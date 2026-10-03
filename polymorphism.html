@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polymorphism — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item active" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="polymorphism">Polymorphism — đa hình trong Java</h1>
+
+    <p class="lead">Polymorphism (đa hình) là khả năng <strong>cùng một lời gọi method cho ra hành vi khác nhau</strong> tuỳ theo object thật sự đứng sau lời gọi đó. Đây là trụ cột thứ ba của OOP bên cạnh encapsulation và inheritance, đồng thời là chủ đề phỏng vấn xuất hiện gần như trong mọi buổi phỏng vấn Java. Trang này tách bạch hai loại đa hình (compile-time và runtime), đi qua overloading, overriding, casting, field hiding, rồi tới pattern matching hiện đại (Java 21+) và ứng dụng trong production.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#overloading">Overloading — đa hình lúc compile-time</a></li>
+        <li><a href="#overriding">Overriding &amp; dynamic dispatch</a></li>
+        <li><a href="#casting">Upcasting, downcasting &amp; instanceof</a></li>
+        <li><a href="#field-hiding">Field hiding &amp; static hiding</a></li>
+        <li><a href="#so-sanh">Overloading vs Overriding</a></li>
+        <li><a href="#interface">Đa hình với interface</a></li>
+        <li><a href="#production">Ứng dụng production — Strategy &amp; OCP</a></li>
+        <li><a href="#covariant">Covariant return type</a></li>
+        <li><a href="#constructor-trap">Bẫy gọi method ảo trong constructor</a></li>
+        <li><a href="#object-methods">Object methods dưới góc nhìn đa hình</a></li>
+        <li><a href="#pitfalls">Pitfalls — bảng lỗi thường gặp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <p>Đa hình nghĩa đen là "nhiều hình thái". Bạn đã dùng nó từ ngày đầu học Java mà có thể chưa gọi tên: <code class="inline">IO.println(...)</code> có hàng chục phiên bản cho từng kiểu dữ liệu — đó là <strong>overloading</strong> (đa hình lúc compile). Còn khi bạn tạo <code class="inline">new ArrayList&lt;&gt;()</code> rồi gán cho biến kiểu <code class="inline">List</code>, lời gọi <code class="inline">add(...)</code> lúc chạy sẽ tìm tới implementation của <code class="inline">ArrayList</code> — đó là <strong>overriding</strong> (đa hình lúc runtime).</p>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 2.4 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết overload đúng luật và đoán đúng bản được chọn; override đúng chữ ký kèm <code class="inline">@Override</code>; dùng biến kiểu cha gọi method của con; ép kiểu an toàn với <code class="inline">instanceof</code>; thay chuỗi <code class="inline">if/else</code> theo type bằng method ảo.</li>
+      <li><strong>Phải hiểu</strong> — overload chọn theo <em>static type</em> của biến và argument lúc compile; override chọn theo <em>runtime type</em> của object lúc chạy; field và static không đa hình; bẫy <code class="inline">null</code>, widening và boxing khi overload; vì sao gọi method ảo trong constructor là nguy hiểm.</li>
+      <li><strong>Nhận biết</strong> — pattern matching <code class="inline">instanceof</code> (Java 16), pattern matching for switch và record pattern (Java 21), sealed classes; bảng method ảo (vtable) và JIT; nguyên lý Liskov (LSP) ở <a href="roadmap.html#phase-2">GĐ2</a>.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất với trang này:</p>
+    <ol>
+      <li>Đoán output của mỗi ví dụ <strong>trước khi</strong> nhìn comment kết quả — đặc biệt các ví dụ về chọn overload và field hiding.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet &amp; checklist</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ gặp trong đề phỏng vấn và tài liệu cũ. Mọi ví dụ Java trong trang là compact source file, chạy bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <h3>Một lời gọi, nhiều hành vi</h3>
+
+    <p>Tưởng tượng một ứng dụng vẽ hình có nút "Vẽ". Cùng một lời gọi <code class="inline">draw()</code>, hình tròn vẽ đường tròn, hình chữ nhật vẽ bốn cạnh — code gọi không cần biết object đang là hình gì:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    void draw() {
+        IO.println("Shape.draw");
+    }
+}
+
+class Circle extends Shape {
+    @Override
+    void draw() {
+        IO.println("Circle.draw");
+    }
+}
+
+class Rectangle extends Shape {
+    @Override
+    void draw() {
+        IO.println("Rectangle.draw");
+    }
+}
+
+void main() {
+    Shape a = new Circle();
+    Shape b = new Rectangle();
+    Shape c = new Shape();
+    a.draw();   // Circle.draw
+    b.draw();   // Rectangle.draw
+    c.draw();   // Shape.draw
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle.draw
+Rectangle.draw
+Shape.draw</code></pre>
+    </div>
+
+    <p>Điểm mấu chốt: biến <code class="inline">a</code> có kiểu khai báo là <code class="inline">Shape</code> nhưng object thật là <code class="inline">Circle</code>. JVM gọi method theo <strong>object thật</strong>, không theo kiểu khai báo — đó chính là dynamic dispatch (mục <a href="#overriding">3</a>).</p>
+
+    <h3>Hai loại đa hình — nhìn là nhớ</h3>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Compile-time (static)</th><th>Runtime (dynamic)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tên gọi</td><td>Overloading</td><td>Overriding (dynamic dispatch)</td></tr>
+        <tr><td>Ai quyết định</td><td>Compiler, theo static type của biến/argument</td><td>JVM, theo runtime type của object</td></tr>
+        <tr><td>Điều kiện</td><td>Cùng tên, khác danh sách tham số</td><td>Lớp con định nghĩa lại method cùng chữ ký của lớp cha</td></tr>
+        <tr><td>Thời điểm</td><td>Ngay khi biên dịch, ghi vào bytecode</td><td>Mỗi lần gọi, lúc chương trình chạy</td></tr>
+        <tr><td>Câu thần chú</td><td>"Overload nhìn biến"</td><td>"Override nhìn object"</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Đừng nhầm:</strong> overload không phải là "đa hình OOP" theo nghĩa kinh điển — nó chỉ là tiện ích đặt tên của compiler. Muốn nói đến sức mạnh thật của đa hình (thêm class mới không phải sửa code cũ), người ta nói tới overriding + dynamic dispatch.</div>
+
+    <h3>Góc Node.js — duck typing vs nominal typing</h3>
+
+    <p>JavaScript không có khái niệm "kế thừa để đa hình": object nào có method <code class="inline">draw()</code> thì dùng được, bất kể nó được tạo ra thế nào. Kiểu này gọi là <strong>duck typing</strong> (structural typing): "nếu nó đi như vịt và kêu như vịt thì là vịt". Java thì ngược lại — <strong>nominal typing</strong>: muốn được coi là <code class="inline">Shape</code>, bạn phải khai báo <code class="inline">extends Shape</code> hoặc <code class="inline">implements Shape</code>, không quan trọng bạn có đủ method hay không.</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+// Duck typing: chi can co method draw, khong can ke thua
+const circle = { draw: () => console.log("Circle.draw") };
+const rectangle = { draw: () => console.log("Rectangle.draw") };
+
+function ve(hinh) {
+    hinh.draw();
+}
+
+ve(circle);
+ve(rectangle);
+
+// JS khong overload that: ham sau ghi de ham truoc
+function chao(ten) {
+    return "Xin chao " + ten;
+}
+
+function chao(ten, tuoi) {
+    return ten + " (" + tuoi + ")";
+}
+
+console.log(chao("An"));        // An (undefined)
+console.log(chao("An", 20));    // An (20)</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle.draw
+Rectangle.draw
+An (undefined)
+An (20)</code></pre>
+    </div>
+
+    <p>Chạy thật bằng Node v22. Ba điểm cần nhớ:</p>
+    <ul>
+      <li>JS gọi được <code class="inline">hinh.draw()</code> dù <code class="inline">circle</code> không kế thừa gì — Java bắt buộc <code class="inline">Circle implements Shape</code>.</li>
+      <li>JS <strong>không có overload thật</strong>: khai báo hai <code class="inline">function chao</code> cùng tên thì hàm sau ghi đè hàm trước, nên <code class="inline">chao("An")</code> in ra <code class="inline">An (undefined)</code>. Java chọn bản theo kiểu/số lượng argument.</li>
+      <li>TypeScript có overload nhưng chỉ ở mức <em>type-check</em>; khi compile xong, thông tin đó biến mất và runtime không dispatch theo kiểu như JVM.</li>
+    </ul>
+
+    <h2 id="overloading">2. Overloading — đa hình lúc compile-time <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Overload</strong> là nhiều method cùng tên trong cùng một class (hoặc giữa cha–con) nhưng <strong>khác danh sách tham số</strong>. Khác nhau có thể là số lượng tham số, kiểu tham số, hoặc thứ tự kiểu tham số. Tên parameter <strong>không</strong> tính vào chữ ký, và return type cũng vậy.</p>
+
+    <div class="signature">
+      <span class="sig-muted">[modifiers]</span> <span class="tok-typ">returnType</span> <span class="sig-var">ten</span><span class="sig-muted">(</span><span class="tok-typ">kieu1</span> <span class="sig-var">a</span><span class="sig-muted">)</span> <span class="sig-muted">|</span> <span class="tok-typ">returnType</span> <span class="sig-var">ten</span><span class="sig-muted">(</span><span class="tok-typ">kieu1</span> <span class="sig-var">a</span><span class="sig-muted">, </span><span class="tok-typ">kieu2</span> <span class="sig-var">b</span><span class="sig-muted">)</span> <span class="sig-muted">|</span> <span class="tok-typ">returnType</span> <span class="sig-var">ten</span><span class="sig-muted">(</span><span class="tok-typ">kieu2</span> <span class="sig-var">b</span><span class="sig-muted">, </span><span class="tok-typ">kieu1</span> <span class="sig-var">a</span><span class="sig-muted">)</span>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">void chao() {
+    IO.println("Xin chao ban");
+}
+
+void chao(String ten) {
+    IO.println("Xin chao " + ten);
+}
+
+void chao(String ten, int tuoi) {
+    IO.println(ten + " (" + tuoi + " tuoi)");
+}
+
+void main() {
+    chao();            // Xin chao ban
+    chao("An");        // Xin chao An
+    chao("Binh", 20);  // Binh (20 tuoi)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Xin chao ban
+Xin chao An
+Binh (20 tuoi)</code></pre>
+    </div>
+
+    <p>Chỉ khác return type là <strong>không đủ</strong> để tạo overload — Java phân biệt method bằng tên + kiểu tham số (method descriptor). Đoạn sau lỗi ngay khi compile:</p>
+
+    <div class="errblock">
+      <pre>OverloadReturnErr.java:6: error: method moTa() is already defined in class Shape
+    String moTa() {
+           ^
+1 error</pre>
+    </div>
+
+    <p>Trong bytecode, tên method luôn được gắn kèm kiểu tham số; chạy <code class="inline">javap</code> bạn sẽ thấy các dòng như <code class="inline">chao(String)</code>, <code class="inline">chao(String, int)</code> là các method hoàn toàn khác nhau.</p>
+
+    <h3>Overload resolution — compiler chọn bản nào?</h3>
+
+    <p>Khi nhiều bản cùng "vừa" với một lời gọi, compiler chọn qua <strong>3 phase</strong>, phase trước thắng phase sau:</p>
+    <ol>
+      <li><strong>Phase 1 — strict (không boxing):</strong> argument khớp chính xác, hoặc widening primitive (ví dụ <code class="inline">int → long</code>) / widening reference (ví dụ <code class="inline">String → Object</code>).</li>
+      <li><strong>Phase 2 — loose:</strong> cho phép boxing/unboxing (ví dụ <code class="inline">int → Integer</code>, <code class="inline">Integer → int</code>).</li>
+      <li><strong>Phase 3 — varargs:</strong> chỉ xét tới nếu hai phase trên không có bản nào phù hợp.</li>
+    </ol>
+    <p>Trong mỗi phase, nếu có nhiều bản phù hợp, compiler chọn bản <strong>cụ thể nhất</strong> (most specific) — ví dụ argument <code class="inline">int</code> thì bản <code class="inline">int</code> thắng bản <code class="inline">long</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void chon(long x) {
+    IO.println("chon(long)");
+}
+
+void chon(Integer x) {
+    IO.println("chon(Integer)");
+}
+
+void main() {
+    chon(1);                   // chon(long) - widening (phase 1) thang boxing (phase 2)
+    chon(1L);                  // chon(long)
+    chon(Integer.valueOf(1));  // chon(Integer) - khop chinh xac (phase 1)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>chon(long)
+chon(long)
+chon(Integer)</code></pre>
+    </div>
+
+    <p>Chú ý: <code class="inline">int → long</code> là widening nên thuộc phase 1 và thắng <code class="inline">int → Integer</code> (boxing, phase 2). Đây là bẫy production phổ biến khi một API thêm bản <code class="inline">long</code> mà call site cũ đang truyền <code class="inline">int</code> — hành vi thay đổi âm thầm.</p>
+
+    <p>Bẫy widening với <code class="inline">int</code>/<code class="inline">long</code>/<code class="inline">double</code> và bẫy varargs:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void f(int x) {
+    IO.println("f(int)");
+}
+
+void f(long x) {
+    IO.println("f(long)");
+}
+
+void f(double x) {
+    IO.println("f(double)");
+}
+
+void g(int a, int b) {
+    IO.println("g(int, int)");
+}
+
+void g(int... xs) {
+    IO.println("g(varargs) count=" + xs.length);
+}
+
+void main() {
+    f(1);      // f(int) - khop chinh xac
+    f(1L);     // f(long)
+    f(1.5f);   // f(double) - float chi widening len double
+    f('a');    // f(int) - char -> int la cu the nhat
+    f(1.0);    // f(double)
+
+    g(1, 2);   // g(int, int) - ban co dinh thang varargs
+    g(1);      // g(varargs) count=1
+    g();       // g(varargs) count=0
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>f(int)
+f(long)
+f(double)
+f(int)
+f(double)
+g(int, int)
+g(varargs) count=1
+g(varargs) count=0</code></pre>
+    </div>
+
+    <p>Bẫy boxing/unboxing khi cả hai kiểu nguyên thủy lẫn wrapper cùng tồn tại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void h(int x) {
+    IO.println("h(int)");
+}
+
+void h(Integer x) {
+    IO.println("h(Integer)");
+}
+
+void p(int x) {
+    IO.println("p(int)");
+}
+
+void p(long x) {
+    IO.println("p(long)");
+}
+
+void p(double x) {
+    IO.println("p(double)");
+}
+
+void r(Integer x) {
+    IO.println("r(Integer)");
+}
+
+void r(int... xs) {
+    IO.println("r(varargs) count=" + xs.length);
+}
+
+void main() {
+    h(1);                   // h(int)
+    h(Integer.valueOf(1));  // h(Integer) - identity (phase 1) thang unboxing (phase 2)
+
+    Integer boxed = 5;
+    p(boxed);               // p(int) - unbox dung kieu, cu the nhat trong phase 2
+
+    r(1);                   // r(Integer) - boxing (phase 2) thang varargs (phase 3)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>h(int)
+h(Integer)
+p(int)
+r(Integer)</code></pre>
+    </div>
+
+    <h3>Overload quyết định theo static type, không theo runtime type</h3>
+
+    <p>Đây là điểm khác biệt cốt lõi giữa overload và override. Compiler chỉ nhìn <em>kiểu khai báo</em> của argument:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void gui(String s) {
+    IO.println("gui(String)");
+}
+
+void gui(Object o) {
+    IO.println("gui(Object)");
+}
+
+void main() {
+    gui("abc");          // gui(String)
+
+    Object o = "abc";    // static type la Object, runtime van la String
+    gui(o);              // gui(Object) - compiler chi nhin static type
+
+    CharSequence cs = "abc";
+    gui(cs);             // gui(Object)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>gui(String)
+gui(Object)
+gui(Object)</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy vận hành:</strong> thêm một overload mới có thể <em>đổi method được chọn</em> ở call site cũ mà không ai sửa gì. Vì vậy overload phải khác nhau rõ ràng về ngữ nghĩa, không chỉ để tiện tay. <code class="inline">List.remove(int)</code> và <code class="inline">List.remove(Object)</code> là ví dụ kinh điển: <code class="inline">list.remove(1)</code> xóa theo <em>vị trí</em>, muốn xóa theo giá trị phải viết <code class="inline">list.remove(Integer.valueOf(1))</code> — xem lại <a href="methods.html#overloading">Methods — mục 5</a>.</div>
+
+    <h3>Bẫy <code class="inline">null</code> — chọn bản cụ thể nhất</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">void xuLy(String s) {
+    IO.println("xuLy(String)");
+}
+
+void xuLy(Object o) {
+    IO.println("xuLy(Object)");
+}
+
+void main() {
+    xuLy("abc");  // xuLy(String)
+    xuLy(null);   // xuLy(String) - cu the nhat
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>xuLy(String)
+xuLy(String)</code></pre>
+    </div>
+
+    <p><code class="inline">null</code> hợp lệ với mọi kiểu reference, nên compiler chọn bản <strong>most specific</strong>: <code class="inline">String</code> là subtype của <code class="inline">Object</code>. Nhưng nếu hai bản không có quan hệ cha–con (ví dụ <code class="inline">Integer</code> và <code class="inline">Long</code>), chương trình <strong>không compile</strong>:</p>
+
+    <div class="errblock">
+      <pre>OverloadNullErr.java:11: error: reference to xuLy is ambiguous
+        xuLy(null);
+        ^
+  both method xuLy(Integer) in Shape and method xuLy(Long) in Shape match
+1 error</pre>
+    </div>
+
+    <p>Cách sửa: ép kiểu rõ ràng <code class="inline">xuLy((Integer) null)</code>, hoặc tốt hơn là đừng để API rơi vào tình huống này — dùng tên method khác nhau cho hai ngữ nghĩa khác nhau.</p>
+
+    <h2 id="overriding">3. Overriding &amp; dynamic dispatch <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Hai method là override của nhau khi lớp con định nghĩa lại instance method của lớp cha với <strong>cùng tên và cùng danh sách tham số</strong>. Quy tắc đầy đủ:</p>
+    <ul>
+      <li>Return type phải giống, hoặc là subtype (covariant — mục <a href="#covariant">9</a>).</li>
+      <li>Access modifier không được thu hẹp (public không được đổi thành protected/private).</li>
+      <li>Checked exception không được mở rộng (có thể thu hẹp hoặc bỏ).</li>
+      <li><code class="inline">static</code>, <code class="inline">private</code>, <code class="inline">final</code> method không override được (xem mục <a href="#field-hiding">5</a>).</li>
+      <li>Luôn viết <code class="inline">@Override</code> để compiler kiểm tra — nếu signature sai, bạn nhận lỗi ngay thay vì vô tình tạo overload mới.</li>
+    </ul>
+
+    <div class="signature">
+      <span class="tok-ann">@Override</span> <span class="sig-muted">access</span> <span class="tok-typ">returnType</span> <span class="sig-var">ten</span><span class="sig-muted">(</span><span class="tok-typ">kieu</span> <span class="sig-var">thamSo</span><span class="sig-muted">) { ... }</span>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    double area() {
+        return 0;
+    }
+
+    String name() {
+        return "Shape";
+    }
+
+    @Override
+    public String toString() {
+        return name() + "[area=" + area() + "]";
+    }
+}
+
+class Circle extends Shape {
+    final double r;
+
+    Circle(double r) {
+        this.r = r;
+    }
+
+    @Override
+    double area() {
+        return Math.PI * r * r;
+    }
+
+    @Override
+    String name() {
+        return "Circle";
+    }
+}
+
+class Rectangle extends Shape {
+    final double w;
+    final double h;
+
+    Rectangle(double w, double h) {
+        this.w = w;
+        this.h = h;
+    }
+
+    @Override
+    double area() {
+        return w * h;
+    }
+
+    @Override
+    String name() {
+        return "Rectangle";
+    }
+}
+
+void main() {
+    Shape[] shapes = { new Circle(1), new Rectangle(2, 3) };
+    for (Shape s : shapes) {
+        IO.println(s);   // toString -> name() + area() deu la method ao
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle[area=3.141592653589793]
+Rectangle[area=6.0]</code></pre>
+    </div>
+
+    <p>Trong vòng lặp, biến <code class="inline">s</code> có static type là <code class="inline">Shape</code>. Compiler chỉ đảm bảo <code class="inline">Shape</code> có các method <code class="inline">name()</code>, <code class="inline">area()</code>, <code class="inline">toString()</code>; còn <em>implementation nào chạy</em> là do JVM quyết định theo runtime type (<code class="inline">Circle</code> hay <code class="inline">Rectangle</code>). Ngay cả <code class="inline">toString()</code> bên trong <code class="inline">Shape</code> gọi <code class="inline">name()</code> và <code class="inline">area()</code> cũng được dispatch tiếp tới lớp con.</p>
+
+    <h3>JVM làm điều đó thế nào?</h3>
+
+    <p>Mỗi class khi nạp vào JVM có một bảng method ảo (vtable) trỏ tới implementation thực tế của từng chữ ký. Lời gọi được biên dịch thành lệnh <code class="inline">invokevirtual</code> ghi theo static type, nhưng JVM tra bảng của runtime class để lấy địa chỉ method:</p>
+
+    <div class="codeblock">
+      <pre><code>9: aload_1
+10: invokevirtual #12   // Method BytecodeDemo$Shape.area:()D</code></pre>
+    </div>
+
+    <p>Dòng <code class="inline">javap</code> thật ở trên (file <code class="inline">BytecodeDemo.java</code>, in ra <code class="inline">3.14</code>) trỏ tới <code class="inline">Shape.area</code> vì đó là static type — nhưng JVM nhìn object thật là <code class="inline">Circle</code> và gọi <code class="inline">Circle.area</code>. Interface dùng lệnh <code class="inline">invokeinterface</code> với cơ chế tương tự. JIT compiler còn tối ưu bằng inline caching: khi call site luôn nhận một loại object, lời gọi ảo gần như nhanh bằng lời gọi thường.</p>
+
+    <div class="note">Bạn không cần thuộc bytecode, nhưng cần trả lời được câu phỏng vấn: "JVM chọn method lúc compile hay lúc runtime?" — với instance method bị override: <strong>lúc runtime</strong>, dựa trên object thật.</div>
+
+    <h2 id="casting">4. Upcasting, downcasting &amp; instanceof <span class="badge b-junior">Junior+</span></h2>
+
+    <p><strong>Upcast</strong> (đi lên: con → cha) là gán object của lớp con cho biến kiểu lớp cha. Java tự động làm, luôn an toàn vì mọi <code class="inline">Circle</code> đều <em>là một</em> <code class="inline">Shape</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Shape s = new Circle();   // upcast - tu dong</code></pre>
+    </div>
+
+    <p><strong>Downcast</strong> (đi xuống: cha → con) phải ép tường minh, vì compiler không biết object thật là gì. Nếu object thật không phải kiểu đích (hoặc lớp con của nó), JVM ném <code class="inline">ClassCastException</code> lúc chạy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    void draw() {
+        IO.println("Shape.draw");
+    }
+}
+
+class Circle extends Shape {
+    void draw() {
+        IO.println("Circle.draw");
+    }
+
+    void banKinh() {
+        IO.println("banKinh()");
+    }
+}
+
+void main() {
+    Shape s = new Circle();   // upcast - tu dong, an toan
+    s.draw();                 // Circle.draw - dynamic dispatch
+
+    // s.banKinh();           // Loi compile: Shape khong co banKinh()
+    if (s instanceof Circle c) {   // pattern matching (Java 16+)
+        c.banKinh();               // banKinh()
+    }
+
+    Shape s2 = new Shape();
+    try {
+        Circle c2 = (Circle) s2;   // downcast sai
+        IO.println("khong bao gio in dong nay: " + c2);
+    } catch (ClassCastException e) {
+        IO.println(e.getClass().getName());   // java.lang.ClassCastException
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle.draw
+banKinh()
+java.lang.ClassCastException</code></pre>
+    </div>
+
+    <p>Ba điều rút ra:</p>
+    <ul>
+      <li>Qua biến static type <code class="inline">Shape</code>, bạn chỉ gọi được method mà <code class="inline">Shape</code> khai báo (hoặc thừa hưởng). Muốn gọi <code class="inline">banKinh()</code> phải downcast hoặc thiết kế lại.</li>
+      <li><code class="inline">instanceof</code> kiểm tra object có thuộc kiểu hay không (kể cả subclass) trước khi ép — tránh <code class="inline">ClassCastException</code>.</li>
+      <li>Từ Java 16, <strong>pattern matching instanceof</strong> cho phép khai báo luôn biến đã ép kiểu: <code class="inline">s instanceof Circle c</code> — không còn dòng ép thủ công.</li>
+    </ul>
+
+    <h3>Pattern matching for switch &amp; record pattern (Java 21)</h3>
+
+    <p>Kết hợp <code class="inline">sealed</code> + <code class="inline">switch</code> theo kiểu + record pattern, bạn có dạng đa hình "có kiểm soát" rất gọn. Compiler biết mọi subtype (nhờ <code class="inline">permits</code>) nên bắt buộc switch expression phải bao hết trường hợp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Shape permits Circle, Rectangle {
+}
+
+record Circle(double r) implements Shape {
+}
+
+record Rectangle(double w, double h) implements Shape {
+}
+
+double dienTich(Shape s) {
+    return switch (s) {
+        case Circle(double r) -&gt; Math.PI * r * r;
+        case Rectangle(double w, double h) -&gt; w * h;
+    };
+}
+
+void main() {
+    IO.println(dienTich(new Circle(1)));       // 3.141592653589793
+    IO.println(dienTich(new Rectangle(2, 3))); // 6.0
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>3.141592653589793
+6.0</code></pre>
+    </div>
+
+    <p><code class="inline">case Circle(double r)</code> chính là <strong>record pattern</strong>: vừa kiểm tra kiểu vừa "tháo" component <code class="inline">r</code> ra biến mà không cần gọi <code class="inline">c.r()</code>. Record pattern là kiến thức <em>nhận biết</em> — chưa cần thành thạo, nhưng gặp trong codebase hiện đại phải đọc hiểu ngay.</p>
+
+    <div class="note warn"><strong>Đừng dùng <code class="inline">getClass() == Circle.class</code> thay <code class="inline">instanceof</code>.</strong> Phép so sánh đó chỉ đúng khi object là <em>chính xác</em> lớp đó; subclass và proxy (Spring, Hibernate) sẽ trượt. <code class="inline">instanceof</code> kiểm tra theo quan hệ "là một" nên đúng với cả cây kế thừa.</div>
+
+    <h2 id="field-hiding">5. Field hiding &amp; static hiding — thứ KHÔNG đa hình <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Method mới đa hình; <strong>field thì không</strong>. Nếu lớp con khai báo field trùng tên lớp cha, field cha bị <em>che</em> (hidden) chứ không bị override. Truy cập field luôn quyết định theo <strong>static type</strong> của biến:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    String ten = "Shape";
+
+    String layTen() {
+        return ten;
+    }
+}
+
+class Circle extends Shape {
+    String ten = "Circle";
+
+    @Override
+    String layTen() {
+        return ten;
+    }
+}
+
+void main() {
+    Shape s = new Circle();
+    IO.println(s.ten);           // Shape  - field theo static type
+    IO.println(s.layTen());      // Circle - method theo runtime type
+
+    Circle c = new Circle();
+    IO.println(c.ten);           // Circle
+    IO.println(((Shape) c).ten); // Shape  - ep len cha thi thay field cha
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Shape
+Circle
+Circle
+Shape</code></pre>
+    </div>
+
+    <p>Cùng một object <code class="inline">Circle</code> mà <code class="inline">s.ten</code> in <code class="inline">Shape</code> còn <code class="inline">s.layTen()</code> in <code class="inline">Circle</code> — đây là câu hỏi phỏng vấn rất hay gặp. Lời khuyên production: <strong>field để private, truy cập qua getter/setter</strong>; khi đó mọi hành vi đi qua method và đa hình hoạt động đúng.</p>
+
+    <p><code class="inline">static</code> method cũng vậy — nó bị <em>hide</em>, không override. Gọi static qua biến thực chất là compiler thay bằng tên class theo static type:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    static String loai() {
+        return "Shape static";
+    }
+}
+
+class Circle extends Shape {
+    static String loai() {
+        return "Circle static";
+    }
+}
+
+void main() {
+    Shape s = new Circle();
+    IO.println(s.loai());       // Shape static - khong dispatch theo object
+    IO.println(Shape.loai());   // Shape static
+    IO.println(Circle.loai());  // Circle static
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Shape static
+Shape static
+Circle static</code></pre>
+    </div>
+
+    <p>Vì vậy không bao giờ dùng static method cho hành vi cần thay đổi theo từng loại object. Gọi static qua instance (<code class="inline">s.loai()</code>) là bad style — nên viết <code class="inline">Shape.loai()</code> hoặc <code class="inline">Circle.loai()</code> để ý định rõ ràng.</p>
+
+    <h2 id="so-sanh">6. Overloading vs Overriding — bảng so sánh</h2>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Overloading</th><th>Overriding</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Định nghĩa</td><td>Cùng tên, khác danh sách tham số</td><td>Lớp con định nghĩa lại method cùng chữ ký của lớp cha</td></tr>
+        <tr><td>Xảy ra ở đâu</td><td>Trong cùng class, hoặc giữa cha–con</td><td>Bắt buộc có quan hệ kế thừa (<code class="inline">extends</code>) hoặc implements interface</td></tr>
+        <tr><td>Thời điểm quyết định</td><td>Compile-time, theo static type</td><td>Runtime, theo runtime type của object</td></tr>
+        <tr><td>Tham số</td><td>Phải khác (số lượng, kiểu, thứ tự)</td><td>Phải giống hệt</td></tr>
+        <tr><td>Return type</td><td>Không tính vào chữ ký — khác return type không tạo overload</td><td>Giống hoặc covariant (subtype)</td></tr>
+        <tr><td>Access modifier</td><td>Không ràng buộc</td><td>Không được thu hẹp hơn lớp cha</td></tr>
+        <tr><td>static / private / final</td><td>Đều có thể overload</td><td>Không override được; static là hide, private/final chặn hẳn</td></tr>
+        <tr><td>Checked exception</td><td>Không ràng buộc</td><td>Không được mở rộng, chỉ được thu hẹp hoặc bỏ</td></tr>
+        <tr><td>Tính đa hình</td><td>Static (compile-time)</td><td>Dynamic (runtime) — đa hình thật sự</td></tr>
+      </tbody>
+    </table>
+
+    <p>Câu phỏng vấn "kể tên các cách đạt đa hình trong Java" trả lời gọn: <strong>overloading (compile-time)</strong> và <strong>overriding (runtime)</strong>. Nếu người phỏng vấn muốn sâu hơn, nói thêm dynamic dispatch, interface, và pattern matching.</p>
+
+    <h2 id="interface">7. Đa hình với interface <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Trong production, đa hình gần như luôn đi qua interface: code gọi làm việc với abstraction, implementation cụ thể được inject lúc chạy. Ví dụ bạn đã gặp mỗi ngày: <code class="inline">List&lt;String&gt; ds = new ArrayList&lt;&gt;();</code> — biến là <code class="inline">List</code>, object là <code class="inline">ArrayList</code>; đổi sang <code class="inline">LinkedList</code> chỉ sửa một dòng.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Shape {
+    double area();
+
+    String ten();
+
+    default boolean laHinhTron() {
+        return ten().equals("Circle");
+    }
+}
+
+class Circle implements Shape {
+    final double r;
+
+    Circle(double r) {
+        this.r = r;
+    }
+
+    public double area() {
+        return Math.PI * r * r;
+    }
+
+    public String ten() {
+        return "Circle";
+    }
+}
+
+class Rectangle implements Shape {
+    final double w;
+    final double h;
+
+    Rectangle(double w, double h) {
+        this.w = w;
+        this.h = h;
+    }
+
+    public double area() {
+        return w * h;
+    }
+
+    public String ten() {
+        return "Rectangle";
+    }
+}
+
+void inDienTich(Shape s) {
+    IO.println(s.ten() + ": area=" + s.area() + ", laHinhTron=" + s.laHinhTron());
+}
+
+void main() {
+    inDienTich(new Circle(1));
+    inDienTich(new Rectangle(2, 3));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle: area=3.141592653589793, laHinhTron=true
+Rectangle: area=6.0, laHinhTron=false</code></pre>
+    </div>
+
+    <p><code class="inline">inDienTich(Shape s)</code> là ví dụ của "lập trình theo abstraction": nó chỉ cần biết <code class="inline">Shape</code> làm được gì, không cần biết object là <code class="inline">Circle</code> hay <code class="inline">Rectangle</code>. Thêm một hình mới (ví dụ <code class="inline">Triangle</code>) không phải sửa <code class="inline">inDienTich</code> — miễn là hình đó <code class="inline">implements Shape</code>. <code class="inline">default method</code> (<code class="inline">laHinhTron</code>) cũng là method ảo, lớp con có thể override nếu muốn.</p>
+
+    <p>Abstract class vs interface — khi nào dùng cái nào — học ở <a href="abstract-interface.html">2.5 Abstract class vs Interface</a>. Trước mắt hãy nhớ: interface cho phép một class "là nhiều hình thái" (<code class="inline">implements Comparable, Serializable</code>), còn abstract class phù hợp khi các lớp con chia sẻ state và code chung.</p>
+
+    <h2 id="production">8. Ứng dụng production — Strategy &amp; nguyên lý Open/Closed <span class="badge b-prod">Production</span></h2>
+
+    <p>Đa hình là công cụ chính để loại bỏ chuỗi <code class="inline">if/else</code> (hoặc <code class="inline">switch</code>) kiểm tra type. Mẫu refactor này có tên: <strong>Replace Conditional with Polymorphism</strong>, và nó phục vụ nguyên lý <strong>Open/Closed</strong>: mở cho mở rộng, đóng cho sửa đổi.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class Shape {
+    abstract double area();
+
+    abstract String ten();
+}
+
+class Circle extends Shape {
+    final double r;
+
+    Circle(double r) {
+        this.r = r;
+    }
+
+    @Override
+    double area() {
+        return Math.PI * r * r;
+    }
+
+    @Override
+    String ten() {
+        return "Circle";
+    }
+}
+
+class Rectangle extends Shape {
+    final double w;
+    final double h;
+
+    Rectangle(double w, double h) {
+        this.w = w;
+        this.h = h;
+    }
+
+    @Override
+    double area() {
+        return w * h;
+    }
+
+    @Override
+    String ten() {
+        return "Rectangle";
+    }
+}
+
+// Cach cu: if/else theo type - them hinh moi phai sua method nay
+double dienTichKieuCu(Shape s) {
+    if (s instanceof Circle c) {
+        return c.area();
+    }
+    if (s instanceof Rectangle r) {
+        return r.area();
+    }
+    return 0;
+}
+
+// Cach dung da hinh: chi goi method ao, khong can biet type cu the
+void inTatCa(Shape... shapes) {
+    for (Shape s : shapes) {
+        IO.println(s.ten() + " = " + s.area());
+    }
+}
+
+void main() {
+    Shape[] shapes = { new Circle(1), new Rectangle(2, 3) };
+    IO.println("cach cu : " + dienTichKieuCu(shapes[0]));
+    IO.println("cach cu : " + dienTichKieuCu(shapes[1]));
+    inTatCa(shapes);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>cach cu : 3.141592653589793
+cach cu : 6.0
+Circle = 3.141592653589793
+Rectangle = 6.0</code></pre>
+    </div>
+
+    <p>Nhìn thì hai cách cho cùng kết quả, nhưng khác nhau về chi phí bảo trì: cách <code class="inline">if/else</code> phải sửa <em>mọi</em> method có chuỗi kiểm tra type mỗi khi thêm hình mới, còn cách đa hình chỉ cần thêm class mới. Đây cũng chính là nền tảng của <strong>Strategy pattern</strong>: mỗi chiến lược là một implementation của cùng interface, chọn lúc runtime. Xem thêm <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</p>
+
+    <div class="note">Lưu ý thực dụng: nếu tập kiểu là <em>đóng</em> và nhỏ (ví dụ chỉ 2-3 loại trạng thái), một <code class="inline">switch</code> pattern với sealed classes (mục <a href="#casting">4</a>) lại dễ đọc và an toàn hơn ép mọi thứ thành class. Đa hình không phải cây búa vạn năng.</div>
+
+    <h2 id="covariant">9. Covariant return type</h2>
+
+    <p>Từ Java 5, method override được phép trả về kiểu <strong>hẹp hơn</strong> (subtype) so với lớp cha. Điều này giúp call site không phải ép kiểu:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    Shape copy() {
+        return new Shape();
+    }
+}
+
+class Circle extends Shape {
+    final double r;
+
+    Circle(double r) {
+        this.r = r;
+    }
+
+    @Override
+    Circle copy() {
+        return new Circle(r);
+    }
+}
+
+void main() {
+    Shape s = new Circle(5);
+    IO.println(s.copy().getClass().getSimpleName());  // Circle
+
+    Circle c = new Circle(5);
+    Circle c2 = c.copy();                              // khong can ep kieu
+    IO.println(c2.getClass().getSimpleName() + " r=" + c2.r);  // Circle r=5.0
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle
+Circle r=5.0</code></pre>
+    </div>
+
+    <p>Qua biến <code class="inline">Shape</code>, <code class="inline">s.copy()</code> vẫn khai báo trả về <code class="inline">Shape</code>; nhưng qua biến <code class="inline">Circle</code>, compiler biết <code class="inline">c.copy()</code> trả về <code class="inline">Circle</code>. Để giữ tương thích bytecode, compiler sinh thêm một <em>bridge method</em> có return type <code class="inline">Shape</code> gọi tới bản covariant — đây là chi tiết nhận biết, gặp khi đọc <code class="inline">javap</code>. JDK dùng nhiều: interface <code class="inline">Appendable</code> khai báo <code class="inline">append(CharSequence)</code> trả về <code class="inline">Appendable</code>, còn <code class="inline">StringBuilder</code> override trả về chính <code class="inline">StringBuilder</code> — nhờ vậy bạn chain được <code class="inline">.append(...).append(...)</code> (xem lại <a href="methods.html#chaining">Methods — mục 10</a>).</p>
+
+    <h2 id="constructor-trap">10. Bẫy gọi method ảo trong constructor <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Gọi một method có thể bị override ngay trong constructor của lớp cha là bẫy kinh điển: override của lớp con chạy <strong>trước khi field của lớp con được khởi tạo</strong>. Thứ tự khởi tạo là: constructor lớp cha → field initializer/instance block của con → thân constructor con.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    Shape() {
+        IO.println("Shape() goi moTa() -&gt; [" + moTa() + "]");
+    }
+
+    String moTa() {
+        return "Shape";
+    }
+}
+
+class Circle extends Shape {
+    String ten = "Circle";
+
+    @Override
+    String moTa() {
+        return ten;
+    }
+}
+
+void main() {
+    new Circle();
+    Circle c = new Circle();
+    IO.println("sau khi tao xong: [" + c.moTa() + "]");
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Shape() goi moTa() -&gt; [null]
+Shape() goi moTa() -&gt; [null]
+sau khi tao xong: [Circle]</code></pre>
+    </div>
+
+    <p>Lúc <code class="inline">Shape()</code> chạy, JVM đã biết object thật là <code class="inline">Circle</code>, nên dispatch vào <code class="inline">Circle.moTa()</code> — nhưng field <code class="inline">ten</code> của <code class="inline">Circle</code> chưa được gán, nên trả về <code class="inline">null</code>. Nếu field là <code class="inline">int</code>, bạn sẽ nhận <code class="inline">0</code> thay vì giá trị mong đợi.</p>
+
+    <div class="note warn"><strong>Quy tắc:</strong> constructor chỉ nên gọi method <code class="inline">private</code>, <code class="inline">static</code> hoặc <code class="inline">final</code> — những method không thể bị override. Nếu cần "hook" cho lớp con, hãy để việc đó ở method <code class="inline">init()</code> được gọi tường minh sau khi tạo object, hoặc dùng factory method.</div>
+
+    <h2 id="object-methods">11. Object methods dưới góc nhìn đa hình <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Mọi class đều kế thừa <code class="inline">Object</code>, và các method như <code class="inline">toString()</code>, <code class="inline">equals()</code>, <code class="inline">hashCode()</code> đều là method ảo. Đây là lý do <code class="inline">IO.println(object)</code> in ra mô tả tuỳ object thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Shape {
+    @Override
+    public String toString() {
+        return "Shape";
+    }
+}
+
+class Circle extends Shape {
+    @Override
+    public String toString() {
+        return "Circle(r=1)";
+    }
+}
+
+void main() {
+    Object o = new Circle();
+    IO.println(o);                 // Circle(r=1) - dynamic dispatch
+    IO.println("x" + new Circle()); // xCircle(r=1) - cong chuoi cung goi toString
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle(r=1)
+xCircle(r=1)</code></pre>
+    </div>
+
+    <p>Hệ quả production: <code class="inline">List.contains</code>, <code class="inline">HashMap</code>, logging, assertion đều dựa vào <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code> — tức là dựa vào đa hình. Override sai <code class="inline">equals</code>/<code class="inline">hashCode</code> (vi phạm contract) sẽ tạo bug rất khó tìm. Chi tiết ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</p>
+
+    <h2 id="pitfalls">12. Pitfalls — bảng lỗi thường gặp <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách phòng</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Gọi overload với <code class="inline">null</code> khi các bản không quan hệ cha–con</td>
+          <td>Lỗi compile "reference to ... is ambiguous"</td>
+          <td>Ép kiểu rõ ràng <code class="inline">m((String) null)</code> hoặc tránh <code class="inline">null</code>/đặt tên method khác nhau</td>
+        </tr>
+        <tr>
+          <td>Downcast không kiểm tra</td>
+          <td><code class="inline">ClassCastException</code> lúc runtime</td>
+          <td><code class="inline">instanceof</code> trước khi ép; tốt nhất thiết kế để không cần downcast</td>
+        </tr>
+        <tr>
+          <td>Dùng <code class="inline">getClass() == X.class</code> thay <code class="inline">instanceof</code></td>
+          <td>Trượt subclass và proxy (Spring, Hibernate)</td>
+          <td>Dùng <code class="inline">instanceof</code>; chỉ so <code class="inline">getClass()</code> khi thật sự cần đúng lớp cuối</td>
+        </tr>
+        <tr>
+          <td>Tưởng field đa hình như method</td>
+          <td>Đọc nhầm giá trị cha/con tuỳ static type của biến</td>
+          <td>Field để <code class="inline">private</code> + getter; hành vi động đặt trong method</td>
+        </tr>
+        <tr>
+          <td>Overload chỉ khác nhau bởi boxing/widening</td>
+          <td>Thêm overload mới âm thầm đổi hành vi call site cũ</td>
+          <td>Tránh overload khác nhau bởi <code class="inline">int</code>/<code class="inline">long</code>/<code class="inline">Integer</code>; dùng tên method khác nhau</td>
+        </tr>
+        <tr>
+          <td>Quá nhiều overload khó đọc</td>
+          <td>Gọi nhầm bản; điển hình <code class="inline">List.remove(1)</code> xóa theo index</td>
+          <td>Builder cho nhiều tùy chọn; đặt tên theo ngữ nghĩa (<code class="inline">removeAt</code>, <code class="inline">removeValue</code>)</td>
+        </tr>
+        <tr>
+          <td>Gọi method overridable trong constructor</td>
+          <td>Chạy override khi field lớp con còn <code class="inline">null</code>/<code class="inline">0</code></td>
+          <td>Chỉ gọi <code class="inline">private</code>/<code class="inline">static</code>/<code class="inline">final</code>; hoặc tách <code class="inline">init()</code></td>
+        </tr>
+        <tr>
+          <td>Dùng static method và mong chờ dynamic dispatch</td>
+          <td>Chạy implementation theo static type, không theo object</td>
+          <td>Static bị hide chứ không override; gọi tường minh qua tên class</td>
+        </tr>
+        <tr>
+          <td>Quên <code class="inline">@Override</code> khi signature viết sai</td>
+          <td>Vô tình tạo overload mới; method "không bao giờ chạy"</td>
+          <td>Luôn viết <code class="inline">@Override</code> — compiler sẽ báo lỗi ngay</td>
+        </tr>
+        <tr>
+          <td>Ép kiểu không cần thiết khi upcast</td>
+          <td>Code rối, che mất ý định thiết kế</td>
+          <td>Upcast tự động: cứ gán <code class="inline">Shape s = new Circle()</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Polymorphism (đa hình) là gì? Nêu lợi ích.</summary>
+      <div class="answer">Là khả năng cùng một lời gọi method cho ra hành vi khác nhau tuỳ object thật sự nhận lời gọi. Ví dụ <code class="inline">s.draw()</code> vẽ hình tròn nếu object là <code class="inline">Circle</code>, vẽ chữ nhật nếu là <code class="inline">Rectangle</code>. Lợi ích: code gọi làm việc với abstraction thay vì từng type cụ thể; thêm loại mới không phải sửa code cũ (Open/Closed); dễ test nhờ mock implementation.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Hai loại đa hình chính trong Java, khác nhau ở thời điểm nào?</summary>
+      <div class="answer"><strong>Compile-time</strong> (static): overloading — compiler chọn method theo static type của biến/argument, quyết định ngay khi biên dịch. <strong>Runtime</strong> (dynamic): overriding — JVM chọn implementation theo runtime type của object mỗi lần gọi (dynamic dispatch). Đa hình theo nghĩa OOP mạnh nhất là loại runtime.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Overloading là gì? Hai method là overload của nhau khi nào?</summary>
+      <div class="answer">Cùng tên nhưng khác danh sách tham số: khác số lượng, khác kiểu, hoặc khác thứ tự kiểu — trong cùng class hoặc giữa cha–con. Tên parameter không tính; return type cũng không tính vào chữ ký.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Vì sao không thể overload chỉ bằng return type?</summary>
+      <div class="answer">Method descriptor trong bytecode gồm tên + kiểu tham số; lời gọi <code class="inline">m(x)</code> chỉ mang tên và argument nên compiler không có cách nào phân biệt nếu hai bản chỉ khác return type. JLS cấm và báo lỗi "method ... is already defined".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Overload resolution chọn method theo thứ tự nào?</summary>
+      <div class="answer">3 phase, phase trước thắng phase sau: (1) strict — khớp chính xác hoặc widening, không boxing; (2) loose — cho phép boxing/unboxing; (3) varargs. Trong mỗi phase, nếu nhiều bản cùng hợp lệ thì chọn bản "cụ thể nhất" (most specific).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Có <code class="inline">m(long)</code> và <code class="inline">m(Integer)</code>, gọi <code class="inline">m(1)</code> chọn bản nào? Vì sao?</summary>
+      <div class="answer">Bản <code class="inline">m(long)</code>. <code class="inline">int → long</code> là widening nên thuộc phase 1, còn <code class="inline">int → Integer</code> là boxing thuộc phase 2. Muốn vào bản <code class="inline">Integer</code> phải viết <code class="inline">m(Integer.valueOf(1))</code> (lúc đó identity phase 1 thắng).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Có <code class="inline">gui(String)</code> và <code class="inline">gui(Object)</code>, gọi <code class="inline">gui(null)</code> chọn bản nào? Khi nào lỗi ambiguous?</summary>
+      <div class="answer">Chọn <code class="inline">gui(String)</code>: <code class="inline">null</code> hợp lệ với mọi reference type nên compiler chọn bản cụ thể nhất, <code class="inline">String</code> là subtype của <code class="inline">Object</code>. Nếu hai bản không có quan hệ cha–con (ví dụ <code class="inline">Integer</code> và <code class="inline">Long</code>) thì lỗi "reference to ... is ambiguous"; sửa bằng ép kiểu <code class="inline">gui((Integer) null)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Overriding là gì? Điều kiện để override hợp lệ?</summary>
+      <div class="answer">Lớp con định nghĩa lại instance method của lớp cha với cùng tên + cùng danh sách tham số. Return type giống hoặc covariant; access modifier không được thu hẹp; checked exception không được mở rộng. Chỉ override được method không <code class="inline">static</code>/<code class="inline">private</code>/<code class="inline">final</code>, và phải có quan hệ kế thừa/implements. Luôn dùng <code class="inline">@Override</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 9. Dynamic dispatch hoạt động thế nào?</summary>
+      <div class="answer">Lời gọi <code class="inline">s.area()</code> biên dịch thành lệnh <code class="inline">invokevirtual</code> ghi method theo static type (<code class="inline">Shape.area</code>). Lúc chạy, JVM tra bảng method ảo (vtable) của runtime class (<code class="inline">Circle</code>) và gọi implementation override. Interface dùng <code class="inline">invokeinterface</code> tương tự. JIT tối ưu call site ổn định bằng inline caching nên chi phí gần như lời gọi thường.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Field có đa hình không?</summary>
+      <div class="answer">Không. Field không bị override mà bị <em>hide</em>: <code class="inline">s.ten</code> đọc theo static type của biến, dù object thật là lớp con. Muốn hành vi động phải dùng method (getter). Best practice: field <code class="inline">private</code>, truy cập qua method.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Static method có đa hình không?</summary>
+      <div class="answer">Không. Static method thuộc class, bị hide chứ không override; gọi qua instance thực chất compiler thay bằng tên class theo static type. Static không có <code class="inline">this</code> nên không thể dispatch theo object.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Upcast và downcast khác nhau thế nào? Khi nào ném ClassCastException?</summary>
+      <div class="answer">Upcast (con → cha) tự động và luôn an toàn. Downcast (cha → con) phải ép tường minh; nếu object thật không phải kiểu đích hoặc lớp con của nó thì JVM ném <code class="inline">ClassCastException</code> lúc runtime. Kiểm tra <code class="inline">instanceof</code> trước khi ép.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Pattern matching instanceof (Java 16) giải quyết vấn đề gì?</summary>
+      <div class="answer">Thay vì <code class="inline">if (s instanceof Circle) { Circle c = (Circle) s; ... }</code>, viết gọn <code class="inline">if (s instanceof Circle c) { ... }</code> — vừa kiểm tra vừa khai báo biến đã ép kiểu, giảm lỗi copy-paste và tăng độ rõ. Biến pattern có scope trong nhánh điều kiện.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Pattern matching for switch (Java 21) — điều kiện để switch exhaustive?</summary>
+      <div class="answer">Với switch expression theo kiểu, compiler yêu cầu bao hết mọi khả năng. Nếu kiểu là <code class="inline">sealed</code> với danh sách <code class="inline">permits</code> hữu hạn, compiler biết đủ mọi subtype và bắt lỗi thiếu case. Không dùng sealed thì phải thêm <code class="inline">default</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Record pattern là gì?</summary>
+      <div class="answer">Tính năng Java 21 cho phép "tháo" record ngay trong pattern: <code class="inline">case Circle(double r)</code> thay vì <code class="inline">case Circle c</code> rồi gọi <code class="inline">c.r()</code>. Có thể lồng nhiều tầng. Đây là kiến thức nhận biết để đọc code hiện đại; viết thành thạo sẽ hữu ích khi làm việc với dữ liệu dạng cây.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Gọi method ảo trong constructor gây ra vấn đề gì?</summary>
+      <div class="answer">Override của lớp con chạy trước khi field của lớp con được khởi tạo (thứ tự: constructor cha → field initializer của con → thân constructor con). Kết quả là override đọc field còn <code class="inline">null</code>/<code class="inline">0</code>. Tránh gọi method overridable trong constructor; dùng <code class="inline">private</code>/<code class="inline">static</code>/<code class="inline">final</code> hoặc tách <code class="inline">init()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Covariant return type là gì?</summary>
+      <div class="answer">Từ Java 5, method override được trả về subtype của kiểu trả về ở lớp cha: <code class="inline">Circle copy()</code> override <code class="inline">Shape copy()</code>. Qua biến kiểu <code class="inline">Circle</code>, call site không cần ép kiểu. Compiler sinh bridge method để tương thích bytecode.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Nguyên lý Liskov (LSP) liên quan gì tới overriding?</summary>
+      <div class="answer">LSP phát biểu: nơi dùng lớp cha phải thay được bằng object của mọi lớp con mà hành vi không vỡ. Override chỉ nên giữ hoặc củng cố ngữ nghĩa (precondition không chặt hơn, postcondition không lỏng hơn). Ví dụ kinh điển vi phạm: <code class="inline">Square extends Rectangle</code> — <code class="inline">setWidth</code> của hình vuông vô tình đổi cả chiều cao, làm code dùng <code class="inline">Rectangle</code> bị sai.</div>
+    </details>
+
+    <h3>Production &amp; Node.js</h3>
+
+    <details class="qa">
+      <summary>Câu 19. Tóm tắt khác biệt overload và override trong một câu cho mỗi loại?</summary>
+      <div class="answer">Overload: cùng tên khác tham số, quyết định lúc compile theo static type, không cần kế thừa, static/private/final đều được. Override: cùng chữ ký, quyết định lúc runtime theo runtime type, bắt buộc kế thừa/implements, không áp dụng cho static/private/final. Bảng đầy đủ ở <a href="#so-sanh">mục 6</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Đa hình được dùng thế nào trong production?</summary>
+      <div class="answer">Thay chuỗi <code class="inline">if/else instanceof</code> bằng method ảo (Replace Conditional with Polymorphism, Strategy pattern) — thêm loại mới chỉ thêm class, không sửa code cũ (Open/Closed). Dependency injection (Spring) inject interface rồi runtime nhận implementation/proxy; mock khi test cũng nhờ đa hình. Xem <a href="#production">mục 8</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Góc Node.js: JS có overload không? Duck typing vs nominal typing?</summary>
+      <div class="answer">JS không có overload thật — khai báo hai function cùng tên thì hàm sau ghi đè hàm trước, tham số không có kiểu tĩnh. JS dùng duck typing (structural): object nào có method phù hợp là dùng được, không cần kế thừa. Java dùng nominal typing: muốn là <code class="inline">Shape</code> phải khai báo <code class="inline">extends</code>/<code class="inline">implements</code>. TypeScript có overload nhưng chỉ ở mức type-check, xoá khi compile; runtime không dispatch như JVM.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1 — widening thắng boxing</summary>
+      <div class="codeblock">
+        <pre><code class="java">void chon(long x)    { IO.println("chon(long)"); }
+void chon(Integer x) { IO.println("chon(Integer)"); }
+
+chon(1);
+chon(1L);
+chon(Integer.valueOf(1));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">chon(long)</code>, <code class="inline">chon(long)</code>, <code class="inline">chon(Integer)</code>. <code class="inline">chon(1)</code> chọn <code class="inline">long</code> vì widening thuộc phase 1 thắng boxing phase 2; <code class="inline">Integer.valueOf(1)</code> khớp chính xác bản <code class="inline">Integer</code> ngay phase 1.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2 — null chọn bản cụ thể nhất</summary>
+      <div class="codeblock">
+        <pre><code class="java">void gui(String s) { IO.println("String"); }
+void gui(Object o) { IO.println("Object"); }
+
+gui(null);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">String</code>. <code class="inline">null</code> khớp cả hai, compiler chọn bản most specific; <code class="inline">String</code> là subtype của <code class="inline">Object</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3 — int/long/double với char và float</summary>
+      <div class="codeblock">
+        <pre><code class="java">void f(int x)    { IO.println("int"); }
+void f(long x)   { IO.println("long"); }
+void f(double x) { IO.println("double"); }
+
+f('a');
+f(1.5f);
+f(1L);
+f(1);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">int</code>, <code class="inline">double</code>, <code class="inline">long</code>, <code class="inline">int</code>. <code class="inline">char → int</code> là widening cụ thể nhất; <code class="inline">float</code> chỉ widening được lên <code class="inline">double</code> (không sang <code class="inline">int</code>/<code class="inline">long</code>); <code class="inline">long</code> khớp chính xác; <code class="inline">int</code> khớp chính xác.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4 — boxing và varargs</summary>
+      <div class="codeblock">
+        <pre><code class="java">void h(int x)     { IO.println("int"); }
+void h(Integer x) { IO.println("Integer"); }
+
+void r(Integer x) { IO.println("r(Integer)"); }
+void r(int... xs) { IO.println("r(varargs) count=" + xs.length); }
+
+h(1);
+h(Integer.valueOf(1));
+r(1);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">int</code>, <code class="inline">Integer</code>, <code class="inline">r(Integer)</code>. <code class="inline">h(Integer.valueOf(1))</code> khớp identity phase 1 thắng unboxing phase 2; <code class="inline">r(1)</code> chọn bản <code class="inline">Integer</code> nhờ boxing phase 2, thắng varargs phase 3.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5 — bản cố định thắng varargs</summary>
+      <div class="codeblock">
+        <pre><code class="java">void g(int a, int b) { IO.println("g(int, int)"); }
+void g(int... xs)    { IO.println("g(varargs) count=" + xs.length); }
+
+g(1, 2);
+g(1);
+g();</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">g(int, int)</code>, <code class="inline">g(varargs) count=1</code>, <code class="inline">g(varargs) count=0</code>. <code class="inline">g(1, 2)</code> khớp bản cố định (phase 1), chỉ khi không còn bản cố định nào phù hợp compiler mới xét varargs (phase 3).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6 — vì sao không compile?</summary>
+      <div class="codeblock">
+        <pre><code class="java">void xuLy(Integer x) { IO.println("Integer"); }
+void xuLy(Long x)    { IO.println("Long"); }
+
+xuLy(null);</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile</strong>: "reference to xuLy is ambiguous — both method xuLy(Integer) ... and method xuLy(Long) ... match". <code class="inline">Integer</code> và <code class="inline">Long</code> là hai nhánh độc lập, không bản nào cụ thể hơn. Sửa: <code class="inline">xuLy((Integer) null)</code>, hoặc đổi tên một method.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7 — field hiding</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Shape {
+    String ten = "Shape";
+    String layTen() { return ten; }
+}
+
+class Circle extends Shape {
+    String ten = "Circle";
+    @Override String layTen() { return ten; }
+}
+
+Shape s = new Circle();
+IO.println(s.ten);
+IO.println(s.layTen());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Shape</code> rồi <code class="inline">Circle</code>. Field <code class="inline">ten</code> đọc theo static type của biến <code class="inline">s</code> (<code class="inline">Shape</code>); method <code class="inline">layTen()</code> dispatch theo runtime type (<code class="inline">Circle</code>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8 — static hiding</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Shape {
+    static String loai() { return "Shape static"; }
+}
+
+class Circle extends Shape {
+    static String loai() { return "Circle static"; }
+}
+
+Shape s = new Circle();
+IO.println(s.loai());
+IO.println(Circle.loai());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Shape static</code> rồi <code class="inline">Circle static</code>. Static method không dispatch theo object: <code class="inline">s.loai()</code> bị compiler dịch thành <code class="inline">Shape.loai()</code> vì static type của <code class="inline">s</code> là <code class="inline">Shape</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9 — dynamic dispatch qua Object</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Shape {
+    @Override public String toString() { return "Shape"; }
+}
+
+class Circle extends Shape {
+    @Override public String toString() { return "Circle"; }
+}
+
+Object o = new Circle();
+IO.println(o);
+IO.println("x" + o);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Circle</code> rồi <code class="inline">xCircle</code>. Cả <code class="inline">IO.println(Object)</code> lẫn phép cộng chuỗi đều gọi <code class="inline">toString()</code>, và method này dispatch theo runtime type <code class="inline">Circle</code> dù biến có static type <code class="inline">Object</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10 — dòng nào ném ClassCastException?</summary>
+      <div class="codeblock">
+        <pre><code class="java">Shape s = new Shape();
+Circle c1 = (Circle) s;            // dong A
+Shape s2 = new Circle();
+Circle c2 = (Circle) s2;           // dong B</code></pre>
+      </div>
+      <div class="answer">Dòng A ném <code class="inline">ClassCastException</code>: object thật là <code class="inline">Shape</code>, không phải <code class="inline">Circle</code>. Dòng B an toàn vì object thật là <code class="inline">Circle</code> (downcast hợp lệ). Kiểm tra <code class="inline">instanceof</code> trước nếu chưa chắc.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11 — refactor instanceof thành pattern matching</summary>
+      <div class="codeblock">
+        <pre><code class="java">double dienTich(Shape s) {
+    if (s instanceof Circle) {
+        Circle c = (Circle) s;
+        return c.area();
+    }
+    if (s instanceof Rectangle) {
+        Rectangle r = (Rectangle) s;
+        return r.area();
+    }
+    return 0;
+}</code></pre>
+      </div>
+      <div class="answer">Dùng pattern matching (Java 16+):
+        <div class="codeblock">
+          <pre><code class="java">double dienTich(Shape s) {
+    if (s instanceof Circle c) {
+        return c.area();
+    }
+    if (s instanceof Rectangle r) {
+        return r.area();
+    }
+    return 0;
+}</code></pre>
+        </div>
+        Tốt hơn nữa: nếu mọi <code class="inline">Shape</code> đều biết tính diện tích, chuyển <code class="inline">area()</code> thành abstract method và bỏ hẳn chuỗi <code class="inline">instanceof</code> (mục <a href="#production">8</a>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12 — overload + override cùng lúc</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Shape {
+    void moTa(Shape s)   { IO.println("Shape.moTa(Shape)"); }
+    void moTa(Circle c)  { IO.println("Shape.moTa(Circle)"); }
+}
+
+class Circle extends Shape {
+    @Override
+    void moTa(Shape s)   { IO.println("Circle.moTa(Shape)"); }
+}
+
+Shape s = new Circle();
+Circle c = new Circle();
+s.moTa(c);
+c.moTa(c);
+s.moTa(s);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Shape.moTa(Circle)</code>, <code class="inline">Shape.moTa(Circle)</code>, <code class="inline">Circle.moTa(Shape)</code>. Hai dòng đầu: overload chọn <code class="inline">moTa(Circle)</code> theo static type của argument, nhưng <code class="inline">Circle</code> không override bản đó nên chạy implementation của <code class="inline">Shape</code>. Dòng ba: chọn <code class="inline">moTa(Shape)</code> rồi dispatch theo runtime type <code class="inline">Circle</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13 — constructor gọi method ảo</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Shape {
+    Shape() {
+        IO.println("[" + moTa() + "]");
+    }
+    String moTa() { return "Shape"; }
+}
+
+class Circle extends Shape {
+    String ten = "Circle";
+    @Override
+    String moTa() { return ten; }
+}
+
+new Circle();</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[null]</code>. Constructor <code class="inline">Shape()</code> gọi <code class="inline">moTa()</code> đã bị <code class="inline">Circle</code> override, nhưng field <code class="inline">ten</code> của <code class="inline">Circle</code> chỉ được gán <em>sau khi</em> constructor cha chạy xong, nên trả về <code class="inline">null</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần nhớ</th><th>Quy tắc</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hai loại đa hình</td><td>Overloading = compile-time (static type) · Overriding = runtime (runtime type, dynamic dispatch)</td></tr>
+        <tr><td>Overload hợp lệ</td><td>Khác số lượng/kiểu/thứ tự tham số; không tính return type và tên parameter</td></tr>
+        <tr><td>Thứ tự chọn overload</td><td>(1) khớp chính xác/widening → (2) boxing/unboxing → (3) varargs; most specific thắng trong mỗi phase</td></tr>
+        <tr><td><code class="inline">m(1)</code> với <code class="inline">m(long)</code>/<code class="inline">m(Integer)</code></td><td>Chọn <code class="inline">m(long)</code> — widening thắng boxing</td></tr>
+        <tr><td><code class="inline">gui(null)</code> với <code class="inline">String</code>/<code class="inline">Object</code></td><td>Chọn <code class="inline">String</code>; với <code class="inline">Integer</code>/<code class="inline">Long</code> thì lỗi ambiguous</td></tr>
+        <tr><td>Overload nhìn gì?</td><td>Static type của biến/argument — <code class="inline">Object o = "abc"</code> thì gọi bản <code class="inline">Object</code></td></tr>
+        <tr><td>Override hợp lệ</td><td>Cùng chữ ký; return giống/covariant; access không hẹp hơn; checked exception không rộng hơn; luôn <code class="inline">@Override</code></td></tr>
+        <tr><td>Dynamic dispatch</td><td>Static type quyết định gọi được method nào; runtime type quyết định implementation nào chạy</td></tr>
+        <tr><td>Upcast / downcast</td><td>Upcast tự động, an toàn; downcast phải ép, sai → <code class="inline">ClassCastException</code>; dùng <code class="inline">instanceof</code></td></tr>
+        <tr><td>Pattern matching</td><td><code class="inline">instanceof Circle c</code> (Java 16); <code class="inline">switch</code> theo kiểu + record pattern (Java 21) với sealed để exhaustive</td></tr>
+        <tr><td>Field &amp; static</td><td>Không đa hình: hide theo static type; field nên private + getter</td></tr>
+        <tr><td>Covariant return</td><td>Lớp con được trả về subtype: <code class="inline">Circle copy()</code> override <code class="inline">Shape copy()</code></td></tr>
+        <tr><td>Constructor</td><td>Không gọi method overridable; field lớp con chưa khởi tạo</td></tr>
+        <tr><td>Production</td><td>Thay if/else instanceof bằng method ảo (Strategy, OCP); lập trình theo interface</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được đa hình bằng một ví dụ đời thường, không dùng thuật ngữ khó.</li>
+      <li>Kể đúng hai loại đa hình và thời điểm quyết định của mỗi loại.</li>
+      <li>Viết được 3 phiên bản overload hợp lệ và giải thích vì sao chúng hợp lệ.</li>
+      <li>Giải thích vì sao khác return type không tạo overload.</li>
+      <li>Dự đoán đúng kết quả <code class="inline">m(1)</code> khi có <code class="inline">m(long)</code> và <code class="inline">m(Integer)</code>.</li>
+      <li>Dự đoán đúng <code class="inline">gui(null)</code> và biết khi nào lỗi ambiguous.</li>
+      <li>Phân biệt overload (static type) và override (runtime type) bằng ví dụ <code class="inline">Object o = "abc"</code>.</li>
+      <li>Viết override đúng chuẩn với <code class="inline">@Override</code>, kể cả covariant return type.</li>
+      <li>Giải thích field hiding và static hiding, không nhầm là đa hình.</li>
+      <li>Kể được điều kiện ném <code class="inline">ClassCastException</code> và cách phòng bằng <code class="inline">instanceof</code>.</li>
+      <li>Viết được pattern matching instanceof và switch pattern với sealed + record pattern.</li>
+      <li>Giải thích bẫy gọi method ảo trong constructor và cách tránh.</li>
+      <li>Nêu được một chỗ trong production nên thay if/else theo type bằng đa hình.</li>
+      <li>Trả lời được câu "JS có overload không?" kèm so sánh duck typing vs nominal typing.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.4.8" target="_blank" rel="noreferrer">JLS §8.4.8 — Overriding (and Hiding) Methods</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html#jls-15.12.2" target="_blank" rel="noreferrer">JLS §15.12.2 — Compile-Time Step 2: Determine Method Signature (overload resolution)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html" target="_blank" rel="noreferrer">Oracle Tutorial — Polymorphism</a></li>
+      <li><a href="https://openjdk.org/jeps/394" target="_blank" rel="noreferrer">JEP 394 — Pattern Matching for instanceof (Java 16)</a></li>
+      <li><a href="https://openjdk.org/jeps/441" target="_blank" rel="noreferrer">JEP 441 — Pattern Matching for switch (Java 21)</a></li>
+      <li><a href="https://openjdk.org/jeps/440" target="_blank" rel="noreferrer">JEP 440 — Record Patterns (Java 21)</a></li>
+      <li><a href="https://dev.java/learn/inheritance/polymorphism/" target="_blank" rel="noreferrer">Dev.java — Polymorphism</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Polymorphism · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abstract class vs Interface — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item active" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="abstract-interface">Abstract class vs Interface — trừu tượng hoá &amp; hợp đồng</h1>
+
+    <p class="lead">Đây là câu hỏi phỏng vấn kinh điển nhất của OOP Java: <strong>abstract class và interface khác gì nhau, khi nào chọn cái nào?</strong> Trang này trả lời từ gốc: trừu tượng hoá (abstraction) là gì, abstract class giữ được gì, interface là <em>hợp đồng</em> (contract) ra sao, default method tiến hoá interface thế nào, xung đột default được giải quyết theo luật nào — kèm ví dụ chạy thật và cách dùng trong production (DI, mock, repository).</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#abstract-class">Abstract class</a></li>
+        <li><a href="#template-method">Template method với DataProcessor</a></li>
+        <li><a href="#interface">Interface — hợp đồng thuần khiết</a></li>
+        <li><a href="#da-interface">Một class, nhiều interface</a></li>
+        <li><a href="#default-method">default method — tiến hoá interface</a></li>
+        <li><a href="#xung-dot-default">Xung đột default method</a></li>
+        <li><a href="#static-private">static &amp; private method trong interface</a></li>
+        <li><a href="#functional-interface">Functional interface &amp; @FunctionalInterface</a></li>
+        <li><a href="#isp">Interface nhỏ — Interface Segregation</a></li>
+        <li><a href="#quyet-dinh">Bảng quyết định abstract vs interface</a></li>
+        <li><a href="#marker-sealed">Marker interface &amp; sealed interface</a></li>
+        <li><a href="#production">Production patterns</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p><strong>Trừu tượng hoá (abstraction)</strong> là nghệ thuật bỏ đi chi tiết implementation và chỉ giữ lại cái người gọi cần biết. Bạn đã gặp nó từ sớm: <code class="inline">List</code> chỉ hứa "tôi có <code class="inline">add</code>, <code class="inline">get</code>, <code class="inline">size</code>", bạn không cần biết nó là <code class="inline">ArrayList</code> hay <code class="inline">LinkedList</code>. Abstract class và interface là hai công cụ để tạo ra lời hứa đó, nhưng mạnh ở hai hướng khác nhau:</p>
+
+    <ul>
+      <li><strong>Abstract class</strong> = một class dở dang: vừa có <em>hợp đồng</em> (abstract method) vừa có <em>tài sản</em> (field, constructor, code dùng chung). Quan hệ là <strong>is-a</strong>: chó <em>là một</em> động vật.</li>
+      <li><strong>Interface</strong> = bản hợp đồng thuần: chỉ quy định "làm được gì", không giữ state, một class ký được nhiều hợp đồng. Quan hệ là <strong>can-do / capability</strong>: thanh toán được, hoàn tiền được, sắp xếp được.</li>
+    </ul>
+
+    <p>Mức độ bắt buộc của chủ đề 2.5 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo abstract class/interface; implement nhiều interface; viết default/static method; sửa xung đột default bằng <code class="inline">Interface.super.method()</code>; viết functional interface và gán lambda; đọc hiểu lỗi compiler kinh điển của chủ đề này.</li>
+      <li><strong>Phải hiểu</strong> — vì sao interface không có state và constructor; field trong interface thực chất là gì; thứ tự giải quyết xung đột default (class thắng → interface cụ thể hơn thắng → lỗi); vì sao Java cho đa implement interface nhưng không cho đa kế thừa class; khác biệt tư duy thiết kế is-a vs can-do.</li>
+      <li><strong>Nhận biết</strong> — marker interface (Serializable, Cloneable); sealed interface (Java 17) + pattern matching switch (đào sâu ở <a href="enum-nested.html">2.7 Enum, nested &amp; sealed classes</a>); functional interface là nền của lambda (học ở <a href="roadmap.html#phase-3">3.6 Lambda</a>); interface ở biên hệ thống để test/DI.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output hoặc <em>đoán lỗi compile</em> của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> và <a href="#quyet-dinh">bảng quyết định</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> trong đề phỏng vấn và tài liệu cũ. Từ đây trở đi, mọi đoạn code có output đều là file chạy được bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <h3>Góc Node.js — JS không có interface, TS có nhưng chỉ là kiểu tĩnh</h3>
+
+    <p>JavaScript thuần không có khái niệm interface hay abstract class. Nó dùng <strong>duck typing</strong>: miễn object "có method cần dùng" là chạy, không ai kiểm tra tên class:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript (Node 22) - khong co interface, chi can "co method pay"
+class CardPayment {
+  pay(amount) { return amount &gt; 0; }
+}
+
+function checkout(gateway, amount) {
+  console.log(gateway.pay(amount));
+}
+
+checkout(new CardPayment(), 100);
+// true</code></pre>
+    </div>
+
+    <p>TypeScript thêm <code class="inline">interface</code>, nhưng theo <strong>structural typing</strong>: chỉ cần cấu trúc (shape) khớp là được, không cần khai báo <code class="inline">implements</code>. Và interface TS bị <em>xoá sạch</em> khi biên dịch — runtime không hề biết nó tồn tại:</p>
+
+    <div class="codeblock">
+      <pre><code>// TypeScript - structural typing: class khong he khai bao implements
+interface Payment {
+  pay(amount: number): boolean;
+}
+
+class CardPayment {
+  pay(amount: number): boolean { return amount &gt; 0; }
+}
+
+function checkout(p: Payment, amount: number): void {
+  console.log("checkout", p.pay(amount));
+}
+
+checkout(new CardPayment(), 100);
+// checkout true</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / TypeScript</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Interface</td><td>JS không có; TS có nhưng chỉ tồn tại lúc compile (type erasure)</td><td>Tồn tại thật trong bytecode; kiểm tra được bằng <code class="inline">instanceof</code></td></tr>
+        <tr><td>Cách khớp kiểu</td><td>TS: structural — shape khớp là xong, không cần <code class="inline">implements</code></td><td>Nominal — buộc phải ghi đúng <code class="inline">implements Payment</code></td></tr>
+        <tr><td>Abstract class</td><td>JS không có; TS có <code class="inline">abstract class</code> nhưng chỉ là kiểm tra lúc compile, runtime vẫn <code class="inline">new</code> được nếu cố tình</td><td>JVM chặn thật: <code class="inline">new</code> abstract class là lỗi compile</td></tr>
+        <tr><td>Code trong hợp đồng</td><td>TS interface không được chứa code</td><td>Java 8+ có <code class="inline">default</code>/<code class="inline">static</code> method chạy thật</td></tr>
+        <tr><td>Đa kế thừa</td><td>1 <code class="inline">extends</code>, nhiều <code class="inline">implements</code> — giống Java</td><td>1 <code class="inline">extends</code>, nhiều <code class="inline">implements</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="abstract-class">2. Abstract class — class còn dở dang <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Abstract class là class <strong>không thể tạo object trực tiếp</strong>, dùng làm nền cho các class con. Nó có thể chứa mọi thứ class thường có — field, constructor, method thường, static — cộng thêm method <code class="inline">abstract</code> (chỉ có chữ ký, không có body), buộc class con phải hoàn thiện.</p>
+
+    <div class="signature">
+      <span class="sig-muted">[access]</span> <span class="tok-kw">abstract</span> <span class="tok-kw">class</span> <span class="sig-var">TenClass</span> <span class="sig-muted">{</span> <span class="tok-kw">abstract</span> <span class="tok-typ">KieuTraVe</span> <span class="sig-var">lamGiDo</span><span class="sig-muted">();</span> <span class="sig-typ">KieuTraVe</span> <span class="sig-var">dungChung</span><span class="sig-muted">() { ... } }</span>
+    </div>
+
+    <p>Ví dụ dưới cho thấy abstract class giữ <strong>state dùng chung</strong> (biến đếm) và <strong>constructor</strong> — hai thứ interface không có. Class con ở đây là anonymous class cho gọn (cú pháp <code class="inline">new DataProcessor() { ... }</code> tạo class con vô danh ngay tại chỗ):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class DataProcessor {
+    private int soLanChay = 0;
+
+    DataProcessor() {
+        IO.println("Tao DataProcessor");
+    }
+
+    abstract String ten();
+
+    String chay() {
+        soLanChay++;
+        return "lan " + soLanChay + ": " + ten();
+    }
+}
+
+void main() {
+    DataProcessor p = new DataProcessor() {
+        String ten() {
+            return "csv";
+        }
+    };
+    IO.println(p.chay());
+    IO.println(p.chay());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Tao DataProcessor
+lan 1: csv
+lan 2: csv</code></pre>
+    </div>
+
+    <p>Ba điều cần nhớ:</p>
+    <ul>
+      <li><strong>Constructor vẫn tồn tại</strong> — nó chạy khi subclass được tạo, qua chuỗi <code class="inline">super()</code>. Nhưng không ai gọi <code class="inline">new DataProcessor()</code> trực tiếp được.</li>
+      <li><strong>State là của abstract class</strong> — <code class="inline">soLanChay</code> nằm trong object subclass và tích luỹ qua từng lần gọi. Interface không làm được điều này.</li>
+      <li><strong>Class con phải "trả nợ"</strong> — hoặc override hết abstract method, hoặc cũng khai báo <code class="inline">abstract</code>. Compiler ép bạn ngay lúc compile.</li>
+    </ul>
+
+    <p>Hai lỗi kinh điển, đúng những gì compiler JDK 25 in ra:</p>
+
+    <div class="errblock">
+      <pre>AbstractInstantiationErr.java:7: error: DataProcessor is abstract; cannot be instantiated
+        DataProcessor p = new DataProcessor();
+                          ^
+1 error</pre>
+    </div>
+
+    <div class="errblock">
+      <pre>AbstractModifierErr.java:2: error: illegal combination of modifiers: abstract and private
+    private abstract void xuLy();
+                          ^
+1 error</pre>
+    </div>
+
+    <div class="note warn"><strong>Abstract method không được là <code class="inline">private</code>, <code class="inline">static</code> hay <code class="inline">final</code></strong> — vì cả ba đều chống lại ý nghĩa "để subclass override". Ngược lại, method thường trong abstract class có thể <code class="inline">final</code> để chặn override. Một abstract class <strong>không bắt buộc</strong> phải có abstract method nào: đôi khi bạn chỉ cần nó để chặn <code class="inline">new</code> và gom code chung.</div>
+
+    <h3>Khi nào dùng abstract class?</h3>
+    <ul>
+      <li>Các subclass chia sẻ <strong>state</strong> hoặc <strong>code chung</strong> thật sự (không chỉ chữ ký).</li>
+      <li>Cần <strong>constructor</strong> để ép subclass khởi tạo đúng cách, hoặc cần <code class="inline">protected</code> field/method cho con dùng.</li>
+      <li>Quan hệ là <strong>is-a</strong> rõ ràng và chỉ có một "trục" kế thừa: <code class="inline">CsvDataProcessor</code> là một <code class="inline">DataProcessor</code>.</li>
+      <li>Muốn dùng <strong>template method</strong> (mục 3): khung thuật toán cố định, vài bước cho con điền vào.</li>
+    </ul>
+
+    <h2 id="template-method">3. Template method với DataProcessor <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Template method</strong> là pattern mạnh nhất của abstract class: class cha định nghĩa <em>khung</em> thuật toán và chốt nó bằng <code class="inline">final</code>, còn từng bước chi tiết là abstract method cho class con điền. Người gọi chỉ thấy một method <code class="inline">xuLy(...)</code>; không thể vô tình phá thứ tự các bước.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class DataProcessor {
+    final String xuLy(String duLieu) {
+        String sach = lamSach(duLieu);
+        String ketQua = bienDoi(sach);
+        return ghiNhan(ketQua);
+    }
+
+    private String lamSach(String s) {
+        return s.trim();
+    }
+
+    protected abstract String bienDoi(String s);
+
+    protected abstract String ghiNhan(String s);
+}
+
+class CsvDataProcessor extends DataProcessor {
+    protected String bienDoi(String s) {
+        return s.toUpperCase();
+    }
+
+    protected String ghiNhan(String s) {
+        return "CSV> " + s;
+    }
+}
+
+void main() {
+    DataProcessor csv = new CsvDataProcessor();
+    IO.println(csv.xuLy("  don hang 42  "));
+
+    DataProcessor dao = new DataProcessor() {
+        protected String bienDoi(String s) {
+            return new StringBuilder(s).reverse().toString();
+        }
+
+        protected String ghiNhan(String s) {
+            return "TXT> " + s;
+        }
+    };
+    IO.println(dao.xuLy("java"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>CSV> DON HANG 42
+TXT> avaj</code></pre>
+    </div>
+
+    <p>Để ý cách chia vai: <code class="inline">lamSach</code> là <code class="inline">private</code> (chi tiết nội bộ, con không được chạm), <code class="inline">xuLy</code> là <code class="inline">final</code> (khung không cho đổi), còn <code class="inline">bienDoi</code>/<code class="inline">ghiNhan</code> là <code class="inline">protected abstract</code> (điểm mở rộng dành cho con). Đây chính là "Open for extension, closed for modification" trong thực tế.</p>
+
+    <h2 id="interface">4. Interface — hợp đồng thuần khiết <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Interface chỉ mô tả "làm được gì". Trước Java 8 nó chỉ có method trắng và hằng số; nay có thêm <code class="inline">default</code>, <code class="inline">static</code> (Java 8) và <code class="inline">private</code> (Java 9) — nhưng vẫn <strong>không có state instance và không có constructor</strong>.</p>
+
+    <div class="signature">
+      <span class="tok-kw">interface</span> <span class="sig-var">Payment</span> <span class="sig-muted">{</span> <span class="sig-muted">/* hang so + chu ky method */</span> <span class="sig-muted">}</span>
+    </div>
+
+    <p>Điều hay bị hỏi nhất là các modifier <em>ngầm định</em>. Bảng này tóm đúng luật JLS:</p>
+
+    <table>
+      <thead>
+        <tr><th>Bạn viết</th><th>Thực chất là</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">boolean pay(long a);</code></td><td><code class="inline">public abstract boolean pay(long a);</code></td><td>Method không có body mặc định là abstract; lớp implement buộc viết <code class="inline">public</code></td></tr>
+        <tr><td><code class="inline">int MAX = 1_000;</code></td><td><code class="inline">public static final int MAX = 1_000;</code></td><td>Field luôn là hằng số dùng chung cho mọi object; không phải biến instance</td></tr>
+        <tr><td><code class="inline">default String f() { ... }</code></td><td><code class="inline">public</code> method có body</td><td>Không cần subclass override; dùng để tiến hoá interface (mục 6)</td></tr>
+        <tr><td><code class="inline">static Payment cash() { ... }</code></td><td><code class="inline">public static</code>, gọi qua tên interface</td><td>Không được kế thừa — xem mục 8</td></tr>
+        <tr><td><code class="inline">private String helper() { ... }</code></td><td><code class="inline">private</code> (Java 9+)</td><td>Chỉ code bên trong interface gọi được</td></tr>
+        <tr><td><code class="inline">class</code> / <code class="inline">interface</code> / <code class="inline">enum</code> / <code class="inline">record</code> lồng</td><td><code class="inline">public static</code></td><td>Không có inner class gắn với instance (vì interface không có instance)</td></tr>
+        <tr><td>constructor, field trống, khối <code class="inline">static { }</code></td><td>Không hợp lệ</td><td>Interface không có state để khởi tạo</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    String VERSION = "1.0";
+    boolean pay(long amount);
+}
+
+class CardPayment implements Payment {
+    public boolean pay(long amount) {
+        IO.println("CardPayment.pay " + amount + " (version " + VERSION + ")");
+        return amount &gt; 0;
+    }
+}
+
+void main() {
+    Payment p = new CardPayment();
+    IO.println(p.pay(100_000));
+    IO.println(Payment.VERSION);
+    IO.println(CardPayment.VERSION);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>CardPayment.pay 100000 (version 1.0)
+true
+1.0
+1.0</code></pre>
+    </div>
+
+    <p><code class="inline">VERSION</code> viết không có modifier nhưng thực chất là <code class="inline">public static final</code>, nên <code class="inline">CardPayment.VERSION</code> chỉ là cách gọi khác của cùng một hằng số — không có "bản riêng" cho từng class. Đúng ba lỗi compiler của chủ đề này:</p>
+
+    <div class="errblock">
+      <pre>InterfaceFieldErr.java:2: error: = expected
+    int MAX;
+           ^
+1 error</pre>
+    </div>
+
+    <div class="errblock">
+      <pre>InterfaceConstructorErr.java:2: error: &lt;identifier&gt; expected
+    Payment() { }
+           ^
+1 error</pre>
+    </div>
+
+    <div class="errblock">
+      <pre>InterfaceFieldAssignErr.java:7: error: cannot assign a value to static final variable MAX
+        Payment.MAX = 5;
+               ^
+1 error</pre>
+    </div>
+
+    <div class="note"><strong>Method trong interface ngầm là <code class="inline">public</code></strong> — nên khi implement bạn <em>buộc</em> phải để <code class="inline">public</code>; để package-private hay <code class="inline">protected</code> là lỗi "attempting to assign weaker access privileges" (xem <a href="#pitfalls">mục 14</a>). Mẹo nhớ: interface là hợp đồng công khai với thế giới bên ngoài.</div>
+
+    <h2 id="da-interface">5. Một class, nhiều interface <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Interface cho phép một class nhận nhiều "vai" cùng lúc — điều Java cấm với class cha. <code class="inline">CardPayment</code> vừa thanh toán được vừa hoàn tiền được, và nó ký cả hai hợp đồng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+    default String currency() {
+        return "VND";
+    }
+}
+
+interface Refundable {
+    void refund(long amount);
+}
+
+class CardPayment implements Payment, Refundable {
+    public boolean pay(long amount) {
+        IO.println("pay " + amount + " " + currency());
+        return true;
+    }
+
+    public void refund(long amount) {
+        IO.println("refund " + amount + " " + currency());
+    }
+}
+
+void main() {
+    CardPayment card = new CardPayment();
+    Payment p = card;
+    Refundable r = card;
+    p.pay(200_000);
+    r.refund(50_000);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>pay 200000 VND
+refund 50000 VND</code></pre>
+    </div>
+
+    <p>Ý nghĩa thiết kế: <strong>code gọi chỉ nên phụ thuộc vào vai nó cần</strong>, không phải cả object. Nơi nào chỉ cần hoàn tiền thì nhận tham số kiểu <code class="inline">Refundable</code>; nơi nào chỉ cần thanh toán thì nhận <code class="inline">Payment</code>. Nhờ đó bạn thay implementation mà không đụng người gọi. Ngược lại, biến kiểu <code class="inline">Payment</code> không thấy được method của <code class="inline">Refundable</code>:</p>
+
+    <div class="errblock">
+      <pre>PaymentRefundErr.java:21: error: cannot find symbol
+        p.refund(50_000);
+         ^
+  symbol:   method refund(int)
+  location: variable p of type Payment
+1 error</pre>
+    </div>
+
+    <div class="note">Phân biệt nhanh: <strong>is-a</strong> (là một) đi với <code class="inline">extends</code> một class hoặc interface; <strong>can-do</strong> (làm được) đi với <code class="inline">implements</code> interface. Khi băn khoăn "con vịt máy là chim hay là đồ chơi?", hãy chọn theo hành vi mà người gọi cần, không theo danh xưng.</div>
+
+    <h2 id="default-method">6. default method — tiến hoá interface không phá code cũ <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Trước Java 8, thêm một method vào interface đang được dùng chung nghĩa là <strong>mọi class implement đều gãy compile</strong> — không ai dám tiến hoá API. Default method (Java 8) giải quyết đúng bài toán đó: interface cung cấp implementation mặc định, class cũ không cần sửa vẫn chạy.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String bienLai(long amount) {
+        return "Bien lai " + amount + " " + currency();
+    }
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+class CardPayment implements Payment {
+    public boolean pay(long amount) {
+        return true;
+    }
+
+    @Override
+    public String currency() {
+        return "USD";
+    }
+}
+
+void main() {
+    Payment card = new CardPayment();
+    Payment cash = amount -&gt; true;
+    IO.println(card.bienLai(100));
+    IO.println(cash.bienLai(200_000));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Bien lai 100 USD
+Bien lai 200000 VND</code></pre>
+    </div>
+
+    <p><code class="inline">CardPayment</code> không hề viết <code class="inline">bienLai</code> mà vẫn dùng được default; nó chỉ override <code class="inline">currency</code> nên biên lai tự đổi sang USD. Còn <code class="inline">cash</code> là lambda cho method trắng duy nhất — interface có đúng một abstract method gọi là <strong>functional interface</strong> (mục 9).</p>
+
+    <p>JDK dùng default method khắp nơi khi cần tiến hoá:</p>
+    <ul>
+      <li><code class="inline">Iterable.forEach</code> — thêm ở Java 8, mọi collection có sẵn <code class="inline">forEach</code> mà không class nào phải viết lại.</li>
+      <li><code class="inline">Comparator.thenComparing</code> — thêm chuỗi so sánh cho comparator cũ.</li>
+      <li><code class="inline">Collection.stream</code> / <code class="inline">removeIf</code>, <code class="inline">Map.getOrDefault</code> / <code class="inline">putIfAbsent</code>.</li>
+      <li><code class="inline">SequencedCollection.reversed()</code> (Java 21) — thêm cả họ method mới cho List/Deque mà không phá implementer.</li>
+    </ul>
+
+    <p>Nhưng nếu thêm method <strong>không có</strong> default, code cũ recompile là gãy ngay:</p>
+
+    <div class="errblock">
+      <pre>InterfaceAddedMethodErr.java:6: error: CardPayment is not abstract and does not override abstract method refund(long) in Payment
+class CardPayment implements Payment {
+^
+1 error</pre>
+    </div>
+
+    <div class="note warn"><strong>Hai mặt của versioning:</strong> thêm abstract method vào interface <em>vẫn tương thích nhị phân</em> (class cũ đã compile vẫn load được), nhưng khi ai đó gọi method mới trên implementation cũ sẽ ném <code class="inline">AbstractMethodError</code> lúc chạy; nếu recompile thì lỗi compile như trên. Default method tránh cả hai — đổi lại bạn phải cẩn thận xung đột default (mục 7) và thay đổi hành vi ngầm.</div>
+
+    <h2 id="xung-dot-default">7. Xung đột default method &amp; luật giải quyết <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Khi một class nhận nhiều interface cùng có default method trùng chữ ký, Java giải quyết theo đúng thứ tự ưu tiên sau (JLS §9.4.1):</p>
+
+    <ol>
+      <li><strong>Class thắng:</strong> method thật trong class (hoặc class cha) luôn thắng default của interface. Lý do: không phá code cũ từ thời trước Java 8.</li>
+      <li><strong>Interface cụ thể hơn thắng:</strong> nếu một interface là con của (extends) interface kia, default của interface con thắng.</li>
+      <li><strong>Còn lại là lỗi compile:</strong> hai default "ngang vai" không ai nhường ai — bạn phải override và chọn bằng tay qua <code class="inline">Interface.super.method()</code>.</li>
+    </ol>
+
+    <h3>Trường hợp 3 — xung đột, phải override</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    default String status() {
+        return "payment";
+    }
+}
+
+interface Refundable {
+    default String status() {
+        return "refundable";
+    }
+}
+
+class CardPayment implements Payment, Refundable {
+    @Override
+    public String status() {
+        return Payment.super.status() + " + " + Refundable.super.status();
+    }
+}
+
+void main() {
+    IO.println(new CardPayment().status());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>payment + refundable</code></pre>
+    </div>
+
+    <p>Nếu không override, compiler báo ngay — cảnh báo sớm tốt hơn để tới lúc chạy mới lỗi:</p>
+
+    <div class="errblock">
+      <pre>DiamondErr.java:13: error: types Payment and Refundable are incompatible;
+class CardPayment implements Payment, Refundable {
+^
+  class CardPayment inherits unrelated defaults for status() from types Payment and Refundable
+1 error</pre>
+    </div>
+
+    <h3>Trường hợp 2 — interface con cụ thể hơn thắng</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    default String status() {
+        return "payment";
+    }
+}
+
+interface Refundable extends Payment {
+    default String status() {
+        return "refundable";
+    }
+}
+
+class CardPayment implements Refundable {
+}
+
+void main() {
+    IO.println(new CardPayment().status());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>refundable</code></pre>
+    </div>
+
+    <h3>Trường hợp 1 — class thắng interface</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    default String status() {
+        return "interface default";
+    }
+}
+
+abstract class DataProcessor implements Payment {
+    @Override
+    public String status() {
+        return "class method";
+    }
+}
+
+class CardPayment extends DataProcessor {
+}
+
+void main() {
+    IO.println(new CardPayment().status());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>class method</code></pre>
+    </div>
+
+    <div class="note">Cú pháp <code class="inline">Payment.super.status()</code> chỉ gọi được default của interface là <em>direct superinterface</em> của class đang viết. Muốn "gọi lại" default của interface ông nội, phải chỉ định đúng interface trực tiếp sở hữu nó. Ngoài ra, xung đột giữa một <code class="inline">default</code> và một method <code class="inline">abstract</code> trùng chữ ký cũng là lỗi compile — Java bắt bạn xác nhận rõ ràng rằng default đó thật sự đúng hợp đồng.</div>
+
+    <h2 id="static-private">8. static &amp; private method trong interface <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Java 8 cho interface có <code class="inline">static</code> method (tiện ích/factory gắn với interface), Java 9 cho thêm <code class="inline">private</code> method (chia sẻ code giữa các default mà không lộ ra API). Cả hai đều <strong>không được kế thừa</strong> — chúng chỉ sống trong interface:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String receipt(long amount) {
+        return nhan() + ": " + amount + " " + currency();
+    }
+
+    private String nhan() {
+        return "HOA DON";
+    }
+
+    static Payment cash() {
+        return amount -&gt; {
+            IO.println("Thu tien mat " + amount);
+            return true;
+        };
+    }
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+void main() {
+    Payment cash = Payment.cash();
+    cash.pay(50_000);
+    IO.println(cash.receipt(50_000));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Thu tien mat 50000
+HOA DON: 50000 VND</code></pre>
+    </div>
+
+    <p><code class="inline">cash()</code> là static factory trả về một implementation lambda; <code class="inline">nhan()</code> là private helper dùng chung — nếu để <code class="inline">public</code>, nó sẽ thành một phần hợp đồng vĩnh viễn không ai muốn. Còn đây là lỗi khi tưởng static method "được thừa kế":</p>
+
+    <div class="errblock">
+      <pre>StaticNotInheritedErr.java:11: error: cannot find symbol
+        CardPayment.cash();
+                   ^
+  symbol:   method cash()
+  location: class CardPayment
+1 error</pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Loại method</th><th>Ai gọi được</th><th>Kế thừa / override</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">abstract</code> (trắng)</td><td>Qua instance, do class implement</td><td>Bắt buộc implement (hoặc class cũng abstract)</td></tr>
+        <tr><td><code class="inline">default</code></td><td>Qua instance</td><td>Kế thừa được, override được, có thể gọi lại bằng <code class="inline">X.super</code></td></tr>
+        <tr><td><code class="inline">static</code></td><td>Chỉ qua tên interface: <code class="inline">Payment.cash()</code></td><td>Không kế thừa, không override</td></tr>
+        <tr><td><code class="inline">private</code> / <code class="inline">private static</code></td><td>Chỉ code trong chính interface</td><td>Không kế thừa, không phải API</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="functional-interface">9. Functional interface &amp; @FunctionalInterface <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Functional interface</strong> là interface có đúng <em>một</em> abstract method (gọi là SAM — Single Abstract Method). Nó là "kiểu" cho lambda và method reference. Annotation <code class="inline">@FunctionalInterface</code> là tuỳ chọn, nhưng nên dùng để compiler chặn ngay lúc bạn lỡ thêm abstract method thứ hai.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@FunctionalInterface
+interface Payment {
+    boolean pay(long amount);
+}
+
+void main() {
+    Payment card = amount -&gt; amount &gt; 0;
+    Payment logger = amount -&gt; {
+        IO.println("pay " + amount);
+        return true;
+    };
+    IO.println(card.pay(0));
+    IO.println(card.pay(100));
+    logger.pay(200);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>false
+true
+pay 200</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>FunctionalInterfaceErr.java:1: error: Unexpected @FunctionalInterface annotation
+@FunctionalInterface
+^
+  Payment is not a functional interface
+    multiple non-overriding abstract methods found in interface Payment
+1 error</pre>
+    </div>
+
+    <p>Vài điểm tinh tế hay bị hỏi:</p>
+    <ul>
+      <li>Default, static, private method <strong>không tính</strong> vào số abstract method — interface vẫn functional dù có bao nhiêu default.</li>
+      <li>Method trùng với public method của <code class="inline">Object</code> như <code class="inline">equals(Object)</code>, <code class="inline">hashCode()</code> cũng không tính. Vì thế <code class="inline">Comparator&lt;T&gt;</code> (có <code class="inline">compare</code> + <code class="inline">equals</code>) vẫn là functional interface.</li>
+      <li>Annotation không bắt buộc: interface một abstract method vẫn dùng được lambda dù không ghi <code class="inline">@FunctionalInterface</code>. Ghi vào là để tự kiểm tra và tài liệu hoá ý định.</li>
+    </ul>
+
+    <p>JDK có sẵn cả bộ trong <code class="inline">java.util.function</code> mà bạn nên nhớ mặt:</p>
+
+    <table>
+      <thead>
+        <tr><th>Interface</th><th>Method duy nhất</th><th>Ý nghĩa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Runnable</code></td><td><code class="inline">void run()</code></td><td>Việc chạy không tham số, không kết quả</td></tr>
+        <tr><td><code class="inline">Callable&lt;V&gt;</code></td><td><code class="inline">V call()</code></td><td>Việc có trả kết quả, được phép ném checked exception</td></tr>
+        <tr><td><code class="inline">Supplier&lt;T&gt;</code></td><td><code class="inline">T get()</code></td><td>Nguồn cấp giá trị</td></tr>
+        <tr><td><code class="inline">Consumer&lt;T&gt;</code></td><td><code class="inline">void accept(T t)</code></td><td>Nhận vào, xử lý, không trả về</td></tr>
+        <tr><td><code class="inline">Function&lt;T,R&gt;</code></td><td><code class="inline">R apply(T t)</code></td><td>Biến đổi T thành R</td></tr>
+        <tr><td><code class="inline">Predicate&lt;T&gt;</code></td><td><code class="inline">boolean test(T t)</code></td><td>Điều kiện đúng/sai</td></tr>
+        <tr><td><code class="inline">Comparator&lt;T&gt;</code></td><td><code class="inline">int compare(T a, T b)</code></td><td>So sánh hai object</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Lambda, method reference và <code class="inline">Stream</code> đều xây trên functional interface — sẽ học ở <a href="roadmap.html#phase-3">3.6 Lambda &amp; Functional interfaces</a>. Ở đây bạn chỉ cần nắm chắc: <strong>interface một abstract method = kiểu của hành vi</strong>.</div>
+
+    <h2 id="isp">10. Interface nhỏ — Interface Segregation (ISP) <span class="badge b-prod">Production</span></h2>
+
+    <p>Interface càng nhỏ càng dễ dùng đúng. Nguyên tắc <strong>Interface Segregation</strong> (chữ I trong SOLID) nói: đừng bắt client phụ thuộc vào method mà nó không dùng. Một "interface béo" như dưới đây là bẫy thiết kế kinh điển:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// FAT INTERFACE - dung nen lam
+interface Payment {
+    boolean pay(long amount);
+    void refund(long amount);
+    void inBaoCao();
+    void guiEmail();
+    void xuatExcel();
+}</code></pre>
+    </div>
+
+    <p>Mọi cổng thanh toán buộc phải implement cả 5 method dù chỉ cần 1; class nào không hỗ trợ hoàn tiền sẽ ném <code class="inline">UnsupportedOperationException</code> — dấu hiệu hợp đồng sai. Cách chữa: tách theo <strong>vai</strong> mà từng nhóm client thật sự cần, rồi class nào có đủ khả năng thì <code class="inline">implements</code> nhiều interface nhỏ:</p>
+
+    <ul>
+      <li><code class="inline">Payment</code> — chỉ <code class="inline">pay</code>, dành cho nơi thu tiền.</li>
+      <li><code class="inline">Refundable</code> — chỉ <code class="inline">refund</code>, dành cho màn hình hoàn tiền.</li>
+      <li><code class="inline">Reportable</code> — xuất báo cáo, tách hẳn khỏi luồng thanh toán.</li>
+    </ul>
+
+    <p>Giống hệt JDK: <code class="inline">List</code> không gộp luôn khả năng truy cập ngẫu nhiên — thứ đó là interface riêng <code class="inline">RandomAccess</code> (marker). Đọc sâu về SOLID và pattern tại <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</p>
+
+    <h2 id="quyet-dinh">11. Bảng quyết định abstract vs interface <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Abstract class</th><th>Interface</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>State instance (field riêng từng object)</td><td>Có</td><td>Không (field là <code class="inline">public static final</code>)</td></tr>
+        <tr><td>Constructor</td><td>Có, chạy khi tạo subclass</td><td>Không</td></tr>
+        <tr><td>Kế thừa</td><td>1 class cha duy nhất (<code class="inline">extends</code>)</td><td>Nhiều interface (<code class="inline">implements</code>)</td></tr>
+        <tr><td>Code dùng chung</td><td>Method thường, field, block khởi tạo</td><td><code class="inline">default</code>/<code class="inline">static</code>/<code class="inline">private</code> method (từ Java 8/9)</td></tr>
+        <tr><td>Access modifier của method</td><td>Tự do: public/protected/private</td><td>Ngầm <code class="inline">public</code>, hoặc <code class="inline">private</code> (Java 9+)</td></tr>
+        <tr><td>Quan hệ thiết kế</td><td><strong>is-a</strong></td><td><strong>can-do</strong> (capability)</td></tr>
+        <tr><td>Tiến hoá API</td><td>Thêm method thường không phá subclass (abstract thì có)</td><td>Thêm <code class="inline">default</code> an toàn hơn; thêm abstract phá implementer khi recompile</td></tr>
+        <tr><td>Dùng khi</td><td>Subclass chia sẻ state/code thật, cần constructor, template method</td><td>Cần hợp đồng cho nhiều loại không liên quan, cần đa "vai", cần điểm mock/test</td></tr>
+      </tbody>
+    </table>
+
+    <p>Cây quyết định thực dụng:</p>
+    <ol>
+      <li>Các implementation chia sẻ <strong>state hoặc code chung</strong> và quan hệ is-a rõ → <strong>abstract class</strong>.</li>
+      <li>Chỉ cần <strong>hợp đồng hành vi</strong>, nhiều nhóm implementation khác nhau, muốn đa kế thừa vai → <strong>interface</strong>.</li>
+      <li>Cần cả hai → <strong>interface cho hợp đồng + abstract base class cho code chung</strong> (combo dưới đây).</li>
+      <li>Chưa chắc → nghiêng về <strong>interface</strong> trước: linh hoạt hơn, sau này còn thêm được abstract base nếu code chung xuất hiện thật.</li>
+    </ol>
+
+    <h3>Combo cả hai — interface + abstract base</h3>
+
+    <p>Đây là cách các framework lớn (Spring, JUnit) tổ chức: interface định nghĩa hợp đồng, abstract class implements sẵn phần chung, class cụ thể chỉ điền chi tiết:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+abstract class DataProcessor implements Payment {
+    final String step(String raw) {
+        return decorate(clean(raw));
+    }
+
+    private String clean(String s) {
+        return s.trim();
+    }
+
+    protected abstract String decorate(String s);
+}
+
+class CardPayment extends DataProcessor {
+    public boolean pay(long amount) {
+        return amount &gt; 0;
+    }
+
+    protected String decorate(String s) {
+        return "CARD> " + s;
+    }
+}
+
+void main() {
+    CardPayment c = new CardPayment();
+    IO.println(c.step("  pay now  "));
+    IO.println(c.pay(10_000));
+    IO.println(c.currency());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>CARD> pay now
+true
+VND</code></pre>
+    </div>
+
+    <p><code class="inline">DataProcessor</code> không cần implement <code class="inline">pay</code> vì bản thân nó abstract — "nợ" được chuyển tiếp cho class con. Đây chính là điều Q&amp;A số 19 hỏi.</p>
+
+    <h2 id="marker-sealed">12. Marker interface &amp; sealed interface <span class="badge b-junior">Junior+</span></h2>
+
+    <h3>Marker interface — interface không có method nào</h3>
+
+    <p>Marker interface chỉ tồn tại để <em>đánh dấu</em> khả năng, không có method nào để implement. Ba ví dụ JDK bạn gặp nhiều nhất:</p>
+
+    <ul>
+      <li><code class="inline">java.io.Serializable</code> — "được phép serialize". Không có method nào; nếu quên đánh dấu, ghi object ra file sẽ ném <code class="inline">NotSerializableException</code>.</li>
+      <li><code class="inline">Cloneable</code> — "được phép gọi <code class="inline">clone()</code>". Lạ lùng là method <code class="inline">clone()</code> nằm ở <code class="inline">Object</code> (protected), không nằm trong interface; thiếu marker là <code class="inline">CloneNotSupportedException</code>.</li>
+      <li><code class="inline">java.util.RandomAccess</code> — "cấu trúc này truy cập theo index nhanh" (ArrayList có, LinkedList không).</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    IO.println("abc" instanceof java.io.Serializable);
+    IO.println(new int[0] instanceof Cloneable);
+    IO.println(new Object() instanceof java.io.Serializable);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+true
+false</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Nhược điểm của marker:</strong> không method nào, nên compiler <em>không kiểm tra được gì</em> về hành vi. Class <code class="inline">implements Serializable</code> vẫn có thể chứa field không serialize được — chỉ nổ lúc chạy. Nhiều marker cổ điển ngày nay được thay bằng annotation (<code class="inline">@Deprecated</code>, <code class="inline">@FunctionalInterface</code>) vì annotation gắn được metadata và không xâm chiếm danh sách interface cha. Chỉ tạo marker khi thư viện cố tình hỏi <code class="inline">instanceof</code>.</div>
+
+    <h3>Sealed interface — đóng danh sách subtype (Java 17)</h3>
+
+    <p>Interface thường ai cũng implement được; <code class="inline">sealed</code> giới hạn đúng danh sách <code class="inline">permits</code>. Lợi ích lớn nhất: compiler biết hết subtype nên <code class="inline">switch</code> pattern matching không cần <code class="inline">default</code> và <strong>thêm subtype mới quên cập nhật switch là lỗi compile ngay</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Payment permits CardPayment, BankTransfer {}
+
+record CardPayment(String last4) implements Payment {}
+
+record BankTransfer(String bank) implements Payment {}
+
+void main() {
+    Payment p1 = new CardPayment("4242");
+    Payment p2 = new BankTransfer("VCB");
+    IO.println(mo(p1));
+    IO.println(mo(p2));
+}
+
+static String mo(Payment p) {
+    return switch (p) {
+        case CardPayment c -&gt; "The " + c.last4();
+        case BankTransfer b -&gt; "Chuyen khoan " + b.bank();
+    };
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>The 4242
+Chuyen khoan VCB</code></pre>
+    </div>
+
+    <p>Thử bỏ một nhánh trong switch xem compiler nói gì:</p>
+
+    <div class="errblock">
+      <pre>SealedSwitchErr.java:9: error: the switch expression does not cover all possible input values
+        return switch (p) {
+               ^
+1 error</pre>
+    </div>
+
+    <div class="note">Subtype của sealed interface phải khai báo <code class="inline">final</code>, <code class="inline">sealed</code> hoặc <code class="inline">non-sealed</code> — record và enum mặc định final nên hay được dùng. Sealed class/interface, enum và pattern matching được đào sâu ở <a href="enum-nested.html">2.7 Enum, nested &amp; sealed classes</a>.</div>
+
+    <h2 id="production">13. Production patterns — interface ở biên hệ thống <span class="badge b-prod">Production</span></h2>
+
+    <p>Trong code production, interface được dùng nhiều nhất ở <strong>biên hệ thống</strong>: nơi code nghiệp vụ nói chuyện với thế giới ngoài (HTTP, DB, email...). Nghiệp vụ chỉ biết hợp đồng; implementation thật (gọi mạng) nằm ở lớp ngoài. Nhờ vậy unit test có thể thay bằng fake implementation trong vài dòng — đặc biệt khi interface là functional:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Payment {
+    boolean charge(long amount);
+}
+
+void thanhToan(Payment gateway, long amount) {
+    if (gateway.charge(amount)) {
+        IO.println("Thanh cong " + amount);
+    } else {
+        IO.println("That bai " + amount);
+    }
+}
+
+void main() {
+    Payment realGateway = amount -&gt; {
+        IO.println("[HTTP] goi cong thanh toan that " + amount);
+        return true;
+    };
+    Payment fakeGateway = amount -&gt; true;
+    thanhToan(realGateway, 100_000);
+    thanhToan(fakeGateway, 250_000);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[HTTP] goi cong thanh toan that 100000
+Thanh cong 100000
+Thanh cong 250000</code></pre>
+    </div>
+
+    <p>Ba mẫu bạn sẽ gặp hằng ngày:</p>
+    <ul>
+      <li><strong>Port &amp; adapter (hexagonal):</strong> nghiệp vụ định nghĩa <code class="inline">Payment</code>; adapter gọi cổng thanh toán thật implement nó. Đổi nhà cung cấp chỉ cần viết adapter mới.</li>
+      <li><strong>Repository:</strong> interface <code class="inline">OrderRepository</code> nằm ở tầng nghiệp vụ; implementation JPA/DB nằm ở tầng hạ tầng. Test dùng implementation in-memory.</li>
+      <li><strong>Dependency Injection:</strong> Spring tìm bean theo kiểu. <code class="inline">@Service class CardPaymentService implements PaymentService</code> được inject vào nơi cần <code class="inline">PaymentService</code>; trong test, Mockito thay bằng mock/proxy cùng interface.</li>
+    </ul>
+
+    <div class="note">Đây là Dependency Inversion Principle (chữ D trong SOLID): module cấp cao không phụ thuộc module cấp thấp, cả hai phụ thuộc abstraction. Abstract class ít dùng ở biên vì nó kéo theo state/code chung — thứ adapter không cần. Xem thêm <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</div>
+
+    <h2 id="pitfalls">14. Pitfalls thường gặp <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dùng abstract class khi chỉ cần hợp đồng</td><td>Chiếm mất slot kế thừa duy nhất; subclass bị "khóa"</td><td>Mặc định interface; chỉ nâng lên abstract khi có state/code chung thật</td></tr>
+        <tr><td>Interface béo (fat interface)</td><td>Implementation giả, <code class="inline">UnsupportedOperationException</code> tràn lan</td><td>ISP — tách theo vai client cần (mục 10)</td></tr>
+        <tr><td>Tưởng field interface là biến instance</td><td>Mọi object dùng chung một giá trị <code class="inline">static final</code>; sửa là vỡ</td><td>State phải nằm trong class; interface chỉ giữ hằng số</td></tr>
+        <tr><td>Thêm abstract method vào interface public</td><td>Implementer cũ recompile gãy; gọi method mới ném <code class="inline">AbstractMethodError</code></td><td>Thêm <code class="inline">default</code> nếu có hành vi mặc định hợp lý; hoặc đánh version API</td></tr>
+        <tr><td>Tin rằng default method chắc chắn được gọi</td><td>Class (kể cả class cha) ghi đè âm thầm; hành vi khác dự đoán</td><td>Viết <code class="inline">@Override</code> khi chủ đích; test tại class cụ thể</td></tr>
+        <tr><td>Interface chỉ để chứa hằng số (constant interface)</td><td>Ô nhiễm namespace, lộ chi tiết implementation vào API</td><td>Dùng <code class="inline">enum</code>, class utility hoặc <code class="inline">import static</code></td></tr>
+        <tr><td>Quên <code class="inline">public</code> khi implement method interface</td><td>Lỗi compile "attempting to assign weaker access privileges"</td><td>Ghi <code class="inline">public</code>; bật IDE warning; dùng <code class="inline">@Override</code></td></tr>
+        <tr><td>Dùng marker interface làm metadata nghiệp vụ</td><td>Không compile-time check, dễ thiếu/sai sót</td><td>Annotation gắn metadata; marker chỉ khi thư viện yêu cầu</td></tr>
+        <tr><td>Ghép nhiều interface có default trùng chữ ký</td><td>Lỗi compile "inherits unrelated defaults"</td><td>Override và chọn rõ ràng bằng <code class="inline">X.super</code></td></tr>
+        <tr><td>Lạm dụng kế thừa abstract base cho mọi thứ</td><td>Phân cấp sâu, khó đổi, vi phạm composition over inheritance</td><td>Ưu tiên composition; abstract base chỉ khi thật sự có phần chung</td></tr>
+      </tbody>
+    </table>
+
+    <p>Hai lỗi compiler hay gặp khi implement, chạy thật để bạn thấy nguyên văn:</p>
+
+    <div class="errblock">
+      <pre>WeakerAccessErr.java:6: error: pay(long) in CardPayment cannot implement pay(long) in Payment
+    boolean pay(long amount) {
+            ^
+  attempting to assign weaker access privileges; was public
+1 error</pre>
+    </div>
+
+    <div class="errblock">
+      <pre>AbstractMethodInConcreteErr.java:1: error: DataProcessor is not abstract and does not override abstract method xuLy() in DataProcessor
+class DataProcessor {
+^
+1 error</pre>
+    </div>
+
+    <div class="note">Một bẫy nữa về default method: interface <strong>không được</strong> khai báo default trùng với public method của <code class="inline">Object</code> như <code class="inline">toString</code>, <code class="inline">equals</code>, <code class="inline">hashCode</code>. Compiler JDK 25 báo: <code class="inline">default method toString in interface Payment overrides a member of java.lang.Object</code>. Lý do: class nào cũng đã có implementation của Object rồi, default sẽ không bao giờ được dùng và gây nhầm lẫn.</div>
+
+    <h2 id="qa">15. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Abstract class và interface khác nhau ở những điểm cốt lõi nào?</summary>
+      <div class="answer"><strong>Abstract class</strong> là class dở dang: có instance field, constructor, method thường, khối khởi tạo; đơn kế thừa; quan hệ is-a; abstract method không bắt buộc phải có. <strong>Interface</strong> là hợp đồng: không state instance, không constructor; đa kế thừa "vai"; method ngầm <code class="inline">public abstract</code>; từ Java 8/9 có thêm <code class="inline">default</code>/<code class="inline">static</code>/<code class="inline">private</code>; quan hệ can-do. Từ Java 8 ranh giới mờ dần nhưng khác biệt gốc vẫn là <strong>state + constructor</strong>: interface vĩnh viễn không có.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Khi nào chọn abstract class, khi nào chọn interface?</summary>
+      <div class="answer">Chọn <strong>abstract class</strong> khi các subclass chia sẻ state/code chung thật sự, cần constructor ép khởi tạo, hoặc cần template method với vài bước mở cho con. Chọn <strong>interface</strong> khi chỉ cần hợp đồng hành vi cho nhiều loại implementation không liên quan, cần một object nhận nhiều vai, hoặc cần điểm thay thế để test/mock. Cần cả hai thì kết hợp: interface cho hợp đồng + abstract base cho code chung (mục 11).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Abstract class có constructor không? Có thì để làm gì?</summary>
+      <div class="answer">Có. Constructor của abstract class chạy khi subclass được khởi tạo, qua chuỗi <code class="inline">super(...)</code>, dùng để khởi tạo field chung và validate tham số. Bạn không <code class="inline">new</code> trực tiếp được abstract class, nên constructor thường để <code class="inline">protected</code> (hoặc package-private) thay vì <code class="inline">public</code>. Interface thì ngược lại: không có constructor, kể cả private.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Abstract class có bắt buộc phải có abstract method không?</summary>
+      <div class="answer">Không. Một abstract class hoàn toàn có thể có 0 abstract method; nó vẫn hợp lệ và vẫn không <code class="inline">new</code> được. Người ta dùng trường hợp này để chặn khởi tạo trực tiếp và gom code chung. Chiều ngược lại mới bị luật: class chứa abstract method <strong>bắt buộc</strong> phải khai báo <code class="inline">abstract</code>, nếu không sẽ lỗi "is not abstract and does not override abstract method".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Interface có field không? Bản chất field trong interface là gì?</summary>
+      <div class="answer">Có, nhưng mọi field đều ngầm là <code class="inline">public static final</code> và bắt buộc khởi tạo ngay khi khai báo. Đây là <strong>hằng số dùng chung</strong>, không phải biến instance: mọi object của mọi class implement đều thấy cùng một giá trị, và không gán lại được (<code class="inline">cannot assign a value to static final variable</code>). Vì thế interface không thể giữ state.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Interface có constructor không? Vì sao?</summary>
+      <div class="answer">Không. Constructor tồn tại để khởi tạo state instance, mà interface không có state instance — nên ngôn ngữ cấm luôn constructor (khai báo <code class="inline">Payment() { }</code> trong interface là lỗi compiler). Object của interface không tồn tại; chỉ object của class implement interface tồn tại, và class đó tự lo constructor của mình.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Có <code class="inline">new</code> được abstract class hay interface không?</summary>
+      <div class="answer">Không — cả hai đều lỗi compile ("is abstract; cannot be instantiated"). Nhưng bạn có thể viết <code class="inline">new Payment() { ... }</code> với <strong>anonymous class</strong>: đó thực chất là tạo object của một class con vô danh implement interface, không phải tạo interface. Với functional interface, lambda <code class="inline">Payment p = amount -&gt; true;</code> cũng tạo ra một implementation như vậy.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Kết hợp <code class="inline">abstract</code> với <code class="inline">final</code>, <code class="inline">private</code>, <code class="inline">static</code> được không?</summary>
+      <div class="answer"><code class="inline">abstract final class</code> là lỗi: "illegal combination of modifiers: abstract and final" — final cấm kế thừa, abstract sống nhờ kế thừa. Tương tự, abstract method không được <code class="inline">private</code> (không ai override được) và không được <code class="inline">static</code> (không gắn instance, không override theo đa hình). Ngược lại, một method <em>thường</em> trong abstract class hoàn toàn có thể <code class="inline">final</code> để chặn subclass override chính nó.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Vì sao Java cho đa implement interface nhưng không cho đa kế thừa class?</summary>
+      <div class="answer">Vì state. Hai class cha đều có field instance sẽ nảy sinh diamond problem: object con chứa một hay hai bản của field trùng tên? Java cắt vấn đề bằng đơn kế thừa class. Interface không mang state instance (field là <code class="inline">static final</code>), nên đa implement an toàn; và nếu Java 8+ đưa ra diamond về default method, JLS có luật giải quyết dứt khoát (class thắng → interface cụ thể hơn thắng → lỗi compile), buộc lập trình viên chọn tường minh thay vì đoán mò như C++.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Method trong interface mặc định có modifier gì? Khai báo được những loại method nào?</summary>
+      <div class="answer">Method không body ngầm là <code class="inline">public abstract</code>; field ngầm là <code class="inline">public static final</code>; nested type ngầm là <code class="inline">public static</code>. Từ Java 8 có thêm <code class="inline">default</code> và <code class="inline">static</code>; từ Java 9 có <code class="inline">private</code> và <code class="inline">private static</code>. Interface không có <code class="inline">protected</code>, không constructor, và không được có khối <code class="inline">static { }</code>. Khi implement method abstract, class con buộc ghi <code class="inline">public</code>.</div>
+    </details>
+
+    <h3>Junior+</h3>
+
+    <details class="qa">
+      <summary>Câu 11. default method sinh ra để giải quyết vấn đề gì?</summary>
+      <div class="answer">Để <strong>tiến hoá interface mà không phá implementation cũ</strong>. Trước Java 8, thêm method trắng vào interface đang dùng rộng rãi là phá vỡ mọi class implement. Default method cho interface một implementation mặc định, nên class cũ không cần sửa. JDK dùng nó ở <code class="inline">Iterable.forEach</code>, <code class="inline">Comparator.thenComparing</code>, <code class="inline">Map.getOrDefault</code>, <code class="inline">SequencedCollection.reversed()</code> (Java 21). Đây cũng là lý do interface từ Java 8 có thể chứa hành vi thật, làm ranh giới với abstract class mờ đi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Xung đột default method được giải quyết theo thứ tự nào?</summary>
+      <div class="answer">Ba bước, bước trước thắng: (1) <strong>class thắng interface</strong> — method trong class hoặc class cha override default; (2) nếu các default đến từ interface có quan hệ cha-con, <strong>interface con (cụ thể hơn) thắng</strong>; (3) nếu các default "ngang vai" không ai thắng ai, <strong>lỗi compile</strong> "inherits unrelated defaults". Muốn giải quyết xung đột ngang vai: override method đó trong class rồi tự chọn bằng <code class="inline">InterfaceA.super.method()</code> và/hoặc <code class="inline">InterfaceB.super.method()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. <code class="inline">Interface.super.method()</code> dùng khi nào? Điều kiện gì?</summary>
+      <div class="answer">Dùng khi class override một method đang xung đột default (hoặc muốn tái dùng có chủ đích) và cần gọi lại implementation default của một interface cụ thể. Điều kiện: interface được gọi phải là <strong>direct superinterface</strong> của class đang viết (hoặc của interface đang viết), và method đó phải là default của chính interface này. Cú pháp đầy đủ là <code class="inline">Payment.super.status()</code>; không gọi được qualified super tới interface "ông nội" gián tiếp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. static method trong interface có được kế thừa không?</summary>
+      <div class="answer">Không. Static method của interface không được class implement kế thừa, cũng không được interface con kế thừa — phải gọi qua tên interface: <code class="inline">Payment.cash()</code>. Gọi <code class="inline">CardPayment.cash()</code> là lỗi "cannot find symbol". Lý do: static gắn với kiểu khai báo chứ không tham gia đa hình; JLS khẳng định interface không thừa kế private/static method từ superinterface. Static method thường dùng làm factory/tiện ích gắn tên interface.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. private method trong interface (Java 9) để làm gì?</summary>
+      <div class="answer">Để <strong>chia sẻ code giữa các default/static method</strong> mà không biến helper thành API công khai. Trước Java 9, muốn tái sử dụng logic giữa hai default method bạn phải tạo một static helper public (ô nhiễm hợp đồng) hoặc class utility ngoài. Private method (và private static) chỉ code bên trong interface gọi được, không kế thừa, không override. Đây là chi tiết nhỏ nhưng hay được hỏi để phân biệt người theo dõi Java hiện đại.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Marker interface là gì? Cho ví dụ và nhược điểm.</summary>
+      <div class="answer">Là interface không có method nào, chỉ dùng để đánh dấu khả năng. Ví dụ: <code class="inline">Serializable</code> (được serialize; thiếu nó ném <code class="inline">NotSerializableException</code>), <code class="inline">Cloneable</code> (được gọi <code class="inline">Object.clone()</code>, nếu không ném <code class="inline">CloneNotSupportedException</code>), <code class="inline">RandomAccess</code> (List truy cập index nhanh). Nhược điểm: không có method nào nên compiler không kiểm tra được gì về hành vi; class vẫn có thể "đánh dấu sai" và lỗi chỉ nổ lúc chạy. Ngày nay metadata thường dùng annotation; chỉ tạo marker khi có code chủ động <code class="inline">instanceof</code> nó.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Sealed interface là gì? Lợi ích khi kết hợp switch?</summary>
+      <div class="answer">Sealed (Java 17) giới hạn interface/class chỉ được phép có đúng các subtype ghi trong <code class="inline">permits</code>. Vì compiler biết hết subtype, <code class="inline">switch</code> pattern matching trên nó trở nên <strong>exhaustive</strong>: không cần <code class="inline">default</code>, và khi thêm subtype mới mà quên nhánh switch, compiler báo "the switch expression does not cover all possible input values". Subtype phải là <code class="inline">final</code>, <code class="inline">sealed</code> hoặc <code class="inline">non-sealed</code>; record/enum hay dùng vì mặc định final. Đây là cách mô hình hoá union type an toàn của Java.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Functional interface là gì? @FunctionalInterface có bắt buộc không?</summary>
+      <div class="answer">Là interface có đúng một abstract method (SAM) — nhờ đó có thể gán lambda hoặc method reference. Annotation <code class="inline">@FunctionalInterface</code> <strong>không bắt buộc</strong>: interface một abstract method vẫn dùng được lambda dù không ghi. Nhưng nên ghi để compiler chặn khi lỡ thêm abstract method thứ hai và để tài liệu hoá ý định. Default/static/private method, cùng method override-equivalent với public method của <code class="inline">Object</code> (như <code class="inline">equals</code>), không tính vào SAM.</div>
+    </details>
+
+    <h3>Nâng cao</h3>
+
+    <details class="qa">
+      <summary>Câu 19. Interface extends interface được không? Abstract class implements interface thì sao?</summary>
+      <div class="answer">Interface <code class="inline">extends</code> được nhiều interface cùng lúc: <code class="inline">interface A extends B, C</code>. Class thì <code class="inline">implements</code> nhiều interface nhưng <code class="inline">extends</code> tối đa một class. Khi abstract class <code class="inline">implements</code> một interface, nó <strong>không buộc</strong> implement hết abstract method — "món nợ" được chuyển cho class con cụ thể; nếu class con cũng không implement thì chính nó phải abstract. Đây là cách xây dựng abstract base class implements sẵn hợp đồng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Thêm method mới vào interface đang được implement rộng rãi thì chuyện gì xảy ra?</summary>
+      <div class="answer">Nếu method <strong>abstract</strong>: class cũ đã biên dịch vẫn load được (tương thích nhị phân), nhưng nếu gọi method mới trên implementation cũ sẽ ném <code class="inline">AbstractMethodError</code> lúc chạy; còn recompile thì lỗi compile "does not override abstract method". Nếu method <strong>default</strong>: an toàn hơn — implementer cũ chạy bình thường với hành vi mặc định. Nhưng coi chừng: class implement nhiều interface có thể vướng xung đột default sau này, và hành vi ngầm thay đổi (ví dụ method mới được gọi ở đâu đó từ trước). Vì vậy thiết kế API công khai cần tính trước chuyện versioning.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Vì sao không nên dùng interface chỉ để chứa hằng số (constant interface)?</summary>
+      <div class="answer">Vì nó lạm dụng interface vào việc không phải hợp đồng hành vi: mọi class implement sẽ thừa hưởng hằng số mà không liên quan gì tới vai trò của mình, tên hằng "chảy" vào namespace của class (ô nhiễm), lộ chi tiết implementation vào API, và làm rối công cụ phân tích. Cách thay thế: hằng số gắn với enum (nhóm giá trị đóng), class utility với private constructor, hoặc <code class="inline">static import</code> khi thật sự cần. Effective Java gọi đây là constant interface antipattern.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Interface có thể khai báo default cho <code class="inline">toString</code>/<code class="inline">equals</code>/<code class="inline">hashCode</code> không?</summary>
+      <div class="answer">Không — đó là lỗi compile: "default method toString in interface Payment overrides a member of java.lang.Object". Mọi class đã thừa hưởng implementation của <code class="inline">Object</code>, nên default đó sẽ không bao giờ được dùng và JLS cấm để tránh nhầm lẫn. Tuy vậy interface được phép <em>khai báo abstract</em> method trùng chữ ký với public method của Object (ví dụ <code class="inline">boolean equals(Object o);</code>) — nó không tính vào SAM nên interface vẫn có thể là functional. Đây là nền tảng để <code class="inline">Comparator</code> vẫn là functional interface.</div>
+    </details>
+
+    <h2 id="bai-tap">16. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">abstract class DataProcessor {
+    DataProcessor() {
+        IO.println("base");
+    }
+
+    abstract String ten();
+}
+
+class CsvDataProcessor extends DataProcessor {
+    CsvDataProcessor() {
+        IO.println("child");
+    }
+
+    String ten() {
+        return "csv";
+    }
+}
+
+void main() {
+    DataProcessor p = new CsvDataProcessor();
+    IO.println(p.ten());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">base</code>, <code class="inline">child</code>, <code class="inline">csv</code>. Khi tạo object con, constructor class cha chạy <strong>trước</strong> (qua <code class="inline">super()</code> ngầm), rồi mới tới constructor con, cuối cùng mới gọi được method. Điều này cho thấy abstract class có constructor thật, khác interface.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    int MAX = 1_000;
+    boolean pay(long amount);
+}
+
+class CardPayment implements Payment {
+    public boolean pay(long amount) {
+        return amount &lt;= MAX;
+    }
+}
+
+void main() {
+    IO.println(Payment.MAX);
+    IO.println(CardPayment.MAX);
+    IO.println(new CardPayment().pay(2_000));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1000</code>, <code class="inline">1000</code>, <code class="inline">false</code>. <code class="inline">MAX</code> chỉ có một bản duy nhất ngầm <code class="inline">public static final</code>; <code class="inline">CardPayment.MAX</code> là cách gọi khác của cùng hằng số, không phải field riêng. <code class="inline">2000 &lt;= 1000</code> sai nên trả <code class="inline">false</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    default String status() {
+        return "payment";
+    }
+}
+
+interface Refundable {
+    default String status() {
+        return "refundable";
+    }
+}
+
+class CardPayment implements Payment, Refundable {
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: <code class="inline">class CardPayment inherits unrelated defaults for status() from types Payment and Refundable</code>. Hai default ngang vai nên Java không tự chọn. Sửa bằng cách override <code class="inline">status()</code> trong <code class="inline">CardPayment</code> và chọn tường minh, ví dụ <code class="inline">return Payment.super.status() + " + " + Refundable.super.status();</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    default String status() {
+        return "payment";
+    }
+}
+
+interface Refundable extends Payment {
+    default String status() {
+        return "refundable";
+    }
+}
+
+class CardPayment implements Refundable {
+}
+
+void main() {
+    IO.println(new CardPayment().status());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">refundable</code>. <code class="inline">Refundable</code> là interface con của <code class="inline">Payment</code>, default của interface con cụ thể hơn thắng default của interface cha. Không có lỗi compile vì hai default có quan hệ cha-con rõ ràng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    default String status() {
+        return "interface default";
+    }
+}
+
+abstract class DataProcessor implements Payment {
+    public String status() {
+        return "class method";
+    }
+}
+
+class CardPayment extends DataProcessor {
+}
+
+void main() {
+    IO.println(new CardPayment().status());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">class method</code>. Method thật trong class (hoặc class cha) luôn thắng default của interface — đây là ưu tiên số 1 trong luật giải quyết xung đột, giữ tương thích ngược cho code viết trước Java 8.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String receipt(long amount) {
+        return nhan() + ": " + amount + " " + currency();
+    }
+
+    private String nhan() {
+        return "HOA DON";
+    }
+
+    static Payment cash() {
+        return amount -&gt; {
+            IO.println("Thu tien mat " + amount);
+            return true;
+        };
+    }
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+void main() {
+    Payment cash = Payment.cash();
+    cash.pay(50_000);
+    IO.println(cash.receipt(50_000));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Thu tien mat 50000</code> rồi <code class="inline">HOA DON: 50000 VND</code>. <code class="inline">cash()</code> là static factory trả lambda; <code class="inline">pay</code> in ra; <code class="inline">receipt</code> là default gọi private helper <code class="inline">nhan()</code> và default <code class="inline">currency()</code>. Lưu ý không gọi được <code class="inline">CardPayment.cash()</code> — static method không kế thừa.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String bienLai(long amount) {
+        return "Bien lai " + amount + " " + currency();
+    }
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+class CardPayment implements Payment {
+    public boolean pay(long amount) {
+        return true;
+    }
+
+    public String currency() {
+        return "USD";
+    }
+}
+
+void main() {
+    Payment card = new CardPayment();
+    Payment cash = amount -&gt; true;
+    IO.println(card.bienLai(100));
+    IO.println(cash.bienLai(200_000));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Bien lai 100 USD</code> rồi <code class="inline">Bien lai 200000 VND</code>. <code class="inline">CardPayment</code> kế thừa default <code class="inline">bienLai</code> nhưng override <code class="inline">currency</code> nên kết quả đổi theo; lambda <code class="inline">cash</code> dùng nguyên default nên ra VND. Đây là cách default method tiến hoá interface mà không phá implementation cũ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">@FunctionalInterface
+interface Payment {
+    boolean pay(long amount);
+}
+
+void main() {
+    Payment card = amount -&gt; amount &gt; 0;
+    Payment logger = amount -&gt; {
+        IO.println("pay " + amount);
+        return true;
+    };
+    IO.println(card.pay(0));
+    IO.println(card.pay(100));
+    logger.pay(200);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">true</code>, <code class="inline">pay 200</code>. <code class="inline">Payment</code> có một abstract method nên là functional interface; hai biến là hai implementation lambda. <code class="inline">pay(0)</code> trả <code class="inline">false</code> vì <code class="inline">0 &gt; 0</code> sai; <code class="inline">logger.pay(200)</code> in ra nhưng giá trị trả về không được dùng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">@FunctionalInterface
+interface Payment {
+    boolean pay(long amount);
+    void refund(long amount);
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: <code class="inline">Unexpected @FunctionalInterface annotation ... multiple non-overriding abstract methods found in interface Payment</code>. Có hai abstract method nên không còn là functional interface; annotation biến lỗi thiết kế thành lỗi compile ngay. Bỏ một method (hoặc cho nó thành <code class="inline">default</code>) mới dùng lambda được.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Payment {
+    static void cash() {
+        IO.println("cash");
+    }
+}
+
+class CardPayment implements Payment {
+}
+
+class Exercise10 {
+    public static void main() {
+        Payment.cash();
+        CardPayment.cash();
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Dòng <code class="inline">Payment.cash()</code> hợp lệ, nhưng <code class="inline">CardPayment.cash()</code> lỗi <code class="inline">cannot find symbol: method cash() location: class CardPayment</code> — static method trong interface không được kế thừa, dù class có <code class="inline">implements</code>. Muốn gọi phải viết đúng tên interface.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() {
+    IO.println("abc" instanceof java.io.Serializable);
+    IO.println(new int[0] instanceof Cloneable);
+    IO.println(new Object() instanceof java.io.Serializable);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">true</code>, <code class="inline">false</code>. <code class="inline">String</code> implements <code class="inline">Serializable</code>; mảng trong Java implements <code class="inline">Cloneable</code>; còn <code class="inline">Object</code> thuần thì không implements <code class="inline">Serializable</code>. <code class="inline">Serializable</code> là marker interface — không method nào, chỉ để đánh dấu.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">sealed interface Payment permits CardPayment, BankTransfer {}
+
+record CardPayment(String last4) implements Payment {}
+
+record BankTransfer(String bank) implements Payment {}
+
+void main() {
+    Payment p1 = new CardPayment("4242");
+    Payment p2 = new BankTransfer("VCB");
+    IO.println(mo(p1));
+    IO.println(mo(p2));
+}
+
+static String mo(Payment p) {
+    return switch (p) {
+        case CardPayment c -&gt; "The " + c.last4();
+        case BankTransfer b -&gt; "Chuyen khoan " + b.bank();
+    };
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">The 4242</code> rồi <code class="inline">Chuyen khoan VCB</code>. Switch không cần <code class="inline">default</code> vì sealed <code class="inline">Payment</code> chỉ có đúng hai subtype và compiler biết hết. Nếu mai thêm <code class="inline">record MomoPayment(...) implements Payment</code> mà quên thêm nhánh, compiler báo "does not cover all possible input values" ngay — đó là giá trị lớn nhất của sealed.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13 (thiết kế)</summary>
+      <div class="codeblock">
+        <pre><code class="java">// Yeu cau: he thong thanh toan co nhieu kieu (the, chuyen khoan),
+// moi kieu phai pay duoc; dong thoi moi giao dich deu di qua quy trinh:
+// lam sach -&gt; bien doi -&gt; ghi nhan (khung co dinh).
+// Hay chon abstract class / interface va viet code.</code></pre>
+      </div>
+      <div class="answer">
+        <p>Chọn <strong>interface <code class="inline">Payment</code></strong> cho hợp đồng "pay được" (can-do, nhiều implementation) và <strong>abstract class <code class="inline">DataProcessor</code></strong> cho template method "làm sạch → biến đổi → ghi nhận" (is-a, code chung). Abstract class <code class="inline">implements</code> luôn interface để class con có cả hai. Kết quả:</p>
+        <div class="codeblock">
+          <pre><code class="java">interface Payment {
+    boolean pay(long amount);
+
+    default String currency() {
+        return "VND";
+    }
+}
+
+abstract class DataProcessor implements Payment {
+    final String step(String raw) {
+        return decorate(clean(raw));
+    }
+
+    private String clean(String s) {
+        return s.trim();
+    }
+
+    protected abstract String decorate(String s);
+}
+
+class CardPayment extends DataProcessor {
+    public boolean pay(long amount) {
+        return amount &gt; 0;
+    }
+
+    protected String decorate(String s) {
+        return "CARD&gt; " + s;
+    }
+}
+
+void main() {
+    CardPayment c = new CardPayment();
+    IO.println(c.step("  pay now  "));
+    IO.println(c.pay(10_000));
+    IO.println(c.currency());
+}</code></pre>
+        </div>
+        <p>Output chạy thật: <code class="inline">CARD&gt; pay now</code>, <code class="inline">true</code>, <code class="inline">VND</code>. Lý do không chọn abstract class cho <code class="inline">Payment</code>: nhiều loại thanh toán không chia sẻ state, và interface giữ slot <code class="inline">extends</code> cho abstract base. Lý do không chọn interface cho <code class="inline">DataProcessor</code>: cần private helper + method <code class="inline">final</code> khoá khung thuật toán — interface không có <code class="inline">final</code> method được.</p>
+      </div>
+    </details>
+
+    <h2 id="cheat-sheet">17. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết / ghi nhớ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Abstract class</td><td><code class="inline">abstract class TenClass { abstract Kieu m(); }</code> — có field/constructor/method thường</td></tr>
+        <tr><td>Interface</td><td><code class="inline">interface TenInterface { Kieu m(); }</code> — method ngầm <code class="inline">public abstract</code></td></tr>
+        <tr><td>Field trong interface</td><td>Ngầm <code class="inline">public static final</code>, bắt buộc khởi tạo; không phải biến instance</td></tr>
+        <tr><td>Constructor</td><td>Abstract class: có (protected); interface: không</td></tr>
+        <tr><td>Kế thừa</td><td>1 <code class="inline">extends</code> class; nhiều <code class="inline">implements</code> interface; interface <code class="inline">extends</code> nhiều interface</td></tr>
+        <tr><td>Chọn loại nào</td><td>State/code chung/is-a → abstract; hợp đồng/can-do/đa vai → interface; cả hai → interface + abstract base</td></tr>
+        <tr><td>default method</td><td><code class="inline">default Kieu m() { ... }</code> — tiến hoá interface không phá implementer cũ</td></tr>
+        <tr><td>Xung đột default</td><td>1) class thắng 2) interface con thắng 3) lỗi compile → override + <code class="inline">X.super.m()</code></td></tr>
+        <tr><td>static trong interface</td><td>Gọi qua <code class="inline">Interface.ten()</code>; không kế thừa, không override</td></tr>
+        <tr><td>private trong interface</td><td>Java 9+; helper dùng chung giữa các default/static, không phải API</td></tr>
+        <tr><td>Functional interface</td><td>Đúng 1 abstract method; <code class="inline">@FunctionalInterface</code> không bắt buộc; lambda target</td></tr>
+        <tr><td>Marker interface</td><td><code class="inline">Serializable</code>, <code class="inline">Cloneable</code>, <code class="inline">RandomAccess</code>; không method, không compile-time check</td></tr>
+        <tr><td>Sealed interface</td><td><code class="inline">sealed interface P permits A, B {}</code>; subtype final/sealed/non-sealed; switch exhaustive</td></tr>
+        <tr><td>Interface ở production</td><td>Port/adapter, repository, DI bean theo interface, fake/mock bằng lambda</td></tr>
+        <tr><td>Lỗi kinh điển</td><td>new abstract/interface; field interface gán lại; thiếu <code class="inline">public</code> khi implement; unrelated defaults; <code class="inline">CardPayment.cash()</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Trả lời trôi chảy câu "abstract class khác interface thế nào" trong 60 giây, kèm ví dụ.</li>
+      <li>Nêu được tiêu chí chọn: state/constructor/code chung → abstract; hợp đồng/đa vai → interface.</li>
+      <li>Giải thích được vì sao interface không có constructor và field là <code class="inline">public static final</code>.</li>
+      <li>Giải thích được vì sao Java cho đa implement interface nhưng không cho đa kế thừa class.</li>
+      <li>Thuộc 3 bước giải quyết xung đột default method và viết được <code class="inline">Interface.super.m()</code>.</li>
+      <li>Phân biệt default/static/private method trong interface: ai gọi được, có kế thừa không.</li>
+      <li>Viết được một functional interface + gán lambda, và giải thích @FunctionalInterface có bắt buộc không.</li>
+      <li>Giải thích marker interface và nêu 2 ví dụ JDK kèm nhược điểm.</li>
+      <li>Viết được sealed interface + switch không cần <code class="inline">default</code>, và biết lỗi khi thiếu nhánh.</li>
+      <li>Nhận diện và sửa 4 lỗi compiler: new abstract, gán field interface, weaker access, unrelated defaults.</li>
+      <li>Biết cách dùng interface ở biên hệ thống: mock/fake cho unit test, DI trong Spring.</li>
+      <li>Tự tay chạy lại ít nhất 5 ví dụ trong trang bằng <code class="inline">java TenFile.java</code>.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html" target="_blank" rel="noreferrer">JLS §9 — Interfaces (kế thừa, default/static/private method)</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.1.1.1" target="_blank" rel="noreferrer">JLS §8.1.1.1 — abstract Classes</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.4.1" target="_blank" rel="noreferrer">JLS §9.4.1 — Inheritance, Overriding and Diamond rules</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/abstract.html" target="_blank" rel="noreferrer">Oracle Tutorial — Abstract Methods and Classes</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html" target="_blank" rel="noreferrer">Oracle Tutorial — Default Methods</a></li>
+      <li><a href="https://openjdk.org/jeps/213" target="_blank" rel="noreferrer">JEP 213 — Milling Project Coin (private interface methods, Java 9)</a></li>
+      <li><a href="https://openjdk.org/jeps/409" target="_blank" rel="noreferrer">JEP 409 — Sealed Classes (Java 17)</a></li>
+      <li><a href="https://dev.java/learn/interfaces/" target="_blank" rel="noreferrer">Dev.java — Interfaces</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Abstract class vs Interface · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

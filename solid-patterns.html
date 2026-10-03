@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLID &amp; design patterns — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item active" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="solid-patterns">SOLID &amp; design patterns</h1>
+
+    <p class="lead">SOLID là 5 nguyên tắc thiết kế hướng đối tượng giúp code dễ đọc, dễ mở rộng và dễ test. Design pattern (mẫu thiết kế) là những giải pháp mẫu có tên cho các vấn đề thiết kế lặp đi lặp lại. Trang này đi từ 5 nguyên tắc tới các pattern thực dụng nhất khi đi làm — singleton, factory, builder, strategy, observer — cách nhận diện chúng trong Spring, và quan trọng nhất: biết khi nào <strong>không</strong> nên dùng pattern.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#srp">S — Single Responsibility</a></li>
+        <li><a href="#ocp">O — Open/Closed</a></li>
+        <li><a href="#lsp">L — Liskov Substitution</a></li>
+        <li><a href="#isp">I — Interface Segregation</a></li>
+        <li><a href="#dip">D — Dependency Inversion</a></li>
+        <li><a href="#singleton">Singleton — một instance duy nhất</a></li>
+        <li><a href="#factory">Factory — tạo object theo nhu cầu</a></li>
+        <li><a href="#builder">Builder — constructor quá dài</a></li>
+        <li><a href="#strategy-observer">Strategy &amp; Observer</a></li>
+        <li><a href="#spring">Nhận diện pattern trong Spring/framework</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Phân biệt hai khái niệm hay bị gộp chung:</p>
+    <ul>
+      <li><strong>Design principle</strong> (nguyên tắc thiết kế) — lời khuyên bậc cao, không có code cụ thể. SOLID, DRY, KISS, YAGNI là ví dụ. Bạn "hiểu và áp dụng", không "cài đặt".</li>
+      <li><strong>Design pattern</strong> (mẫu thiết kế) — giải pháp cụ thể, đã được đặt tên, mô tả quan hệ giữa các class/object để giải một vấn đề lặp lại. Singleton, Factory, Builder, Strategy, Observer... là ví dụ. Bạn "nhận diện và chọn dùng".</li>
+    </ul>
+
+    <p>Bộ pattern nổi tiếng nhất là của "Gang of Four" (GoF, 1994) với 23 mẫu, chia làm 3 nhóm. Không cần học hết 23 — cần biết nhóm nào tồn tại để tra cứu:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nhóm</th><th>Giải quyết việc gì</th><th>Ví dụ tiêu biểu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Creational</strong> (khởi tạo)</td><td>Cách tạo object linh hoạt, che giấu chi tiết khởi tạo</td><td>Singleton, Factory Method, Abstract Factory, Builder, Prototype</td></tr>
+        <tr><td><strong>Structural</strong> (cấu trúc)</td><td>Ghép các object/class thành cấu trúc lớn hơn</td><td>Adapter, Decorator, Proxy, Facade, Composite</td></tr>
+        <tr><td><strong>Behavioral</strong> (hành vi)</td><td>Cách object giao tiếp, phân chia trách nhiệm, thuật toán</td><td>Strategy, Observer, Template Method, Chain of Responsibility, Command</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Pattern là công cụ, không phải mục tiêu.</strong> Lỗi phổ biến của người mới học pattern là thấy vấn đề nào cũng muốn "dán" pattern vào: thêm interface khi chỉ có một implementation, thêm factory cho một constructor, thêm abstract class cho hai class chưa chắc thay đổi. Kết quả là code khó đọc hơn, nhiều file hơn, mà chẳng giải quyết vấn đề thực tế nào. Nguyên tắc thực dụng: <strong>chỉ dùng pattern khi bạn đã thấy vấn đề nó giải quyết đang thật sự xảy ra</strong> (rule of three — đến lần thứ ba lặp lại mới trừu tượng hoá).</div>
+
+    <p>Mức độ bắt buộc của chủ đề 2.8 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — nhận diện và sửa vi phạm SRP, OCP, LSP, ISP, DIP ở đoạn code nhỏ; viết singleton bằng enum và holder; viết builder cho lớp nhiều tham số; dùng strategy qua interface + lambda; viết simple factory; dùng observer/listener; giải thích constructor injection và lợi ích test.</li>
+      <li><strong>Phải hiểu</strong> — vì sao DIP dẫn tới testability; vì sao LSP/ISP là về hợp đồng chứ không phải cú pháp; vì sao singleton bị coi là anti-pattern; vì sao over-engineering còn tệ hơn thiếu pattern.</li>
+      <li><strong>Nhận biết</strong> — pattern mà Spring/JDK dùng sẵn: <code class="inline">@Bean</code> (Factory), AOP (Proxy/Decorator), <code class="inline">JdbcTemplate</code> (Template Method), <code class="inline">ApplicationEvent</code> (Observer), <code class="inline">Comparator</code> (Strategy); abstract factory, prototype, visitor chỉ cần biết tên + ý tưởng.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Với mỗi nguyên tắc: đọc định nghĩa → đoán xem đoạn code mẫu vi phạm ở đâu → đọc cách sửa. Đoán trước, xem sau.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Tự hỏi "đoạn code này có mùi gì?" thay vì "đoạn code này nên dùng pattern gì?". Pattern là câu trả lời, vấn đề mới là câu hỏi.</li>
+      <li>Ôn nhanh bảng trong <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Các file không khai báo class bao ngoài là <strong>compact source file</strong>: lưu thành <code class="inline">TenFile.java</code> rồi chạy <code class="inline">java TenFile.java</code> là được.</div>
+
+    <h3>Góc Node.js</h3>
+
+    <p>Bạn đến từ Node.js nên nhiều pattern đã dùng hằng ngày mà không gọi tên:</p>
+
+    <table>
+      <thead>
+        <tr><th>Trong Node.js / JS</th><th>Pattern tương ứng</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Express/Koa middleware, <code class="inline">next()</code> chuyền qua từng handler</td><td>Chain of Responsibility</td><td>Mỗi handler xử lý rồi chuyển request cho handler kế; Servlet Filter/HandlerInterceptor của Java cũng vậy</td></tr>
+        <tr><td><code class="inline">require()</code>/<code class="inline">import</code> chỉ chạy module một lần, lần sau trả về object cache</td><td>Singleton</td><td>Module cache chính là singleton "miễn phí" của Node — mọi nơi import cùng nhận một object</td></tr>
+        <tr><td>NestJS DI: <code class="inline">@Injectable()</code>, constructor injection, provider scope</td><td>Dependency Inversion + DI</td><td>Ý tưởng giống Spring: đối tượng không tự <code class="inline">new</code> dependency; range provider mặc định là singleton trong module, Spring là singleton trong application context</td></tr>
+        <tr><td><code class="inline">EventEmitter</code>, <code class="inline">addEventListener</code>, pub/sub</td><td>Observer</td><td>Cùng mô hình 1-n: subject phát sự kiện, nhiều listener nhận</td></tr>
+        <tr><td>Callback/HOF: <code class="inline">arr.sort(compareFn)</code>, truyền hàm xử lý</td><td>Strategy</td><td>Java cũng làm được điều này từ Java 8 với functional interface + lambda</td></tr>
+        <tr><td>Object literal trong constructor options</td><td>Builder / Named arguments</td><td>JS có object literal thay builder; Java không có nên cần builder khi nhiều tham số tùy chọn</td></tr>
+      </tbody>
+    </table>
+
+    <p>Middleware của Express là ví dụ dễ thấy nhất của Chain of Responsibility — chạy thật bằng Node v22:</p>
+
+    <div class="codeblock">
+      <pre><code>// middleware chain ~ chain of responsibility
+const middlewares = [
+  (req, next) =&gt; { console.log("1. log:", req.url); next(); },
+  (req, next) =&gt; { console.log("2. xac thuc nguoi dung"); next(); },
+  (req, next) =&gt; { console.log("3. xu ly don hang"); },
+];
+
+function chayChuoi(req) {
+  let i = 0;
+  function next() {
+    if (i &lt; middlewares.length) middlewares[i++](req, next);
+  }
+  next();
+}
+
+chayChuoi({ url: "/don-hang" });
+// 1. log: /don-hang
+// 2. xac thuc nguoi dung
+// 3. xu ly don hang</code></pre>
+    </div>
+
+    <p>Còn module cache của Node chính là singleton: hai lần <code class="inline">require</code> cùng module trả về đúng một object, nên state chia sẻ với nhau:</p>
+
+    <div class="codeblock">
+      <pre><code>// counter.cjs
+let count = 0;
+module.exports = {
+  tang() { return ++count; },
+  dem()  { return count; },
+};
+
+// main.cjs
+const a = require("./counter.cjs");
+const b = require("./counter.cjs");
+console.log("a === b:", a === b);  // a === b: true
+a.tang();
+console.log("b.dem():", b.dem());  // b.dem(): 1</code></pre>
+    </div>
+
+    <div class="note">Điểm khác biệt lớn: Node "tha" cho bạn dùng object/closure/hàm tự do, còn Java ép mọi thứ vào class/interface — nhờ vậy pattern hiện ra rõ ràng hơn trong code Java, nhưng cũng dễ bị lạm dụng hơn. Đừng biến Java thành JavaScript bằng cách nhồi mọi thứ vào static.</div>
+
+    <h2 id="srp">2. S — Single Responsibility <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Phát biểu:</strong> một class chỉ nên có <strong>một lý do để thay đổi</strong> (one reason to change) — nghĩa là chỉ phục vụ một "trục thay đổi" (axis of change) hoặc một nhóm người quan tâm (stakeholder).</p>
+
+    <p>Ví dụ đời thường: một nhân viên vừa bán hàng, vừa giao hàng, vừa làm kế toán. Mỗi khi chính sách giao hàng đổi, chính sách thuế đổi, hay quy trình bán đổi — đều phải sửa cùng một người. Tách vai ra thì mỗi thay đổi chỉ ảnh hưởng đúng chỗ của nó.</p>
+
+    <p>Đoạn code sau vi phạm SRP vì class <code class="inline">Order</code> đảm nhận 3 việc: tính tiền (nghiệp vụ), gửi hóa đơn (thông báo) và ghi log (hạ tầng):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+public class Order {
+    private final BigDecimal donGia;
+    private final int soLuong;
+    private final String email;
+
+    Order(BigDecimal donGia, int soLuong, String email) {
+        this.donGia = donGia;
+        this.soLuong = soLuong;
+        this.email = email;
+    }
+
+    BigDecimal xuLyDon() {
+        BigDecimal tong = donGia.multiply(BigDecimal.valueOf(soLuong));
+        IO.println("Gui hoa don toi " + email + ": " + tong);    // Gui hoa don toi an@example.com: 240000
+        IO.println("LOG: don hang cua " + email + " = " + tong);  // LOG: don hang cua an@example.com = 240000
+        return tong;
+    }
+
+    public static void main() {
+        Order don = new Order(new BigDecimal("120000"), 2, "an@example.com");
+        IO.println("Tong tien: " + don.xuLyDon());                // Tong tien: 240000
+    }
+}</code></pre>
+    </div>
+
+    <p>Ba lý do để <code class="inline">Order</code> phải sửa: quy tắc tính tiền đổi, mẫu email đổi, định dạng log đổi. Mỗi lần như vậy đều phải mở lại class nghiệp vụ và chạy lại toàn bộ test của nó — dù nghiệp vụ không hề sai.</p>
+
+    <p>Tách ra: <code class="inline">Order</code> chỉ còn tính tiền, không in ấn gì cả. Việc gửi thông báo nhường cho thành phần chuyên trách (mục <a href="#factory">Factory</a> sẽ có <code class="inline">NotificationFactory</code>), việc ghi log nhường cho logging framework. Caller ghép chúng lại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+public class Order {
+    private final BigDecimal donGia;
+    private final int soLuong;
+
+    Order(BigDecimal donGia, int soLuong) {
+        this.donGia = donGia;
+        this.soLuong = soLuong;
+    }
+
+    BigDecimal tinhTien() {
+        return donGia.multiply(BigDecimal.valueOf(soLuong));
+    }
+
+    public static void main() {
+        Order don = new Order(new BigDecimal("120000"), 2);
+        BigDecimal tong = don.tinhTien();
+        IO.println("Tong tien: " + tong);  // Tong tien: 240000
+    }
+}</code></pre>
+    </div>
+
+    <p><strong>Hiểu đúng, kẻo cực đoan:</strong> SRP <em>không</em> có nghĩa "mỗi class một method". Một class có 10 method vẫn đúng SRP nếu tất cả cùng phục vụ một trục thay đổi (ví dụ <code class="inline">Order</code> có <code class="inline">tinhTien</code>, <code class="inline">themSanPham</code>, <code class="inline">apDungCoupon</code> đều là nghiệp vụ đơn hàng). Tiêu chí thực dụng: mô tả class bằng một câu <strong>không có chữ "và"</strong>. Nếu phải viết "class này tính tiền <em>và</em> gửi email <em>và</em> ghi log", hãy tách.</p>
+
+    <div class="note">Đừng tách class chỉ để "cho đẹp". Tách quá sớm cũng là over-engineering: mỗi class nhỏ thêm một file, một chỗ phải điều hướng khi debug. Tách khi lý do thay đổi thứ hai <strong>thực sự xuất hiện</strong>.</div>
+
+    <h2 id="ocp">3. O — Open/Closed <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Phát biểu:</strong> module nên <strong>mở cho việc mở rộng</strong> (open for extension) và <strong>đóng với việc sửa đổi</strong> (closed for modification) — thêm tính năng mới bằng cách thêm code mới, hạn chế tối đa sửa code cũ đã chạy ổn và đã có test.</p>
+
+    <p>Đoạn code tính chiết khấu theo loại khách sau sẽ phải sửa mỗi khi có loại khách mới — mỗi lần sửa lại có nguy cơ làm hỏng nhánh cũ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+public class Order {
+    static BigDecimal apDungChietKhau(BigDecimal tong, String loaiKhach) {
+        if (loaiKhach.equals("vang")) {
+            return tong.multiply(new BigDecimal("0.95"));
+        } else if (loaiKhach.equals("bach kim")) {
+            return tong.multiply(new BigDecimal("0.90"));
+        } else if (loaiKhach.equals("thuong")) {
+            return tong;
+        } else {
+            throw new IllegalArgumentException("Loai khach la: " + loaiKhach);
+        }
+    }
+
+    public static void main() {
+        IO.println(apDungChietKhau(new BigDecimal("100000"), "vang"));  // 95000.00
+    }
+}</code></pre>
+    </div>
+
+    <p>Cách viết "đóng với sửa đổi": biến mỗi quy tắc thành dữ liệu — một entry trong <code class="inline">Map</code>, value là hàm nhận tổng tiền và trả về tiền sau chiết khấu:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.util.Map;
+import java.util.function.UnaryOperator;
+
+public class Order {
+    static final Map&lt;String, UnaryOperator&lt;BigDecimal&gt;&gt; CHIET_KHAU = Map.of(
+            "thuong", tong -&gt; tong,
+            "vang", tong -&gt; tong.multiply(new BigDecimal("0.95")),
+            "bach kim", tong -&gt; tong.multiply(new BigDecimal("0.90")));
+
+    static BigDecimal apDungChietKhau(BigDecimal tong, String loaiKhach) {
+        UnaryOperator&lt;BigDecimal&gt; quyTac = CHIET_KHAU.get(loaiKhach);
+        if (quyTac == null) {
+            throw new IllegalArgumentException("Loai khach la: " + loaiKhach);
+        }
+        return quyTac.apply(tong);
+    }
+
+    public static void main() {
+        IO.println(apDungChietKhau(new BigDecimal("100000"), "vang"));      // 95000.00
+        IO.println(apDungChietKhau(new BigDecimal("100000"), "bach kim"));  // 90000.00
+    }
+}</code></pre>
+    </div>
+
+    <p>Thêm loại khách mới giờ chỉ là thêm một dòng vào map — không đụng vào logic đang chạy. Nhánh <code class="inline">equals</code> đã biến mất, cũng không còn rủi ro quên <code class="inline">else</code>.</p>
+
+    <p>Cách cổ điển của OCP là <strong>interface + đa hình</strong>: định nghĩa một interface, mỗi quy tắc là một implementation, thêm quy tắc mới là thêm class mới. Đó chính là pattern Strategy ở mục <a href="#strategy-observer">10</a>. Map-of-lambda ở trên chỉ là bản gọn của cùng ý tưởng khi mỗi quy tắc chỉ có một biểu thức. Xem thêm <a href="polymorphism.html">2.4 Polymorphism</a>.</p>
+
+    <div class="note warn">OCP <strong>không</strong> cấm sửa code. Sửa bug, đổi hành vi sai vẫn phải sửa bình thường. Điều cần hạn chế là: mỗi lần thêm tính năng phải mở file cũ ra sửa và test lại toàn bộ. Nếu dữ liệu chỉ có đúng 2-3 nhánh cố định, một <code class="inline">switch</code> rõ ràng còn dễ đọc hơn cả map lẫn interface.</div>
+
+    <h2 id="lsp">4. L — Liskov Substitution <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Phát biểu (Barbara Liskov, 1987):</strong> nếu <code class="inline">S</code> là subtype của <code class="inline">T</code>, thì object kiểu <code class="inline">S</code> phải thay thế được object kiểu <code class="inline">T</code> mà <strong>không làm hỏng tính đúng đắn của chương trình</strong>. Nói đơn giản: code đang dùng cha thì khi truyền con vào phải chạy đúng y như trước, không bất ngờ.</p>
+
+    <p>Ví dụ kinh điển: <code class="inline">Bird</code> có <code class="inline">fly()</code>, nhưng <code class="inline">Penguin</code> kế thừa lại không bay được. Cách "sửa" tệ nhất là override để ném lỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Bird {
+    void fly() {
+        IO.println("Bay tren troi");
+    }
+}
+
+class Penguin extends Bird {
+    @Override
+    void fly() {
+        throw new UnsupportedOperationException("Canh cut khong bay duoc");
+    }
+}
+
+void main() {
+    Bird chim = new Penguin();
+    try {
+        chim.fly();
+    } catch (UnsupportedOperationException e) {
+        IO.println("Vi pham LSP: " + e.getMessage());  // Vi pham LSP: Canh cut khong bay duoc
+    }
+}</code></pre>
+    </div>
+
+    <p>Code viết theo kiểu "chim nào cũng bay" sẽ vỡ khi nhận <code class="inline">Penguin</code>. Dấu hiệu vi phạm LSP rất dễ nhận ra: <strong>override rồi ném <code class="inline">UnsupportedOperationException</code></strong>, hoặc trong thân method phải <code class="inline">instanceof</code> để xử lý riêng từng subtype. Cách sửa: đừng cho <code class="inline">Penguin</code> kế thừa <code class="inline">Bird</code>; tách interface <code class="inline">FlyingBird</code> chỉ dành cho loài bay được, hoặc mô hình hóa hành vi bay thành một khả năng riêng (composition).</p>
+
+    <p>Ví dụ thứ hai hay gặp trong phỏng vấn: <code class="inline">Square</code> kế thừa <code class="inline">Rectangle</code> — nghe rất "hình học", nhưng sai về hợp đồng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Rectangle {
+    protected int width;
+    protected int height;
+
+    void setWidth(int width) {
+        this.width = width;
+    }
+
+    void setHeight(int height) {
+        this.height = height;
+    }
+
+    int area() {
+        return width * height;
+    }
+}
+
+class Square extends Rectangle {
+    @Override
+    void setWidth(int width) {
+        this.width = width;
+        this.height = width;
+    }
+
+    @Override
+    void setHeight(int height) {
+        this.width = height;
+        this.height = height;
+    }
+}
+
+void main() {
+    Rectangle r = new Square();
+    r.setWidth(5);
+    r.setHeight(4);
+    IO.println("Dien tich mong doi 20, thuc te " + r.area());  // Dien tich mong doi 20, thuc te 16
+}</code></pre>
+    </div>
+
+    <p><strong>Vì sao vi phạm?</strong> Hợp đồng ngầm của <code class="inline">Rectangle</code> là: <code class="inline">setWidth</code> và <code class="inline">setHeight</code> <strong>độc lập</strong> với nhau — gọi cái này không được đổi cái kia. <code class="inline">Square</code> buộc hai cạnh bằng nhau nên đã phá hợp đồng đó. Code viết trên <code class="inline">Rectangle</code> (tính diện tích sau khi set hai cạnh) không thể biết mình đang nhận <code class="inline">Square</code>, nên kết quả sai âm thầm: mong đợi 20, nhận 16. Đây là lý do LSP nói về <em>hợp đồng hành vi</em>, không phải quan hệ "is-a" ngoài đời. Cách sửa: <code class="inline">Square</code> và <code class="inline">Rectangle</code> cùng implement interface <code class="inline">Shape</code> bất biến (mỗi shape tự tính diện tích), hoặc tạo <code class="inline">Square</code> từ đầu chứ không kế thừa.</p>
+
+    <p>Tóm tắt luật chơi khi override (xem thêm <a href="inheritance.html">2.3 Inheritance</a>): không được siết chặt hơn điều kiện đầu vào (precondition), không được nới lỏng hơn điều kiện đầu ra (postcondition), không được phá invariant của cha, và không được ném checked exception mới ngoài danh sách cha cho phép.</p>
+
+    <h2 id="isp">5. I — Interface Segregation <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Phát biểu:</strong> client không nên bị ép phụ thuộc vào những method mà nó không dùng. Thay vì một interface "ôm đồm", hãy chia thành nhiều interface nhỏ theo nhu cầu của từng nhóm client.</p>
+
+    <p>Ví dụ: interface máy văn phòng gộp cả in, scan, fax. Một máy in giá rẻ buộc phải implement cả ba, và phải "giả vờ" với hai method không có:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Machine {
+    void print(String document);
+    void scan(String document);
+    void fax(String document);
+}
+
+void main() {
+    Machine mayIn = new Machine() {
+        public void print(String document) {
+            IO.println("In: " + document);  // In: hoa don
+        }
+
+        public void scan(String document) {
+            throw new UnsupportedOperationException("May in don gian khong scan duoc");
+        }
+
+        public void fax(String document) {
+            throw new UnsupportedOperationException("May in don gian khong fax duoc");
+        }
+    };
+
+    mayIn.print("hoa don");
+    try {
+        mayIn.scan("hop dong");
+    } catch (UnsupportedOperationException e) {
+        IO.println("Loi: " + e.getMessage());  // Loi: May in don gian khong scan duoc
+    }
+}</code></pre>
+    </div>
+
+    <p>Tách interface theo nhu cầu — ai cần gì dùng nấy. Class in đơn giản chỉ cần một method, thậm chí dùng luôn lambda vì interface chỉ có một method:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Printer {
+    void print(String document);
+}
+
+void main() {
+    Printer mayIn = document -&gt; IO.println("In: " + document);
+    mayIn.print("hoa don");  // In: hoa don
+}</code></pre>
+    </div>
+
+    <p>Lợi ích thực tế: code phụ thuộc ít method hơn thì dễ mock khi test, ít phải implement "method giả", và không có nguy cơ gọi nhầm method mà implementation không hỗ trợ. JDK cũng theo nguyên tắc này: <code class="inline">DataInput</code> và <code class="inline">DataOutput</code> tách riêng đọc/ghi; các functional interface như <code class="inline">Consumer</code>, <code class="inline">Supplier</code>, <code class="inline">Predicate</code> mỗi cái chỉ một method thay vì một interface "làm mọi thứ".</p>
+
+    <div class="note warn">Đừng tách interface chỉ vì muốn mỗi interface một method. ISP nói về <strong>client</strong>: nếu mọi client đều dùng đủ cả 5 method của interface, giữ nguyên một interface là hợp lý. Interface thuộc về người gọi, không thuộc về người viết. Xem thêm <a href="abstract-interface.html">2.5 Abstract class vs Interface</a>.</div>
+
+    <h2 id="dip">6. D — Dependency Inversion <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Phát biểu:</strong> (1) module cấp cao không nên phụ thuộc module cấp thấp — cả hai nên phụ thuộc abstraction; (2) abstraction không nên phụ thuộc chi tiết — chi tiết phụ thuộc abstraction.</p>
+
+    <p>Ví dụ kinh điển: <code class="inline">OrderService</code> xử lý nghiệp vụ (cấp cao) không nên biết database cụ thể (cấp thấp). Nó chỉ cần biết interface <code class="inline">OrderRepository</code>; còn implementation là MySQL, memory hay mock test đều được:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+interface OrderRepository {
+    Optional&lt;Order&gt; findById(long id);
+}
+
+record Order(long id, String customer) {
+    static final OrderRepository IN_MEMORY = id -&gt; id == 42
+            ? Optional.of(new Order(42, "Nguyen Van An"))
+            : Optional.empty();
+}
+
+class OrderService {
+    private final OrderRepository repository;
+
+    OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+
+    String tenKhach(long id) {
+        return repository.findById(id)
+                .map(Order::customer)
+                .orElse("khong tim thay");
+    }
+}
+
+void main() {
+    OrderService service = new OrderService(Order.IN_MEMORY);
+    IO.println(service.tenKhach(42));  // Nguyen Van An
+    IO.println(service.tenKhach(99));  // khong tim thay
+}</code></pre>
+    </div>
+
+    <p>Chiều phụ thuộc đã bị đảo: trước đây <code class="inline">OrderService</code> biết <code class="inline">MySQLOrderRepository</code>, giờ cả hai cùng biết <code class="inline">OrderRepository</code>. Khi test, bạn truyền repository giả trong bộ nhớ — không cần database, không cần Spring context. Đây là lý do số một khiến DIP là nguyên tắc được đánh giá cao trong phỏng vấn.</p>
+
+    <h3>DI khác DIP thế nào?</h3>
+
+    <ul>
+      <li><strong>DIP</strong> là <em>nguyên tắc thiết kế</em>: phụ thuộc vào abstraction. Nó nói về hướng mũi tên phụ thuộc trong code.</li>
+      <li><strong>DI (Dependency Injection)</strong> là <em>kỹ thuật hiện thực</em>: dependency được truyền từ bên ngoài vào thay vì tự tạo bên trong. Có 3 kiểu: constructor injection, setter injection, field injection.</li>
+      <li>DI giúp thực thi DIP, nhưng <strong>inject một class cụ thể vẫn vi phạm DIP</strong>. Ví dụ constructor nhận <code class="inline">MySQLOrderRepository</code> (concrete) thì có DI nhưng không có DIP.</li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Constructor injection</th><th>Setter / field injection</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dependency bắt buộc</td><td>Có — không tạo được object nếu thiếu</td><td>Không — dễ quên, object ở trạng thái nửa vời</td></tr>
+        <tr><td>Field</td><td><code class="inline">private final</code>, bất biến</td><td>Không <code class="inline">final</code> được</td></tr>
+        <tr><td>Test</td><td>Chỉ cần gọi constructor</td><td>Phải reflection/container của framework</td></tr>
+        <tr><td>Spring</td><td>Khuyến nghị; Spring tự inject, không cần <code class="inline">@Autowired</code> nếu chỉ một constructor</td><td>Hợp lệ cho dependency tùy chọn</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Nhớ một câu: <strong>"new là từ khoá đắt nhất trong code nghiệp vụ"</strong>. Chỗ nào cần thay thế/mock mà bạn phải <code class="inline">new</code> cứng implementation, chỗ đó đang vi phạm DIP.</div>
+
+    <h2 id="singleton">7. Singleton — một instance duy nhất <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Mục đích:</strong> đảm bảo một class chỉ có đúng <strong>một instance</strong> trong toàn chương trình và cung cấp điểm truy cập toàn cục cho instance đó. Hay dùng cho: cấu hình, connection pool, cache, logger. Đây là pattern <em>dễ cài sai nhất</em> trong đa luồng nên phỏng vấn rất thích hỏi.</p>
+
+    <div class="signature">
+      <span class="sig-muted">public final class</span> <span class="tok-typ">AppConfig</span> <span class="sig-muted">{</span> <span class="sig-muted">private</span> <span class="tok-typ">AppConfig</span><span class="sig-muted">() { }</span> <span class="sig-muted">static</span> <span class="tok-typ">AppConfig</span> <span class="sig-var">getInstance</span><span class="sig-muted">() { ... } }</span>
+    </div>
+
+    <h3>Cách 1 — eager (tạo sẵn)</h3>
+
+    <p>Instance được tạo ngay khi class được nạp. JVM đảm bảo class chỉ khởi tạo một lần nên thread-safe sẵn, nhưng instance tồn tại kể cả khi chưa ai dùng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class AppConfig {
+    static final AppConfig INSTANCE = new AppConfig();
+
+    private AppConfig() {
+    }
+
+    String get(String key) {
+        return "gia tri cua " + key;
+    }
+
+    public static void main() {
+        AppConfig cauHinh = AppConfig.INSTANCE;
+        IO.println(cauHinh.get("db.url"));              // gia tri cua db.url
+        IO.println("Chi mot object? " + (AppConfig.INSTANCE == cauHinh));  // Chi mot object? true
+    }
+}</code></pre>
+    </div>
+
+    <p>Constructor <code class="inline">private</code> chặn mọi nơi khác tạo instance — thử <code class="inline">new</code> sẽ bị compiler chặn ngay:</p>
+
+    <div class="errblock">
+      <pre>AppConfigDemo.java:7: error: AppConfig() has private access in AppConfig
+        new AppConfig();
+        ^
+1 error</pre>
+    </div>
+
+    <h3>Cách 2 — lazy holder (khuyến nghị cho class thường)</h3>
+
+    <p>Muốn vừa lazy (khi nào gọi lần đầu mới tạo) vừa thread-safe mà không cần <code class="inline">synchronized</code>? Dựa vào luật khởi tạo class của JVM: class chỉ được khởi tạo khi có ai đó truy cập lần đầu, và việc khởi tạo class đã được JVM đồng bộ hoá:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class AppConfig {
+    private AppConfig() {
+    }
+
+    private static class Holder {
+        static final AppConfig INSTANCE = new AppConfig();
+    }
+
+    static AppConfig getInstance() {
+        return Holder.INSTANCE;
+    }
+
+    public static void main() {
+        IO.println("Cung mot object? " + (AppConfig.getInstance() == AppConfig.getInstance()));
+        // Cung mot object? true
+    }
+}</code></pre>
+    </div>
+
+    <h3>Cách 3 — double-checked locking với volatile</h3>
+
+    <p>Cách này từng sai trong lịch sử Java: thiếu <code class="inline">volatile</code>, một thread có thể thấy <code class="inline">instance != null</code> nhưng object <em>chưa được khởi tạo xong</em> (do CPU/JIT tái sắp xếp thao tác ghi). Từ Java 5, thêm <code class="inline">volatile</code> là đúng — nhưng nếu không hiểu rõ JMM, hãy dùng holder hoặc enum:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class AppConfig {
+    private static volatile AppConfig instance;
+
+    private AppConfig() {
+    }
+
+    static AppConfig getInstance() {
+        if (instance == null) {                  // kiem tra lan 1: nhanh, khong khoa
+            synchronized (AppConfig.class) {
+                if (instance == null) {          // kiem tra lan 2: bat buoc
+                    instance = new AppConfig();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public static void main() {
+        IO.println("Cung mot object? " + (AppConfig.getInstance() == AppConfig.getInstance()));
+        // Cung mot object? true
+    }
+}</code></pre>
+    </div>
+
+    <h3>Cách 4 — enum (ngắn và an toàn nhất)</h3>
+
+    <p>JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần, thread-safe; enum còn chống được cả reflection lẫn serialization phá vỡ singleton. Đây là cách được Effective Java khuyến nghị:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public enum AppConfig {
+    INSTANCE;
+
+    private int soLanDoc = 0;
+
+    String get(String key) {
+        soLanDoc++;
+        return key + " = gia tri (lan doc " + soLanDoc + ")";
+    }
+
+    public static void main() {
+        IO.println(AppConfig.INSTANCE.get("db.url"));   // db.url = gia tri (lan doc 1)
+        IO.println(AppConfig.INSTANCE.get("db.user"));  // db.user = gia tri (lan doc 2)
+    }
+}</code></pre>
+    </div>
+
+    <p>Hai dòng output cho thấy state dùng chung: lần gọi thứ hai thấy <code class="inline">soLanDoc</code> đã tăng — đúng như một singleton.</p>
+
+    <table>
+      <thead>
+        <tr><th>Cách</th><th>Lazy?</th><th>Thread-safe?</th><th>Nhận xét</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Eager <code class="inline">static final INSTANCE</code></td><td>Không</td><td>Có (JVM class init)</td><td>Đơn giản; tạo sớm kể cả không dùng</td></tr>
+        <tr><td>Lazy + <code class="inline">synchronized</code> method</td><td>Có</td><td>Có</td><td>Mọi lần gọi đều phải khoá — chậm</td></tr>
+        <tr><td>Lazy holder</td><td>Có</td><td>Có</td><td>Gọn, không cần khoá; khuyến nghị cho class thường</td></tr>
+        <tr><td>Double-checked locking + <code class="inline">volatile</code></td><td>Có</td><td>Có</td><td>Nhanh sau lần đầu; dễ viết sai nếu thiếu <code class="inline">volatile</code></td></tr>
+        <tr><td>Enum <code class="inline">INSTANCE</code></td><td>Gần như không (theo JVM)</td><td>Có</td><td>Ngắn nhất; chống reflection + serialization; khuyến nghị chung</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Vì sao singleton bị coi là anti-pattern?</h3>
+
+    <ul>
+      <li><strong>Global state</strong> — bất kỳ code nào cũng sửa được state dùng chung; bug ở xa rất khó lần ra.</li>
+      <li><strong>Khó test</strong> — không thể thay instance thật bằng fake, test phụ thuộc thứ tự chạy, singleton giữ state giữa các test.</li>
+      <li><strong>Che giấu dependency</strong> — đọc constructor không biết class cần gì; dependency nằm sâu trong thân method.</li>
+      <li><strong>Race condition</strong> — nếu singleton có state mutable mà không đồng bộ, đây là bãi mìn trong đa luồng.</li>
+    </ul>
+
+    <div class="note"><strong>Spring singleton bean khác gì?</strong> Spring mặc định mỗi bean là một instance trong application context, nhưng: (1) container quản lý vòng đời, không cần private constructor/static <code class="inline">INSTANCE</code>; (2) có thể đổi scope thành <code class="inline">prototype</code>, <code class="inline">request</code>, <code class="inline">session</code>; (3) test dễ vì có thể inject bean giả. Vì vậy câu "đừng dùng singleton" nên hiểu là "đừng tự viết singleton + global state; hãy để DI container quản lý".</div>
+
+    <h2 id="factory">8. Factory — tạo object theo nhu cầu <span class="badge b-junior">Junior+</span></h2>
+
+    <p><strong>Vấn đề:</strong> khi chỗ sử dụng phải quyết định tạo implementation nào (theo config, theo input, theo môi trường), code sẽ rải rác các chuỗi <code class="inline">new EmailNotifier()</code>/<code class="inline">new SmsNotifier()</code> kèm <code class="inline">if/else</code>/<code class="inline">switch</code> lặp lại. Thêm kênh mới phải sửa nhiều nơi.</p>
+
+    <p><strong>Simple factory</strong> gom việc chọn implementation vào một chỗ. Ở đây sản phẩm là <code class="inline">Consumer&lt;String&gt;</code> — interface sẵn có của JDK, chỉ một method, nên dùng lambda thay cho class:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.Consumer;
+
+public class NotificationFactory {
+    static Consumer&lt;String&gt; create(String channel) {
+        return switch (channel) {
+            case "email" -&gt; message -&gt; IO.println("[EMAIL] " + message);
+            case "sms" -&gt; message -&gt; IO.println("[SMS] " + message);
+            default -&gt; throw new IllegalArgumentException("Kenh khong ho tro: " + channel);
+        };
+    }
+
+    public static void main() {
+        Consumer&lt;String&gt; thongBao = NotificationFactory.create("email");
+        thongBao.accept("Don hang DH-42 da duoc xu ly");  // [EMAIL] Don hang DH-42 da duoc xu ly
+
+        NotificationFactory.create("sms").accept("OTP cua ban la 123456");  // [SMS] OTP cua ban la 123456
+
+        try {
+            NotificationFactory.create("zalo");
+        } catch (IllegalArgumentException e) {
+            IO.println("Loi: " + e.getMessage());  // Loi: Kenh khong ho tro: zalo
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Bản cổ điển của ví dụ này sẽ có interface <code class="inline">Notifier</code> và hai class <code class="inline">EmailNotifier</code>, <code class="inline">SmsNotifier</code>. Vì mỗi sản phẩm chỉ hành xử như một hàm một tham số, dùng <code class="inline">Consumer&lt;String&gt;</code> + lambda giúp bỏ hẳn hai file class mà vẫn giữ đúng tinh thần factory. Nếu sản phẩm có state hoặc nhiều method, tạo interface riêng và class thật như bình thường.</p>
+
+    <p>Phân biệt ba mức độ:</p>
+    <ul>
+      <li><strong>Simple factory</strong> (ví dụ trên) — một method tĩnh trả về sản phẩm theo tham số. Không phải pattern GoF chính thức nhưng dùng nhiều nhất trong thực tế.</li>
+      <li><strong>Factory method</strong> — creator khai báo method trừu tượng <code class="inline">create()</code>, các subclass quyết định sản phẩm cụ thể. JDK: <code class="inline">Collection.iterator()</code>, <code class="inline">NumberFormat.getInstance()</code>, <code class="inline">Executors.newFixedThreadPool()</code>.</li>
+      <li><strong>Abstract factory</strong> — "nhà máy của các nhà máy", tạo cả một họ sản phẩm liên quan (ví dụ UI theme sáng/tối tạo Button + Checkbox đồng bộ). Chỉ cần nhận biết tên; code Java thường ít tự viết.</li>
+    </ul>
+
+    <div class="note warn"><strong>Đừng để factory trả <code class="inline">null</code>.</strong> Ví dụ trên ném <code class="inline">IllegalArgumentException</code> với message rõ ràng — caller biết ngay mình truyền sai. Nếu factory trả <code class="inline">null</code>, lỗi sẽ nổ ở tận nơi khác với stack trace khó hiểu. Trường hợp "có thể không có" thì trả <code class="inline">Optional</code> (học ở <a href="roadmap.html#phase-3">3.7 Optional</a>).</div>
+
+    <h2 id="builder">9. Builder — constructor quá dài <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Vấn đề:</strong> constructor nhiều tham số, phần lớn là tùy chọn, lại có các tham số cùng kiểu nằm cạnh nhau — gọi hàm kiểu gì cũng khó đọc và dễ truyền nhầm:</p>
+
+    <div class="codeblock">
+      <pre><code>// Khong dung builder: doc khong biet tham so nao la gi, de truyen nham
+new Order("Nguyen Van An", "123 Le Loi, Q1", "COD", true, null, 2, "giao gap");</code></pre>
+    </div>
+
+    <p>Builder thay thế bằng chuỗi method có tên, mỗi method trả về chính builder để gọi tiếp, cuối cùng <code class="inline">build()</code> tạo ra sản phẩm bất biến (<code class="inline">record</code>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+record Order(String customer, List&lt;String&gt; items, String coupon, boolean express) {
+}
+
+class OrderBuilder {
+    private String customer = "khach le";
+    private final List&lt;String&gt; items = new ArrayList&lt;&gt;();
+    private String coupon;
+    private boolean express;
+
+    OrderBuilder customer(String customer) {
+        this.customer = customer;
+        return this;
+    }
+
+    OrderBuilder addItem(String item) {
+        items.add(item);
+        return this;
+    }
+
+    OrderBuilder coupon(String coupon) {
+        this.coupon = coupon;
+        return this;
+    }
+
+    OrderBuilder express() {
+        this.express = true;
+        return this;
+    }
+
+    Order build() {
+        return new Order(customer, List.copyOf(items), coupon, express);
+    }
+}
+
+void main() {
+    Order don = new OrderBuilder()
+            .customer("Nguyen Van An")
+            .addItem("Ao thun")
+            .addItem("Quan jean")
+            .express()
+            .build();
+    IO.println(don);
+    // Order[customer=Nguyen Van An, items=[Ao thun, Quan jean], coupon=null, express=true]
+
+    IO.println(new OrderBuilder().build());
+    // Order[customer=khach le, items=[], coupon=null, express=false]
+}</code></pre>
+    </div>
+
+    <p>Builder giải quyết 4 việc cùng lúc: thay "named arguments" mà Java không có, cho giá trị mặc định, validate tập trung trong <code class="inline">build()</code> (ví dụ chặn đơn rỗng), và giữ sản phẩm <code class="inline">Order</code> bất biến — ai đó cầm <code class="inline">Order</code> không thể sửa nữa.</p>
+
+    <p>Điểm cần chú ý: <code class="inline">List.copyOf(items)</code> tạo bản sao bất biến, nên builder sửa tiếp cũng không ảnh hưởng object đã build. Đây là chi tiết nhiều người quên khiến đơn hàng "tự nhiên" thay đổi sau khi build.</p>
+
+    <p>JDK cũng đầy builder: <code class="inline">StringBuilder</code>, <code class="inline">Stream.builder()</code>, <code class="inline">HttpRequest.newBuilder()</code>, <code class="inline">LocalDate</code> thì không cần vì bất biến với method tên rõ nghĩa. Lombok <code class="inline">@Builder</code> sinh ra code tương tự thế này — chỉ cần biết tên, không cần viết tay.</p>
+
+    <div class="note warn"><strong>Đừng dùng builder cho mọi thứ.</strong> Hai tham số thì <code class="inline">new Order(donGia, soLuong)</code> gọn hơn hẳn builder 30 dòng. Chỉ chuyển sang builder khi có khoảng 4+ tham số, phần lớn tùy chọn, hoặc khi cần validate trước khi tạo object.</div>
+
+    <h2 id="strategy-observer">10. Strategy &amp; Observer <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Strategy</strong> (chiến lược): đóng gói một họ thuật toán có thể thay thế cho nhau lúc chạy. Code gọi chỉ làm việc với interface, không cần biết thuật toán cụ thể.</p>
+
+    <p>Cách tồi là <code class="inline">if/else</code> theo phương thức thanh toán ngay trong <code class="inline">checkout</code>: thêm ví điện tử mới phải sửa method đã chạy ổn. Cách Strategy: <code class="inline">Order</code> giữ một <code class="inline">PaymentStrategy</code> và đổi được bất cứ lúc nào:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+interface PaymentStrategy {
+    void pay(BigDecimal amount);
+}
+
+class Order {
+    private PaymentStrategy payment;
+
+    void doiCachThanhToan(PaymentStrategy payment) {
+        this.payment = payment;
+    }
+
+    void checkout(BigDecimal amount) {
+        if (payment == null) {
+            throw new IllegalStateException("Chua chon cach thanh toan");
+        }
+        payment.pay(amount);
+    }
+}
+
+void main() {
+    Order don = new Order();
+
+    // Java 8 truoc lambda: anonymous class - van la mot implementation cua interface
+    don.doiCachThanhToan(new PaymentStrategy() {
+        public void pay(BigDecimal amount) {
+            IO.println("VNPay: -" + amount + " VND");
+        }
+    });
+    don.checkout(new BigDecimal("250000"));  // VNPay: -250000 VND
+
+    // Tu Java 8: lambda thay ca class implementation khi interface chi co 1 method
+    don.doiCachThanhToan(amount -&gt; IO.println("Momo: -" + amount + " VND"));
+    don.checkout(new BigDecimal("120000"));  // Momo: -120000 VND
+
+    don.doiCachThanhToan(amount -&gt; IO.println("Tien mat: -" + amount + " VND"));
+    don.checkout(new BigDecimal("50000"));   // Tien mat: -50000 VND
+}</code></pre>
+    </div>
+
+    <p>Vì <code class="inline">PaymentStrategy</code> chỉ có một method (functional interface), mỗi lambda chính là một implementation — không cần tạo hàng loạt class nhỏ. Nếu thuật toán có state hoặc nhiều method, hãy tạo class thật <code class="inline">implements PaymentStrategy</code>. Strategy chính là DIP áp cho tầng thuật toán: code cấp cao (<code class="inline">Order</code>) chỉ biết abstraction. Lambda sẽ học kỹ ở <a href="roadmap.html#phase-3">3.6 Lambda &amp; Functional interfaces</a>.</p>
+
+    <p><strong>Observer</strong> (quan sát): subject giữ danh sách observer, khi state đổi thì thông báo cho tất cả. Đây là nền tảng của event listener, pub/sub, và Spring <code class="inline">ApplicationEvent</code>. Ví dụ: <code class="inline">Order</code> cho đăng ký <code class="inline">PriceObserver</code> để nhận thông báo mỗi khi tổng tiền thay đổi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+interface PriceObserver {
+    void onPriceChanged(BigDecimal oldValue, BigDecimal newValue);
+}
+
+class Order {
+    private BigDecimal tongTien;
+    private final List&lt;PriceObserver&gt; observers = new ArrayList&lt;&gt;();
+
+    Order(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
+
+    void addObserver(PriceObserver observer) {
+        observers.add(observer);
+    }
+
+    void capNhatTong(BigDecimal moi) {
+        BigDecimal cu = tongTien;
+        tongTien = moi;
+        for (PriceObserver observer : observers) {
+            observer.onPriceChanged(cu, moi);
+        }
+    }
+}
+
+void main() {
+    Order don = new Order(new BigDecimal("250000"));
+    don.addObserver((cu, moi) -&gt; IO.println("Email: tong tien doi tu " + cu + " thanh " + moi));
+    don.addObserver((cu, moi) -&gt; IO.println("LOG: " + cu + " -&gt; " + moi));
+
+    don.capNhatTong(new BigDecimal("270000"));
+    // Email: tong tien doi tu 250000 thanh 270000
+    // LOG: 250000 -&gt; 270000
+}</code></pre>
+    </div>
+
+    <p>Khi nào dùng hai pattern này?</p>
+    <table>
+      <thead>
+        <tr><th></th><th>Strategy</th><th>Observer</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mục đích</td><td>Chọn một thuật toán trong nhiều thuật toán</td><td>Một sự kiện, nhiều nơi cùng biết</td></tr>
+        <tr><td>Quan hệ</td><td>1-1: context giữ một strategy</td><td>1-n: subject giữ nhiều observer</td></tr>
+        <tr><td>Dấu hiệu cần dùng</td><td><code class="inline">if/else</code> dài theo loại xử lý, muốn đổi lúc chạy</td><td>Cần "khi X xảy ra thì làm A, B, C" mà không muốn subject biết A, B, C</td></tr>
+        <tr><td>Ví dụ JDK</td><td><code class="inline">Comparator</code> truyền vào <code class="inline">sort</code></td><td><code class="inline">addEventListener</code>, Spring <code class="inline">@EventListener</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn">Observer dễ gây <strong>memory leak</strong> nếu đăng ký mà không bao giờ remove (subject giữ reference tới observer mãi mãi), và một observer ném exception có thể chặn các observer còn lại nếu vòng lặp không bọc <code class="inline">try/catch</code>. Trong production, luôn có cơ chế hủy đăng ký hoặc dùng listener lifecycle của framework.</div>
+
+    <h2 id="spring">11. Nhận diện pattern trong Spring/framework <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Bạn sẽ gặp lại toàn bộ pattern vừa học khi đọc source Spring. Nhớ bảng ánh xạ này là đủ để "đọc vị" framework:</p>
+
+    <table>
+      <thead>
+        <tr><th>Pattern / nguyên tắc</th><th>Biểu hiện trong Spring / JDK</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>DIP + DI</td><td>Constructor injection, interface <code class="inline">@Repository</code>/<code class="inline">@Service</code>, <code class="inline">@Autowired</code></td><td>Spring tạo và tiêm dependency; class nghiệp vụ chỉ biết interface</td></tr>
+        <tr><td>Factory</td><td><code class="inline">@Bean</code> trong <code class="inline">@Configuration</code>, <code class="inline">BeanFactory</code>, <code class="inline">ApplicationContext</code></td><td>Method <code class="inline">@Bean</code> chính là simple factory do container gọi</td></tr>
+        <tr><td>Singleton</td><td>Bean scope mặc định là <code class="inline">singleton</code></td><td>Một instance mỗi application context — khác GoF singleton ở mục 7</td></tr>
+        <tr><td>Builder</td><td><code class="inline">RestClient.builder()</code>, <code class="inline">WebClient.builder()</code>, <code class="inline">UriComponentsBuilder</code></td><td>Fluent API cho object nhiều tham số</td></tr>
+        <tr><td>Proxy / Decorator</td><td>AOP: <code class="inline">@Transactional</code>, <code class="inline">@Async</code>, <code class="inline">@Cacheable</code></td><td>Spring bọc bean bằng proxy thêm hành vi mà không sửa code gốc</td></tr>
+        <tr><td>Template Method</td><td><code class="inline">JdbcTemplate</code>, <code class="inline">RestTemplate</code>, <code class="inline">TransactionTemplate</code></td><td>Khung thuật toán cố định, chỗ khác nhau là callback của bạn</td></tr>
+        <tr><td>Observer</td><td><code class="inline">ApplicationEventPublisher</code>, <code class="inline">@EventListener</code></td><td>Publisher phát event, nhiều listener nhận — decouple các module</td></tr>
+        <tr><td>Strategy</td><td><code class="inline">Comparator</code>, <code class="inline">PasswordEncoder</code>, nhiều implementation cùng interface để Spring chọn</td><td>Inject đúng implementation theo profile/config</td></tr>
+        <tr><td>Chain of Responsibility</td><td>Servlet Filter, <code class="inline">HandlerInterceptor</code>, Spring Security filter chain</td><td>Giống middleware Express ở mục 1</td></tr>
+        <tr><td>Adapter</td><td><code class="inline">HandlerAdapter</code>, <code class="inline">HttpMessageConverter</code></td><td>Chuyển interface này thành interface khác mà hệ thống cần</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Mẹo đọc source framework: khi thấy tên class có <code class="inline">Factory</code>, <code class="inline">Builder</code>, <code class="inline">Adapter</code>, <code class="inline">Proxy</code>, <code class="inline">Template</code>, <code class="inline">Strategy</code>, gần như chắc chắn pattern tương ứng đang được dùng. Tên gọi là một phần của pattern — giúp người đọc code hiểu nhanh ý đồ thiết kế.</div>
+
+    <h2 id="pitfalls">12. Pitfalls thường gặp <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Pitfall</th><th>Dấu hiệu</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dùng pattern khi không cần</td><td>Interface chỉ có một implementation duy nhất; factory cho một constructor; abstract class cho code chưa có biến thể</td><td>YAGNI + rule of three: đợi đến lần thay đổi thứ ba mới trừu tượng hoá</td></tr>
+        <tr><td>Lạm dụng singleton</td><td>Global state mutable; test phải chạy theo thứ tự; class nào cũng gọi <code class="inline">getInstance()</code></td><td>Truyền dependency qua constructor; để DI container quản lý; singleton chỉ cho hạ tầng stateless</td></tr>
+        <tr><td>Factory trả <code class="inline">null</code></td><td>Caller NPE ở tận đâu đó, stack trace không trỏ về nguồn</td><td>Ném exception có message hoặc trả <code class="inline">Optional</code>; không bao giờ trả <code class="inline">null</code></td></tr>
+        <tr><td>Strategy class explosion</td><td>Hàng chục class nhỏ, mỗi class chỉ một dòng logic</td><td>Nếu interface một method, dùng lambda/method reference; chỉ tạo class khi có state hoặc logic phức tạp</td></tr>
+        <tr><td>Builder dài dòng vô ích</td><td>Class 2-3 tham số vẫn có builder 30 dòng</td><td>Constructor/record cho ít tham số; builder khi nhiều tham số tùy chọn hoặc cần validate</td></tr>
+        <tr><td>Copy pattern không hiểu</td><td>Abstract factory cho CRUD đơn giản; comment ghi tên pattern nhưng code chẳng giải quyết vấn đề gì</td><td>Hiểu vấn đề trước, chọn pattern sau; đọc lại code sau 1 tuần xem còn dễ hiểu không</td></tr>
+        <tr><td>Abstract hoá mọi thứ</td><td>Interface cho từng class "để sau này thay thế", nhưng "sau này" không bao giờ tới</td><td>Interface thuộc về client; chỉ tạo khi có nhu cầu thay thế/mock thật sự</td></tr>
+        <tr><td>Vi phạm LSP kiểu ném <code class="inline">UnsupportedOperationException</code></td><td>Override để vô hiệu method của cha</td><td>Tách interface (ISP) hoặc composition; không ép subtype làm điều nó không làm được</td></tr>
+        <tr><td>Observer leak / nuốt lỗi</td><td>Quên remove listener; một listener ném lỗi làm cả chuỗi dừng</td><td>Quản lý lifecycle listener; bọc <code class="inline">try/catch</code> từng observer nếu cần cô lập lỗi</td></tr>
+        <tr><td>Singleton có state chia sẻ không đồng bộ</td><td>Race condition ngẫu nhiên, bug không tái hiện được</td><td>Ưu tiên immutable; nếu bắt buộc có state, dùng đồng bộ/atomic và ghi rõ lý do</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn">Một câu để nhớ: <strong>pattern không cứu được thiết kế tồi, chỉ làm nó khó sửa hơn.</strong> Trước khi thêm pattern, hãy chắc chắn mình đang giải quyết một vấn đề thật, không phải đang trang trí code.</div>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Design pattern là gì? GoF chia pattern thành mấy nhóm?</summary>
+      <div class="answer">Design pattern là giải pháp điển hình, đã được đặt tên, cho một vấn đề thiết kế lặp lại — nó mô tả quan hệ giữa các class/object, không phải thư viện code dán vào là chạy. GoF chia 23 mẫu thành 3 nhóm: <strong>creational</strong> (khởi tạo object: Singleton, Factory, Builder), <strong>structural</strong> (ghép cấu trúc: Adapter, Decorator, Proxy) và <strong>behavioral</strong> (hành vi: Strategy, Observer, Template Method, Chain of Responsibility).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. SOLID là gì? Kể tên 5 nguyên tắc kèm một câu mô tả.</summary>
+      <div class="answer"><strong>S</strong> — Single Responsibility: một class một lý do để thay đổi. <strong>O</strong> — Open/Closed: mở cho mở rộng, đóng với sửa đổi. <strong>L</strong> — Liskov Substitution: subtype thay thế được cha mà không phá chương trình. <strong>I</strong> — Interface Segregation: interface nhỏ theo nhu cầu client. <strong>D</strong> — Dependency Inversion: phụ thuộc abstraction, không phụ thuộc concrete.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. SRP hiểu đúng thế nào? Có phải "mỗi class một method"?</summary>
+      <div class="answer">Không. SRP là "một lý do để thay đổi" — một class có thể có nhiều method miễn tất cả cùng phục vụ một trục thay đổi/nhóm stakeholder. Tiêu chí thực dụng: mô tả class bằng một câu không có chữ "và". Nếu phải nói "class này tính tiền và gửi email và ghi log" thì nên tách.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. OCP nghĩa là gì? Có phải cấm sửa code?</summary>
+      <div class="answer">OCP nghĩa là thêm tính năng mới nên làm bằng cách thêm code mới (class mới, implementation mới, entry mới) thay vì sửa nhánh if/else cũ đã chạy ổn và đã test. Nó không cấm sửa bug hay sửa hành vi sai. Nếu chỉ có 2-3 nhánh cố định, switch đơn giản còn dễ đọc hơn trừu tượng hoá.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Phát biểu nguyên tắc Liskov (LSP)?</summary>
+      <div class="answer">Nếu S là subtype của T thì object kiểu S phải thay thế được object kiểu T mà không làm hỏng tính đúng đắn của chương trình. Cụ thể khi override: không siết chặt precondition, không nới lỏng postcondition, giữ nguyên invariant, không ném checked exception mới ngoài danh sách cha cho phép.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Vì sao Square kế thừa Rectangle bị coi là vi phạm LSP?</summary>
+      <div class="answer">Vì hợp đồng của Rectangle là <code class="inline">setWidth</code> và <code class="inline">setHeight</code> độc lập với nhau. Square buộc hai cạnh bằng nhau nên phá hợp đồng đó: code viết trên Rectangle gọi <code class="inline">setWidth(5); setHeight(4)</code> mong đợi diện tích 20 nhưng nhận 16. Đây là lỗi âm thầm, không exception. Cách sửa: cho cả hai cùng implement một interface Shape bất biến, hoặc dùng composition thay vì kế thừa.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. ISP là gì? Lợi ích thực tế?</summary>
+      <div class="answer">Client không nên bị ép phụ thuộc method nó không dùng; chia interface lớn thành nhiều interface nhỏ theo nhu cầu client. Lợi ích: không phải implement method "giả" rồi ném UnsupportedOperationException, dễ mock khi test, giảm coupling. Ví dụ JDK: DataInput/DataOutput tách riêng; Consumer/Supplier/Predicate mỗi cái một method.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Nguyên tắc Dependency Inversion nói gì?</summary>
+      <div class="answer">Module cấp cao không phụ thuộc module cấp thấp; cả hai phụ thuộc abstraction. Abstraction không phụ thuộc chi tiết; chi tiết phụ thuộc abstraction. Ví dụ: OrderService (nghiệp vụ) không biết MySQL, chỉ biết interface OrderRepository; ai cài đặt interface đó là chuyện của tầng hạ tầng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. DI và DIP khác nhau thế nào?</summary>
+      <div class="answer">DIP là nguyên tắc thiết kế (phụ thuộc abstraction); DI là kỹ thuật truyền dependency từ ngoài vào (constructor/setter/field). DI giúp thực thi DIP nhưng không đảm bảo DIP: constructor nhận thẳng <code class="inline">MySQLOrderRepository</code> là có DI mà vẫn vi phạm DIP.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao nên ưu tiên constructor injection?</summary>
+      <div class="answer">Dependency là bắt buộc nên object không bao giờ ở trạng thái thiếu; field có thể <code class="inline">final</code> (immutable); tạo object trong test chỉ cần gọi constructor, không cần container/reflection; đọc constructor là biết ngay class phụ thuộc gì. Setter/field injection chỉ hợp lý cho dependency tùy chọn.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Singleton là gì? Kể các cách cài đặt.</summary>
+      <div class="answer">Đảm bảo một class chỉ có một instance và có điểm truy cập toàn cục. Các cách: (1) eager <code class="inline">static final INSTANCE</code>; (2) lazy + <code class="inline">synchronized</code>; (3) lazy holder (static nested class) — lazy + thread-safe không cần khoá; (4) double-checked locking + <code class="inline">volatile</code>; (5) enum <code class="inline">INSTANCE</code> — ngắn và an toàn nhất. Khác static class: singleton là object thật, có thể implements interface, thay thế/mock được, kiểm soát được thời điểm khởi tạo.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Double-checked locking vì sao bắt buộc có <code class="inline">volatile</code>?</summary>
+      <div class="answer">Vì <code class="inline">instance = new AppConfig()</code> không phải một thao tác nguyên tử: cấp phát bộ nhớ, chạy constructor, gán reference. Nếu thiếu <code class="inline">volatile</code>, CPU/JIT có thể tái sắp xếp khiến thread khác thấy reference khác <code class="inline">null</code> trong khi object chưa khởi tạo xong (partially constructed object) rồi dùng luôn — lỗi cực khó tái hiện. <code class="inline">volatile</code> cấm tái sắp xếp và đảm bảo visibility. Nếu không tự tin, dùng holder hoặc enum.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Enum singleton có gì hay?</summary>
+      <div class="answer">JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần nên thread-safe sẵn; enum chống reflection (constructor enum bị chặn) và serialization luôn trả cùng instance — hai lỗ hổng kinh điển của singleton class. Code ngắn nhất, không cần <code class="inline">synchronized</code>. Nhược điểm: không lazy theo nghĩa tuyệt đối (khởi tạo khi class được dùng) và không thể kế thừa class khác.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Khi nào KHÔNG nên dùng singleton?</summary>
+      <div class="answer">Khi đối tượng có state mutable dùng chung (dễ race, bug khó tái hiện); khi cần mock/thay thế trong test; khi singleton chỉ để tiện gọi ở mọi nơi thay vì truyền dependency rõ ràng; khi framework đã có DI container quản lý vòng đời (Spring bean). Quy tắc: dùng DI trước, singleton tự viết là phương án cuối.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Builder giải quyết vấn đề gì? Khi nào không nên dùng?</summary>
+      <div class="answer">Giải quyết telescoping constructor: nhiều tham số, phần lớn tùy chọn, khó đọc và dễ truyền nhầm. Builder cho named arguments, giá trị mặc định, validate trong <code class="inline">build()</code>, và giữ sản phẩm bất biến. Không nên dùng khi chỉ 2-3 tham số — constructor hoặc record gọn hơn nhiều.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Strategy thay thế if/else thế nào? Khi nào vẫn nên giữ if/else?</summary>
+      <div class="answer">Thay vì if/else chọn thuật toán trong method, đưa từng thuật toán vào một implementation của interface chung, context chỉ gọi interface và đổi được lúc chạy. Khi chỉ có 2-3 nhánh đơn giản, không có nhu cầu đổi lúc chạy, if/else/switch dễ đọc hơn. Dấu hiệu cần Strategy: nhánh tăng liên tục, mỗi nhánh có logic riêng, muốn test từng nhánh độc lập.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Simple factory khác factory method thế nào? Vì sao factory không nên trả <code class="inline">null</code>?</summary>
+      <div class="answer">Simple factory: một method tĩnh nhận tham số rồi tự quyết định sản phẩm (thường dùng switch). Factory method: creator khai báo method trừu tượng để subclass quyết định sản phẩm — mở rộng bằng cách thêm subclass creator. Factory không nên trả <code class="inline">null</code> vì caller sẽ NPE ở nơi khác, stack trace khó lần; hãy ném exception có message hoặc trả <code class="inline">Optional</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Observer pattern là gì? Cho ví dụ.</summary>
+      <div class="answer">Subject giữ danh sách observer; khi state đổi thì thông báo cho tất cả observer (quan hệ 1-n). Ví dụ: <code class="inline">PriceObserver</code> nhận thông báo khi giá đổi, <code class="inline">addEventListener</code> trên DOM, EventEmitter trong Node, Spring <code class="inline">ApplicationEvent</code>/<code class="inline">@EventListener</code>. Lưu ý remove listener để tránh leak và cô lập exception từng observer.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Spring dùng những pattern nào? Kể tên kèm ví dụ.</summary>
+      <div class="answer">DI/DIP (constructor injection), Factory (<code class="inline">@Bean</code>, <code class="inline">BeanFactory</code>), Singleton (bean scope mặc định), Builder (<code class="inline">RestClient.builder()</code>), Proxy/Decorator (AOP <code class="inline">@Transactional</code>), Template Method (<code class="inline">JdbcTemplate</code>), Observer (<code class="inline">ApplicationEventPublisher</code>), Strategy (<code class="inline">PasswordEncoder</code>, <code class="inline">Comparator</code>), Chain of Responsibility (filter chain, interceptor), Adapter (<code class="inline">HandlerAdapter</code>).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Spring singleton bean khác GoF singleton ở đâu?</summary>
+      <div class="answer">Spring singleton là một instance trong application context, không phải một instance trong JVM: hai context khác nhau có hai bean; có thể đổi scope thành prototype/request/session. Class không cần private constructor hay static <code class="inline">INSTANCE</code>, vòng đời do container quản lý, dễ inject fake khi test. GoF singleton là biến static toàn cục thật sự.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Làm sao nhận diện khi nào cần pattern?</summary>
+      <div class="answer">Bắt đầu từ "mùi" của code chứ không phải từ pattern: if/else/switch dài theo type, constructor dài, <code class="inline">new</code> rải rác, khó viết unit test vì dính chặt vào implementation, global state khó kiểm soát, đăng ký nhận sự kiện thủ công. Mỗi mùi ánh xạ tới một pattern. Thực dụng: rule of three — đến lần thứ ba lặp lại cấu trúc tương tự mới trừu tượng hoá.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Có phải càng nhiều pattern càng tốt? Làm sao tránh over-engineering?</summary>
+      <div class="answer">Không. Pattern là công cụ giao tiếp và giảm chi phí thay đổi, không phải tiêu chí chất lượng. Tránh bằng cách: hỏi "vấn đề thật đang gặp là gì?", ưu tiên code đơn giản chạy được, chỉ trừu tượng khi có ít nhất hai biến thể thật (hoặc lần thay đổi thứ ba), và đọc lại code của mình sau vài ngày — nếu khó hiểu hơn code cũ thì pattern đang bị lạm dụng.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.math.BigDecimal;
+
+interface PaymentStrategy {
+    void pay(BigDecimal amount);
+}
+
+void main() {
+    PaymentStrategy giam10 = amount -&gt; IO.println("Thu " + amount.multiply(new BigDecimal("0.9")) + " VND");
+    giam10.pay(new BigDecimal("100000"));
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra <code class="inline">Thu 90000.0 VND</code>. <code class="inline">100000 * 0.9</code> với <code class="inline">BigDecimal</code> giữ đúng scale của phép nhân (1 chữ số thập phân) nên kết quả là <code class="inline">90000.0</code>, không phải <code class="inline">90000</code>. Muốn in gọn dùng <code class="inline">setScale(0)</code> hoặc <code class="inline">stripTrailingZeros()</code>. Đây cũng là ví dụ Strategy gọn nhất: interface một method + lambda.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.math.BigDecimal;
+
+record Order(BigDecimal donGia, int soLuong, String email) {
+    BigDecimal xuLyDon() {
+        BigDecimal tong = donGia.multiply(BigDecimal.valueOf(soLuong));
+        IO.println("Gui hoa don toi " + email + ": " + tong);
+        IO.println("LOG: " + tong);
+        return tong;
+    }
+}
+
+void main() {
+    IO.println("Tong: " + new Order(new BigDecimal("50000"), 3, "binh@example.com").xuLyDon());
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra 3 dòng:</p>
+        <div class="codeblock error">
+          <pre><code>Gui hoa don toi binh@example.com: 150000
+LOG: 150000
+Tong: 150000</code></pre>
+        </div>
+        <p>Method <code class="inline">xuLyDon</code> vi phạm SRP: nó gộp nghiệp vụ tính tiền, nội dung email và ghi log — ba lý do thay đổi khác nhau. Cách sửa: <code class="inline">Order</code> chỉ trả về tiền; việc thông báo để caller hoặc một thành phần chuyên trách; việc log để logging framework.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.math.BigDecimal;
+
+public class Order {
+    static BigDecimal apDungChietKhau(BigDecimal tong, String loaiKhach) {
+        if (loaiKhach.equals("vang")) {
+            return tong.multiply(new BigDecimal("0.95"));
+        } else if (loaiKhach.equals("bach kim")) {
+            return tong.multiply(new BigDecimal("0.90"));
+        } else if (loaiKhach.equals("thuong")) {
+            return tong;
+        } else {
+            throw new IllegalArgumentException("Loai khach la: " + loaiKhach);
+        }
+    }
+
+    public static void main() {
+        IO.println(apDungChietKhau(new BigDecimal("200000"), "bach kim"));
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra <code class="inline">180000.00</code>. Câu hỏi phụ: thêm loại khách "kim cương" giảm 20% phải sửa gì? Phải mở hàm ra thêm một nhánh <code class="inline">else if</code> — vi phạm OCP. Hướng sửa: dùng <code class="inline">Map&lt;String, UnaryOperator&lt;BigDecimal&gt;&gt;</code> hoặc interface strategy; thêm loại khách mới chỉ là thêm một entry/implementation.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Rectangle {
+    protected int width;
+    protected int height;
+
+    void setWidth(int width) {
+        this.width = width;
+    }
+
+    void setHeight(int height) {
+        this.height = height;
+    }
+
+    int area() {
+        return width * height;
+    }
+}
+
+class Square extends Rectangle {
+    @Override
+    void setWidth(int width) {
+        this.width = width;
+        this.height = width;
+    }
+
+    @Override
+    void setHeight(int height) {
+        this.width = height;
+        this.height = height;
+    }
+}
+
+void main() {
+    Rectangle r = new Square();
+    r.setWidth(6);
+    r.setHeight(3);
+    IO.println(r.area());
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra <code class="inline">9</code>, không phải 18. <code class="inline">Square</code> ép hai cạnh bằng nhau: sau <code class="inline">setWidth(6)</code> cạnh là 6, sau <code class="inline">setHeight(3)</code> cả hai cạnh thành 3 nên diện tích 9. Code viết trên <code class="inline">Rectangle</code> không thể đoán hành vi này — vi phạm LSP nghiêm trọng vì sai âm thầm. Cách sửa: interface <code class="inline">Shape</code> bất biến hoặc composition.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Bird {
+    void fly() {
+        IO.println("Bay tren troi");
+    }
+}
+
+class Penguin extends Bird {
+    @Override
+    void fly() {
+        throw new UnsupportedOperationException("Canh cut khong bay duoc");
+    }
+}
+
+void main() {
+    Bird chim = new Penguin();
+    chim.fly();
+}</code></pre>
+      </div>
+      <div class="answer"><p>Chương trình không in gì mà dừng bằng <code class="inline">UnsupportedOperationException: Canh cut khong bay duoc</code> (kèm stack trace). Code gọi qua <code class="inline">Bird</code> không hề biết <code class="inline">Penguin</code> sẽ ném lỗi — đúng dấu hiệu vi phạm LSP. Cách sửa: tách interface cho loài bay được, hoặc để <code class="inline">Penguin</code> không kế thừa <code class="inline">Bird</code> nếu <code class="inline">Bird</code> mặc định biết bay.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">interface Machine {
+    void print(String document);
+    void scan(String document);
+    void fax(String document);
+}
+
+record SimplePrinter() implements Machine {
+    public void print(String document) {
+        IO.println("In: " + document);
+    }
+
+    public void scan(String document) {
+        throw new UnsupportedOperationException("Khong scan duoc");
+    }
+
+    public void fax(String document) {
+        throw new UnsupportedOperationException("Khong fax duoc");
+    }
+}
+
+void main() {
+    Machine may = new SimplePrinter();
+    may.print("bien lai");
+    try {
+        may.fax("hop dong");
+    } catch (RuntimeException e) {
+        IO.println("Bat: " + e.getMessage());
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra 2 dòng:</p>
+        <div class="codeblock error">
+          <pre><code>In: bien lai
+Bat: Khong fax duoc</code></pre>
+        </div>
+        <p><code class="inline">SimplePrinter</code> buộc implement cả 3 method dù chỉ dùng được 1 — vi phạm ISP. Tách thành các interface nhỏ (<code class="inline">Printer</code>, <code class="inline">Scanner</code>, <code class="inline">Fax</code>) hoặc dùng interface sẵn có của JDK chỉ chứa method cần thiết.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.math.BigDecimal;
+
+interface PaymentStrategy {
+    void pay(BigDecimal amount);
+}
+
+class Order {
+    private final PaymentStrategy payment;
+
+    Order(PaymentStrategy payment) {
+        this.payment = payment;
+    }
+
+    void checkout(BigDecimal amount) {
+        payment.pay(amount);
+        IO.println("Da thanh toan " + amount);
+    }
+}
+
+void main() {
+    Order don1 = new Order(amount -&gt; IO.println("The tin dung: " + amount));
+    Order don2 = new Order(amount -&gt; IO.println("Vi dien tu: " + amount));
+    don1.checkout(new BigDecimal("100000"));
+    don2.checkout(new BigDecimal("200000"));
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra 4 dòng:</p>
+        <div class="codeblock error">
+          <pre><code>The tin dung: 100000
+Da thanh toan 100000
+Vi dien tu: 200000
+Da thanh toan 200000</code></pre>
+        </div>
+        <p><code class="inline">Order</code> chỉ biết abstraction <code class="inline">PaymentStrategy</code>, không biết VNPay/Momo nào cụ thể — đảo ngược phụ thuộc (DIP) và cũng thể hiện constructor injection. Đổi cách thanh toán chỉ cần truyền lambda khác, không sửa <code class="inline">Order</code>.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class AppConfig {
+    private static volatile AppConfig instance;
+
+    private AppConfig() {
+    }
+
+    static AppConfig getInstance() {
+        if (instance == null) {
+            synchronized (AppConfig.class) {
+                if (instance == null) {
+                    instance = new AppConfig();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public static void main() {
+        IO.println("Cung mot object? " + (AppConfig.getInstance() == AppConfig.getInstance()));
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra <code class="inline">Cung mot object? true</code>. Hai lần gọi trả về cùng instance nhờ kiểm tra ngoài (nhanh) và kiểm tra trong <code class="inline">synchronized</code> (chống tạo hai lần). Nếu bỏ <code class="inline">volatile</code>, chương trình có thể vẫn in <code class="inline">true</code> trên máy bạn nhưng <strong>không được đảm bảo</strong> theo Java Memory Model: thread khác có thể thấy reference khác null khi object chưa khởi tạo xong. An toàn hơn: dùng lazy holder hoặc enum.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">public enum AppConfig {
+    INSTANCE;
+
+    private int soLanDoc = 0;
+
+    String get(String key) {
+        soLanDoc++;
+        return key + " = gia tri (lan doc " + soLanDoc + ")";
+    }
+
+    public static void main() {
+        IO.println(AppConfig.INSTANCE.get("db.url"));
+        IO.println(AppConfig.INSTANCE.get("db.user"));
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra:</p>
+        <div class="codeblock error">
+          <pre><code>db.url = gia tri (lan doc 1)
+db.user = gia tri (lan doc 2)</code></pre>
+        </div>
+        <p>Chỉ có một <code class="inline">AppConfig.INSTANCE</code> nên biến <code class="inline">soLanDoc</code> được chia sẻ giữa hai lần gọi — đúng bản chất singleton. Enum an toàn với đa luồng, reflection và serialization; đây là cách được Effective Java khuyến nghị.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.function.Consumer;
+
+public class NotificationFactory {
+    static Consumer&lt;String&gt; create(String channel) {
+        return switch (channel) {
+            case "email" -&gt; message -&gt; IO.println("[EMAIL] " + message);
+            case "sms" -&gt; message -&gt; IO.println("[SMS] " + message);
+            default -&gt; throw new IllegalArgumentException("Kenh khong ho tro: " + channel);
+        };
+    }
+
+    public static void main() {
+        try {
+            NotificationFactory.create(null);
+        } catch (RuntimeException e) {
+            IO.println(e.getClass().getSimpleName());
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra <code class="inline">NullPointerException</code>, <strong>không</strong> phải <code class="inline">IllegalArgumentException</code>: <code class="inline">switch</code> trên <code class="inline">null</code> ném NPE ngay khi chọn nhánh, trước cả khi nhánh <code class="inline">default</code> được xét. Muốn thông báo rõ ràng, validate trước: <code class="inline">if (channel == null) throw new IllegalArgumentException("channel khong duoc null");</code> rồi mới switch.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+record Order(String customer, List&lt;String&gt; items, String coupon, boolean express) {
+}
+
+class OrderBuilder {
+    private String customer = "khach le";
+    private final List&lt;String&gt; items = new ArrayList&lt;&gt;();
+    private String coupon;
+    private boolean express;
+
+    OrderBuilder customer(String customer) {
+        this.customer = customer;
+        return this;
+    }
+
+    OrderBuilder addItem(String item) {
+        items.add(item);
+        return this;
+    }
+
+    OrderBuilder express() {
+        this.express = true;
+        return this;
+    }
+
+    Order build() {
+        return new Order(customer, List.copyOf(items), coupon, express);
+    }
+}
+
+void main() {
+    OrderBuilder builder = new OrderBuilder();
+    builder.customer("Nguyen Van An");
+    builder.addItem("Ao thun");
+    builder.express();
+    IO.println(builder.build());
+    IO.println(builder.build());
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra hai dòng giống hệt nhau:</p>
+        <div class="codeblock error">
+          <pre><code>Order[customer=Nguyen Van An, items=[Ao thun], coupon=null, express=true]
+Order[customer=Nguyen Van An, items=[Ao thun], coupon=null, express=true]</code></pre>
+        </div>
+        <p><code class="inline">build()</code> tạo snapshot: <code class="inline">List.copyOf(items)</code> sao chép danh sách nên hai lần build độc lập. Nếu dùng thẳng <code class="inline">items</code> tham chiếu, sửa builder sau đó sẽ thay đổi cả object đã build — lỗi rất khó phát hiện trong production.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+interface PriceObserver {
+    void onPriceChanged(BigDecimal oldValue, BigDecimal newValue);
+}
+
+class Order {
+    private BigDecimal tongTien;
+    private final List&lt;PriceObserver&gt; observers = new ArrayList&lt;&gt;();
+
+    Order(BigDecimal tongTien) {
+        this.tongTien = tongTien;
+    }
+
+    void addObserver(PriceObserver observer) {
+        observers.add(observer);
+    }
+
+    void capNhatTong(BigDecimal moi) {
+        BigDecimal cu = tongTien;
+        tongTien = moi;
+        for (PriceObserver observer : observers) {
+            observer.onPriceChanged(cu, moi);
+        }
+    }
+}
+
+void main() {
+    Order don = new Order(new BigDecimal("100000"));
+    don.addObserver((cu, moi) -&gt; IO.println("A: " + cu + " -&gt; " + moi));
+    don.addObserver((cu, moi) -&gt; IO.println("B: " + cu + " -&gt; " + moi));
+    don.capNhatTong(new BigDecimal("120000"));
+    don.capNhatTong(new BigDecimal("150000"));
+}</code></pre>
+      </div>
+      <div class="answer"><p>In ra 4 dòng — mỗi lần cập nhật, cả hai observer đều được gọi theo thứ tự đăng ký:</p>
+        <div class="codeblock error">
+          <pre><code>A: 100000 -&gt; 120000
+B: 100000 -&gt; 120000
+A: 120000 -&gt; 150000
+B: 120000 -&gt; 150000</code></pre>
+        </div>
+        <p>Đây là Observer: subject không cần biết observer nào làm gì, chỉ phát thông báo. Lưu ý thứ tự gọi là thứ tự thêm vào danh sách — đừng thiết kế phụ thuộc vào thứ tự này nếu không cần.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13</summary>
+      <div class="codeblock">
+        <pre><code>// Chon pattern phu hop cho tung tinh huong, giai thich ngan:
+// 1. Order can tao object bat bien voi 7 tham so, phan lon tuy chon.
+// 2. Giam gia thay doi theo mua, muon doi luc chay va test tung quy tac.
+// 3. Khi don hang doi trang thai, can gui email + push notification + ghi audit.
+// 4. Toan app chi can mot ket noi toi config trung tam.
+// 5. Tao notifier theo kenh (email/sms) ma khong rai new khap noi.</code></pre>
+      </div>
+      <div class="answer"><p>1 — <strong>Builder</strong> (nhiều tham số tùy chọn, sản phẩm bất biến). 2 — <strong>Strategy</strong> (họ thuật toán thay thế lúc chạy, test độc lập). 3 — <strong>Observer</strong> (một sự kiện, nhiều nơi nhận, tránh Order biết hết các bên). 4 — <strong>Singleton</strong> (một instance duy nhất; hoặc tốt hơn là bean do DI container quản lý). 5 — <strong>Simple factory</strong> (gom logic chọn implementation vào một chỗ, không trả null). Điểm chung: chọn pattern theo <em>vấn đề</em>, không theo danh sách cho đẹp.</p></div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet — chọn nhanh</h3>
+
+    <table>
+      <thead>
+        <tr><th>Vấn đề gặp phải</th><th>Giải pháp / pattern</th><th>Dấu hiệu nhận diện</th><th>Ví dụ JDK / Spring</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Class ôm nhiều trục thay đổi</td><td>SRP — tách class</td><td>Tên class có And/Manager/Util; mô tả phải dùng chữ "và"</td><td>Order tách khỏi notification/log</td></tr>
+        <tr><td>Thêm tính năng phải sửa if/else cũ</td><td>OCP — interface, map, đa hình</td><td>if/else theo type/loại đối tượng tăng dần</td><td><code class="inline">Map&lt;String, UnaryOperator&lt;BigDecimal&gt;&gt;</code></td></tr>
+        <tr><td>Subtype thay vào cha làm sai hành vi</td><td>LSP — sửa cây kế thừa</td><td>Override rồi ném UnsupportedOperationException; phải instanceof</td><td>Square/Rectangle, Penguin/Bird</td></tr>
+        <tr><td>Interface to, client phải implement method không dùng</td><td>ISP — tách interface nhỏ</td><td>Method "giả" ném lỗi; mock phải stub nhiều method</td><td>DataInput/DataOutput, Printer/Scanner</td></tr>
+        <tr><td>Class nghiệp vụ dính chặt vào implementation</td><td>DIP + DI — constructor injection</td><td>Không test được nếu thiếu database/service thật</td><td>OrderRepository, <code class="inline">@Service</code> + constructor</td></tr>
+        <tr><td>Cần đúng một instance toàn cục</td><td>Singleton (enum/holder), hoặc DI bean</td><td>Global state, config, pool, cache</td><td><code class="inline">AppConfig.INSTANCE</code>, Spring bean</td></tr>
+        <tr><td><code class="inline">new</code> rải rác, chọn impl theo input</td><td>Factory (simple/factory method)</td><td>Switch tạo object lặp ở nhiều nơi</td><td><code class="inline">NotificationFactory</code>, <code class="inline">List.of</code>, <code class="inline">@Bean</code></td></tr>
+        <tr><td>Constructor quá dài, nhiều tham số tùy chọn</td><td>Builder</td><td>4+ tham số, nhiều boolean/null, khó đọc call site</td><td><code class="inline">OrderBuilder</code>, <code class="inline">StringBuilder</code>, <code class="inline">HttpRequest.newBuilder()</code></td></tr>
+        <tr><td>Nhiều thuật toán, muốn đổi lúc chạy</td><td>Strategy</td><td>Switch theo loại xử lý, logic mỗi nhánh phình to</td><td><code class="inline">Comparator</code>, <code class="inline">PaymentStrategy</code>, lambda</td></tr>
+        <tr><td>Một sự kiện, nhiều nơi cần biết</td><td>Observer</td><td>"Khi X xảy ra thì làm A, B, C" mà subject không nên biết A, B, C</td><td><code class="inline">PriceObserver</code>, <code class="inline">@EventListener</code></td></tr>
+        <tr><td>Khung thuật toán cố định, chỉ khác bước con</td><td>Template Method</td><td>Class cha gọi các abstract method theo trình tự</td><td><code class="inline">JdbcTemplate</code>, <code class="inline">RestTemplate</code></td></tr>
+        <tr><td>Cần thêm hành vi quanh object mà không sửa nó</td><td>Decorator / Proxy</td><td>Log, cache, transaction, security bọc lấy service</td><td>AOP <code class="inline">@Transactional</code>, <code class="inline">HttpServletRequestWrapper</code></td></tr>
+        <tr><td>Request đi qua nhiều bước xử lý theo chuỗi</td><td>Chain of Responsibility</td><td>Mỗi bước quyết định xử lý tiếp hay dừng</td><td>Servlet Filter, Security filter chain, middleware</td></tr>
+        <tr><td>Interface hai bên không khớp</td><td>Adapter</td><td>Cần "phiên dịch" giữa API cũ và API mới</td><td><code class="inline">HandlerAdapter</code>, <code class="inline">HttpMessageConverter</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Phát biểu được 5 nguyên tắc SOLID bằng một câu mỗi nguyên tắc, không cần nhìn tài liệu.</li>
+      <li>Giải thích SRP đúng: "một lý do để thay đổi", không phải "mỗi class một method".</li>
+      <li>Đưa được ví dụ OCP bằng interface/map và nói rõ khi nào vẫn nên dùng switch.</li>
+      <li>Giải thích được vì sao Square/Rectangle vi phạm LSP, kèm kết quả số cụ thể (20 vs 16).</li>
+      <li>Chỉ ra dấu hiệu vi phạm LSP: override ném UnsupportedOperationException, phải instanceof.</li>
+      <li>Giải thích ISP bằng ví dụ Machine print/scan/fax hoặc JDK DataInput/DataOutput.</li>
+      <li>Phân biệt DIP (nguyên tắc) và DI (kỹ thuật); nêu 3 kiểu injection và vì sao ưu tiên constructor.</li>
+      <li>Viết được singleton bằng enum, lazy holder, DCL + volatile — và biết cái nào nên chọn.</li>
+      <li>Giải thích vì sao singleton bị coi là anti-pattern và Spring bean khác gì.</li>
+      <li>Viết được simple factory trả interface, ném exception khi input sai, không trả null.</li>
+      <li>Viết được builder cho record, có giá trị mặc định và snapshot bằng <code class="inline">List.copyOf</code>.</li>
+      <li>Viết được strategy bằng interface + lambda, giải thích khi nào if/else vẫn tốt hơn.</li>
+      <li>Viết được observer đơn giản và kể tên ứng dụng thật (event listener, ApplicationEvent).</li>
+      <li>Kể được ít nhất 6 pattern Spring dùng sẵn kèm ví dụ annotation/class.</li>
+      <li>Trả lời được "càng nhiều pattern càng tốt không?" với lập luận chống over-engineering.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://refactoring.guru/design-patterns" target="_blank" rel="noreferrer">Refactoring.Guru — Design Patterns</a></li>
+      <li><a href="https://www.baeldung.com/solid-principles" target="_blank" rel="noreferrer">Baeldung — SOLID Principles in Java</a></li>
+      <li><a href="https://martinfowler.com/articles/injection.html" target="_blank" rel="noreferrer">Martin Fowler — Inversion of Control Containers and the Dependency Injection pattern</a></li>
+      <li><a href="https://docs.spring.io/spring-framework/reference/core/beans.html" target="_blank" rel="noreferrer">Spring Framework — The IoC Container</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Enum.html" target="_blank" rel="noreferrer">Java SE 25 API — Enum (enum singleton)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · SOLID &amp; design patterns · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

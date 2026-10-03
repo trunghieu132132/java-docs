@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inheritance — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item active" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="inheritance">Inheritance — kế thừa trong Java</h1>
+
+    <p class="lead">Kế thừa (inheritance) cho phép một class <strong>thừa hưởng</strong> field và method từ class khác, biến quan hệ đời thường "Dog là một Animal" (is-a) thành code thật: <code class="inline">class Dog extends Animal</code>. Đây là cơ chế đứng sau polymorphism, abstract class, exception hierarchy và gần như toàn bộ thư viện JDK. Nhưng kế thừa cũng là công cụ bị lạm dụng nhiều nhất — trang này không chỉ dạy cách viết <code class="inline">extends</code>, mà còn dạy <strong>khi nào không nên dùng</strong>, cùng các bẫy khởi tạo và override mà phỏng vấn Junior+ rất hay hỏi.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#cu-phap-super">Cú pháp <code class="inline">extends</code> &amp; từ khoá <code class="inline">super</code></a></li>
+        <li><a href="#thu-tu-khoi-tao">Thứ tự khởi tạo cha/con đầy đủ</a></li>
+        <li><a href="#overriding">Method overriding &amp; <code class="inline">@Override</code></a></li>
+        <li><a href="#static-hiding">static: hiding chứ không phải override</a></li>
+        <li><a href="#final">final — chặn kế thừa và override</a></li>
+        <li><a href="#protected"><code class="inline">protected</code> &amp; visibility khi kế thừa</a></li>
+        <li><a href="#object-class">Object — gốc của mọi class</a></li>
+        <li><a href="#composition">Composition vs inheritance</a></li>
+        <li><a href="#lsp">LSP — nguyên lý thay thế</a></li>
+        <li><a href="#instanceof-cast">instanceof &amp; cast (giới thiệu)</a></li>
+        <li><a href="#jdk-hierarchy">Cây kế thừa trong JDK</a></li>
+        <li><a href="#sealed">sealed — kiểm soát ai được kế thừa</a></li>
+        <li><a href="#pitfalls">Pitfalls &amp; production notes</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Hai thuật ngữ bạn sẽ gặp suốt:</p>
+    <ul>
+      <li><strong>Superclass</strong> (lớp cha, base class) — class bị kế thừa, giữ phần chung: <code class="inline">Animal</code>.</li>
+      <li><strong>Subclass</strong> (lớp con, derived class) — class đi kế thừa, thêm phần riêng: <code class="inline">Dog</code>. Java dùng từ khoá <code class="inline">extends</code> ("mở rộng").</li>
+    </ul>
+
+    <p>Ví dụ đời thường: "Xe máy <em>là một</em> phương tiện", "hóa đơn VAT <em>là một</em> hóa đơn", "Dog <em>là một</em> Animal". Quan hệ đọc là "is-a" (là một). Ngược lại, "Xe máy <em>có</em> một động cơ" là quan hệ <strong>has-a</strong> — đó là composition, học ở <a href="#composition">mục 9</a>. Chọn nhầm is-a/has-a là lỗi thiết kế phổ biến nhất của người mới.</p>
+
+    <p>Ba sự thật quan trọng của Java mà bạn phải nhớ:</p>
+    <ul>
+      <li><strong>Đơn kế thừa:</strong> một class chỉ <code class="inline">extends</code> đúng một class. Không có "đa kế thừa class" như C++. Muốn nhiều "kiểu" thì dùng interface (học ở <a href="roadmap.html#phase-2">2.5 Abstract class vs Interface</a>).</li>
+      <li><strong>Mọi class đều là con cháu của <code class="inline">Object</code>:</strong> viết hay không viết <code class="inline">extends Object</code> thì <code class="inline">Object</code> vẫn là gốc (mục 8).</li>
+      <li><strong>Kế thừa là bắc cầu:</strong> <code class="inline">Dog extends Animal</code>, <code class="inline">Animal extends Object</code> — Dog thừa hưởng cả chuỗi.</li>
+    </ul>
+
+    <p>Mức độ bắt buộc của chủ đề 2.3 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết <code class="inline">extends</code> đúng; gọi <code class="inline">super(args)</code> và <code class="inline">super.method()</code>; override kèm <code class="inline">@Override</code>; phân biệt override / overload / hiding; chọn composition khi quan hệ không phải is-a; dự đoán được thứ tự khởi tạo cha/con.</li>
+      <li><strong>Phải hiểu</strong> — constructor không được thừa hưởng; compiler tự chèn <code class="inline">super()</code>; quy tắc visibility/return type/exception khi override; static binding vs dynamic dispatch; vì sao gọi method overridable trong constructor là bẫy; LSP.</li>
+      <li><strong>Nhận biết</strong> — sealed class (JDK 17+), JEP 513 Flexible Constructor Bodies (JDK 25), diamond problem, "favor composition over inheritance".</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512) — và dạng class đầy đủ chạy bằng <code class="inline">java TenFile.java</code>. Kết quả chạy thật in ngay bên dưới mỗi ví dụ. Code production vẫn dùng <code class="inline">public static void main(String[] args)</code> như bạn thấy trong đề phỏng vấn.</div>
+
+    <h3 id="goc-nodejs">Góc Node.js — prototype chain vs class extends</h3>
+
+    <p>Nếu bạn đến từ JS/Node, kế thừa không còn xa lạ — nhưng cơ chế bên dưới khác hẳn. JavaScript không có "class" thật: <code class="inline">class ... extends</code> chỉ là cú pháp đường (syntactic sugar) trên <strong>prototype chain</strong>. Mỗi object có một liên kết ẩn <code class="inline">[[Prototype]]</code>; khi truy cập <code class="inline">dog.speak()</code>, engine dò theo chuỗi prototype cho tới khi tìm thấy. Java không có prototype: class được biên dịch cố định, method được gọi qua bảng ảo (virtual dispatch) do JVM quản lý.</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cơ chế</td><td>Prototype chain (dò liên kết <code class="inline">[[Prototype]]</code> lúc chạy)</td><td>Class-based, đơn kế thừa, JVM dispatch</td></tr>
+        <tr><td>Cú pháp</td><td><code class="inline">class Dog extends Animal</code> (sugar trên prototype)</td><td><code class="inline">class Dog extends Animal</code> (cú pháp thật)</td></tr>
+        <tr><td><code class="inline">super</code></td><td><code class="inline">super(...)</code> gọi constructor cha; <code class="inline">super.speak()</code> gọi method cha</td><td>Giống về ý tưởng, nhưng có quy tắc chặt hơn</td></tr>
+        <tr><td>Đa kế thừa</td><td>Không; mixin bằng <code class="inline">Object.assign</code>/composition</td><td>Không cho class; nhiều interface cho phép implements</td></tr>
+        <tr><td>Access modifier</td><td>Chỉ có <code class="inline">#private</code> (mới); còn lại public</td><td><code class="inline">private</code>, package-private, <code class="inline">protected</code>, <code class="inline">public</code></td></tr>
+        <tr><td><code class="inline">this</code> trước <code class="inline">super()</code></td><td>Bắt buộc gọi <code class="inline">super()</code> trước khi chạm <code class="inline">this</code></td><td>Trước JDK 25 giống JS; JDK 25 (JEP 513) cho phép câu lệnh không đụng <code class="inline">this</code> đứng trước <code class="inline">super()</code></td></tr>
+        <tr><td>Dynamic dispatch</td><td>Dò prototype mỗi lần truy cập (engine tối ưu sau)</td><td>Chọn method theo object thật lúc chạy qua bảng ảo</td></tr>
+      </tbody>
+    </table>
+
+    <p>Đoạn JS dưới đây cho kết quả y hệt phiên bản Java ở mục 2:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  speak() {
+    console.log(this.name + " phat ra am thanh...");
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    console.log(this.name + ": Gau gau!");
+  }
+}
+
+new Dog("Milu").speak();   // Milu: Gau gau!</code></pre>
+    </div>
+
+    <div class="note">Điểm dễ nhầm nhất: trong JS, method "override" thực chất là gán một property mới lên prototype của lớp con; trong Java, override là ghi đè entry trong bảng method của class — compiler kiểm tra chặt (signature, visibility, return type, exception) nên sai sẽ lỗi ngay khi compile, không đợi tới lúc chạy.</div>
+
+    <h2 id="cu-phap-super">2. Cú pháp <code class="inline">extends</code> &amp; từ khoá <code class="inline">super</code> <span class="badge b-junior">Junior+</span></h2>
+
+    <div class="signature">
+      <span class="sig-muted">[modifier]</span> <span class="tok-kw">class</span> <span class="tok-typ">TenCon</span> <span class="tok-kw">extends</span> <span class="tok-typ">TenCha</span> <span class="sig-muted">{ ... }</span>
+    </div>
+
+    <p>Trong thân class con, <code class="inline">super</code> có ba dạng dùng, ý nghĩa khác nhau:</p>
+
+    <div class="signature">
+      <span class="sig-var">super</span><span class="sig-muted">(</span>args<span class="sig-muted">);</span> &nbsp;&nbsp;&nbsp; <span class="sig-muted">// gọi constructor của lớp cha</span><br>
+      <span class="sig-var">super</span><span class="sig-muted">.</span><span class="sig-var">method</span><span class="sig-muted">(</span>args<span class="sig-muted">);</span> &nbsp;&nbsp;&nbsp; <span class="sig-muted">// gọi bản method của lớp cha (không dispatch)</span><br>
+      <span class="sig-var">this</span><span class="sig-muted">(</span>args<span class="sig-muted">);</span> &nbsp;&nbsp;&nbsp; <span class="sig-muted">// gọi constructor khác của CHÍNH class này</span>
+    </div>
+
+    <p>Ví dụ nền tảng — <code class="inline">Dog</code> thừa hưởng <code class="inline">name()</code> và <code class="inline">speak()</code> từ <code class="inline">Animal</code>, override <code class="inline">speak()</code>, rồi gọi bản gốc qua <code class="inline">super.speak()</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    String name() {
+        return name;
+    }
+
+    void speak() {
+        IO.println(name + " phat ra am thanh...");
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    void speak() {
+        IO.println(name() + ": Gau gau!");
+    }
+
+    void showAll() {
+        super.speak();
+        speak();
+    }
+
+    public static void main() {
+        Dog dog = new Dog("Milu");
+        dog.speak();
+        dog.showAll();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Milu: Gau gau!
+Milu phat ra am thanh...
+Milu: Gau gau!</code></pre>
+    </div>
+
+    <p>Ba điều rút ra từ ví dụ:</p>
+    <ul>
+      <li><code class="inline">Dog</code> không khai báo <code class="inline">name</code> nhưng vẫn có, vì field <code class="inline">private final String name</code> nằm ở <code class="inline">Animal</code>. Field <code class="inline">private</code> vẫn thuộc về object con — chỉ là code con không truy cập trực tiếp được (đó là encapsulation, không phải "không thừa hưởng").</li>
+      <li><code class="inline">super.speak()</code> gọi thẳng bản của cha; còn <code class="inline">speak()</code> trong <code class="inline">showAll()</code> vẫn dispatch tới bản của <code class="inline">Dog</code> dù code nằm ở đâu.</li>
+      <li><code class="inline">Dog(String name) { super(name); }</code> — constructor con bắt buộc lo việc gọi constructor cha (xem quy tắc bên dưới).</li>
+    </ul>
+
+    <h3>Constructor khi kế thừa — 4 quy tắc</h3>
+
+    <ol>
+      <li><strong>Constructor không được thừa hưởng.</strong> <code class="inline">Animal(String)</code> không tự trở thành constructor của <code class="inline">Dog</code>; mỗi class phải tự khai báo constructor của mình. Vì vậy <code class="inline">new Dog()</code> trong khi Dog chỉ có <code class="inline">Dog(String)</code> là lỗi compile.</li>
+      <li><strong>Không gọi tường minh thì compiler tự chèn <code class="inline">super()</code></strong> (constructor cha không tham số) vào đầu constructor con. Nếu lớp cha <em>không có</em> constructor no-arg, bạn buộc phải gọi <code class="inline">super(args)</code> — nếu không sẽ lỗi compile:</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+}
+
+public class Dog extends Animal {
+    Dog() {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:10: error: constructor Animal in class Animal cannot be applied to given types;
+    Dog() {
+          ^
+  required: String
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+1 error</pre>
+    </div>
+
+    <p>3. <strong><code class="inline">this(args)</code> gọi constructor khác của cùng class</strong> — dùng để dồn logic về một constructor chính (constructor chaining). Ví dụ dưới đây <code class="inline">Dog()</code> gọi <code class="inline">this("khong ten", "chua ro")</code>, constructor đó lại gọi <code class="inline">super(name)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+        IO.println("Animal(" + name + ")");
+    }
+
+    String name() {
+        return name;
+    }
+}
+
+public class Dog extends Animal {
+    private final String breed;
+
+    Dog(String name, String breed) {
+        super(name);
+        this.breed = breed;
+        IO.println("Dog(" + name + ", " + breed + ")");
+    }
+
+    Dog(String name) {
+        this(name, "chua ro");
+    }
+
+    Dog() {
+        this("khong ten", "chua ro");
+    }
+
+    public static void main() {
+        new Dog("Milu");
+        new Dog();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Animal(Milu)
+Dog(Milu, chua ro)
+Animal(khong ten)
+Dog(khong ten, chua ro)</code></pre>
+    </div>
+
+    <p>4. <strong>Mỗi constructor chỉ được gọi tối đa một constructor khác</strong> — hoặc <code class="inline">this(...)</code>, hoặc <code class="inline">super(...)</code>, không bao giờ cả hai. Gọi cả hai sẽ lỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    Animal() {
+    }
+}
+
+public class Dog extends Animal {
+    Dog() {
+        super();
+        this(1);
+    }
+
+    Dog(int x) {
+        super();
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:9: error: redundant explicit constructor invocation
+        this(1);
+            ^
+1 error</pre>
+    </div>
+
+    <p><strong>JDK 25 (JEP 513) — Flexible Constructor Bodies:</strong> trước JDK 25, <code class="inline">super()</code>/<code class="inline">this()</code> phải là câu đầu tiên. Từ JDK 25, bạn được phép đặt câu lệnh <em>không đụng tới instance</em> trước lời gọi constructor — hữu ích để validate hoặc chuẩn bị dữ liệu trước khi gọi cha:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        IO.println("Animal(" + name + ")");
+        this.name = name;
+    }
+
+    String name() {
+        return name;
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        IO.println("chuan bi du lieu truoc super()");
+        super(name.toUpperCase());
+        IO.println("ten = " + name());
+    }
+
+    public static void main() {
+        new Dog("milu");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>chuan bi du lieu truoc super()
+Animal(MILU)
+ten = MILU</code></pre>
+    </div>
+
+    <p>Giới hạn vẫn rất chặt: trước <code class="inline">super()</code> bạn <strong>không được dùng <code class="inline">this</code></strong> — không đọc field, không gọi instance method. Làm sai sẽ lỗi compile:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    Animal(String name) {
+    }
+}
+
+public class Dog extends Animal {
+    Dog() {
+        speak();
+        super("Milu");
+    }
+
+    void speak() {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:8: error: cannot reference speak() before supertype constructor has been called
+        speak();
+        ^
+1 error</pre>
+    </div>
+
+    <p>Ngoại lệ duy nhất được phép: <strong>gán field của chính class</strong> (field không có initializer) trước <code class="inline">super()</code> — kỹ thuật JEP 513 giới thiệu để field của con đã đúng ngay cả khi method override bị gọi từ constructor cha (xem <a href="#pitfalls">mục 14</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    Animal() {
+        IO.println("Animal()");
+    }
+}
+
+public class Dog extends Animal {
+    private final int age;
+
+    Dog(int age) {
+        this.age = age;
+        IO.println("gan age truoc super()");
+        super();
+        IO.println("age = " + this.age);
+    }
+
+    public static void main() {
+        new Dog(3);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>gan age truoc super()
+Animal()
+age = 3</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đừng lạm dụng prologue.</strong> Code trước <code class="inline">super()</code> chỉ nên là validate tham số, tính toán thuần tuý, hoặc gán field. Mọi thứ phức tạp nên nằm sau <code class="inline">super()</code>. Phỏng vấn vẫn hỏi theo luật cũ "super phải là câu đầu tiên" — hãy trả lời kèm ngữ cảnh JDK 25 (JEP 513) để ghi điểm.</div>
+
+    <h2 id="thu-tu-khoi-tao">3. Thứ tự khởi tạo cha/con đầy đủ <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Đây là câu hỏi kinh điển: khi chạy <code class="inline">new Dog()</code>, code nào chạy trước? Câu trả lời đúng phải kể đủ <strong>6 bước</strong>, và phân biệt rõ <strong>static</strong> (chạy một lần khi class được nạp) với <strong>instance</strong> (chạy mỗi lần tạo object):</p>
+
+    <ol>
+      <li><strong>static initializer của lớp cha</strong> — khi class con được nạp lần đầu, JVM nạp và khởi tạo lớp cha trước (cha trước con).</li>
+      <li><strong>static initializer của lớp con.</strong></li>
+      <li><strong>instance field + instance initializer của lớp cha</strong>, theo thứ tự xuất hiện trong file.</li>
+      <li><strong>thân constructor lớp cha.</strong></li>
+      <li><strong>instance field + instance initializer của lớp con</strong>, theo thứ tự xuất hiện.</li>
+      <li><strong>thân constructor lớp con.</strong></li>
+    </ol>
+
+    <p>Ví dụ chạy thật dưới đây in đúng thứ tự đó. Chú ý: vì <code class="inline">main</code> nằm trong <code class="inline">Dog</code>, hai dòng static của cha/con in ra trước cả khi thân <code class="inline">main</code> chạy — nhưng vẫn đúng thứ tự cha trước con:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    static {
+        IO.println("1. static initializer Animal");
+    }
+
+    int animalField = initAnimalField();
+
+    int initAnimalField() {
+        IO.println("3. instance field Animal");
+        return 10;
+    }
+
+    Animal(String name) {
+        IO.println("4. constructor Animal");
+    }
+}
+
+public class Dog extends Animal {
+    static {
+        IO.println("2. static initializer Dog");
+    }
+
+    int value = 42;
+
+    {
+        IO.println("5. instance initializer Dog");
+    }
+
+    Dog(String name) {
+        super(name);
+        IO.println("6. constructor Dog");
+    }
+
+    public static void main() {
+        Dog dog = new Dog("Milu");
+        IO.println("dog.value = " + dog.value);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>1. static initializer Animal
+2. static initializer Dog
+3. instance field Animal
+4. constructor Animal
+5. instance initializer Dog
+6. constructor Dog
+dog.value = 42</code></pre>
+    </div>
+
+    <p>Ghi nhớ bằng một câu: <strong>static cha → static con → instance cha → constructor cha → instance con → constructor con</strong>. Hệ quả thực chiến: mọi field của lớp con lúc constructor cha chạy vẫn còn giá trị mặc định (0, <code class="inline">null</code>, <code class="inline">false</code>). Nếu constructor cha gọi một method bị override ở con, method đó sẽ đọc phải field chưa khởi tạo — xem <a href="#pitfalls">mục 14</a>.</p>
+
+    <div class="note">Các lần <code class="inline">new Dog()</code> sau chỉ chạy bước 3–6; static initializer chỉ chạy đúng một lần cho mỗi class loader. Bạn có thể tự kiểm chứng bằng cách thêm dòng <code class="inline">new Dog("Milu");</code> thứ hai trong <code class="inline">main</code>.</div>
+
+    <h2 id="overriding">4. Method overriding &amp; <code class="inline">@Override</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Override</strong> = lớp con định nghĩa lại một instance method của lớp cha với <strong>đúng signature</strong> (tên + danh sách kiểu tham số). Khác overload (cùng class, khác tham số), override xảy ra giữa cha và con và được quyết định lúc chạy (dynamic dispatch).</p>
+
+    <p>Annotation <code class="inline">@Override</code> không bắt buộc về mặt cú pháp, nhưng gần như luôn nên viết: compiler sẽ báo lỗi nếu bạn tưởng đang override mà thực ra không phải (sai tên, sai tham số, method cha là private/static...).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    Number makeSound() {
+        IO.println("Animal sound");
+        return 0;
+    }
+
+    String speak() {
+        return "Animal speaks";
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    Integer makeSound() {
+        IO.println("Dog sound");
+        return 1;
+    }
+
+    @Override
+    String speak() {
+        return "Dog speaks: Gau gau!";
+    }
+
+    public static void main() {
+        Animal animal = new Dog();
+        IO.println(animal.speak());
+        IO.println(animal.makeSound().getClass().getSimpleName());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Dog speaks: Gau gau!
+Dog sound
+Integer</code></pre>
+    </div>
+
+    <p>Quan sát: biến <code class="inline">animal</code> có kiểu <code class="inline">Animal</code> nhưng <code class="inline">animal.speak()</code> gọi bản của <code class="inline">Dog</code> — đó chính là polymorphism (<a href="roadmap.html#phase-2">2.4</a>). <code class="inline">makeSound()</code> minh hoạ <strong>covariant return type</strong>: lớp con được trả về kiểu hẹp hơn (<code class="inline">Integer</code> thay vì <code class="inline">Number</code>); compiler sinh "bridge method" để JVM vẫn dispatch đúng.</p>
+
+    <h3>Bảng luật override — được và không được</h3>
+
+    <table>
+      <thead>
+        <tr><th>Yếu tố</th><th>Quy tắc</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Signature</td><td>Phải trùng: cùng tên, cùng kiểu và số lượng tham số. Sai một chút là overload/compile error chứ không phải override.</td></tr>
+        <tr><td>Return type</td><td>Giống, hoặc <strong>covariant</strong> (kiểu con của kiểu cha).</td></tr>
+        <tr><td>Visibility</td><td>Không được <strong>giảm</strong>: <code class="inline">public</code> → <code class="inline">protected</code> là lỗi; tăng thì được (<code class="inline">protected</code> → <code class="inline">public</code>).</td></tr>
+        <tr><td>Checked exception</td><td>Không được ném <strong>rộng hơn</strong>; hẹp hơn hoặc bỏ hẳn thì được. Unchecked (<code class="inline">RuntimeException</code>) không bị giới hạn.</td></tr>
+        <tr><td>private / static / final</td><td>Không override được. private bị "ẩn" (method mới hoàn toàn), static là hiding (mục 5), final bị cấm compile.</td></tr>
+        <tr><td>Access xuyên package</td><td>Lớp con ở package khác chỉ override được method <code class="inline">public</code> hoặc <code class="inline">protected</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Giảm visibility bị chặn ngay khi compile:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    public void speak() {
+        IO.println("Animal sound");
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    protected void speak() {
+        IO.println("Dog sound");
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:9: error: speak() in Dog cannot override speak() in Animal
+    protected void speak() {
+                   ^
+  attempting to assign weaker access privileges; was public
+1 error</pre>
+    </div>
+
+    <p>Ném checked exception rộng hơn cũng bị chặn — vì call site chỉ chuẩn bị bắt <code class="inline">IOException</code>, không thể "bất ngờ" nhận <code class="inline">Exception</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.IOException;
+
+class Animal {
+    void read() throws IOException {
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    void read() throws Exception {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:10: error: read() in Dog cannot override read() in Animal
+    void read() throws Exception {
+         ^
+  overridden method does not throw Exception
+1 error</pre>
+    </div>
+
+    <h3>Override vs Overload — bảng phân biệt</h3>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Override</th><th>Overload</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Quan hệ</td><td>Cha – con</td><td>Cùng một class (hoặc kế thừa)</td></tr>
+        <tr><td>Signature</td><td>Giống hệt</td><td>Khác tham số</td></tr>
+        <tr><td>Chọn bản nào</td><td>Lúc <strong>chạy</strong> theo object thật (dynamic dispatch)</td><td>Lúc <strong>compile</strong> theo kiểu tham số</td></tr>
+        <tr><td>Return type</td><td>Covariant</td><td>Không ràng buộc</td></tr>
+        <tr><td>Visibility</td><td>Không được giảm</td><td>Không ràng buộc</td></tr>
+        <tr><td>Exception</td><td>Không mở rộng checked</td><td>Không ràng buộc</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="static-hiding">5. static: hiding chứ không phải override <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Static method không tham gia dynamic dispatch. Nếu lớp con khai báo method static trùng signature với static method của cha, đó là <strong>hiding</strong> (che khuất): gọi method nào phụ thuộc vào <strong>kiểu của reference</strong> lúc compile, không phải object thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    static void info() {
+        IO.println("Animal.info() - static");
+    }
+}
+
+public class Dog extends Animal {
+    static void info() {
+        IO.println("Dog.info() - hiding, khong phai override");
+    }
+
+    public static void main() {
+        Animal animal = new Dog();
+        animal.info();
+
+        Dog dog = new Dog();
+        dog.info();
+
+        ((Animal) dog).info();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Animal.info() - static
+Dog.info() - hiding, khong phai override
+Animal.info() - static</code></pre>
+    </div>
+
+    <p>Dù object thật là <code class="inline">Dog</code>, <code class="inline">animal.info()</code> vẫn gọi <code class="inline">Animal.info()</code> vì kiểu reference là <code class="inline">Animal</code>. Đây là lý do static method không thể là "polymorphism".</p>
+
+    <p>Không được trộn static của cha với instance của con (và ngược lại) — compiler chặn cả hai chiều:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    static void info() {
+        IO.println("Animal.info()");
+    }
+}
+
+public class Dog extends Animal {
+    void info() {
+        IO.println("Dog.info()");
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:8: error: info() in Dog cannot override info() in Animal
+    void info() {
+         ^
+  overridden method is static
+1 error</pre>
+    </div>
+
+    <h3>private method — "override" giả</h3>
+
+    <p>Private method không được thừa hưởng theo nghĩa override. Nếu lớp con khai báo method cùng tên, đó là một method <strong>hoàn toàn mới</strong>; method private của cha vẫn được gọi theo kiểu tĩnh (early binding) bên trong class cha:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private void secret() {
+        IO.println("Animal.secret() (private)");
+    }
+
+    void callSecret() {
+        secret();
+    }
+}
+
+public class Dog extends Animal {
+    void secret() {
+        IO.println("Dog.secret() (method moi)");
+    }
+
+    public static void main() {
+        new Animal().callSecret();
+        new Dog().callSecret();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Animal.secret() (private)
+Animal.secret() (private)</code></pre>
+    </div>
+
+    <p>Cả hai lần đều in bản của <code class="inline">Animal</code>: <code class="inline">callSecret()</code> gọi <code class="inline">secret()</code> đã được bind tĩnh trong thân <code class="inline">Animal</code>. <code class="inline">Dog.secret()</code> chưa bao giờ được gọi. Kết luận: đừng đặt trùng tên với private method của cha — nó gây hiểu nhầm chết người khi đọc code.</p>
+
+    <h2 id="final">6. final — chặn kế thừa và override <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">final</code> là công cụ thiết kế: nói rõ "phần này cố ý không cho thay đổi". Ba ngữ cảnh khác nhau:</p>
+
+    <ul>
+      <li><strong>final method</strong> — không lớp con nào override được. Compiler chặn:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    final void speak() {
+        IO.println("Animal sound");
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    void speak() {
+        IO.println("Dog sound");
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:9: error: speak() in Dog cannot override speak() in Animal
+    void speak() {
+         ^
+  overridden method is final
+1 error</pre>
+    </div>
+
+    <ul>
+      <li><strong>final class</strong> — không class nào extends được. Ví dụ: <code class="inline">String</code>, <code class="inline">Integer</code>, mọi class bao ngoài record, và nhiều class bất biến của JDK:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class Dog extends String {
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Dog.java:1: error: cannot inherit from final String
+public class Dog extends String {
+                         ^
+1 error</pre>
+    </div>
+
+    <ul>
+      <li><strong>final field / biến</strong> — gán đúng một lần, sau đó là hằng. Đây là nền tảng của bất biến (immutability); chi tiết ở <a href="index.html#final">Biến trong Java — mục 10</a> và <a href="roadmap.html#phase-2">2.2 Encapsulation &amp; Immutability</a>.</li>
+    </ul>
+
+    <p>Vì sao JDK cho <code class="inline">String</code> là final? Để đảm bảo an toàn và tối ưu: bất biến, dùng chung được trong string pool, và không bị lớp con "phá" hành vi. Khi cần "mở rộng" một final class, hãy dùng <strong>composition</strong> (mục 9) hoặc tạo API mới bọc bên ngoài.</p>
+
+    <h2 id="protected">7. <code class="inline">protected</code> &amp; visibility khi kế thừa <span class="badge b-junior">Junior+</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Modifier</th><th>Trong class</th><th>Cùng package</th><th>Lớp con khác package</th><th>Ngoài</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">private</code></td><td>Có</td><td>Không</td><td>Không</td><td>Không</td></tr>
+        <tr><td>package-private (bỏ trống)</td><td>Có</td><td>Có</td><td>Không</td><td>Không</td></tr>
+        <tr><td><code class="inline">protected</code></td><td>Có</td><td>Có</td><td>Có (qua <code class="inline">this</code>/reference kiểu con)</td><td>Không</td></tr>
+        <tr><td><code class="inline">public</code></td><td>Có</td><td>Có</td><td>Có</td><td>Có</td></tr>
+      </tbody>
+    </table>
+
+    <p><code class="inline">protected</code> là mức "vừa đủ" cho lớp con: field/method truy cập được từ class con (kể cả khác package). Ví dụ <code class="inline">Animal</code> để <code class="inline">name</code> là <code class="inline">protected</code> để lớp con đổi được tên:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    protected String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    String namePublic() {
+        return name;
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        super(name);
+    }
+
+    void rename(String newName) {
+        name = newName;
+    }
+
+    public static void main() {
+        Dog dog = new Dog("Milu");
+        dog.rename("Milu con");
+        IO.println("ten = " + dog.namePublic());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>ten = Milu con</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Cẩn thận với protected field.</strong> Nó phá encapsulation: mọi lớp con đều có thể sửa trực tiếp, class cha mất kiểm soát invariant. Best practice: field để <code class="inline">private</code>, cần cho lớp con truy cập thì mở <code class="inline">protected</code> method (getter/setter có kiểm tra), không mở field thô. Một điểm tinh tế nữa: lớp con ở package khác chỉ truy cập được thành viên <code class="inline">protected</code> qua reference có kiểu là chính lớp con đó (hoặc nhỏ hơn) — không qua biến kiểu cha.</div>
+
+    <h2 id="object-class">8. Object — gốc của mọi class <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">java.lang.Object</code> là lớp duy nhất không có cha. Mọi class (kể cả class bạn không viết <code class="inline">extends</code>) đều kế thừa <code class="inline">Object</code>; record, enum, mảng cũng vậy. Nhờ đó mọi object đều có sẵn:</p>
+
+    <ul>
+      <li><code class="inline">toString()</code> — mặc định trả <code class="inline">TenClass@maBamHex</code>.</li>
+      <li><code class="inline">equals(Object)</code> — mặc định so sánh <strong>identity</strong> (cùng một object).</li>
+      <li><code class="inline">hashCode()</code> — mã băm, phải nhất quán với <code class="inline">equals</code>.</li>
+      <li><code class="inline">getClass()</code> — metadata class lúc chạy; so sánh được bằng <code class="inline">a.getClass() == Animal.class</code>.</li>
+      <li>Nhóm method đa luồng <code class="inline">wait</code>/<code class="inline">notify</code>/<code class="inline">notifyAll</code>, cùng <code class="inline">clone()</code> (hiếm dùng).</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        super(name);
+    }
+
+    public static void main() {
+        Animal a = new Animal("Milu");
+        Animal b = new Animal("Milu");
+
+        IO.println(a.getClass().getSimpleName());
+        IO.println(a.getClass() == Animal.class);
+        IO.println(a.toString().startsWith("Animal@"));
+        IO.println(a.equals(a));
+        IO.println(a.equals(b));
+        IO.println(a.hashCode() == a.hashCode());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Animal
+true
+true
+true
+false
+true</code></pre>
+    </div>
+
+    <p>Hai object cùng dữ liệu <code class="inline">"Milu"</code> nhưng <code class="inline">a.equals(b)</code> trả <code class="inline">false</code> vì <code class="inline">equals</code> mặc định so identity. Muốn so theo giá trị, phải override <code class="inline">equals</code>/<code class="inline">hashCode</code> — và khi làm ở cây kế thừa có bẫy riêng (mục 14). Toàn bộ contract của <code class="inline">equals</code>, <code class="inline">hashCode</code>, <code class="inline">toString</code> sẽ học ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</p>
+
+    <h2 id="composition">9. Composition vs inheritance <span class="badge b-prod">Production</span></h2>
+
+    <p>Nguyên tắc nổi tiếng (Effective Java, Item 18): <strong>"Favor composition over inheritance"</strong> — ưu tiên composition thay vì kế thừa. Kế thừa chỉ đúng khi quan hệ <em>is-a</em> thật sự và class cha được thiết kế để cho kế thừa; còn nếu bạn chỉ muốn <em>tái dùng code</em> thì composition gần như luôn thắng.</p>
+
+    <p>Ví dụ kinh điển: viết stack bằng cách kế thừa <code class="inline">ArrayList</code>. Nghe "tiết kiệm" vì được tặng miễn phí <code class="inline">add</code>, <code class="inline">remove</code>, <code class="inline">size</code>... nhưng chính món quà đó phá vỡ invariant LIFO của stack:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+
+public class BadStack&lt;E&gt; extends ArrayList&lt;E&gt; {
+    void push(E e) {
+        add(e);
+    }
+
+    E pop() {
+        return remove(size() - 1);
+    }
+
+    public static void main() {
+        BadStack&lt;String&gt; stack = new BadStack&lt;&gt;();
+        stack.push("a");
+        stack.push("b");
+        stack.add(0, "chen vao giua");
+        IO.println(stack);
+        IO.println("pop -> " + stack.pop());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[chen vao giua, a, b]
+pop -> b</code></pre>
+    </div>
+
+    <p>Người dùng stack có thể gọi thẳng <code class="inline">add(0, ...)</code>, <code class="inline">remove(0)</code>, <code class="inline">set(...)</code> — stack không còn là stack. Tệ hơn: mọi thay đổi của <code class="inline">ArrayList</code> trong tương lai đều có thể ảnh hưởng tới <code class="inline">BadStack</code> mà bạn không kiểm soát. Trong JDK thật, <code class="inline">java.util.Stack extends Vector</code> cũng mắc lỗi thiết kế y hệt và được khuyến cáo dùng <code class="inline">ArrayDeque</code> thay thế.</p>
+
+    <p>Bản đúng dùng <strong>composition + delegation</strong>: giữ một <code class="inline">Deque</code> bên trong và chỉ lộ đúng API của stack:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayDeque;
+import java.util.Deque;
+
+public class GoodStack&lt;E&gt; {
+    private final Deque&lt;E&gt; data = new ArrayDeque&lt;&gt;();
+
+    void push(E e) {
+        data.addLast(e);
+    }
+
+    E pop() {
+        return data.removeLast();
+    }
+
+    E peek() {
+        return data.getLast();
+    }
+
+    int size() {
+        return data.size();
+    }
+
+    public static void main() {
+        GoodStack&lt;String&gt; stack = new GoodStack&lt;&gt;();
+        stack.push("a");
+        stack.push("b");
+        IO.println("size = " + stack.size());
+        IO.println("pop  = " + stack.pop());
+        IO.println("peek = " + stack.peek());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>size = 2
+pop  = b
+peek = a</code></pre>
+    </div>
+
+    <p>Giờ không ai chèn được vào giữa stack: API công khai chỉ có <code class="inline">push</code>, <code class="inline">pop</code>, <code class="inline">peek</code>, <code class="inline">size</code>. Bên trong đổi từ <code class="inline">ArrayDeque</code> sang cấu trúc khác cũng không ảnh hưởng người dùng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Kế thừa</th><th>Composition</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Quan hệ</td><td>is-a</td><td>has-a</td></tr>
+        <tr><td>Mức liên kết</td><td>Chặt — lớp con phụ thuộc toàn bộ API và hành vi của cha</td><td>Lỏng — chỉ phụ thuộc phần API mình dùng</td></tr>
+        <tr><td>Khi class cha đổi</td><td>Dễ vỡ (fragile base class)</td><td>Được che giấu, dễ thay nội bộ</td></tr>
+        <tr><td>Tái dùng code</td><td>Thừa hưởng tất cả (kể cả thứ không muốn)</td><td>Ủy quyền (delegation) có chọn lọc</td></tr>
+        <tr><td>Phù hợp khi</td><td>Hierarchy ổn định, is-a thật, cha được thiết kế cho kế thừa</td><td>Mặc định nên chọn; mọi trường hợp còn lại</td></tr>
+      </tbody>
+    </table>
+
+    <p>Vậy khi nào <em>vẫn nên</em> kế thừa? Khi hội đủ: (1) quan hệ is-a đúng nghĩa; (2) class cha ổn định, ít thay đổi; (3) class cha được thiết kế và tài liệu hoá cho việc kế thừa (method rõ ràng, có hook như <code class="inline">protected</code> method); (4) bạn kiểm soát được cả cây kế thừa (cùng team/cùng module). Ví dụ hợp lý: exception hierarchy của chính bạn, base class cho các loại tài liệu trong cùng module.</p>
+
+    <h2 id="lsp">10. LSP — nguyên lý thay thế <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Liskov Substitution Principle (LSP):</strong> chỗ nào code cần lớp cha thì phải thay được bằng object của lớp con mà chương trình vẫn đúng. Nói cách khác: <em>lớp con không được làm điều mà người dùng lớp cha không ngờ tới</em>. Kế thừa là một lời hứa — vi phạm LSP là phá lời hứa đó.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Bird {
+    void fly() {
+        IO.println("Dang bay...");
+    }
+}
+
+public class Penguin extends Bird {
+    @Override
+    void fly() {
+        throw new UnsupportedOperationException("Chim canh cut khong bay duoc");
+    }
+
+    static void choChimBay(Bird bird) {
+        bird.fly();
+    }
+
+    public static void main() {
+        choChimBay(new Bird());
+
+        try {
+            choChimBay(new Penguin());
+        } catch (UnsupportedOperationException e) {
+            IO.println("Loi LSP: " + e.getMessage());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Dang bay...
+Loi LSP: Chim canh cut khong bay duoc</code></pre>
+    </div>
+
+    <p>Hàm <code class="inline">choChimBay(Bird)</code> được viết dựa trên giả định "Bird nào cũng bay". <code class="inline">Penguin</code> là Bird nhưng ném lỗi — mọi call site cũ bị phá. Cách sửa đúng: đừng đặt <code class="inline">fly()</code> ở <code class="inline">Bird</code>; tách interface <code class="inline">Flyable</code> cho các loài bay được, còn <code class="inline">Penguin</code> chỉ là <code class="inline">Bird</code> (interface học ở <a href="roadmap.html#phase-2">2.5</a>).</p>
+
+    <p>Dấu hiệu code đang vi phạm LSP:</p>
+    <ul>
+      <li>Override mà ném <code class="inline">UnsupportedOperationException</code>, hoặc biến method thành no-op rỗng.</li>
+      <li>Code khách hàng phải <code class="inline">instanceof</code>/ép kiểu để xử lý riêng từng lớp con.</li>
+      <li>Lớp con làm yếu precondition (nhận ít hơn), làm mạnh postcondition (trả về ít hơn) so với cha.</li>
+      <li>Comment kiểu "phải gọi method X trước khi gọi Y" chỉ đúng với một lớp con.</li>
+    </ul>
+
+    <p>LSP là chữ L trong SOLID — xem thêm ở <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>. Nhớ câu thần chú: <strong>kế thừa không phải để tái dùng code, mà để thay thế được (substitutability)</strong>.</p>
+
+    <h2 id="instanceof-cast">11. instanceof &amp; cast (giới thiệu) <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Vì lớp con là một dạng của lớp cha, gán con cho biến kiểu cha luôn an toàn — gọi là <strong>upcast</strong>, không cần ép kiểu:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Animal a = new Dog("Milu");   // upcast tu dong</code></pre>
+    </div>
+
+    <p>Chiều ngược lại — <strong>downcast</strong> — phải ép kiểu tường minh vì compiler không biết object thật là gì. Nếu ép sai sẽ ném <code class="inline">ClassCastException</code> lúc chạy. Luôn kiểm tra bằng <code class="inline">instanceof</code> trước, tốt nhất dùng dạng pattern matching (Java 16+) để khỏi ép thủ công:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    String name() {
+        return name;
+    }
+
+    void speak() {
+        IO.println(name() + " phat ra am thanh...");
+    }
+}
+
+class Cat extends Animal {
+    Cat(String name) {
+        super(name);
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    void speak() {
+        IO.println(name() + ": Gau gau!");
+    }
+
+    public static void main() {
+        Animal a = new Dog("Milu");
+        IO.println("a instanceof Dog = " + (a instanceof Dog));
+        IO.println("a instanceof Cat = " + (a instanceof Cat));
+
+        Dog d = (Dog) a;
+        d.speak();
+
+        Animal c = new Cat("Miu");
+        if (c instanceof Dog dog) {
+            dog.speak();
+        } else {
+            IO.println("c khong phai Dog");
+        }
+
+        try {
+            Dog bad = (Dog) c;
+        } catch (ClassCastException e) {
+            IO.println("Bat duoc: " + e.getClass().getSimpleName());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a instanceof Dog = true
+a instanceof Cat = false
+Milu: Gau gau!
+c khong phai Dog
+Bat duoc: ClassCastException</code></pre>
+    </div>
+
+    <p>Quan sát dòng cuối: ép <code class="inline">Cat</code> thành <code class="inline">Dog</code> ném <code class="inline">ClassCastException</code>. Quy tắc thực chiến: <strong>tránh downcast nếu thiết kế được</strong>; nếu buộc phải làm, luôn <code class="inline">instanceof</code> trước. Upcast + dynamic dispatch chính là polymorphism — đào sâu ở <a href="polymorphism.html">2.4 Polymorphism</a>; ép kiểu primitive (int, double...) nằm ở <a href="data-types.html">1.2 Data Types</a>.</p>
+
+    <h2 id="jdk-hierarchy">12. Cây kế thừa trong JDK <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Đọc code JDK bạn sẽ gặp các cây kế thừa lớn. Ba cây quan trọng nhất:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cây</th><th>Đường kế thừa tiêu biểu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Exception</td><td><code class="inline">Object → Throwable → Exception → IOException</code></td></tr>
+        <tr><td>Collections</td><td><code class="inline">Object → AbstractList → ArrayList</code> (và <code class="inline">List</code> là interface)</td></tr>
+        <tr><td>Số</td><td><code class="inline">Object → Number → Integer/Double</code> (<code class="inline">BigDecimal</code> cũng extends <code class="inline">Number</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nhờ kế thừa, một biến <code class="inline">Exception</code> giữ được mọi exception, một biến <code class="inline">Number</code> giữ được mọi loại số:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class JdkHierarchyDemo {
+    public static void main() {
+        Object o = "hello";
+        IO.println(o instanceof CharSequence);
+        IO.println("hello" instanceof Comparable);
+
+        Exception e = new java.io.IOException("loi doc file");
+        IO.println(e instanceof Exception);
+        IO.println(e instanceof java.io.IOException);
+        IO.println(e instanceof RuntimeException);
+        IO.println(e.getClass().getSuperclass().getSimpleName());
+
+        Number n = 42;
+        IO.println(n instanceof Integer);
+        IO.println(n instanceof Double);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+true
+true
+true
+false
+Exception
+true
+false</code></pre>
+    </div>
+
+    <p>Vài bài học thiết kế rút ra:</p>
+    <ul>
+      <li><strong>Đặt hành vi chung ở gốc cây:</strong> mọi exception đều có <code class="inline">getMessage()</code>/stack trace vì nằm ở <code class="inline">Throwable</code>; bạn chỉ cần bắt <code class="inline">Exception</code> là dùng được chung.</li>
+      <li><strong>Không phải cái gì cũng nên kế thừa:</strong> <code class="inline">java.util.Stack extends Vector</code> là ví dụ lịch sử sai (mục 9); <code class="inline">java.util.Properties extends Hashtable</code> cũng vậy.</li>
+      <li><strong>Interface tách khỏi cây class:</strong> <code class="inline">ArrayList</code> nằm trong cây <code class="inline">AbstractList</code>, đồng thời implements <code class="inline">List</code>, <code class="inline">RandomAccess</code>... — Java dùng interface để có "nhiều kiểu" mà không cần đa kế thừa class.</li>
+    </ul>
+
+    <h2 id="sealed">13. sealed — kiểm soát ai được kế thừa <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Từ Java 17, bạn có thể đóng khung một cây kế thừa bằng <code class="inline">sealed</code> + <code class="inline">permits</code>: chỉ những class/interface được liệt kê mới được phép kế thừa. Các lớp con phải là <code class="inline">final</code>, <code class="inline">sealed</code> tiếp, hoặc <code class="inline">non-sealed</code> (mở lại tự do).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract sealed class Animal permits Dog, Cat {
+    abstract String speak();
+}
+
+final class Cat extends Animal {
+    @Override
+    String speak() {
+        return "Meo meo!";
+    }
+}
+
+public final class Dog extends Animal {
+    private final String name;
+
+    Dog(String name) {
+        this.name = name;
+    }
+
+    @Override
+    String speak() {
+        return name + ": Gau gau!";
+    }
+
+    public static void main() {
+        Animal a = new Dog("Milu");
+        Animal c = new Cat();
+        IO.println(a.speak());
+        IO.println(c.speak());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Milu: Gau gau!
+Meo meo!</code></pre>
+    </div>
+
+    <p>Lợi ích: compiler biết chính xác tập lớp con, nên <code class="inline">switch</code> theo kiểu có thể kiểm tra đủ nhánh mà không cần <code class="inline">default</code>; thêm lớp con mới mà quên xử lý là lỗi compile. <code class="inline">sealed</code> là lựa chọn trung dung giữa "mở hoàn toàn" (mọi class extends) và <code class="inline">final</code> (không ai extends). Chi tiết enum/record/sealed ở <a href="roadmap.html#phase-2">2.7 Enum, nested &amp; sealed classes</a>.</p>
+
+    <h2 id="pitfalls">14. Pitfalls &amp; production notes <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Gọi method overridable trong constructor cha</td><td>Override của con chạy khi field con còn giá trị mặc định (0/null)</td><td>Constructor chỉ gọi method <code class="inline">private</code>/<code class="inline">final</code>/<code class="inline">static</code>; hoặc dùng prologue JEP 513 gán field trước</td></tr>
+        <tr><td><code class="inline">protected</code> field</td><td>Lớp con sửa trực tiếp, phá invariant của cha</td><td>Field <code class="inline">private</code>; mở <code class="inline">protected</code> method có kiểm tra khi thật cần</td></tr>
+        <tr><td>Cây kế thừa sâu 3–4 tầng</td><td>Fragile base class, khó đọc, sửa gốc vỡ khắp nơi</td><td>Giữ tối đa 2–3 tầng; ưu tiên composition</td></tr>
+        <tr><td>Kế thừa chỉ để tái dùng code</td><td>Sai quan hệ is-a, lộ API không mong muốn</td><td>Composition + delegation (mục 9)</td></tr>
+        <tr><td>Thêm state khi override <code class="inline">equals</code> ở lớp con</td><td>Bất đối xứng và vi phạm hashCode contract</td><td>Tránh thêm state vào equals; hoặc dùng composition</td></tr>
+        <tr><td>Downcast không kiểm tra</td><td><code class="inline">ClassCastException</code> lúc chạy</td><td><code class="inline">instanceof</code> trước, hoặc thiết kế lại để không cần cast</td></tr>
+        <tr><td>Nhầm hiding static thành override</td><td>Gọi sai method vì theo kiểu reference</td><td>Không che static method; gọi qua <code class="inline">TenClass.method()</code></td></tr>
+        <tr><td>Quên <code class="inline">super(args)</code> khi cha không có no-arg</td><td>Lỗi compile ngay</td><td>Thêm <code class="inline">super(args)</code> — compiler sẽ nhắc</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Ví dụ 1 — gọi method overridable trong constructor</h3>
+
+    <p><code class="inline">Animal</code> gọi <code class="inline">speak()</code> trong constructor; <code class="inline">Dog</code> override nó. Vì constructor cha chạy trước khi field của con được khởi tạo, <code class="inline">age</code> vẫn là <code class="inline">0</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    Animal(String name) {
+        IO.println("Animal constructor goi speak()");
+        speak();
+    }
+
+    void speak() {
+        IO.println("Animal.speak()");
+    }
+}
+
+public class Dog extends Animal {
+    private int age;
+
+    Dog(String name) {
+        super(name);
+        age = 3;
+        IO.println("Dog constructor: age = " + age);
+    }
+
+    @Override
+    void speak() {
+        IO.println("Dog.speak() doc age = " + age);
+    }
+
+    public static void main() {
+        new Dog("Milu");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Animal constructor goi speak()
+Dog.speak() doc age = 0
+Dog constructor: age = 3</code></pre>
+    </div>
+
+    <p>Đây là lý do nhiều style guide cấm gọi method non-final từ constructor. Nếu buộc phải có "hook", hãy để method <code class="inline">final</code> hoặc <code class="inline">private</code>, hoặc validate trong prologue trước <code class="inline">super()</code> (JEP 513, mục 2).</p>
+
+    <h3>Ví dụ 2 — equals thêm state ở lớp con gây bất đối xứng</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Objects;
+
+class Animal {
+    protected final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Animal other) {
+            return name.equals(other.name);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+}
+
+public class Dog extends Animal {
+    private final String breed;
+
+    Dog(String name, String breed) {
+        super(name);
+        this.breed = breed;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Dog other) {
+            return super.equals(o) &amp;&amp; breed.equals(other.breed);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, breed);
+    }
+
+    public static void main() {
+        Animal a = new Animal("Milu");
+        Dog d = new Dog("Milu", "Poodle");
+        IO.println("a.equals(d) = " + a.equals(d));
+        IO.println("d.equals(a) = " + d.equals(a));
+        IO.println("a.hashCode() == d.hashCode() = " + (a.hashCode() == d.hashCode()));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a.equals(d) = true
+d.equals(a) = false
+a.hashCode() == d.hashCode() = false</code></pre>
+    </div>
+
+    <p><code class="inline">a.equals(d)</code> là <code class="inline">true</code> nhưng <code class="inline">d.equals(a)</code> là <code class="inline">false</code> — vi phạm tính đối xứng (symmetry); kèm theo đó hai object "bằng nhau" lại có hashCode khác nhau. Contract yêu cầu <code class="inline">x.equals(y)</code> thì <code class="inline">y.equals(x)</code>, và <code class="inline">equals</code> thì <code class="inline">hashCode</code> phải bằng nhau. Cách xử lý chuẩn (dùng composition thay vì kế thừa, hoặc chấp nhận không so được hai chiều) sẽ học kỹ ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</p>
+
+    <h2 id="qa">15. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Kế thừa là gì? <code class="inline">extends</code> làm gì?</summary>
+      <div class="answer">Kế thừa cho phép lớp con (subclass) thừa hưởng field và method của lớp cha (superclass), tạo quan hệ is-a. <code class="inline">class Dog extends Animal</code> nghĩa là Dog có mọi thành viên không-private của Animal, dùng được chúng như của mình, và có thể override để thay đổi hành vi. Java chỉ cho đơn kế thừa class.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Vì sao Java không cho đa kế thừa class? Diamond problem là gì?</summary>
+      <div class="answer">Đa kế thừa class tạo ra "diamond problem": nếu A có method <code class="inline">x()</code>, B và C đều extends A và override <code class="inline">x()</code>, thì D extends B, C gọi <code class="inline">x()</code> theo bản nào? Java chọn đơn kế thừa cho class để tránh nhập nhằng, nhưng cho phép implements nhiều interface. Với interface có default method, nếu xung đột xảy ra, compiler buộc lớp con override để chọn cách giải quyết.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Constructor có được thừa hưởng không? Vì sao?</summary>
+      <div class="answer">Không. Constructor không phải thành viên (member) nên không được thừa hưởng; mỗi class phải tự khai báo constructor của mình. Tên constructor trùng tên class nên về bản chất cũng không thể thừa hưởng sang class tên khác. Constructor con bắt buộc gọi trực tiếp hoặc gián tiếp constructor cha qua <code class="inline">super(...)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Nếu constructor không gọi <code class="inline">super(...)</code> thì chuyện gì xảy ra? Khi nào lỗi?</summary>
+      <div class="answer">Compiler tự chèn <code class="inline">super()</code> (không tham số) vào đầu constructor. Nếu lớp cha không có constructor no-arg, chương trình lỗi compile: "constructor Animal in class Animal cannot be applied to given types". Lúc đó bạn buộc phải gọi tường minh <code class="inline">super(args)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">this(...)</code> và <code class="inline">super(...)</code> khác nhau thế nào? Gọi cả hai trong một constructor được không?</summary>
+      <div class="answer"><code class="inline">super(...)</code> gọi constructor lớp cha; <code class="inline">this(...)</code> gọi constructor khác cùng class (constructor chaining). Không được gọi cả hai trong cùng constructor — compiler báo "redundant explicit constructor invocation" hoặc lỗi tương tự. Từ JDK 25 (JEP 513), câu lệnh không đụng <code class="inline">this</code> được phép đứng trước lời gọi constructor, nhưng điều này không thay đổi việc chỉ được gọi tối đa một constructor khác.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Override và overload khác nhau thế nào?</summary>
+      <div class="answer">Override: lớp con định nghĩa lại method của cha với cùng signature; quyết định lúc chạy theo object thật. Overload: nhiều method cùng tên khác danh sách tham số (thường trong cùng class); quyết định lúc compile theo kiểu tham số. Override có ràng buộc return type covariant, visibility không giảm, exception không mở rộng — overload không có các ràng buộc này.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">@Override</code> có bắt buộc không? Vì sao nên dùng?</summary>
+      <div class="answer">Không bắt buộc — code vẫn compile nếu thiếu. Nhưng nên luôn viết: compiler kiểm tra method đó thật sự override một method cha/interface, nhờ đó bắt được lỗi sai tên, sai tham số, method cha private/static... Nếu không, bạn có thể vô tình tạo overload mới và method cũ không bao giờ được gọi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Khi override, quy tắc về return type, visibility, exception là gì?</summary>
+      <div class="answer">Return type: giống hoặc covariant (kiểu con). Visibility: không được giảm, chỉ được tăng. Checked exception: không được ném rộng hơn method cha (có thể hẹp hơn hoặc bỏ); unchecked exception không bị hạn chế. Thêm nữa, không override được private, static, final; constructor không tính là override.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. static method có override được không? Hiện tượng đó gọi là gì?</summary>
+      <div class="answer">Không. Nếu lớp con khai báo static method trùng signature, đó là <strong>hiding</strong> (che khuất), không phải override. Method được chọn theo kiểu reference lúc compile, không theo object thật. Ví dụ biến <code class="inline">Animal animal = new Dog(); animal.info();</code> vẫn gọi <code class="inline">Animal.info()</code> dù object là Dog.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Private method trùng tên ở lớp con — có phải override không?</summary>
+      <div class="answer">Không. Private method không được thừa hưởng nên lớp con khai báo cùng tên chỉ là một method mới, không liên quan gì tới method cha. Method private của cha được bind tĩnh (early binding): nếu code trong class cha gọi nó, luôn chạy bản của cha dù object thật là lớp con.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Trình bày đầy đủ thứ tự khởi tạo khi tạo một object lớp con.</summary>
+      <div class="answer">(1) static initializer lớp cha → (2) static initializer lớp con → (3) instance field/initializer của cha → (4) thân constructor cha → (5) instance field/initializer của con → (6) thân constructor con. Phần static chỉ chạy lần đầu class được nạp; phần instance chạy mỗi lần <code class="inline">new</code>. Vì vậy field của con luôn có giá trị mặc định khi constructor cha đang chạy.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Vì sao không nên gọi method overridable trong constructor?</summary>
+      <div class="answer">Vì constructor cha chạy trước khi field của con được khởi tạo. Nếu method bị con override được gọi từ constructor cha, bản của con chạy khi mọi field riêng của con còn là 0/null — bug rất khó tìm. Giải pháp: chỉ gọi method private/final/static trong constructor, hoặc dùng prologue JEP 513 để gán field con trước <code class="inline">super()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Mọi class có kế thừa <code class="inline">Object</code> không? Interface thì sao?</summary>
+      <div class="answer">Mọi class — kể cả class không viết <code class="inline">extends</code>, record, enum, mảng — đều có <code class="inline">Object</code> ở gốc. Interface không extends Object, nhưng mọi object thực hiện interface vẫn là Object; biến kiểu interface vẫn gọi được các method của Object như <code class="inline">toString()</code>, <code class="inline">equals()</code>. Một interface có thể extends nhiều interface khác.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Upcast và downcast là gì? Khi nào <code class="inline">ClassCastException</code> xảy ra?</summary>
+      <div class="answer">Upcast: gán object con cho biến kiểu cha — luôn an toàn, tự động (<code class="inline">Animal a = new Dog()</code>). Downcast: ép biến kiểu cha về kiểu con (<code class="inline">(Dog) a</code>) — cần thiết khi muốn dùng API riêng của con. Nếu object thật không phải kiểu đích (hoặc lớp con của nó), JVM ném <code class="inline">ClassCastException</code> lúc chạy. Luôn kiểm tra bằng <code class="inline">instanceof</code> trước khi cast.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. final method, final class, final field khác nhau thế nào? Cho ví dụ JDK.</summary>
+      <div class="answer">final method: lớp con không override được. final class: không class nào extends được — ví dụ <code class="inline">String</code>, <code class="inline">Integer</code>, mọi record. final field/biến: gán một lần, không đổi được. Cả ba đều là công cụ thiết kế để nói rõ "phần này cố ý bất biến"; <code class="inline">String</code> final giúp bất biến và dùng chung an toàn trong string pool.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Khi nào dùng composition thay vì kế thừa? "Favor composition over inheritance" nghĩa là gì?</summary>
+      <div class="answer">Kế thừa chỉ đúng khi quan hệ is-a thật và lớp cha được thiết kế ổn định cho việc kế thừa. Nếu mục đích chỉ là tái dùng code, hoặc quan hệ thực ra là has-a, hãy dùng composition: giữ object của class khác làm field và ủy quyền (delegation) các method cần thiết. Composition lỏng hơn, che giấu nội bộ tốt hơn, ít bị ảnh hưởng khi class kia thay đổi. Ví dụ kinh điển: đừng cho <code class="inline">Stack extends ArrayList</code>, hãy cho Stack chứa một <code class="inline">Deque</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. LSP (Liskov Substitution Principle) là gì? Cho ví dụ vi phạm.</summary>
+      <div class="answer">Mọi nơi dùng lớp cha phải thay được bằng object lớp con mà chương trình vẫn đúng. Ví dụ vi phạm: <code class="inline">Bird</code> có <code class="inline">fly()</code>, <code class="inline">Penguin extends Bird</code> nhưng <code class="inline">fly()</code> ném <code class="inline">UnsupportedOperationException</code> — code viết cho Bird sẽ vỡ khi nhận Penguin. Cách sửa: tách interface <code class="inline">Flyable</code> cho loài bay được, đừng nhét hành vi không phổ quát vào lớp cha.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Vì sao <code class="inline">Stack extends ArrayList</code> là thiết kế sai?</summary>
+      <div class="answer">Vì stack là LIFO, còn ArrayList cho phép chèn/xóa/sửa ở bất kỳ vị trí nào. Kế thừa khiến stack thừa hưởng <code class="inline">add(index, e)</code>, <code class="inline">remove(index)</code>, <code class="inline">set(...)</code> — người dùng có thể phá invariant LIFO. Ngoài ra stack phụ thuộc vào mọi thay đổi tương lai của ArrayList. Trong JDK, <code class="inline">java.util.Stack extends Vector</code> là ví dụ lịch sử của lỗi này; cách đúng là composition với <code class="inline">ArrayDeque</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Override <code class="inline">equals</code> ở lớp con mà thêm field mới có vấn đề gì?</summary>
+      <div class="answer">Gây bất đối xứng: với <code class="inline">Animal</code> so theo name và <code class="inline">Dog</code> so thêm breed, có thể <code class="inline">a.equals(d) == true</code> nhưng <code class="inline">d.equals(a) == false</code> — vi phạm contract đối xứng; hashCode cũng có thể khác nhau dù equals nói bằng nhau. Cách tránh: không thêm field mới vào equals của lớp con (chấp nhận so theo cha), hoặc dùng composition thay vì kế thừa, hoặc dùng <code class="inline">getClass()</code> thay <code class="inline">instanceof</code> (giữ được đối xứng, nhưng object lớp con sẽ không bao giờ bằng object lớp cha — mỗi cách đều có đánh đổi). Chi tiết ở <a href="object-contract.html">2.6</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. sealed class là gì? Dùng khi nào?</summary>
+      <div class="answer">sealed (Java 17+) giới hạn tập class/interface được phép kế thừa qua danh sách <code class="inline">permits</code>; các lớp con phải final, sealed tiếp, hoặc non-sealed. Dùng cho domain model đóng (ví dụ cây lệnh thanh toán, trạng thái đơn hàng) để compiler kiểm tra đủ nhánh khi dùng switch pattern matching. Nó là điểm giữa "mở hoàn toàn" và final.</div>
+    </details>
+
+    <h2 id="bai-tap">16. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Thứ tự khởi tạo</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    static {
+        IO.println("1. static Animal");
+    }
+
+    int a = inA();
+
+    int inA() {
+        IO.println("3. instance field Animal");
+        return 1;
+    }
+
+    Animal(String name) {
+        IO.println("4. constructor Animal");
+    }
+}
+
+public class Dog extends Animal {
+    static {
+        IO.println("2. static Dog");
+    }
+
+    int value = 42;
+
+    {
+        IO.println("5. instance initializer Dog");
+    }
+
+    Dog(String name) {
+        super(name);
+        IO.println("6. constructor Dog");
+    }
+
+    public static void main() {
+        Dog dog = new Dog("Milu");
+        IO.println("dog.value = " + dog.value);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra lần lượt: <code class="inline">1. static Animal</code>, <code class="inline">2. static Dog</code>, <code class="inline">3. instance field Animal</code>, <code class="inline">4. constructor Animal</code>, <code class="inline">5. instance initializer Dog</code>, <code class="inline">6. constructor Dog</code>, rồi <code class="inline">dog.value = 42</code>. Quy tắc: static cha → static con → instance cha → constructor cha → instance con → constructor con (mục 3).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Sửa lỗi thiếu <code class="inline">super(args)</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+}
+
+public class Dog extends Animal {
+    Dog() {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: <code class="inline">constructor Animal in class Animal cannot be applied to given types; required: String; found: no arguments</code>. Vì Animal chỉ có constructor nhận <code class="inline">String</code>, compiler chèn <code class="inline">super()</code> no-arg nên thất bại. Sửa: <code class="inline">Dog() { super("Milu"); }</code> hoặc đổi thành <code class="inline">Dog(String name) { super(name); }</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Tìm lỗi visibility khi override</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    public void speak() {
+        IO.println("Animal sound");
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    protected void speak() {
+        IO.println("Dog sound");
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: <code class="inline">speak() in Dog cannot override speak() in Animal; attempting to assign weaker access privileges; was public</code>. Override không được giảm visibility. Sửa: giữ <code class="inline">public void speak()</code>. Ngược lại, tăng từ <code class="inline">protected</code> lên <code class="inline">public</code> là hợp lệ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. Output của stack kế thừa ArrayList</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.ArrayList;
+
+public class BadStack&lt;E&gt; extends ArrayList&lt;E&gt; {
+    void push(E e) {
+        add(e);
+    }
+
+    E pop() {
+        return remove(size() - 1);
+    }
+
+    public static void main() {
+        BadStack&lt;String&gt; stack = new BadStack&lt;&gt;();
+        stack.push("a");
+        stack.push("b");
+        stack.add(0, "chen vao giua");
+        IO.println(stack);
+        IO.println("pop -> " + stack.pop());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[chen vao giua, a, b]</code> rồi <code class="inline">pop -> b</code>. <code class="inline">add(0, ...)</code> chèn thẳng vào giữa stack vì BadStack thừa hưởng toàn bộ API của ArrayList — invariant LIFO bị phá (mục 9). Cách đúng: composition với <code class="inline">Deque</code> và chỉ lộ API <code class="inline">push/pop/peek/size</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. static method chạy theo kiểu nào?</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    static void info() {
+        IO.println("Animal.info()");
+    }
+}
+
+public class Dog extends Animal {
+    static void info() {
+        IO.println("Dog.info()");
+    }
+
+    public static void main() {
+        Animal animal = new Dog();
+        animal.info();
+
+        Dog dog = new Dog();
+        dog.info();
+
+        ((Animal) dog).info();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Animal.info()</code>, <code class="inline">Dog.info()</code>, <code class="inline">Animal.info()</code>. Static method gọi theo kiểu reference lúc compile (hiding), không theo object thật. Dòng đầu dù <code class="inline">animal</code> trỏ tới Dog vẫn chạy bản của Animal; dòng ba ép về Animal nên cũng chạy bản Animal.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. <code class="inline">@Override</code> nào sai?</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    void speak() {
+    }
+
+    void run(int speed) {
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    void speak() {
+    }
+
+    @Override
+    void run() {
+    }
+
+    @Override
+    void run(int speed) {
+    }
+
+    @Override
+    void bark() {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile</strong> tại hai chỗ: <code class="inline">run()</code> và <code class="inline">bark()</code> — lỗi <code class="inline">method does not override or implement a method from a supertype</code>. <code class="inline">run()</code> không khớp <code class="inline">run(int)</code> của cha (khác tham số — đây là overload, không phải override); <code class="inline">bark()</code> không tồn tại ở cha. <code class="inline">speak()</code> và <code class="inline">run(int speed)</code> hợp lệ. Chính vì vậy nên luôn viết <code class="inline">@Override</code>: nó biến lỗi logic âm thầm thành lỗi compile.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Bẫy gọi method overridable trong constructor</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    Animal(String name) {
+        IO.println("Animal constructor goi speak()");
+        speak();
+    }
+
+    void speak() {
+        IO.println("Animal.speak()");
+    }
+}
+
+public class Dog extends Animal {
+    private int age;
+
+    Dog(String name) {
+        super(name);
+        age = 3;
+        IO.println("Dog constructor: age = " + age);
+    }
+
+    @Override
+    void speak() {
+        IO.println("Dog.speak() doc age = " + age);
+    }
+
+    public static void main() {
+        new Dog("Milu");
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra: <code class="inline">Animal constructor goi speak()</code>, <code class="inline">Dog.speak() doc age = 0</code>, <code class="inline">Dog constructor: age = 3</code>. Constructor cha gọi <code class="inline">speak()</code>, dynamic dispatch chọn bản của Dog, nhưng lúc đó <code class="inline">age</code> chưa được gán (còn 0) vì field của con chỉ được khởi tạo sau khi constructor cha chạy xong.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. instanceof và cạm bẫy downcast</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    String name() {
+        return name;
+    }
+
+    void speak() {
+        IO.println(name() + " phat ra am thanh...");
+    }
+}
+
+class Cat extends Animal {
+    Cat(String name) {
+        super(name);
+    }
+}
+
+public class Dog extends Animal {
+    Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    void speak() {
+        IO.println(name() + ": Gau gau!");
+    }
+
+    public static void main() {
+        Animal a = new Dog("Milu");
+        IO.println(a instanceof Dog);
+        IO.println(a instanceof Cat);
+        Dog d = (Dog) a;
+        d.speak();
+        Animal c = new Cat("Miu");
+        try {
+            Dog bad = (Dog) c;
+        } catch (ClassCastException e) {
+            IO.println("Bat duoc: " + e.getClass().getSimpleName());
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">Milu: Gau gau!</code>, <code class="inline">Bat duoc: ClassCastException</code>. Biến kiểu Animal có thể trỏ tới Dog (upcast miễn phí) nên <code class="inline">instanceof Dog</code> là true, <code class="inline">instanceof Cat</code> là false. Ép Cat thành Dog ném <code class="inline">ClassCastException</code> — vì vậy phải kiểm tra <code class="inline">instanceof</code> trước khi downcast.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. Covariant return type</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    Number makeSound() {
+        IO.println("Animal sound");
+        return 0;
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    Integer makeSound() {
+        IO.println("Dog sound");
+        return 1;
+    }
+
+    public static void main() {
+        Animal animal = new Dog();
+        IO.println(animal.makeSound().getClass().getSimpleName());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Dog sound</code> rồi <code class="inline">Integer</code>. <code class="inline">Integer</code> là lớp con của <code class="inline">Number</code> nên return type hẹp hơn vẫn hợp lệ (covariant). Object thật là Dog nên dynamic dispatch chạy bản Dog; compiler/JVM sinh bridge method để call site kiểu <code class="inline">Number</code> vẫn hoạt động.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. final method và final class</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    final void speak() {
+    }
+}
+
+public class Dog extends Animal {
+    @Override
+    void speak() {
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: <code class="inline">speak() in Dog cannot override speak() in Animal; overridden method is final</code>. Với <code class="inline">public class Dog extends String</code>, lỗi là <code class="inline">cannot inherit from final String</code> — <code class="inline">String</code> (và <code class="inline">Integer</code>) là final class. Muốn "mở rộng" final class, dùng composition thay vì kế thừa.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Constructor chaining với <code class="inline">this()</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">class Animal {
+    private final String name;
+
+    Animal(String name) {
+        this.name = name;
+        IO.println("Animal(" + name + ")");
+    }
+
+    String name() {
+        return name;
+    }
+}
+
+public class Dog extends Animal {
+    private final String breed;
+
+    Dog(String name, String breed) {
+        super(name);
+        this.breed = breed;
+        IO.println("Dog(" + name + ", " + breed + ")");
+    }
+
+    Dog(String name) {
+        this(name, "chua ro");
+    }
+
+    Dog() {
+        this("khong ten", "chua ro");
+    }
+
+    public static void main() {
+        new Dog("Milu");
+        new Dog();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra: <code class="inline">Animal(Milu)</code>, <code class="inline">Dog(Milu, chua ro)</code>, <code class="inline">Animal(khong ten)</code>, <code class="inline">Dog(khong ten, chua ro)</code>. <code class="inline">this(...)</code> dồn mọi constructor về constructor đầy đủ, constructor đó mới gọi <code class="inline">super(name)</code>. Nhờ vậy logic ở một chỗ, không lặp code khởi tạo.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Vi phạm LSP</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Bird {
+    void fly() {
+        IO.println("Dang bay...");
+    }
+}
+
+public class Penguin extends Bird {
+    @Override
+    void fly() {
+        throw new UnsupportedOperationException("Chim canh cut khong bay duoc");
+    }
+
+    static void choChimBay(Bird bird) {
+        bird.fly();
+    }
+
+    public static void main() {
+        choChimBay(new Bird());
+        try {
+            choChimBay(new Penguin());
+        } catch (UnsupportedOperationException e) {
+            IO.println("Loi LSP: " + e.getMessage());
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Dang bay...</code> rồi <code class="inline">Loi LSP: Chim canh cut khong bay duoc</code>. Hàm <code class="inline">choChimBay(Bird)</code> giả định mọi Bird bay được, nhưng Penguin ném lỗi — code viết cho lớp cha vỡ khi nhận lớp con. Cách sửa: tách <code class="inline">Flyable</code> thành interface riêng, không nhét <code class="inline">fly()</code> vào Bird.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13. equals bất đối xứng khi lớp con thêm state</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.Objects;
+
+class Animal {
+    protected final String name;
+
+    Animal(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Animal other) {
+            return name.equals(other.name);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+}
+
+public class Dog extends Animal {
+    private final String breed;
+
+    Dog(String name, String breed) {
+        super(name);
+        this.breed = breed;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Dog other) {
+            return super.equals(o) &amp;&amp; breed.equals(other.breed);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, breed);
+    }
+
+    public static void main() {
+        Animal a = new Animal("Milu");
+        Dog d = new Dog("Milu", "Poodle");
+        IO.println(a.equals(d));
+        IO.println(d.equals(a));
+        IO.println(a.hashCode() == d.hashCode());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">false</code>. <code class="inline">Animal.equals</code> chấp nhận mọi Animal (kể cả Dog) nên <code class="inline">a.equals(d)</code> là true; <code class="inline">Dog.equals</code> chỉ chấp nhận Dog nên <code class="inline">d.equals(a)</code> là false — vi phạm đối xứng. Tệ hơn, hashCode của hai object "bằng nhau" (theo một chiều) lại khác nhau. Giải pháp thường dùng: không thêm field mới vào equals của lớp con, hoặc dùng composition.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 14. Thiết kế lại cây kế thừa bị vi phạm LSP</summary>
+      <div class="codeblock">
+        <pre><code class="java">abstract class Animal {
+    abstract void swim();
+}
+
+class Dog extends Animal {
+    @Override
+    void swim() {
+        IO.println("Dog boi rat gioi");
+    }
+}
+
+class Cat extends Animal {
+    @Override
+    void swim() {
+        throw new UnsupportedOperationException("Meo khong boi");
+    }
+}</code></pre>
+      </div>
+      <div class="answer">Thiết kế sai vì <code class="inline">swim()</code> không phổ quát cho mọi Animal: bất kỳ code nào nhận <code class="inline">Animal</code> và gọi <code class="inline">swim()</code> sẽ vỡ khi gặp <code class="inline">Cat</code> — vi phạm LSP. Thiết kế lại: <code class="inline">Animal</code> chỉ giữ hành vi chung (ví dụ <code class="inline">speak()</code>); loài bơi được triển khai qua interface riêng, hoặc <code class="inline">swim()</code> chỉ tồn tại ở <code class="inline">Dog</code> nếu chỉ một loài có hành vi đó. Nguyên tắc: đừng nhét vào lớp cha thứ không đúng với <em>mọi</em> lớp con.</div>
+    </details>
+
+    <h2 id="cheat-sheet">17. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kế thừa</td><td><code class="inline">class Con extends Cha { }</code> — chỉ một class cha</td></tr>
+        <tr><td>Gọi constructor cha</td><td><code class="inline">super(args);</code> — tối đa một lời gọi constructor khác mỗi constructor</td></tr>
+        <tr><td>Gọi constructor cùng class</td><td><code class="inline">this(args);</code> — constructor chaining</td></tr>
+        <tr><td>Compiler tự chèn</td><td><code class="inline">super();</code> khi không gọi tường minh; cha không có no-arg → lỗi compile</td></tr>
+        <tr><td>Gọi method cha</td><td><code class="inline">super.method(args);</code> — bỏ qua dynamic dispatch</td></tr>
+        <tr><td>Override</td><td>Cùng signature; return covariant; không giảm visibility; không mở rộng checked exception</td></tr>
+        <tr><td>Bắt lỗi override</td><td>Luôn viết <code class="inline">@Override</code></td></tr>
+        <tr><td>static method</td><td>Hiding, không override; gọi theo kiểu reference</td></tr>
+        <tr><td>private method</td><td>Không override; method con cùng tên là method mới</td></tr>
+        <tr><td>final</td><td>method: cấm override · class: cấm kế thừa (String, Integer) · field: gán một lần</td></tr>
+        <tr><td>Thứ tự khởi tạo</td><td>static cha → static con → instance cha → ctor cha → instance con → ctor con</td></tr>
+        <tr><td>Ép kiểu</td><td>Upcast tự động; downcast cần <code class="inline">instanceof</code> (pattern matching) trước</td></tr>
+        <tr><td>Object</td><td>Gốc mọi class; override <code class="inline">toString</code>/<code class="inline">equals</code>/<code class="inline">hashCode</code> cùng nhau</td></tr>
+        <tr><td>Chọn thiết kế</td><td>is-a ổn định → kế thừa; còn lại → composition + delegation</td></tr>
+        <tr><td>Đóng hierarchy</td><td><code class="inline">sealed ... permits ...</code>; con phải final/sealed/non-sealed</td></tr>
+        <tr><td>JDK 25</td><td>JEP 513: được đặt code không đụng <code class="inline">this</code> trước <code class="inline">super()</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Viết được <code class="inline">class Con extends Cha</code> kèm constructor gọi <code class="inline">super(args)</code> mà không cần tra cứu.</li>
+      <li>Kể đúng 6 bước thứ tự khởi tạo cha/con và phân biệt static với instance.</li>
+      <li>Giải thích được vì sao constructor không được thừa hưởng.</li>
+      <li>Nêu đủ 4 quy tắc override: signature, covariant return, visibility, checked exception.</li>
+      <li>Phân biệt override / overload / hiding và cho ví dụ mỗi loại.</li>
+      <li>Giải thích vì sao static method không dispatch theo object thật.</li>
+      <li>Trả lời được private method trùng tên ở con có phải override không (không).</li>
+      <li>Giải thích bẫy gọi method overridable trong constructor kèm ví dụ field = 0.</li>
+      <li>Phân biệt upcast và downcast, biết khi nào <code class="inline">ClassCastException</code>.</li>
+      <li>Nêu được lý do <code class="inline">Stack extends ArrayList</code> sai và cách sửa bằng composition.</li>
+      <li>Phát biểu LSP và một ví dụ vi phạm (Bird/Penguin).</li>
+      <li>Giải thích vì sao thêm state vào <code class="inline">equals</code> ở lớp con gây bất đối xứng.</li>
+      <li>Biết JEP 513 thay đổi quy tắc constructor của JDK 25 thế nào.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.1.4" target="_blank" rel="noreferrer">JLS §8.1.4 — Superclasses and Subclasses</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.8.7" target="_blank" rel="noreferrer">JLS §8.8.7 — Constructor Bodies and Explicit Constructor Invocations</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.4.8" target="_blank" rel="noreferrer">JLS §8.4.8 — Inheritance, Overriding, and Hiding</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-12.html#jls-12.5" target="_blank" rel="noreferrer">JLS §12.5 — Creation of New Class Instances</a></li>
+      <li><a href="https://openjdk.org/jeps/513" target="_blank" rel="noreferrer">JEP 513 — Flexible Constructor Bodies (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/subclasses.html" target="_blank" rel="noreferrer">Oracle Tutorial — Inheritance</a></li>
+      <li><a href="https://dev.java/learn/inheritance/" target="_blank" rel="noreferrer">Dev.java — Inheritance</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Inheritance · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

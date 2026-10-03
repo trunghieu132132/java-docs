@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotations &amp; Reflection — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item active" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="annotations-reflection">Annotations &amp; Reflection — metadata và soi class lúc runtime</h1>
+
+    <p class="lead">Annotation là <strong>nhãn metadata</strong> gắn lên class, field, method; bản thân nó <em>không làm gì cả</em> — phải có "người đọc" nó. Reflection là bộ API cho phép chương trình <strong>tự soi và thao tác</strong> class, field, method, constructor lúc đang chạy. Ghép hai thứ này lại bạn hiểu được vì sao Spring, Jackson, JPA trông "thần kỳ": chúng quét annotation bằng reflection. Trang này đi từ built-in annotation, tự định nghĩa annotation, retention/target, reflection API, tới tự viết validator mini — kết thúc bằng cách debug framework và bẫy production.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#built-in">Built-in annotations — annotation có sẵn của Java</a></li>
+        <li><a href="#tu-dinh-nghia">Tự định nghĩa annotation với @interface</a></li>
+        <li><a href="#meta-annotation">@Retention, @Target &amp; các meta-annotation</a></li>
+        <li><a href="#reflection-co-ban">Reflection API cơ bản — soi class lúc runtime</a></li>
+        <li><a href="#doc-annotation">Đọc annotation lúc runtime — validator đầu tiên</a></li>
+        <li><a href="#reflection-nang-cao">Reflection nâng cao — private, constructor, record</a></li>
+        <li><a href="#mini-framework">Mini framework — validator, DI &amp; JSON serializer</a></li>
+        <li><a href="#hieu-nang">Hiệu năng reflection</a></li>
+        <li><a href="#framework">Spring/Jackson/JPA dùng annotation &amp; reflection thế nào</a></li>
+        <li><a href="#pitfalls">Pitfalls — bảng lỗi thường gặp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js — TypeScript decorators vs Java annotations</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 2.9 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — đọc hiểu annotation trong codebase Spring/Jackson/JPA; tự định nghĩa annotation với <code class="inline">@Retention</code>/<code class="inline">@Target</code>; dùng reflection đọc field, gọi method, tạo object; phân biệt <code class="inline">getDeclared...</code> và <code class="inline">get...</code>; tự viết validator mini đọc annotation lúc runtime.</li>
+      <li><strong>Phải hiểu</strong> — annotation là dữ liệu thụ động, phải có reader (compiler, framework, tool); retention quyết định annotation sống tới đâu; reflection đi qua đối tượng <code class="inline">Class</code>; <code class="inline">setAccessible(true)</code> phá encapsulation và bị JPMS chặn với class của JDK; generic bị erasure nên runtime không giữ <code class="inline">List&lt;String&gt;</code>; reflection chậm hơn gọi trực tiếp.</li>
+      <li><strong>Nhận biết</strong> — annotation processor chạy lúc compile (Lombok, MapStruct); dynamic proxy dùng cho AOP (<code class="inline">@Transactional</code>); bytecode manipulation (ASM, ByteBuddy); <code class="inline">MethodHandle</code>/<code class="inline">VarHandle</code> là lối thoát hiệu năng cho reflection; JEP 512 compact source file là cú pháp JDK 25 học ở <a href="methods.html#main">1.5 Methods</a>.</li>
+    </ul>
+
+    <p><strong>Vì sao nói "annotation không tự làm gì"?</strong> Hãy tưởng tượng annotation như tờ giấy nhớ dán lên hộp hàng: tờ giấy không tự di chuyển hộp. Việc "đọc rồi xử lý" do người khác làm:</p>
+    <ul>
+      <li><code class="inline">@Override</code> — do <strong>compiler</strong> đọc; sai là báo lỗi ngay khi build.</li>
+      <li><code class="inline">@Deprecated</code> — do <strong>javac và IDE</strong> đọc để cảnh báo/gạch ngang.</li>
+      <li><code class="inline">@Autowired</code>, <code class="inline">@Transactional</code> — do <strong>Spring</strong> đọc bằng reflection lúc khởi động.</li>
+      <li><code class="inline">@JsonProperty</code> — do <strong>Jackson</strong> đọc bằng reflection khi serialize/deserialize.</li>
+      <li><code class="inline">@Entity</code>, <code class="inline">@Column</code> — do <strong>Hibernate/JPA</strong> đọc để sinh câu SQL.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả, rồi tự gõ lại và chạy bằng JDK 25.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> trong tài liệu cũ. Nếu bạn đến từ Node.js, đừng bỏ qua mục <a href="#goc-nodejs">Góc Node.js</a> ở cuối: TypeScript decorators là "phiên bản chủ động" của annotation.</div>
+
+    <h2 id="built-in">2. Built-in annotations — annotation có sẵn của Java <span class="badge b-junior">Junior+</span></h2>
+
+    <p>JDK có sẵn một bộ annotation nhỏ dùng hằng ngày. Điểm đáng chú ý: hầu hết chúng có retention <code class="inline">SOURCE</code> — chỉ compiler đọc, không tồn tại lúc runtime. Đây là bằng chứng rõ nhất cho câu "annotation cần người đọc".</p>
+
+    <table>
+      <thead>
+        <tr><th>Annotation</th><th>Ai đọc</th><th>Retention</th><th>Dùng khi nào</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">@Override</code></td><td>Compiler</td><td>SOURCE</td><td>Chắc chắn method đang override; gõ sai tên là lỗi compile</td></tr>
+        <tr><td><code class="inline">@Deprecated</code></td><td>Compiler, IDE, tool</td><td>RUNTIME</td><td>Đánh dấu API sắp bỏ; có <code class="inline">since</code>/<code class="inline">forRemoval</code></td></tr>
+        <tr><td><code class="inline">@SuppressWarnings("...")</code></td><td>Compiler</td><td>SOURCE</td><td>Tắt cảnh báo có chủ đích, ở phạm vi hẹp nhất</td></tr>
+        <tr><td><code class="inline">@FunctionalInterface</code></td><td>Compiler</td><td>RUNTIME</td><td>Chốt interface chỉ có đúng 1 abstract method</td></tr>
+        <tr><td><code class="inline">@SafeVarargs</code></td><td>Compiler</td><td>RUNTIME</td><td>Cam kết không "heap pollution" với varargs generic</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ dùng <code class="inline">@Override</code> và <code class="inline">@Deprecated</code>. Lưu ý <code class="inline">@Deprecated</code> vẫn <em>chạy được</em> — nó chỉ là lời cảnh báo, không xóa code:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class Order {
+    @Override
+    public String toString() {
+        return "Don hang #1";
+    }
+
+    @Deprecated(since = "2.0", forRemoval = true)
+    static void inKieuCu() {
+        IO.println("ham cu van chay");
+    }
+
+    public static void main() {
+        IO.println(new Order());
+        inKieuCu();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Don hang #1
+ham cu van chay</code></pre>
+    </div>
+
+    <p>Nếu bạn gõ sai tên method, <code class="inline">@Override</code> biến lỗi logic âm thầm thành lỗi compile — đúng mục đích của nó:</p>
+
+    <div class="errblock">
+      <pre>Order.java:2: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+1 error</pre>
+    </div>
+
+    <p>Điểm thú vị: javac <strong>không cảnh báo</strong> khi bạn dùng API deprecated ngay trong cùng class khai báo nó. Phải dùng từ class khác mới thấy warning thật:</p>
+
+    <div class="errblock">
+      <pre>Order.java:9: warning: [removal] inKieuCu() in Order has been deprecated and marked for removal
+        Order.inKieuCu();
+             ^
+1 warning</pre>
+    </div>
+
+    <div class="note"><strong>@Deprecated khác comment thường thế nào?</strong> Comment <code class="inline">// ham nay sap bo</code> chỉ con người đọc. <code class="inline">@Deprecated</code> là dữ liệu máy đọc được: IDE gạch ngang tên method, javac in warning, <code class="inline">forRemoval = true</code> báo cho công cụ build rằng API sẽ bị xóa hẳn (từ JDK 9). Đây là ví dụ hoàn hảo của "annotation không tự làm gì, nhưng cho người khác làm".</div>
+
+    <h3>@FunctionalInterface — chốt hợp đồng cho lambda</h3>
+
+    <p>Annotation này không bắt buộc (interface một abstract method vẫn dùng được với lambda), nhưng nó biến ý định thiết kế thành lỗi compile nếu ai đó vô tình thêm method thứ hai:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@FunctionalInterface
+interface XuLy {
+    void chay();
+}
+
+void main() {
+    XuLy x = () -&gt; IO.println("lambda chay duoc");
+    x.chay();
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>lambda chay duoc</code></pre>
+    </div>
+
+    <p>Thêm method thứ hai vào interface bị chặn ngay khi compile:</p>
+
+    <div class="errblock">
+      <pre>XuLy.java:1: error: Unexpected @FunctionalInterface annotation
+@FunctionalInterface
+^
+  XuLy is not a functional interface
+    multiple non-overriding abstract methods found in interface XuLy
+1 error</pre>
+    </div>
+
+    <h3>@SafeVarargs &amp; @SuppressWarnings</h3>
+
+    <p><code class="inline">@SafeVarargs</code> dùng khi viết method nhận varargs có generic — compiler thường cảnh báo "Possible heap pollution". Bạn cam kết method không ghi sai kiểu vào mảng. Annotation này chỉ hợp lệ trên method <code class="inline">static</code>, <code class="inline">final</code> hoặc <code class="inline">private</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+@SafeVarargs
+static &lt;T&gt; List&lt;T&gt; gop(T... items) {
+    List&lt;T&gt; ketQua = new ArrayList&lt;&gt;();
+    for (T item : items) {
+        ketQua.add(item);
+    }
+    return ketQua;
+}
+
+void main() {
+    IO.println(gop("a", "b", "c"));
+    IO.println(gop(1, 2, 3));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[a, b, c]
+[1, 2, 3]</code></pre>
+    </div>
+
+    <p><code class="inline">@SuppressWarnings</code> cũng chạy lúc compile: nó tắt một loại cảnh báo cụ thể (<code class="inline">"unchecked"</code>, <code class="inline">"deprecation"</code>, <code class="inline">"rawtypes"</code>...). Nguyên tắc production: đặt ở phạm vi <strong>hẹp nhất</strong> (biến local nếu được), luôn kèm comment lý do. Ví dụ thật ở mục <a href="#reflection-nang-cao">7</a> khi bị erasure buộc phải cast <code class="inline">(List&lt;String&gt;)</code>.</p>
+
+    <h2 id="tu-dinh-nghia">3. Tự định nghĩa annotation với @interface <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Annotation bạn dùng hằng ngày đều do người khác định nghĩa y như cách này: một interface đặc biệt khai báo bằng <code class="inline">@interface</code>. Mỗi "element" trông như method nhưng thực chất là một khóa dữ liệu, có thể kèm giá trị mặc định bằng <code class="inline">default</code>.</p>
+
+    <div class="signature">
+      <span class="sig-muted">[public] @interface</span> <span class="sig-var">TenAnnotation</span> <span class="sig-muted">{</span> <span class="tok-typ">kieu</span> <span class="sig-var">tenElement</span><span class="sig-muted">() default</span> <span class="sig-var">giaTri</span><span class="sig-muted">; }</span>
+    </div>
+
+    <p>Ba dạng annotation bạn sẽ gặp:</p>
+    <ul>
+      <li><strong>Marker annotation</strong> — không có element nào, chỉ đánh dấu "có mặt": <code class="inline">@NotEmpty</code>.</li>
+      <li><strong>Single-value annotation</strong> — chỉ có một element tên là <code class="inline">value()</code>, được viết tắt: nếu <code class="inline">Range</code> chỉ có <code class="inline">int value()</code> thì <code class="inline">@Range(18)</code> tương đương <code class="inline">@Range(value = 18)</code>.</li>
+      <li><strong>Multi-element annotation</strong> — nhiều element, có thể có default: <code class="inline">@Range(min = 18, max = 120)</code> (bỏ được <code class="inline">max</code> nếu nó có default).</li>
+    </ul>
+
+    <p>Ví dụ đầu tiên — chú ý annotation phải có <code class="inline">@Retention(RUNTIME)</code> thì reflection mới thấy (giải thích ở <a href="#meta-annotation">mục 4</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface NotEmpty {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+record UserForm(@NotEmpty String email, @Range(min = 18) int age) {}
+
+void main() throws Exception {
+    IO.println("NotEmpty co mat: "
+            + UserForm.class.getDeclaredField("email").isAnnotationPresent(NotEmpty.class));
+    Range r = UserForm.class.getDeclaredField("age").getAnnotation(Range.class);
+    IO.println("Range: min=" + r.min() + ", max=" + r.max() + " (max lay mac dinh)");
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>NotEmpty co mat: true
+Range: min=18, max=100 (max lay mac dinh)</code></pre>
+    </div>
+
+    <h3>Element nhận những kiểu dữ liệu nào?</h3>
+
+    <p>Chỉ được dùng: primitive (<code class="inline">int</code>, <code class="inline">boolean</code>...), <code class="inline">String</code>, <code class="inline">Class</code>, enum, annotation khác, và mảng của các kiểu đó. <strong>Không được</strong> để giá trị <code class="inline">null</code>, không dùng generic. Xem toàn bộ kiểu trong một annotation thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+
+enum OrderStatus { MOI, DANG_GIAO, XONG }
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+    String donVi() default "tuoi";
+    boolean batBuoc() default false;
+    Class&lt;?&gt; kieu() default Integer.class;
+    OrderStatus trangThai() default OrderStatus.MOI;
+    String[] tags() default {};
+}
+
+@Range
+class UserForm {}
+
+void main() {
+    Range r = UserForm.class.getAnnotation(Range.class);
+    IO.println("min      : " + r.min());
+    IO.println("donVi    : " + r.donVi());
+    IO.println("kieu     : " + r.kieu().getSimpleName());
+    IO.println("trangThai: " + r.trangThai());
+    IO.println("tags     : " + r.tags().length);
+    IO.println("batBuoc  : " + r.batBuoc());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>min      : 0
+donVi    : tuoi
+kieu     : Integer
+trangThai: MOI
+tags     : 0
+batBuoc  : false</code></pre>
+    </div>
+
+    <div class="note">Annotation type không thể <code class="inline">extends</code>/<code class="inline">implements</code>, mọi element không có tham số và không <code class="inline">throws</code>. Nếu annotation chỉ để compiler/tool dùng (như <code class="inline">@Override</code>), đặt <code class="inline">@Retention(SOURCE)</code> cho gọn bytecode.</div>
+
+    <h2 id="meta-annotation">4. @Retention, @Target &amp; các meta-annotation <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Meta-annotation là annotation gắn lên chính annotation — quy định vòng đời và vị trí sử dụng của nó. Đây là phần bị hỏi nhiều nhất khi phỏng vấn về annotation.</p>
+
+    <h3>@Retention — annotation sống tới đâu?</h3>
+
+    <table>
+      <thead>
+        <tr><th>RetentionPolicy</th><th>Compiler giữ ở đâu</th><th>Ai đọc được</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">SOURCE</code></td><td>Chỉ trong source code, bị xóa khi biên dịch</td><td>Compiler, annotation processor</td><td><code class="inline">@Override</code>, <code class="inline">@SuppressWarnings</code>, Lombok</td></tr>
+        <tr><td><code class="inline">CLASS</code> (mặc định)</td><td>Lưu trong file .class nhưng JVM không nạp cho reflection</td><td>Bytecode tool (ASM, javap)</td><td>Đa số annotation nội bộ không dùng reflection</td></tr>
+        <tr><td><code class="inline">RUNTIME</code></td><td>Lưu trong .class và JVM giữ lại</td><td>Reflection, framework lúc chạy</td><td>Spring, Jackson, JPA, <code class="inline">@Deprecated</code></td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Quên khai báo <code class="inline">@Retention</code> là mặc định <code class="inline">CLASS</code></strong> — compiler thấy nhưng reflection không thấy. Đây là lỗi kinh điển khi tự viết annotation. Chạy thật để thấy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+
+@interface NotEmpty {}          // khong khai bao @Retention -&gt; mac dinh CLASS
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface Range {
+    int min() default 0;
+}
+
+@NotEmpty
+@Range(min = 18)
+class UserForm {}
+
+void main() {
+    IO.println("NotEmpty (CLASS) : " + (UserForm.class.getAnnotation(NotEmpty.class) != null));
+    IO.println("Range (RUNTIME)  : " + (UserForm.class.getAnnotation(Range.class) != null));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>NotEmpty (CLASS) : false
+Range (RUNTIME)  : true</code></pre>
+    </div>
+
+    <h3>@Target — được gắn vào đâu?</h3>
+
+    <p><code class="inline">@Target</code> nhận danh sách <code class="inline">ElementType</code>. Không khai báo <code class="inline">@Target</code> thì mặc định gắn được gần như mọi nơi (trừ <code class="inline">TYPE_PARAMETER</code>/<code class="inline">TYPE_USE</code>).</p>
+
+    <table>
+      <thead>
+        <tr><th>ElementType</th><th>Gắn lên</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">TYPE</code></td><td>Class, interface, enum, record, annotation</td></tr>
+        <tr><td><code class="inline">FIELD</code></td><td>Field (kể cả hằng số enum)</td></tr>
+        <tr><td><code class="inline">METHOD</code></td><td>Method</td></tr>
+        <tr><td><code class="inline">PARAMETER</code></td><td>Tham số method/constructor</td></tr>
+        <tr><td><code class="inline">CONSTRUCTOR</code></td><td>Constructor</td></tr>
+        <tr><td><code class="inline">LOCAL_VARIABLE</code></td><td>Biến local trong thân method</td></tr>
+        <tr><td><code class="inline">ANNOTATION_TYPE</code></td><td>Annotation khác (dùng cho meta-annotation)</td></tr>
+        <tr><td><code class="inline">PACKAGE</code></td><td>Package (trong package-info.java)</td></tr>
+        <tr><td><code class="inline">TYPE_PARAMETER</code>, <code class="inline">TYPE_USE</code></td><td>Generic type parameter / mọi vị trí dùng type (Java 8)</td></tr>
+        <tr><td><code class="inline">MODULE</code>, <code class="inline">RECORD_COMPONENT</code></td><td>Module descriptor / component của record (Java 9, 16)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Đặt sai chỗ là lỗi compile ngay:</p>
+
+    <div class="errblock">
+      <pre>UserForm.java:10: error: annotation interface not applicable to this kind of declaration
+@Range(min = 18, max = 120)
+^
+1 error</pre>
+    </div>
+
+    <h3>@Inherited — kế thừa annotation</h3>
+
+    <p>Mặc định annotation trên class cha <strong>không</strong> xuất hiện trên class con. Thêm <code class="inline">@Inherited</code> (chỉ dùng được với <code class="inline">TYPE</code>) để bật kế thừa — Spring rất thích cơ chế này:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+@Range(min = 18, max = 120)
+class Order {}
+
+class UserForm extends Order {}
+
+void main() {
+    IO.println("Order    : " + (Order.class.getAnnotation(Range.class) != null));
+    IO.println("UserForm : " + (UserForm.class.getAnnotation(Range.class) != null));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Order    : true
+UserForm : true</code></pre>
+    </div>
+
+    <h3>@Repeatable — gắn nhiều lần (Java 8)</h3>
+
+    <p>Trước Java 8, mỗi annotation chỉ gắn một lần. Từ Java 8, khai báo <code class="inline">@Repeatable</code> trỏ tới một annotation "container" chứa mảng. Compiler tự bọc khi bạn gắn nhiều lần:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Repeatable(Ranges.class)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@interface Ranges {
+    Range[] value();
+}
+
+@Range(min = 0, max = 10)
+@Range(min = 100, max = 200)
+class Order {}
+
+void main() {
+    Range[] ds = Order.class.getAnnotationsByType(Range.class);
+    IO.println("so Range tren Order: " + ds.length);
+    for (Range r : ds) {
+        IO.println("khoang: " + r.min() + "-" + r.max());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>so Range tren Order: 2
+khoang: 0-10
+khoang: 100-200</code></pre>
+    </div>
+
+    <p>Nhớ dùng <code class="inline">getAnnotationsByType(Range.class)</code> — còn <code class="inline">getAnnotation(Range.class)</code> sẽ trả <code class="inline">null</code> vì trên class thật ra chỉ có container <code class="inline">@Ranges</code>.</p>
+
+    <p><code class="inline">@Documented</code> là meta-annotation còn lại đáng biết: nó chỉ yêu cầu Javadoc hiển thị annotation này trong tài liệu API. Không ảnh hưởng runtime.</p>
+
+    <h2 id="reflection-co-ban">5. Reflection API cơ bản — soi class lúc runtime <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Reflection là khả năng của chương trình Java tự nhìn vào chính mình lúc đang chạy: biết class nào có field gì, method gì, gọi chúng, tạo object mới — kể cả khi mọi thứ chỉ được quyết định lúc runtime. Điểm vào của toàn bộ API là đối tượng <code class="inline">java.lang.Class</code>.</p>
+
+    <p>Có ba cách lấy <code class="inline">Class</code>, cả ba trả về <strong>cùng một object</strong> (JVM chỉ có một Class cho mỗi class loader):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class UserForm {
+    private String email = "an@example.com";
+
+    public static void main() throws Exception {
+        Class&lt;?&gt; c1 = UserForm.class;                 // tu class literal
+        Class&lt;?&gt; c2 = new UserForm().getClass();      // tu object dang song
+        Class&lt;?&gt; c3 = Class.forName("UserForm");      // tu ten day du (binary name)
+
+        IO.println("c1 == c2: " + (c1 == c2));
+        IO.println("c2 == c3: " + (c2 == c3));
+        IO.println("getName   : " + c1.getName());
+        IO.println("simpleName: " + c1.getSimpleName());
+        IO.println("package   : [" + c1.getPackageName() + "]");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>c1 == c2: true
+c2 == c3: true
+getName   : UserForm
+simpleName: UserForm
+package   : []</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Cách lấy Class</th><th>Dùng khi nào</th><th>Rủi ro</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">UserForm.class</code></td><td>Biết class ngay lúc viết code</td><td>Không có</td></tr>
+        <tr><td><code class="inline">obj.getClass()</code></td><td>Đang có object, cần soi kiểu thật của nó</td><td>Không có</td></tr>
+        <tr><td><code class="inline">Class.forName("...")</code></td><td>Tên class chỉ biết lúc runtime (config, JDBC driver cũ)</td><td>Ném <code class="inline">ClassNotFoundException</code> (checked)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khi đã có <code class="inline">Class</code>, bạn liệt kê được mọi thành phần khai báo bên trong. Vì thứ tự field/method do JVM trả về <strong>không được đảm bảo</strong>, ví dụ sort theo tên để output ổn định:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+import java.util.*;
+
+public class UserForm {
+    private String email;
+    private int age;
+
+    public UserForm(String email, int age) {
+        this.email = email;
+        this.age = age;
+    }
+
+    public String moTa() {
+        return email + " (" + age + ")";
+    }
+
+    private String biMat() {
+        return "goi duoc method private!";
+    }
+
+    public static void main() throws Exception {
+        UserForm form = new UserForm("an@example.com", 25);
+        Class&lt;?&gt; c = form.getClass();
+
+        Field[] fields = c.getDeclaredFields();
+        Arrays.sort(fields, Comparator.comparing(Field::getName));
+        IO.println("-- fields khai bao trong class --");
+        for (Field f : fields) {
+            IO.println(f.getType().getSimpleName() + " " + f.getName()
+                    + " (" + Modifier.toString(f.getModifiers()) + ")");
+        }
+
+        Method[] methods = c.getDeclaredMethods();
+        Arrays.sort(methods, Comparator.comparing(Method::getName));
+        IO.println("-- methods khai bao trong class --");
+        for (Method m : methods) {
+            IO.println(m.getReturnType().getSimpleName() + " " + m.getName());
+        }
+
+        Method biMat = c.getDeclaredMethod("biMat");
+        biMat.setAccessible(true);
+        IO.println("invoke: " + biMat.invoke(form));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>-- fields khai bao trong class --
+int age (private)
+String email (private)
+-- methods khai bao trong class --
+String biMat
+void main
+String moTa
+invoke: goi duoc method private!</code></pre>
+    </div>
+
+    <div class="note warn"><strong><code class="inline">getDeclared...</code> vs <code class="inline">get...</code>:</strong> <code class="inline">getDeclaredFields()</code> trả <em>mọi mức truy cập</em> (private, protected, package, public) nhưng <em>chỉ của class hiện tại</em> — không gồm field kế thừa. <code class="inline">getFields()</code> chỉ trả field <code class="inline">public</code> nhưng gồm cả của class cha và interface. Quy tắc y hệt cho <code class="inline">getDeclaredMethods()</code>/<code class="inline">getMethods()</code>, constructor cũng vậy. Muốn soi trọn vẹn một class, hãy đi ngược cây kế thừa với <code class="inline">getDeclaredFields()</code> ở từng cấp.</div>
+
+    <h2 id="doc-annotation">6. Đọc annotation lúc runtime — validator đầu tiên <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Giờ ghép hai mảnh: annotation cung cấp <em>luật</em> (<code class="inline">@Range(min = 18, max = 120)</code>), reflection là <em>người đọc luật</em> và kiểm tra dữ liệu. Đây chính là cách Hibernate Validator (<code class="inline">@NotNull</code>, <code class="inline">@Min</code>, <code class="inline">@Size</code>) hoạt động — bạn sẽ tự viết bản mini:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+import java.lang.reflect.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+record UserForm(String email, @Range(min = 18, max = 120) int age) {}
+
+void main() throws Exception {
+    kiemTra(new UserForm("an@example.com", 15));
+    kiemTra(new UserForm("binh@example.com", 25));
+}
+
+static void kiemTra(Object obj) throws Exception {
+    for (Field f : obj.getClass().getDeclaredFields()) {
+        Range r = f.getAnnotation(Range.class);
+        if (r == null) {
+            continue;
+        }
+        f.setAccessible(true);
+        int value = f.getInt(obj);
+        if (value &lt; r.min() || value &gt; r.max()) {
+            IO.println("LOI " + f.getName() + " = " + value
+                    + " ngoai khoang [" + r.min() + ", " + r.max() + "]");
+        } else {
+            IO.println("OK  " + f.getName() + " = " + value);
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>LOI age = 15 ngoai khoang [18, 120]
+OK  age = 25</code></pre>
+    </div>
+
+    <p>Bốn bước của mọi validator kiểu này:</p>
+    <ol>
+      <li><code class="inline">obj.getClass().getDeclaredFields()</code> — quét toàn bộ field cần kiểm tra.</li>
+      <li><code class="inline">f.getAnnotation(Range.class)</code> — hỏi "field này có luật gì?". Annotation thiếu <code class="inline">@Retention(RUNTIME)</code> sẽ trả <code class="inline">null</code> ở bước này.</li>
+      <li><code class="inline">f.setAccessible(true)</code> rồi <code class="inline">f.getInt(obj)</code> — đọc giá trị field private.</li>
+      <li>So với <code class="inline">r.min()</code>/<code class="inline">r.max()</code> và báo lỗi kèm ngữ cảnh.</li>
+    </ol>
+
+    <div class="note">Nếu bạn gọi <code class="inline">f.getAnnotation(...)</code> mà nhận <code class="inline">null</code> dù rõ ràng đã gắn annotation: kiểm tra <code class="inline">@Retention(RUNTIME)</code> trước tiên (mục <a href="#meta-annotation">4</a>), sau đó kiểm tra <code class="inline">@Target</code> và đúng field/method đang soi (annotation trên record component có thể nằm ở field, accessor hoặc parameter tuỳ <code class="inline">@Target</code>).</div>
+
+    <h2 id="reflection-nang-cao">7. Reflection nâng cao — private, constructor, record <span class="badge b-junior">Junior+</span></h2>
+
+    <h3>Constructor private &amp; sửa field private</h3>
+
+    <p><code class="inline">Class.newInstance()</code> đã bị deprecate từ Java 9 (nó che mất exception thật). Cách đúng hiện nay là lấy constructor tường minh rồi gọi <code class="inline">newInstance()</code>. Với thành viên private, gọi <code class="inline">setAccessible(true)</code> trước:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    private String email = "an@example.com";
+    private int age = 25;
+
+    private UserForm() {
+    }
+
+    public static void main() throws Exception {
+        Constructor&lt;UserForm&gt; ctor = UserForm.class.getDeclaredConstructor();
+        ctor.setAccessible(true);              // constructor dang private
+        UserForm form = ctor.newInstance();
+        IO.println("tao object: " + form.email);
+
+        Field f = UserForm.class.getDeclaredField("age");
+        f.setAccessible(true);                 // field dang private
+        IO.println("truoc: " + f.getInt(form));
+        f.setInt(form, 30);
+        IO.println("sau  : " + f.getInt(form));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tao object: an@example.com
+truoc: 25
+sau  : 30</code></pre>
+    </div>
+
+    <p>Reflection cho phép bạn làm được những việc mà bình thường compiler cấm — đó là sức mạnh, và cũng là lý do phải dùng hết sức tiết chế. <code class="inline">setAccessible(true)</code> <strong>phá encapsulation</strong>: field <code class="inline">final</code> của instance cũng có thể bị ghi đè trong nhiều trường hợp, invariant của class bị phá vỡ. Chỉ dùng trong framework, thư viện serialize/deserialize, test utility — không dùng trong logic nghiệp vụ.</p>
+
+    <h3>Record — <code class="inline">getRecordComponents()</code></h3>
+
+    <p>Record sinh ra để reflection "sạch" hơn hẳn: thay vì đoán field nào là component, JDK 16+ cung cấp metadata chính thức gồm tên, kiểu, accessor và cả generic type:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+
+record UserForm(String email, int age) {}
+
+void main() {
+    IO.println("la record: " + UserForm.class.isRecord());
+    for (RecordComponent rc : UserForm.class.getRecordComponents()) {
+        IO.println(rc.getName() + " : " + rc.getType().getSimpleName()
+                + " | accessor: " + rc.getAccessor().getName());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>la record: true
+email : String | accessor: email
+age : int | accessor: age</code></pre>
+    </div>
+
+    <h3>Modifier &amp; erasure của generic</h3>
+
+    <p>Generic trong Java chỉ tồn tại lúc compile — JVM "xóa" thông tin kiểu (type erasure), nên reflection không thể ngăn ai đó nhét <code class="inline">Integer</code> vào <code class="inline">List&lt;String&gt;</code>. Đây vừa là giới hạn, vừa là cách để hiểu vì sao <code class="inline">@SuppressWarnings("unchecked")</code> tồn tại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+import java.util.*;
+
+public class Order {
+    private final List&lt;String&gt; tags = new ArrayList&lt;&gt;();
+
+    @SuppressWarnings("unchecked")
+    public static void main() throws Exception {
+        Field f = Order.class.getDeclaredField("tags");
+        IO.println("getType()       : " + f.getType().getName());
+        IO.println("getGenericType(): " + f.getGenericType().getTypeName());
+        IO.println("modifier cua tags: " + Modifier.toString(f.getModifiers()));
+
+        f.setAccessible(true);
+        List&lt;String&gt; tags = (List&lt;String&gt;) f.get(new Order());
+        Method add = List.class.getMethod("add", Object.class);
+        IO.println("chen Integer duoc: " + add.invoke(tags, 123));
+        IO.println("noi dung: " + tags);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>getType()       : java.util.List
+getGenericType(): java.util.List&lt;java.lang.String&gt;
+modifier cua tags: private final
+chen Integer duoc: true
+noi dung: [123]</code></pre>
+    </div>
+
+    <p>Chú ý: <code class="inline">getGenericType()</code> vẫn đọc được <code class="inline">java.util.List&lt;java.lang.String&gt;</code> vì đó là thông tin ghi trong chữ ký field. Nhưng một object <code class="inline">ArrayList</code> đang sống <strong>không biết</strong> nó từng được khai báo với <code class="inline">String</code> hay <code class="inline">Integer</code>. Erasure được học đầy đủ ở <a href="roadmap.html#phase-3">3.2 Generics</a>.</p>
+
+    <h3>JPMS — vì sao mở private của JDK bị chặn</h3>
+
+    <p>Từ Java 9, module system (JPMS) đóng gói nội bộ JDK. Bạn vẫn mở được private field của class do mình viết (chạy trong unnamed module), nhưng mở ruột class của JDK như <code class="inline">String</code> sẽ bị chặn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    public static void main() throws Exception {
+        try {
+            Field f = String.class.getDeclaredField("value");
+            f.setAccessible(true);
+            IO.println("mo duoc");
+        } catch (InaccessibleObjectException e) {
+            IO.println("loai loi: " + e.getClass().getSimpleName());
+            IO.println("bi chan boi JPMS: " + e.getMessage().contains("\"opens java.lang\""));
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>loai loi: InaccessibleObjectException
+bi chan boi JPMS: true</code></pre>
+    </div>
+
+    <p>Message thật có dạng: <code class="inline">Unable to make field private final byte[] java.lang.String.value accessible: module java.base does not "opens java.lang" to unnamed module @...</code> (phần hash <code class="inline">@...</code> đổi mỗi lần chạy). Nếu thực sự cần (ví dụ thư viện cũ), mở tường minh bằng cờ JVM — chạy thật sẽ in ra <code class="inline">mo duoc</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>java --add-opens java.base/java.lang=ALL-UNNAMED UserForm.java</code></pre>
+    </div>
+
+    <div class="note warn">Đừng lạm dụng <code class="inline">--add-opens</code> để "chữa cháy". Nó phá vỡ đóng gói của JDK, dễ vỡ khi nâng version, và thường là dấu hiệu thư viện đã cũ. Chỉ dùng khi không còn lựa chọn và ghi rõ lý do trong cấu hình build.</div>
+
+    <h2 id="mini-framework">8. Mini framework — validator, DI &amp; JSON serializer <span class="badge b-prod">Production</span></h2>
+
+    <p>Từ validator một annotation, nâng lên nhiều annotation. Điểm đáng học: vòng lặp xử lý trung tâm <strong>không cần biết</strong> nghiệp vụ cụ thể — nó chỉ hỏi "field này có annotation nào?" và áp luật tương ứng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.annotation.*;
+import java.lang.reflect.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface NotEmpty {}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface Range {
+    int min();
+    int max();
+}
+
+record UserForm(@NotEmpty String email, @Range(min = 18, max = 120) int age) {}
+
+void main() throws Exception {
+    kiemTra(new UserForm("", 15));
+    kiemTra(new UserForm("an@example.com", 25));
+}
+
+static void kiemTra(Object obj) throws Exception {
+    int loi = 0;
+    for (Field f : obj.getClass().getDeclaredFields()) {
+        f.setAccessible(true);
+        Object value = f.get(obj);
+        if (f.isAnnotationPresent(NotEmpty.class)
+                &amp;&amp; value instanceof String s &amp;&amp; s.isBlank()) {
+            IO.println("LOI " + f.getName() + ": khong duoc rong");
+            loi++;
+        }
+        Range r = f.getAnnotation(Range.class);
+        if (r != null &amp;&amp; value instanceof Integer i
+                &amp;&amp; (i &lt; r.min() || i &gt; r.max())) {
+            IO.println("LOI " + f.getName() + ": " + i
+                    + " ngoai [" + r.min() + ", " + r.max() + "]");
+            loi++;
+        }
+    }
+    IO.println("ket qua: " + (loi == 0 ? "HOP LE" : loi + " loi"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>LOI email: khong duoc rong
+LOI age: 15 ngoai [18, 120]
+ket qua: 2 loi
+ket qua: HOP LE</code></pre>
+    </div>
+
+    <p>Hạn chế của cách viết "if từng annotation": mỗi annotation mới phải sửa vòng lặp trung tâm. Framework thật (Hibernate Validator) giải quyết bằng interface kiểu <code class="inline">ConstraintValidator&lt;A, T&gt;</code> — mỗi annotation có một validator riêng, framework chỉ dispatch. Đó là bước từ "mini" lên "framework".</p>
+
+    <h3>Mini JSON serializer bằng record component</h3>
+
+    <p>Cùng ý tưởng, áp cho serialize: quét component, gọi accessor, in ra JSON. Jackson làm đúng việc này nhưng tối ưu và cache cực kỹ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+
+public class Order {
+    record UserForm(String email, int age) {}
+
+    public static void main() {
+        IO.println(toJson(new UserForm("an@example.com", 25)));
+    }
+
+    static String toJson(Object obj) {
+        StringBuilder sb = new StringBuilder("{");
+        RecordComponent[] comps = obj.getClass().getRecordComponents();
+        try {
+            for (int i = 0; i &lt; comps.length; i++) {
+                if (i &gt; 0) {
+                    sb.append(", ");
+                }
+                Object value = comps[i].getAccessor().invoke(obj);
+                sb.append('"').append(comps[i].getName()).append("\": ");
+                if (value instanceof String s) {
+                    sb.append('"').append(s).append('"');
+                } else {
+                    sb.append(value);
+                }
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        return sb.append('}').toString();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>{"email": "an@example.com", "age": 25}</code></pre>
+    </div>
+
+    <h3>Ý tưởng mini-DI (dependency injection)</h3>
+
+    <p>Spring khởi động theo trình tự mà bạn có thể tự mô phỏng: quét classpath tìm class có annotation <code class="inline">@Component</code>; với mỗi class, tìm constructor (hoặc field) đánh dấu cần inject; đệ quy tạo các dependency trước; gọi <code class="inline">newInstance()</code> truyền dependency vào. Spring thêm hàng trăm thứ quanh đó — vòng đời bean, proxy AOP, scope, circular dependency, lazy init — nhưng lõi vẫn là annotation + reflection + <code class="inline">Constructor.newInstance</code>.</p>
+
+    <div class="note warn"><strong>Đừng tự viết framework.</strong> Reflection dễ làm cho "chạy được" nhưng rất khó làm cho <em>đúng</em>: xử lý exception, generic, proxy, thread-safety, hiệu năng, bảo mật. Hãy viết validator/serializer nhỏ cho bài tập học, còn production dùng thư viện đã được kiểm chứng.</div>
+
+    <h2 id="hieu-nang">9. Hiệu năng reflection <span class="badge b-prod">Production</span></h2>
+
+    <p>Reflection chậm hơn gọi method trực tiếp vì JIT khó tối ưu: phải kiểm tra quyền truy cập mỗi lần gọi, boxing tham số, không inline được, tra cứu metadata. Benchmark nhỏ — gọi 10 triệu lần qua <code class="inline">Method.invoke</code> so với gọi thẳng (sau khi đã warm up JIT):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    static int dem = 0;
+
+    static void tang() {
+        dem++;
+    }
+
+    public static void main() throws Exception {
+        Method m = UserForm.class.getDeclaredMethod("tang");
+        m.setAccessible(true);
+
+        for (int i = 0; i &lt; 1_000_000; i++) {   // khoi dong JIT
+            tang();
+            m.invoke(null);
+        }
+
+        long t1 = System.nanoTime();
+        for (int i = 0; i &lt; 10_000_000; i++) {
+            tang();
+        }
+        long t2 = System.nanoTime();
+        for (int i = 0; i &lt; 10_000_000; i++) {
+            m.invoke(null);
+        }
+        long t3 = System.nanoTime();
+
+        IO.println("goi truc tiep : " + (t2 - t1) / 1_000_000 + " ms");
+        IO.println("qua reflection: " + (t3 - t2) / 1_000_000 + " ms");
+        IO.println("cham hon 5 lan: " + ((t3 - t2) &gt; 5 * (t2 - t1)));
+        IO.println("dem = " + dem);
+    }
+}</code></pre>
+    </div>
+
+    <p>Một lần chạy thật trên máy này (JDK 25) — con số thay đổi theo máy và tải hệ thống, nhưng tỉ lệ thì luôn đáng kể:</p>
+
+    <div class="codeblock error">
+      <pre><code>goi truc tiep : 1 ms
+qua reflection: 23 ms
+cham hon 5 lan: true
+dem = 22000000</code></pre>
+    </div>
+
+    <p>Chi phí đến từ: kiểm tra accessibility, boxing/unboxing tham số, không được JIT inline, tra cứu và tạo mảng argument. Kinh nghiệm production:</p>
+    <ul>
+      <li><strong>Cache</strong> <code class="inline">Field</code>/<code class="inline">Method</code>/<code class="inline">Constructor</code> — đừng <code class="inline">getDeclaredMethod(...)</code> mỗi request; gọi <code class="inline">setAccessible(true)</code> một lần rồi tái sử dụng.</li>
+      <li><strong>Dùng ở startup, không dùng ở hot path</strong>: Spring quét bean, Jackson dựng mapper, JPA dựng metadata một lần lúc khởi động. Logic nghiệp vụ sau đó chạy trên object thường.</li>
+      <li>Trường hợp buộc phải gọi động với tần suất cao, tìm hiểu <code class="inline">MethodHandle</code>/<code class="inline">LambdaMetafactory</code> (nhanh hơn gần bằng gọi trực tiếp) — thuộc mức "nhận biết", không cần cho Junior+.</li>
+      <li>Trước khi tối ưu, đo đạc: reflection trên vài nghìn lần gọi mỗi request là quá đủ nhanh; chỉ đáng lo khi nằm trong vòng lặp hàng triệu lần.</li>
+    </ul>
+
+    <h2 id="framework">10. Spring/Jackson/JPA dùng annotation &amp; reflection thế nào <span class="badge b-prod">Production</span></h2>
+
+    <p>Toàn bộ "phép thuật" của hệ sinh thái Java đều là annotation + reflection + proxy. Nhìn bảng dưới để biết cần debug ở đâu khi có sự cố:</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc framework làm</th><th>Annotation liên quan</th><th>Cơ chế bên dưới</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Quét và tạo bean</td><td><code class="inline">@Component</code>, <code class="inline">@Service</code>, <code class="inline">@Repository</code>, <code class="inline">@Configuration</code></td><td>Đọc classpath, <code class="inline">Class.forName</code>, lọc theo annotation, <code class="inline">Constructor.newInstance</code></td></tr>
+        <tr><td>Tiêm dependency</td><td><code class="inline">@Autowired</code> (khuyên dùng constructor injection)</td><td>Đọc constructor/field, tìm bean khớp kiểu rồi truyền vào</td></tr>
+        <tr><td>Transaction, bảo mật, cache, log</td><td><code class="inline">@Transactional</code>, <code class="inline">@PreAuthorize</code>, <code class="inline">@Cacheable</code></td><td>Dynamic proxy bọc bean: mở transaction, kiểm tra quyền... trước khi gọi method gốc (AOP)</td></tr>
+        <tr><td>JSON hóa object</td><td><code class="inline">@JsonProperty</code>, <code class="inline">@JsonIgnore</code>, <code class="inline">@JsonFormat</code></td><td>Jackson đọc annotation + field/accessor để map tên và định dạng</td></tr>
+        <tr><td>Map object xuống bảng</td><td><code class="inline">@Entity</code>, <code class="inline">@Table</code>, <code class="inline">@Id</code>, <code class="inline">@Column</code></td><td>Hibernate quét metadata, sinh SQL, tạo object/đọc field bằng reflection</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ minh hoạ Spring (cần Spring mới chạy được — ở đây chỉ để đọc cơ chế): Spring tìm một bean khớp kiểu <code class="inline">Order</code> và truyền vào constructor, bạn không hề gõ <code class="inline">new</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@RestController
+class User {
+    private final Order service;
+
+    User(Order service) {          // Spring tu tim bean va truyen vao
+        this.service = service;
+    }
+
+    @GetMapping("/orders/{id}")
+    Order get(@PathVariable long id) {
+        return service;
+    }
+}</code></pre>
+    </div>
+
+    <p>Jackson và JPA — chú ý tên annotation chính là "hợp đồng" framework đọc lúc chạy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Jackson: orderId se thanh "order_id" trong JSON
+record Order(@JsonProperty("order_id") long orderId, BigDecimal total) {}
+
+// JPA: class Order ung voi bang orders, field id la khoa chinh tu tang
+@Entity
+@Table(name = "orders")
+class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id;
+}</code></pre>
+    </div>
+
+    <div class="note"><strong>Hiểu để debug, không phải để tự viết framework.</strong> Khi <code class="inline">@Transactional</code> không có tác dụng, nguyên nhân thường là <em>self-invocation</em> — gọi method qua <code class="inline">this</code> bên trong cùng bean nên proxy bị bỏ qua. Khi <code class="inline">@Autowired</code> báo không tìm thấy bean, vấn đề nằm ở component scan hoặc kiểu khớp. Biết annotation + proxy vận hành thế nào giúp bạn đọc stack trace và log của framework thay vì đoán mò.</div>
+
+    <h2 id="pitfalls">11. Pitfalls — bảng lỗi thường gặp</h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi / bẫy</th><th>Triệu chứng</th><th>Cách sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Thiếu <code class="inline">@Retention(RUNTIME)</code></td><td><code class="inline">getAnnotation()</code> trả về <code class="inline">null</code> dù đã gắn annotation</td><td>Thêm <code class="inline">@Retention(RetentionPolicy.RUNTIME)</code> (mặc định là CLASS)</td></tr>
+        <tr><td><code class="inline">@Target</code> sai chỗ</td><td>Compile error "annotation interface not applicable to this kind of declaration"</td><td>Sửa <code class="inline">@Target</code> cho đúng (FIELD, METHOD, TYPE...)</td></tr>
+        <tr><td>Nhầm <code class="inline">getFields()</code> với <code class="inline">getDeclaredFields()</code></td><td>Không thấy field private, hoặc tưởng thấy hết nhưng thiếu field kế thừa</td><td><code class="inline">getDeclared...</code> cho mọi mức truy cập của class hiện tại; <code class="inline">get...</code> chỉ public + kế thừa</td></tr>
+        <tr><td>Sai tên/ký tự tham số khi lấy method</td><td><code class="inline">NoSuchMethodException</code> (checked, dễ quên bắt)</td><td>Truyền đúng kiểu tham số: <code class="inline">getDeclaredMethod("chao", String.class)</code>; dùng <code class="inline">getDeclaredMethods()</code> để liệt kê khi không chắc</td></tr>
+        <tr><td><code class="inline">setAccessible(true)</code> lên class JDK</td><td><code class="inline">InaccessibleObjectException</code> từ Java 9 (JPMS)</td><td>Tránh mở ruột JDK; nếu bắt buộc, <code class="inline">--add-opens</code> tường minh và ghi lý do</td></tr>
+        <tr><td>Reflection trong vòng lặp nóng</td><td>Chậm hơn nhiều lần so với gọi trực tiếp, CPU tăng vô ích</td><td>Cache <code class="inline">Field</code>/<code class="inline">Method</code>, <code class="inline">setAccessible</code> một lần; chuyển sang gọi trực tiếp/interface nếu được</td></tr>
+        <tr><td>Lạm dụng reflection trong business code</td><td>Mất kiểm tra kiểu lúc compile, refactor IDE không thấy, lỗi chỉ nổ lúc runtime</td><td>Chỉ dùng ở tầng framework/mapper; nghiệp vụ dùng kiểu tường minh</td></tr>
+        <tr><td>Quên xử lý exception reflection</td><td><code class="inline">IllegalAccessException</code>, <code class="inline">InvocationTargetException</code>... lộ ra ngoài hoặc bị "quên"</td><td>Bọc thành <code class="inline">RuntimeException</code> với thông điệp rõ; nhớ <code class="inline">InvocationTargetException.getCause()</code> là lỗi thật của method</td></tr>
+        <tr><td>Quên generic bị erasure</td><td>Tưởng reflection kiểm tra được <code class="inline">List&lt;String&gt;</code>, thực tế nhét được <code class="inline">Integer</code></td><td>Kiểm tra ở tầng compile; runtime chỉ còn <code class="inline">getGenericType()</code> của khai báo, không của object</td></tr>
+        <tr><td>Dùng <code class="inline">Class.newInstance()</code></td><td>Deprecated từ Java 9, che mất exception thật của constructor</td><td><code class="inline">getDeclaredConstructor().newInstance()</code></td></tr>
+        <tr><td>Annotation không tự kế thừa</td><td>Class con không thấy annotation của class cha</td><td>Thêm <code class="inline">@Inherited</code> (chỉ áp dụng cho annotation trên class)</td></tr>
+        <tr><td>Quên container của <code class="inline">@Repeatable</code></td><td><code class="inline">getAnnotation(Range.class)</code> trả null khi gắn nhiều lần</td><td>Dùng <code class="inline">getAnnotationsByType(Range.class)</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">12. Góc Node.js — TypeScript decorators vs Java annotations</h2>
+
+    <p>Nếu bạn đến từ NestJS/TypeORM, bạn đã dùng decorators — trông rất giống annotation Java nhưng bản chất khác hẳn. Decorator trong TypeScript (legacy, bật bằng <code class="inline">experimentalDecorators</code>) là <strong>một hàm được gọi ngay lúc class được định nghĩa</strong>; nó có thể thay thế/xoá phương thức, gắn logic. Annotation Java là dữ liệu thụ động nằm đó chờ ai đó đọc:</p>
+
+    <div class="codeblock">
+      <pre><code>// TypeScript - chi de so sanh, KHONG phai Java
+function Range(min: number, max: number) {
+  return function (target: any, key: string) {
+    console.log(`gan len ${key}`);   // chay NGAY khi class duoc dinh nghia
+  };
+}
+
+class UserForm {
+  @Range(18, 120)
+  age = 15;
+}
+// In ra: gan len age</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>TypeScript decorator</th><th>Java annotation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bản chất</td><td>Hàm chạy ngay khi khai báo class — có thể wrap/đổi hành vi</td><td>Metadata thụ động, không chạy gì cả</td></tr>
+        <tr><td>Ai xử lý</td><td>Chính decorator function (do bạn viết)</td><td>Compiler hoặc framework đọc qua reflection</td></tr>
+        <tr><td>Đọc kiểu lúc runtime</td><td>Không có sẵn — cần <code class="inline">reflect-metadata</code> + <code class="inline">emitDecoratorMetadata</code></td><td>Có sẵn qua <code class="inline">java.lang.reflect</code> (nhưng generic bị erasure)</td></tr>
+        <tr><td>DI / framework</td><td>NestJS: <code class="inline">@Controller</code>, <code class="inline">@Injectable</code>, <code class="inline">@Inject</code> — gần như bản sao ý tưởng Spring</td><td>Spring: <code class="inline">@RestController</code>, <code class="inline">@Service</code>, <code class="inline">@Autowired</code></td></tr>
+        <tr><td>Thời điểm "phép thuật"</td><td>Lúc import module / define class</td><td>Lúc Spring/Jackson khởi động và quét</td></tr>
+        <tr><td>Kiểm tra lúc compile</td><td>Type check của TS (khá mạnh)</td><td>Compiler check annotation + kiểu Java</td></tr>
+      </tbody>
+    </table>
+
+    <p>Tóm lại: decorator mạnh hơn ở chỗ <em>chủ động chạy code</em>, annotation yếu hơn ở khoản đó nhưng bù lại metadata có sẵn trong bytecode và hệ sinh thái framework khổng lồ. NestJS nhìn giống Spring chính vì nó mô phỏng mô hình "annotation + container đọc metadata" — còn decorator của nó là công cụ để gắn metadata <code class="inline">design:type</code> qua <code class="inline">reflect-metadata</code>.</p>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Annotation là gì? Vì sao nói nó "không tự làm gì"?</summary>
+      <div class="answer">Annotation là metadata (dữ liệu mô tả) gắn lên class, field, method, parameter... Nó không chứa hành vi và không tự thực thi. Phải có "reader": compiler đọc <code class="inline">@Override</code>, javac/IDE đọc <code class="inline">@Deprecated</code>, Spring đọc <code class="inline">@Autowired</code> bằng reflection lúc khởi động, Jackson đọc <code class="inline">@JsonProperty</code> khi serialize. Bỏ reader đi thì annotation chỉ là dữ liệu vô hình.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Annotation khác comment thường ở điểm nào?</summary>
+      <div class="answer">Comment bị compiler bỏ hoàn toàn, chỉ con người đọc. Annotation được compiler parse, kiểm tra hợp lệ theo <code class="inline">@Target</code>, lưu vào bytecode theo <code class="inline">@Retention</code>, và có thể đọc bằng reflection/framework/tool (IDE gạch ngang, javac warning, build tool xử lý <code class="inline">forRemoval</code>). Nói ngắn: annotation là comment mà máy đọc được.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. <code class="inline">@Override</code> có tác dụng gì? Vì sao nó có retention SOURCE?</summary>
+      <div class="answer">Nó bắt compiler xác nhận method thật sự override method từ cha/interface; gõ sai tên hoặc sai chữ ký sẽ là lỗi compile thay vì lỗi logic âm thầm. Retention SOURCE vì sau khi compiler kiểm tra xong thông tin này vô dụng — không cần lưu vào .class, tiết kiệm bytecode.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. SOURCE, CLASS, RUNTIME khác nhau thế nào? Mặc định là gì?</summary>
+      <div class="answer"><code class="inline">SOURCE</code> chỉ tồn tại trong source, compiler/tool đọc rồi bỏ; <code class="inline">CLASS</code> được ghi vào .class nhưng JVM không giữ cho reflection (chỉ bytecode tool đọc); <code class="inline">RUNTIME</code> giữ tới lúc chạy để reflection đọc. Mặc định khi không khai báo <code class="inline">@Retention</code> là <strong>CLASS</strong> — đây là lý do phổ biến nhất khiến <code class="inline">getAnnotation()</code> trả null.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Làm sao tự định nghĩa một annotation?</summary>
+      <div class="answer">Khai báo bằng <code class="inline">@interface</code>, các "element" viết như method không tham số, có thể kèm <code class="inline">default</code>. Ví dụ: <code class="inline">@Retention(RUNTIME) @Target(FIELD) @interface Range { int min() default 0; int max() default 100; }</code>. Annotation type không extends/implements được, element không nhận <code class="inline">null</code>, không generic, không throws.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Marker, single-value và multi-element annotation khác nhau ra sao?</summary>
+      <div class="answer">Marker: không có element nào, chỉ đánh dấu có mặt (<code class="inline">@NotEmpty</code>). Single-value: chỉ có duy nhất element tên <code class="inline">value()</code> nên viết tắt được — <code class="inline">@Range(18)</code> nghĩa là <code class="inline">@Range(value = 18)</code>. Multi-element: nhiều element, có thể có default; khi dùng chỉ cần truyền element không có default hoặc muốn ghi đè (<code class="inline">@Range(min = 18)</code>, bỏ qua <code class="inline">max</code> nếu có default).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Element của annotation nhận những kiểu dữ liệu nào?</summary>
+      <div class="answer">Primitive, <code class="inline">String</code>, <code class="inline">Class</code> (class literal), enum, annotation khác, và mảng của các kiểu trên. Không được dùng <code class="inline">null</code>, generic, hay kiểu tự định nghĩa thông thường. Nếu cần giá trị đặc biệt, dùng giá trị sentinel (chuỗi rỗng, số âm) quy ước trong tài liệu annotation.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Reflection là gì? Ứng dụng thực tế ở đâu?</summary>
+      <div class="answer">Là API (<code class="inline">java.lang.reflect</code>) cho phép chương trình Java kiểm tra và thao tác class/field/method/constructor lúc runtime: liệt kê thành viên, tạo object, gọi method, đọc/ghi field, đọc annotation. Ứng dụng: DI container (Spring), serialize JSON (Jackson), ORM (Hibernate), testing/mock (JUnit, Mockito), IDE/tool phân tích code, plugin loader.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Có mấy cách lấy đối tượng <code class="inline">Class</code>? Chúng khác gì nhau?</summary>
+      <div class="answer">Ba cách: <code class="inline">UserForm.class</code> (class literal — biết class lúc compile), <code class="inline">obj.getClass()</code> (từ object đang sống), <code class="inline">Class.forName("ten.binary")</code> (từ chuỗi, dùng khi tên chỉ biết lúc runtime). Với cùng class loader, cả ba trả về <strong>cùng một object</strong> nên so sánh <code class="inline">==</code> được. <code class="inline">forName</code> ném <code class="inline">ClassNotFoundException</code> (checked) nếu sai tên/không có trên classpath.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">getDeclaredFields()</code> khác <code class="inline">getFields()</code> thế nào?</summary>
+      <div class="answer"><code class="inline">getDeclaredFields()</code> trả mọi field khai báo trực tiếp trong class hiện tại bất kể mức truy cập (private/protected/package/public), nhưng không gồm field kế thừa. <code class="inline">getFields()</code> chỉ trả field <code class="inline">public</code>, kể cả public kế thừa từ cha/interface. Quy tắc y hệt cho <code class="inline">getDeclaredMethods()</code>/<code class="inline">getMethods()</code> và <code class="inline">getDeclaredConstructors()</code>/<code class="inline">getConstructors()</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Đọc/ghi field private bằng reflection thế nào? Tạo object với constructor private?</summary>
+      <div class="answer">Lấy field bằng <code class="inline">getDeclaredField("ten")</code>, gọi <code class="inline">setAccessible(true)</code>, rồi <code class="inline">get(obj)</code>/<code class="inline">set(obj, value)</code>. Với constructor private: <code class="inline">getDeclaredConstructor(...)</code>, <code class="inline">setAccessible(true)</code>, <code class="inline">newInstance(args)</code>. Lưu ý <code class="inline">setAccessible</code> phá encapsulation — chỉ dùng trong framework/thư viện/test, không dùng trong logic nghiệp vụ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Vì sao <code class="inline">String.class.getDeclaredField("value").setAccessible(true)</code> bị chặn?</summary>
+      <div class="answer">Từ Java 9, JPMS đóng gói nội bộ JDK: module <code class="inline">java.base</code> không mở package <code class="inline">java.lang</code> cho module vô danh (nơi code của bạn chạy), nên reflection từ bên ngoài bị chặn bằng <code class="inline">InaccessibleObjectException</code>. Class của bạn chạy trong unnamed module vốn mở nên vẫn <code class="inline">setAccessible</code> bình thường. Cần thiết thì thêm cờ <code class="inline">--add-opens java.base/java.lang=ALL-UNNAMED</code>, nhưng nên coi đó là giải pháp tạm.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. <code class="inline">@Inherited</code> hoạt động thế nào? Có áp dụng cho interface không?</summary>
+      <div class="answer"><code class="inline">@Inherited</code> chỉ dùng cho annotation trên class (hoặc annotation type). Khi class cha có annotation được đánh dấu <code class="inline">@Inherited</code>, class con gọi <code class="inline">getAnnotation()</code> cũng thấy nó (như thừa kế qua <code class="inline">getAnnotations()</code>). Nó <strong>không</strong> áp dụng cho interface và cũng không lan qua interface implementation — đây là bẫy khi thiết kế annotation cho framework.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">@Repeatable</code> giải quyết vấn đề gì? Container annotation là gì?</summary>
+      <div class="answer">Trước Java 8, một annotation chỉ gắn một lần trên cùng vị trí. <code class="inline">@Repeatable</code> cho phép gắn nhiều lần; compiler tự bọc các lần gắn vào một annotation container có element mảng (ví dụ <code class="inline">@Ranges({@Range(...), @Range(...)})</code>). Lúc đọc dùng <code class="inline">getAnnotationsByType(Range.class)</code>; <code class="inline">getAnnotation(Range.class)</code> trả null vì trên class thật ra chỉ có container.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. <code class="inline">getRecordComponents()</code> là gì? Dùng làm gì?</summary>
+      <div class="answer">API từ Java 16 trả về mảng <code class="inline">RecordComponent</code> cho record: tên, kiểu, generic type, accessor, annotation của từng component. Nó "chính danh" hơn <code class="inline">getDeclaredFields()</code> vì phản ánh đúng khai báo record, dùng nhiều trong serializer/mapper (Jackson dùng để serialize record) và trong framework cần metadata sạch. Ngoài ra còn <code class="inline">isRecord()</code> để kiểm tra.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Vì sao reflection chậm hơn gọi trực tiếp? Có cách nào giảm?</summary>
+      <div class="answer">Vì mỗi lần gọi phải kiểm tra quyền truy cập, boxing tham số, đóng gói mảng argument, không được JIT inline, và tra cứu metadata — benchmark nhỏ cho thấy chậm hơn hàng chục lần. Giảm bằng: cache <code class="inline">Field</code>/<code class="inline">Method</code> (không lookup lại), gọi <code class="inline">setAccessible(true)</code> một lần, dùng ở startup thay vì hot path, và với trường hợp khắt khe dùng <code class="inline">MethodHandle</code>/<code class="inline">LambdaMetafactory</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Spring "thần kỳ" nhờ annotation + reflection cụ thể thế nào?</summary>
+      <div class="answer">Spring quét classpath tìm class có <code class="inline">@Component</code>/<code class="inline">@Service</code>... — đọc annotation bằng reflection; tạo bean bằng constructor (reflection) và tiêm dependency khớp kiểu cho <code class="inline">@Autowired</code>; bọc bean bằng dynamic proxy để thực hiện AOP cho <code class="inline">@Transactional</code>, <code class="inline">@Cacheable</code>... Tất cả "phép thuật" chỉ diễn ra một lần lúc khởi động; sau đó code chạy gần như gọi trực tiếp qua proxy.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Jackson đọc annotation và serialize record thế nào?</summary>
+      <div class="answer">Jackson đọc metadata class một lần (cache lại), ánh xạ tên field/accessor theo <code class="inline">@JsonProperty</code>, bỏ qua field theo <code class="inline">@JsonIgnore</code>. Với record, nó dùng canonical constructor và tên component (không cần getter truyền thống); với class thường, cần getter/setter hoặc bật module đọc tên parameter (<code class="inline">-parameters</code>). Việc nặng diễn ra lúc khởi tạo mapper, không phải mỗi lần serialize.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. JPA/Hibernate dùng annotation gì để map object xuống bảng?</summary>
+      <div class="answer">Quét <code class="inline">@Entity</code>, <code class="inline">@Table</code>, <code class="inline">@Id</code>, <code class="inline">@Column</code>, <code class="inline">@ManyToOne</code>... bằng reflection, dựng metadata ánh xạ, sinh SQL và tạo object/đọc ghi field bằng reflection. Vì tạo instance qua reflection (và proxy cho lazy loading), entity thường phải có constructor không tham số (có thể để <code class="inline">protected</code>) — đó là lý do Hibernate yêu cầu điều này.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Vì sao không kiểm tra được <code class="inline">List&lt;String&gt;</code> bằng reflection?</summary>
+      <div class="answer">Vì type erasure: generic chỉ tồn tại lúc compile, JVM xóa thông tin kiểu khi biên dịch nên runtime chỉ còn <code class="inline">java.util.List</code>. Reflection vẫn đọc được khai báo <code class="inline">getGenericType()</code> trên field/method (metadata trong chữ ký), nhưng object đang sống không biết mình từng được khai báo với kiểu gì — nên nhét <code class="inline">Integer</code> vào <code class="inline">List&lt;String&gt;</code> bằng reflection vẫn "thành công" cho tới khi đọc ra dùng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Khi nào KHÔNG nên dùng reflection? Ví dụ production?</summary>
+      <div class="answer">Không dùng trong logic nghiệp vụ, vòng lặp hiệu năng cao, hoặc khi có thể giải quyết bằng interface/DI/generic. Ví dụ: cần tính tiền đơn hàng thì gọi method trực tiếp, không lookup <code class="inline">getDeclaredMethod</code>; cần thay đổi hành vi theo loại đối tượng thì dùng đa hình thay vì kiểm tra class bằng reflection. Reflection hợp lý ở tầng framework/mapper/tool/test — nơi cái giá "mất kiểm tra compile" được bù bằng tính linh hoạt.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. <code class="inline">@Deprecated(since, forRemoval)</code> có gì hơn comment <code class="inline">@deprecated</code> trong Javadoc?</summary>
+      <div class="answer">Nó là dữ liệu máy đọc được: IDE gạch ngang, javac in warning, tool phân tích dùng; <code class="inline">since</code> ghi phiên bản bắt đầu deprecated, <code class="inline">forRemoval = true</code> báo API sẽ bị xóa hẳn để công cụ build đánh dấu nguy hiểm (kể cả warning <code class="inline">[removal]</code> như ở mục 2). Comment Javadoc chỉ hiển thị cho người đọc, không tác động gì tới compiler/tool.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface Range {
+    int min();
+    int max();
+}
+
+@Range(min = 18, max = 120)
+class UserForm {}
+
+void main() {
+    Range r = UserForm.class.getAnnotation(Range.class);
+    IO.println(r.min());
+    IO.println(r.max());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">18</code> rồi <code class="inline">120</code>. <code class="inline">@Retention(RUNTIME)</code> giữ annotation tới lúc chạy nên reflection đọc được; đọc từng element bằng method <code class="inline">min()</code>/<code class="inline">max()</code> thay vì in cả object annotation (thứ tự element trong <code class="inline">toString</code> không đảm bảo).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+
+@interface Range {
+    int min() default 0;
+}
+
+@Range(min = 18)
+class UserForm {}
+
+void main() {
+    IO.println(UserForm.class.getAnnotation(Range.class) != null);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>. Thiếu <code class="inline">@Retention</code> nên mặc định là <code class="inline">CLASS</code> — compiler thấy nhưng JVM không giữ cho reflection, <code class="inline">getAnnotation</code> trả <code class="inline">null</code>. Sửa: thêm <code class="inline">@Retention(RetentionPolicy.RUNTIME)</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+@Range(min = 18, max = 120)
+public class UserForm {
+    public static void main() {
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> <code class="inline">@Target(ElementType.METHOD)</code> chỉ cho phép gắn lên method, nhưng annotation đang gắn lên class. Lỗi thật: <code class="inline">annotation interface not applicable to this kind of declaration</code>. Sửa <code class="inline">@Target(ElementType.TYPE)</code> (hoặc <code class="inline">FIELD</code> nếu muốn gắn lên field), không sửa chỗ dùng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class UserForm {
+    static class Order {
+    }
+
+    public static void main() {
+        IO.println(Order.class.getSimpleName());
+        IO.println(Order.class.getName());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Order</code> rồi <code class="inline">UserForm$Order</code>. <code class="inline">getSimpleName()</code> chỉ tên ngắn; <code class="inline">getName()</code> là tên đầy đủ trong đó class lồng nhau ngăn cách bằng dấu <code class="inline">$</code>. <code class="inline">Class.forName("UserForm$Order")</code> mới là tên dùng để nạp lại class này.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    private int age = 25;
+
+    public static void main() throws Exception {
+        UserForm form = new UserForm();
+        Field f = UserForm.class.getDeclaredField("age");
+        f.setAccessible(true);
+        IO.println("truoc: " + f.getInt(form));
+        f.setInt(form, 99);
+        IO.println("sau  : " + f.getInt(form));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">truoc: 25</code> rồi <code class="inline">sau  : 99</code>. Reflection sửa thẳng field private của object. Nếu bỏ <code class="inline">f.setAccessible(true)</code>, cả <code class="inline">getInt</code> lẫn <code class="inline">setInt</code> ném <code class="inline">IllegalAccessException</code>. Đây là minh hoạ rõ nhất cho "reflection phá encapsulation".</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. Viết annotation <code class="inline">@NotEmpty</code> và validator đọc nó</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+import java.lang.reflect.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface NotEmpty {}
+
+record UserForm(@NotEmpty String email) {}
+
+void main() throws Exception {
+    UserForm form = new UserForm("");
+    Field f = UserForm.class.getDeclaredField("email");
+    f.setAccessible(true);
+    if (f.isAnnotationPresent(NotEmpty.class) &amp;&amp; ((String) f.get(form)).isBlank()) {
+        IO.println("LOI email: khong duoc rong");
+    } else {
+        IO.println("email hop le");
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">LOI email: khong duoc rong</code>. Bắt buộc có <code class="inline">@Retention(RUNTIME)</code> nếu không <code class="inline">isAnnotationPresent</code> trả false; <code class="inline">@Target(FIELD)</code> để annotation gắn đúng chỗ; <code class="inline">setAccessible(true)</code> cần cho field private của record. Thử đổi email thành <code class="inline">"an@example.com"</code> — in ra <code class="inline">email hop le</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Viết <code class="inline">toString</code> bằng reflection</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.reflect.*;
+import java.util.*;
+
+public class UserForm {
+    private String email = "an@example.com";
+    private int age = 25;
+
+    public static void main() throws Exception {
+        IO.println(moTa(new UserForm()));
+    }
+
+    static String moTa(Object obj) throws Exception {
+        StringBuilder sb = new StringBuilder(obj.getClass().getSimpleName()).append("[");
+        Field[] fields = obj.getClass().getDeclaredFields();
+        Arrays.sort(fields, Comparator.comparing(Field::getName));
+        for (int i = 0; i &lt; fields.length; i++) {
+            fields[i].setAccessible(true);
+            if (i &gt; 0) {
+                sb.append(", ");
+            }
+            sb.append(fields[i].getName()).append("=").append(fields[i].get(obj));
+        }
+        return sb.append("]").toString();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">UserForm[age=25, email=an@example.com]</code>. Sort theo tên vì thứ tự field do JVM trả về không đảm bảo. Đây là ý tưởng lõi của các thư viện sinh <code class="inline">toString</code>/JSON tự động: quét field, đọc giá trị, in ra.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Liệt kê annotation đang có trên class lúc runtime</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+import java.util.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+@Deprecated(since = "1.0")
+@Range(min = 1, max = 10)
+class Order {}
+
+void main() {
+    Annotation[] anns = Order.class.getAnnotations();
+    Arrays.sort(anns, Comparator.comparing(a -&gt; a.annotationType().getSimpleName()));
+    for (Annotation a : anns) {
+        IO.println(a.annotationType().getSimpleName());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Deprecated</code> rồi <code class="inline">Range</code> (đã sort). Cả hai đều RUNTIME nên <code class="inline">getAnnotations()</code> thấy hết. Nếu <code class="inline">Range</code> thiếu <code class="inline">@Retention(RUNTIME)</code> thì chỉ còn <code class="inline">Deprecated</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. <code class="inline">@Range</code> validation — đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.annotation.*;
+import java.lang.reflect.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+@interface Range {
+    int min() default 0;
+    int max() default 100;
+}
+
+record UserForm(String email, @Range(min = 18, max = 120) int age) {}
+
+void main() throws Exception {
+    for (Field f : UserForm.class.getDeclaredFields()) {
+        Range r = f.getAnnotation(Range.class);
+        if (r == null) {
+            continue;
+        }
+        f.setAccessible(true);
+        int value = f.getInt(new UserForm("an@example.com", 15));
+        IO.println(f.getName() + ": " + (value &gt;= r.min() &amp;&amp; value &lt;= r.max() ? "OK" : "LOI"));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">age: LOI</code>. Field <code class="inline">email</code> bị bỏ qua vì không có <code class="inline">@Range</code> (<code class="inline">continue</code>); <code class="inline">age = 15</code> nhỏ hơn <code class="inline">min = 18</code>. Đổi tuổi thành 25 sẽ in <code class="inline">age: OK</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. Record components — đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.reflect.*;
+
+record UserForm(String email, int age) {}
+
+void main() {
+    RecordComponent[] comps = UserForm.class.getRecordComponents();
+    IO.println("so component: " + comps.length);
+    IO.println("comps[0].getType() == String.class: " + (comps[0].getType() == String.class));
+    IO.println("comps[1].getAccessor().getName(): " + comps[1].getAccessor().getName());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">so component: 2</code>, <code class="inline">comps[0].getType() == String.class: true</code>, <code class="inline">comps[1].getAccessor().getName(): age</code>. Thứ tự component đúng theo khai báo record (khác field thường — thứ tự không đảm bảo).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Gọi method private bằng reflection — đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    private String chao(String ten) {
+        return "Chao " + ten;
+    }
+
+    public static void main() throws Exception {
+        Method m = UserForm.class.getDeclaredMethod("chao", String.class);
+        m.setAccessible(true);
+        IO.println(m.invoke(new UserForm(), "An"));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Chao An</code>. <code class="inline">getDeclaredMethod</code> phải chỉ đúng tên + kiểu tham số (<code class="inline">String.class</code>), nếu không sẽ <code class="inline">NoSuchMethodException</code>. <code class="inline">invoke</code> nhận object đích (hoặc <code class="inline">null</code> với static) rồi danh sách argument; nếu method gốc ném exception, reflection bọc nó trong <code class="inline">InvocationTargetException</code> — lấy lỗi thật bằng <code class="inline">getCause()</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Giải thích lỗi JPMS khi mở private của class JDK</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.lang.reflect.*;
+
+public class UserForm {
+    public static void main() throws Exception {
+        Field f = String.class.getDeclaredField("value");
+        f.setAccessible(true);
+        f.set("hello", new byte[]{1, 2, 3});
+        IO.println("doi duoc ruot cua String");
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không chạy được.</strong> Dòng <code class="inline">setAccessible</code> ném <code class="inline">InaccessibleObjectException</code> (<code class="inline">RuntimeException</code>): module <code class="inline">java.base</code> không <code class="inline">opens</code> package <code class="inline">java.lang</code> cho unnamed module. Từ Java 9 JPMS bảo vệ nội bộ JDK vì việc sửa <code class="inline">String.value</code> phá vỡ tính bất biến. Muốn thật sự chạy (không khuyến khích): thêm cờ <code class="inline">--add-opens java.base/java.lang=ALL-UNNAMED</code> khi chạy <code class="inline">java</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Khai báo annotation</td><td><code class="inline">@Retention(RUNTIME) @Target(FIELD) @interface Range { int min(); int max() default 100; }</code></td></tr>
+        <tr><td>Đọc annotation trên field/method/class</td><td><code class="inline">element.getAnnotation(Range.class)</code> / <code class="inline">isAnnotationPresent(Range.class)</code></td></tr>
+        <tr><td>Đọc annotation lặp</td><td><code class="inline">getAnnotationsByType(Range.class)</code> (có <code class="inline">@Repeatable</code>)</td></tr>
+        <tr><td>Annotation kế thừa cho class con</td><td>Thêm <code class="inline">@Inherited</code> lên annotation type</td></tr>
+        <tr><td>Lấy đối tượng <code class="inline">Class</code></td><td><code class="inline">UserForm.class</code>, <code class="inline">obj.getClass()</code>, <code class="inline">Class.forName("ten.binary")</code></td></tr>
+        <tr><td>Tên class</td><td><code class="inline">getName()</code> (đầy đủ, class lồng dùng <code class="inline">$</code>) / <code class="inline">getSimpleName()</code> / <code class="inline">getPackageName()</code></td></tr>
+        <tr><td>Liệt kê thành viên của chính class</td><td><code class="inline">getDeclaredFields()</code> / <code class="inline">getDeclaredMethods()</code> / <code class="inline">getDeclaredConstructors()</code> — mọi mức truy cập</td></tr>
+        <tr><td>Liệt kê thành viên public + kế thừa</td><td><code class="inline">getFields()</code> / <code class="inline">getMethods()</code> / <code class="inline">getConstructors()</code></td></tr>
+        <tr><td>Tạo object</td><td><code class="inline">c.getDeclaredConstructor(...).newInstance(args)</code> (+ <code class="inline">setAccessible(true)</code> nếu private)</td></tr>
+        <tr><td>Gọi method</td><td><code class="inline">m.setAccessible(true); m.invoke(obj, args)</code>; static thì truyền <code class="inline">null</code></td></tr>
+        <tr><td>Đọc/ghi field</td><td><code class="inline">f.setAccessible(true); f.get(obj)</code>, <code class="inline">f.set(obj, value)</code>, <code class="inline">f.getInt(obj)</code>...</td></tr>
+        <tr><td>Kiểm tra modifier</td><td><code class="inline">Modifier.toString(member.getModifiers())</code></td></tr>
+        <tr><td>Metadata record</td><td><code class="inline">c.isRecord()</code>, <code class="inline">c.getRecordComponents()</code> → <code class="inline">getName()</code>/<code class="inline">getType()</code>/<code class="inline">getAccessor()</code></td></tr>
+        <tr><td>Xem kiểu generic đã khai báo</td><td><code class="inline">f.getGenericType().getTypeName()</code> — nhớ object runtime đã bị erasure</td></tr>
+        <tr><td>Mở private của JDK (hạn chế)</td><td><code class="inline">java --add-opens java.base/java.lang=ALL-UNNAMED File.java</code></td></tr>
+        <tr><td>Chọn retention</td><td>Compiler-only → <code class="inline">SOURCE</code>; bytecode tool → <code class="inline">CLASS</code>; framework/reflection → <code class="inline">RUNTIME</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được "annotation là metadata thụ động" kèm ví dụ compiler đọc vs framework đọc.</li>
+      <li>Phân biệt SOURCE / CLASS / RUNTIME và nhớ mặc định là CLASS.</li>
+      <li>Viết được annotation tùy biến có element + default, chọn đúng @Retention/@Target.</li>
+      <li>Đọc annotation lúc runtime bằng reflection, kể cả trên record component.</li>
+      <li>Kể tên 3 cách lấy <code class="inline">Class</code> và nói khi nào dùng cách nào.</li>
+      <li>Phân biệt <code class="inline">getDeclaredFields()</code> và <code class="inline">getFields()</code> không cần tra cứu.</li>
+      <li>Tạo object, gọi method, sửa field private bằng reflection và nêu rủi ro encapsulation.</li>
+      <li>Giải thích vì sao <code class="inline">setAccessible</code> lên class JDK bị JPMS chặn.</li>
+      <li>Giải thích erasure: vì sao không kiểm tra được <code class="inline">List&lt;String&gt;</code> lúc runtime.</li>
+      <li>Nêu được reflection chậm hơn và 2-3 cách giảm chi phí (cache, startup, MethodHandle).</li>
+      <li>Trình bày Spring dùng annotation + reflection + proxy thế nào, và bẫy self-invocation.</li>
+      <li>Nói rõ khi nào KHÔNG nên dùng reflection trong production.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6" target="_blank" rel="noreferrer">JLS §9.6 — Annotation Interfaces</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/package-summary.html" target="_blank" rel="noreferrer">JDK 25 API — java.lang.annotation</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/reflect/package-summary.html" target="_blank" rel="noreferrer">JDK 25 API — java.lang.reflect</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/reflect/index.html" target="_blank" rel="noreferrer">Oracle Tutorial — The Reflection API</a></li>
+      <li><a href="https://www.typescriptlang.org/docs/handbook/decorators.html" target="_blank" rel="noreferrer">TypeScript Handbook — Decorators</a></li>
+      <li><a href="https://docs.nestjs.com/providers" target="_blank" rel="noreferrer">NestJS — Providers (dependency injection)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Annotations &amp; Reflection · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

@@ -23,7 +23,7 @@
 
     <nav class="tree" id="tree">
       <details class="group" open>
-        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
         <a class="item active" href="roadmap.html">Lộ trình học Java</a>
         <a class="item" href="index.html">Biến trong Java</a>
         <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
@@ -32,6 +32,18 @@
         <a class="item" href="methods.html">Methods</a>
         <a class="item" href="arrays.html">Arrays</a>
         <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
       </details>
     </nav>
   </aside>
@@ -111,16 +123,16 @@
       <tbody>
         <tr><td>0. Chuẩn bị</td><td>5</td><td>3</td><td>0</td><td>Môi trường, Git, Linux</td></tr>
         <tr><td>1. Java Core</td><td>7</td><td>0</td><td>7</td><td>Ngôn ngữ nền tảng</td></tr>
-        <tr><td>2. OOP</td><td>9</td><td>0</td><td>0</td><td>Trái tim Java, phỏng vấn nặng nhất</td></tr>
+        <tr><td>2. OOP</td><td>9</td><td>0</td><td>9</td><td>Trái tim Java, phỏng vấn nặng nhất</td></tr>
         <tr><td>3. Dữ liệu &amp; lỗi</td><td>8</td><td>0</td><td>0</td><td>Exceptions, Generics, Collections, Streams</td></tr>
         <tr><td>4. Production essentials</td><td>7</td><td>0</td><td>0</td><td>JVM, Concurrency, Maven, Testing, Logging</td></tr>
         <tr><td>5. Backend stack</td><td>9</td><td>0</td><td>0</td><td>SQL, Spring, JPA, Docker</td></tr>
         <tr><td>6. Interview prep</td><td>6</td><td>0</td><td>0</td><td>DSA, Q&amp;A, mock, project</td></tr>
-        <tr><td><strong>Tổng</strong></td><td><strong>51</strong></td><td><strong>3</strong></td><td><strong>7</strong></td><td>~9 tháng với 10–15 giờ/tuần</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>51</strong></td><td><strong>3</strong></td><td><strong>16</strong></td><td>~9 tháng với 10–15 giờ/tuần</td></tr>
       </tbody>
     </table>
 
-    <p>"Có sẵn" = công cụ/môi trường đã cài (0.1–0.3); "Doc đã viết" = doc học hoàn chỉnh (1.1–1.7). Đã cài công cụ chưa có nghĩa là đã học xong chủ đề.</p>
+    <p>"Có sẵn" = công cụ/môi trường đã cài (0.1–0.3); "Doc đã viết" = doc học hoàn chỉnh (1.1–1.7 và 2.1–2.9). Đã cài công cụ chưa có nghĩa là đã học xong chủ đề.</p>
 
     <h2 id="phase-0">Giai đoạn 0 — Chuẩn bị môi trường</h2>
 
@@ -244,13 +256,13 @@
 
     <div class="note"><strong>Milestone giai đoạn 1:</strong> viết app console (project xuyên suốt "quản lý đơn hàng") dùng mảng + method + nhập liệu; mỗi method tự kiểm thử 3 loại đầu vào (bình thường, biên, sai) trước khi ghép; code sạch, xử lý lỗi nhập sai.</div>
 
-    <h2 id="phase-2">Giai đoạn 2 — OOP (trái tim của Java)</h2>
+        <h2 id="phase-2">Giai đoạn 2 — OOP (trái tim của Java)</h2>
 
     <div class="note"><strong>Góc Node.js:</strong> JS dùng prototype chain, Java dùng kế thừa đơn + interface. <code class="inline">this</code> trong JS phụ thuộc cách gọi hàm, còn <code class="inline">this</code> trong Java luôn là instance hiện tại. So sánh object trong JS bằng reference; trong Java mặc định cũng vậy, muốn so giá trị phải override <code class="inline">equals</code>/<code class="inline">hashCode</code>.</div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.1 Classes &amp; Objects</span><span class="badge b-next">Tiếp theo</span></div>
-      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.1 Classes &amp; Objects</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="classes-objects.html">Classes &amp; Objects</a> — 15 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: rất cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>class, object, <code class="inline">new</code>, constructor (mặc định, có tham số, overload)</li>
         <li><code class="inline">this</code>, <code class="inline">static</code> (field/method/block), thứ tự khởi tạo</li>
@@ -260,8 +272,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.2 Encapsulation &amp; Immutability</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.2 Encapsulation &amp; Immutability</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="encapsulation.html">Encapsulation &amp; Immutability</a> — 15 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Đóng gói: private field + getter/setter; khi nào không cần setter</li>
         <li>Immutable object: final field, không lộ reference, defensive copy</li>
@@ -270,8 +282,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.3 Inheritance</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.3 Inheritance</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="inheritance.html">Inheritance</a> — 17 mục, 20 Q&amp;A, 14 bài tập · Phỏng vấn: rất cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li><code class="inline">extends</code>, <code class="inline">super</code>, constructor chaining, thứ tự khởi tạo class cha/con</li>
         <li>Method overriding, annotation <code class="inline">@Override</code>, quy tắc không được phá vỡ</li>
@@ -281,8 +293,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.4 Polymorphism</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.4 Polymorphism</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="polymorphism.html">Polymorphism</a> — 15 mục, 21 Q&amp;A, 13 bài tập · Phỏng vấn: rất cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Compile-time (overloading) vs runtime (overriding)</li>
         <li>Dynamic dispatch hoạt động thế nào</li>
@@ -292,8 +304,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.5 Abstract class vs Interface</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: rất cao (câu kinh điển) · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.5 Abstract class vs Interface</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="abstract-interface.html">Abstract class vs Interface</a> — 17 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: rất cao (câu kinh điển) · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Khi nào chọn abstract class, khi nào interface (kèm ví dụ quyết định)</li>
         <li>default / static / private method trong interface</li>
@@ -303,8 +315,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.6 Object contract: equals / hashCode / toString</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.6 Object contract: equals / hashCode / toString</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="object-contract.html">equals / hashCode / toString</a> — 17 mục, 24 Q&amp;A, 12 bài tập · Phỏng vấn: rất cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Hợp đồng equals/hashCode; hậu quả khi vi phạm (HashMap/HashSet "mất" phần tử)</li>
         <li>Override đúng cách; generated code của IDE; record làm sẵn</li>
@@ -313,18 +325,18 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.7 Enum, nested &amp; sealed classes</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">2.7 Enum, nested &amp; sealed classes</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="enum-nested.html">Enum, Nested &amp; Sealed</a> — 16 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Enum có field/constructor/method; dùng thay magic string</li>
         <li>Static nested vs inner vs local vs anonymous class</li>
-        <li>Sealed class/interface (Java 17) mức nhận biết</li>
+        <li>Sealed class/interface (Java 17) kết hợp pattern matching</li>
       </ul>
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.8 SOLID &amp; design patterns cơ bản</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: trung bình–cao · Production: nên biết</div>
+      <div class="topic-head"><span class="topic-name">2.8 SOLID &amp; design patterns cơ bản</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="solid-patterns.html">SOLID &amp; Patterns</a> — 15 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: trung bình–cao · Production: nên biết</div>
       <ul class="topic-sub">
         <li>5 nguyên tắc SOLID kèm ví dụ Java</li>
         <li>Singleton (thread-safe), Factory, Builder, Strategy, Observer</li>
@@ -333,8 +345,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">2.9 Annotations &amp; Reflection</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: cao · Production: nên biết — nền tảng của mọi "magic" Spring</div>
+      <div class="topic-head"><span class="topic-name">2.9 Annotations &amp; Reflection</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="annotations-reflection.html">Annotations &amp; Reflection</a> — 15 mục, 22 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: nên biết — nền tảng của mọi "magic" Spring</div>
       <ul class="topic-sub">
         <li>Annotation built-in: <code class="inline">@Override</code>, <code class="inline">@Deprecated</code>, <code class="inline">@SuppressWarnings</code></li>
         <li>Tự định nghĩa annotation: <code class="inline">@Retention</code>, <code class="inline">@Target</code>; cách framework đọc annotation</li>
@@ -346,12 +358,12 @@
 
     <div class="note"><strong>Milestone giai đoạn 2:</strong> refactor app console "quản lý đơn hàng" theo OOP; model có interface + enum + equals/hashCode; giải thích được chỗ nào chọn composition thay vì kế thừa (không dùng kế thừa cho đủ checklist); dùng breakpoint xem object và lời gọi method trong debugger.</div>
 
-    <h2 id="phase-3">Giai đoạn 3 — Dữ liệu &amp; xử lý lỗi</h2>
+<h2 id="phase-3">Giai đoạn 3 — Dữ liệu &amp; xử lý lỗi</h2>
 
     <div class="note"><strong>Góc Node.js:</strong> <code class="inline">Array.map/filter/reduce</code> của JS gần giống Stream, nhưng Stream của Java là lazy, chỉ chạy một lần và có thể parallel. <code class="inline">Date</code> của JS tương ứng <code class="inline">java.time</code>; <code class="inline">JSON.stringify/parse</code> sẽ được thay bằng Jackson ở giai đoạn 5.</div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">3.1 Exception Handling</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-head"><span class="topic-name">3.1 Exception Handling</span><span class="badge b-next">Tiếp theo</span></div>
       <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Checked vs unchecked; Error vs Exception; hierarchy</li>

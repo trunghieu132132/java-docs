@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encapsulation &amp; Immutability — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item active" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="encapsulation">Encapsulation &amp; Immutability — đóng gói &amp; bất biến</h1>
+
+    <p class="lead">Encapsulation (đóng gói) là giấu ruột của object, chỉ mở ra những gì bên ngoài thật sự cần. Immutability (bất biến) là làm object không thể đổi state sau khi tạo. Hai ý này đi cùng nhau: muốn bảo vệ dữ liệu thì vừa phải đóng (private), vừa phải chặn sửa (immutable). Trang này đi từ <code class="inline">private</code>/getter/setter, 5 bước tạo immutable class, copy phòng thủ, record, tới pattern production và các cạm bẫy hay gặp.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Hãy bắt đầu bằng hình ảnh cây ATM. Bạn chỉ thấy màn hình, bàn phím, khe tiền — đó là <strong>API công khai</strong>. Bạn không thấy và không chạm được ruột máy, két tiền, hệ thống đếm — đó là <strong>implementation bị giấu</strong>. Ngân hàng có thể thay ruột máy, nâng cấp phần mềm, miễn giữ nguyên cách dùng bên ngoài thì bạn vẫn rút tiền như cũ. Code cũng vậy: field để <code class="inline">private</code>, chỉ lộ ra vài method nghiệp vụ; muốn đổi cách lưu trữ bên trong thì đổi, client không hề biết.</p>
+
+    <p>Đóng gói tồn tại để bảo vệ <strong>invariant</strong> — điều kiện luôn phải đúng của object: số dư không được âm, số lượng đặt hàng phải &gt; 0, email phải chứa <code class="inline">@</code>, <code class="inline">createdAt</code> không được đổi. Nếu field là <code class="inline">public</code>, mọi nơi trong chương trình đều có thể phá invariant, và bạn không có cách nào kiểm soát:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">user.balance = -500_000;              // khong ai kiem tra duoc
+user.balance = user.balance - 100_000; // quy tac trừ tiền copy khap noi
+user.balance -= 100_000;              // ba noi viet ba kieu, mot noi quen validate</code></pre>
+    </div>
+
+    <p>Ba lợi ích cốt lõi của đóng gói:</p>
+
+    <ul>
+      <li><strong>Bảo vệ invariant</strong> — mọi thay đổi phải đi qua method có validate, object không bao giờ rơi vào trạng thái vô lý.</li>
+      <li><strong>Giấu implementation</strong> — đổi kiểu dữ liệu bên trong (ví dụ <code class="inline">long</code> sang <code class="inline">BigDecimal</code>) mà không phá code bên ngoài, miễn giữ API.</li>
+      <li><strong>Kiểm soát điểm thay đổi</strong> — logic nằm một chỗ, sửa một lần; không phải đi tìm mọi nơi đã copy quy tắc.</li>
+    </ul>
+
+    <p>Còn <strong>immutable</strong> là mức bảo vệ cao hơn: object sinh ra xong thì không đổi được nữa. Ai đang giữ reference cũng yên tâm vì không ai sửa lén được state. Bạn đã gặp nhiều object bất biến của JDK: <code class="inline">String</code>, <code class="inline">Integer</code>, <code class="inline">BigDecimal</code>, <code class="inline">LocalDate</code> — và record được sinh ra chính để chở dữ liệu theo kiểu này.</p>
+
+    <p><strong>Góc Node.js:</strong> JavaScript hiện đại cũng có field <code class="inline">#private</code> (từ ES2022) để giấu dữ liệu thật, nhưng đa số code quen dùng public field và object tự do; còn "khóa" object kiểu <code class="inline">Object.freeze</code> chỉ có tác dụng một lớp. Mục <a href="#goc-nodejs">12</a> so sánh chi tiết.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 2.2 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo field <code class="inline">private</code> + getter/setter có validate; viết immutable class đủ 5 bước; defensive copy cho <code class="inline">List</code>/<code class="inline">Map</code>; viết method <code class="inline">withX()</code>/<code class="inline">plus()</code> trả object mới; đọc và viết record có validate.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">final</code> chưa đủ để bất biến; record chỉ bất biến nông; vì sao immutable thread-safe và an toàn khi làm key <code class="inline">HashMap</code>; khác nhau giữa unmodifiable và immutable; khi nào nên bỏ setter (tell-don't-ask).</li>
+      <li><strong>Nhận biết</strong> — copy nông vs copy sâu cho cấu trúc lồng; JPA entity không immutable (học ở giai đoạn backend); builder khi có nhiều field (<a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>).</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ. File có class tên đầy đủ chạy bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#private-getter-setter">private, getter &amp; setter</a></li>
+        <li><a href="#khong-setter">Khi nào không nên có setter</a></li>
+        <li><a href="#immutable-class">Immutable class — 5 bước tạo</a></li>
+        <li><a href="#money">Class Money — ví dụ đầy đủ</a></li>
+        <li><a href="#defensive-copy">Copy phòng thủ (defensive copy)</a></li>
+        <li><a href="#record">Record &amp; bất biến nông</a></li>
+        <li><a href="#loi-ich">Lợi ích của immutable</a></li>
+        <li><a href="#danh-doi">Đánh đổi &amp; khi nào không dùng</a></li>
+        <li><a href="#production-patterns">Patterns trong production</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="private-getter-setter">2. private, getter &amp; setter — giấu dữ liệu</h2>
+
+    <p>Cơ chế đầu tiên của đóng gói là <strong>access modifier</strong> (mức truy cập). Java có 4 mức, chọn đúng mức là quyết định thiết kế chứ không phải chi tiết vặt:</p>
+
+    <table>
+      <thead>
+        <tr><th>Mức</th><th>Ai truy cập được</th><th>Dùng khi nào</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">private</code></td><td>Chỉ code trong cùng class</td><td>Mặc định cho mọi field; helper method nội bộ</td></tr>
+        <tr><td>không ghi gì (package-private)</td><td>Các class cùng package</td><td>Phối hợp nội bộ một package, test cùng package</td></tr>
+        <tr><td><code class="inline">protected</code></td><td>Cùng package + subclass</td><td>Method dành cho subclass override (học ở <a href="inheritance.html">2.3 Inheritance</a>)</td></tr>
+        <tr><td><code class="inline">public</code></td><td>Mọi nơi</td><td>API công khai — càng ít càng tốt</td></tr>
+      </tbody>
+    </table>
+
+    <p>Quy tắc thực dụng: <strong>field luôn <code class="inline">private</code></strong>, method mặc định để hẹp nhất có thể rồi mở dần khi cần. Khi field private, bên ngoài chỉ đọc/ghi qua getter/setter hoặc method nghiệp vụ:</p>
+
+    <div class="signature">
+      <span class="sig-muted">public</span> <span class="tok-typ">long</span> <span class="sig-var">getBalance</span><span class="sig-muted">() { return balance; }</span>
+      &nbsp;&nbsp;
+      <span class="sig-muted">public void</span> <span class="sig-var">setBalance</span><span class="sig-muted">(</span><span class="tok-typ">long</span> <span class="sig-var">value</span><span class="sig-muted">) { validate; this.balance = value; }</span>
+    </div>
+
+    <p>Ví dụ đầy đủ: <code class="inline">User</code> có <code class="inline">balance</code> private, mọi lối vào đều validate, bên ngoài không chạm được vào field:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class User {
+    private final String email;
+    private long balance;
+
+    User(String email, long balance) {
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("email khong hop le: " + email);
+        }
+        if (balance &lt; 0) {
+            throw new IllegalArgumentException("balance khong duoc am: " + balance);
+        }
+        this.email = email;
+        this.balance = balance;
+    }
+
+    String getEmail() {
+        return email;
+    }
+
+    long getBalance() {
+        return balance;
+    }
+
+    void setBalance(long newBalance) {
+        if (newBalance &lt; 0) {
+            throw new IllegalArgumentException("balance khong duoc am: " + newBalance);
+        }
+        this.balance = newBalance;
+    }
+
+    void deposit(long amount) {
+        if (amount &lt;= 0) {
+            throw new IllegalArgumentException("amount phai duong: " + amount);
+        }
+        balance += amount;
+    }
+
+    void withdraw(long amount) {
+        if (amount &lt;= 0) {
+            throw new IllegalArgumentException("amount phai duong: " + amount);
+        }
+        if (amount &gt; balance) {
+            throw new IllegalArgumentException("so du khong du: " + amount);
+        }
+        balance -= amount;
+    }
+
+    public static void main() {
+        User an = new User("an@example.com", 100_000);
+        an.deposit(50_000);
+        IO.println("sau deposit    : " + an.getBalance());   // 150000
+        an.withdraw(30_000);
+        IO.println("sau withdraw   : " + an.getBalance());   // 120000
+        an.setBalance(200_000);
+        IO.println("sau setBalance : " + an.getBalance());   // 200000
+        try {
+            an.withdraw(500_000);
+        } catch (IllegalArgumentException e) {
+            IO.println("loi: " + e.getMessage());            // loi: so du khong du: 500000
+        }
+        try {
+            an.setBalance(-1);
+        } catch (IllegalArgumentException e) {
+            IO.println("loi: " + e.getMessage());            // loi: balance khong duoc am: -1
+        }
+        IO.println("so du cuoi     : " + an.getBalance());   // 200000
+    }
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật <code class="inline">java User.java</code>:</p>
+
+    <div class="codeblock error">
+      <pre><code>sau deposit    : 150000
+sau withdraw   : 120000
+sau setBalance : 200000
+loi: so du khong du: 500000
+loi: balance khong duoc am: -1
+so du cuoi     : 200000</code></pre>
+    </div>
+
+    <p>Thử truy cập thẳng field từ class khác sẽ bị chặn ngay khi compile — đây là hàng rào cứng, không phải quy ước:</p>
+
+    <div class="errblock">
+      <pre>User.java:8: error: balance has private access in User
+        u.balance = -100;
+         ^
+1 error</pre>
+    </div>
+
+    <div class="note"><strong>private là theo class, không theo object:</strong> hai object cùng class vẫn đọc/ghi private của nhau thoải mái, và <code class="inline">main</code> nằm trong chính class đó cũng truy cập được. Vì vậy ví dụ lỗi trên phải đặt lời gọi trong một class khác. Điều này giải thích vì sao <code class="inline">equals</code> của một class so sánh private field của object khác cùng class được (xem <a href="object-contract.html">2.6 equals / hashCode / toString</a>).</div>
+
+    <div class="note warn">Có private + getter/setter <strong>chưa chắc</strong> là đóng gói tốt. Nếu getter/setter chỉ chuyển tiếp field, bạn vừa giấu dữ liệu lại vừa mở nó ra ở dạng khác — client vẫn phụ thuộc cấu trúc nội bộ. Mục tiếp theo bàn kỹ hơn.</div>
+
+    <h2 id="khong-setter">3. Khi nào KHÔNG nên có setter <span class="badge b-prod">Production</span></h2>
+
+    <p>Setter là API nguy hiểm nhất trong một class nghiệp vụ vì nó cho phép "đặt object vào bất kỳ trạng thái nào". Ba trường hợp dưới đây setter gần như luôn là mùi code.</p>
+
+    <h3>3.1. Object bất biến thì không có setter</h3>
+
+    <p>Nếu mục tiêu là object không đổi (mục <a href="#immutable-class">4</a>), setter mâu thuẫn trực tiếp với mục tiêu đó. Muốn "sửa" thì method trả về object mới.</p>
+
+    <h3>3.2. Tell, don't ask — bảo object làm việc thay vì hỏi dữ liệu</h3>
+
+    <p>Kiểu "ask rồi set" đẩy quy tắc nghiệp vụ ra ngoài class; ai gọi cũng phải nhớ và copy quy tắc đó. Kiểu "tell" giao việc cho object, quy tắc nằm một chỗ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Ask roi set: quy tac nam o ngoai, phai nho va lap lai o moi call site
+if (user.getBalance() &gt;= 100_000) {
+    user.setBalance(user.getBalance() - 100_000);
+}
+
+// Tell: giao viec cho object, class tu giu invariant
+user.withdraw(100_000);</code></pre>
+    </div>
+
+    <h3>3.3. Setter cho id, createdAt, status là mùi code</h3>
+
+    <ul>
+      <li><code class="inline">id</code> là định danh — đổi id nghĩa là object khác, đừng cho setter.</li>
+      <li><code class="inline">createdAt</code> là thời điểm sinh ra — bất biến theo định nghĩa.</li>
+      <li><code class="inline">status</code> nên đổi qua <strong>hành động nghiệp vụ</strong> để class kiểm tra luật chuyển trạng thái, thay vì gán thô:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">order.setStatus(OrderStatus.CANCELLED); // ai cung set duoc, ke ca tu trang thai da giao
+order.cancel();                         // ro nghiep vu, class tu kiem tra trang thai hop le
+</code></pre>
+    </div>
+
+    <p>Còn getter trả về collection nội bộ là lỗi kinh điển — client sửa được list ruột của object. Ví dụ và cách sửa nằm ở mục <a href="#defensive-copy">6</a>.</p>
+
+    <table>
+      <thead>
+        <tr><th>Bối cảnh</th><th>Setter</th><th>Lý do</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Value object (Money, Email...), entity</td><td>Không nên</td><td>Invariant và hành vi nghiệp vụ phải được giữ; dùng method có tên hành động</td></tr>
+        <tr><td>DTO / config cần framework (Jackson, JPA)</td><td>Chấp nhận được</td><td>Framework cần set field; DTO gần như chỉ chở dữ liệu — nhưng entity (JPA) thì cẩn thận</td></tr>
+        <tr><td>Field có invariant (số dư, số lượng)</td><td>Chỉ khi validate</td><td>Setter không validate = cửa mở phá invariant (bài tập 8)</td></tr>
+        <tr><td>Field định danh, thời gian tạo, trạng thái</td><td>Tránh</td><td>Đổi qua method nghiệp vụ để kiểm soát luật</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Nguyên tắc nhớ nhanh:</strong> setter chỉ hợp lệ khi "gán giá trị bất kỳ" thật sự là một hành vi hợp lệ của object. Nếu không, hãy viết method nghiệp vụ — tên method cũng tự tài liệu hóa ý nghĩa.</div>
+
+    <h2 id="immutable-class">4. Immutable class — 5 bước tạo <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Object bất biến (immutable) là object mà sau khi constructor chạy xong, nhìn từ bên ngoài <strong>không có cách nào đổi state</strong>. Tạo một immutable class chuẩn gồm 5 bước:</p>
+
+    <ol>
+      <li><strong>Đánh dấu class <code class="inline">final</code></strong> — chặn subclass thêm field mutable hoặc override method phá tính bất biến. Nếu không muốn final class, có thể giữ constructor private + static factory.</li>
+      <li><strong>Mọi field <code class="inline">private final</code></strong> — không có đường ghi sau constructor.</li>
+      <li><strong>Không viết setter</strong> — mọi thao tác "thay đổi" trả về object mới (<code class="inline">withAmount</code>, <code class="inline">plus</code>...).</li>
+      <li><strong>Validate trong constructor</strong> — fail fast, object sinh ra là đã đúng invariant, không có cửa sổ thời gian nào object ở trạng thái hỏng.</li>
+      <li><strong>Defensive copy mọi field mutable</strong> — khi nhận trong constructor và khi trả trong getter (chi tiết ở mục <a href="#defensive-copy">6</a>).</li>
+    </ol>
+
+    <div class="signature">
+      <span class="sig-muted">public final class</span> <span class="tok-typ">Money</span> <span class="sig-muted">{</span>
+      &nbsp;<span class="sig-muted">private final long amount; private final String currency;</span>
+      &nbsp;<span class="sig-muted">// khong setter; method tra object moi</span> <span class="sig-muted">}</span>
+    </div>
+
+    <h3><code class="inline">final</code> — khóa reference, không khóa nội dung</h3>
+
+    <p>Đây là hiểu lầm tốn kém nhất. <code class="inline">final</code> chỉ đảm bảo biến được gán <strong>một lần</strong>; nếu biến trỏ tới object mutable thì nội dung object vẫn đổi bình thường:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class VariablesDemo {
+    public static void main() {
+        final List&lt;String&gt; items = new ArrayList&lt;&gt;();
+        items.add("ao");
+        items.add("quan");
+        IO.println(items);       // [ao, quan]
+        IO.println(items.size()); // 2
+    }
+}</code></pre>
+    </div>
+
+    <p>Đoạn trên chạy bình thường, thêm phần tử thoải mái. Nhưng gán lại biến thì không compile:</p>
+
+    <div class="errblock">
+      <pre>VariablesDemo.java:8: error: cannot assign a value to final variable items
+        items = new ArrayList&lt;&gt;();
+        ^
+1 error</pre>
+    </div>
+
+    <div class="note"><strong>Kết luận:</strong> <code class="inline">final</code> là điều kiện cần nhưng chưa đủ. Muốn immutable phải khóa cả reference <em>và</em> nội dung object (dùng object immutable, hoặc copy phòng thủ). Chi tiết <code class="inline">final</code> bạn đã học ở <a href="index.html#final">Biến trong Java — mục 10</a>.</div>
+
+    <h2 id="money">5. Class Money — ví dụ bất biến đầy đủ</h2>
+
+    <p>Ghép đủ 5 bước vào một value object thật: <code class="inline">Money</code> với <code class="inline">amount</code> + <code class="inline">currency</code>. Mọi thao tác trả object mới, không bao giờ sửa object cũ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ProductionDemo {
+    static final class Money {
+        private final long amount;
+        private final String currency;
+
+        Money(long amount, String currency) {
+            if (amount &lt; 0) {
+                throw new IllegalArgumentException("amount khong hop le: " + amount);
+            }
+            if (currency == null || currency.isBlank()) {
+                throw new IllegalArgumentException("currency khong hop le");
+            }
+            this.amount = amount;
+            this.currency = currency;
+        }
+
+        long amount() {
+            return amount;
+        }
+
+        String currency() {
+            return currency;
+        }
+
+        Money plus(Money other) {
+            checkSameCurrency(other);
+            return new Money(amount + other.amount, currency);
+        }
+
+        Money minus(Money other) {
+            checkSameCurrency(other);
+            return new Money(amount - other.amount, currency);
+        }
+
+        Money withAmount(long newAmount) {
+            return new Money(newAmount, currency);
+        }
+
+        private void checkSameCurrency(Money other) {
+            if (!currency.equals(other.currency)) {
+                throw new IllegalArgumentException("khac currency: " + currency + " vs " + other.currency);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return amount + " " + currency;
+        }
+    }
+
+    public static void main() {
+        Money gia = new Money(250_000, "VND");
+        Money ship = new Money(30_000, "VND");
+        Money tong = gia.plus(ship);
+
+        IO.println("gia      : " + gia);                                // 250000 VND
+        IO.println("tong     : " + tong);                               // 280000 VND
+        IO.println("giam gia : " + tong.minus(new Money(50_000, "VND"))); // 230000 VND
+        IO.println("amount 0 : " + tong.withAmount(0));                // 0 VND
+        IO.println("gia sau tat ca phep tinh: " + gia);                 // 250000 VND
+
+        try {
+            new Money(-1, "VND");
+        } catch (IllegalArgumentException e) {
+            IO.println("loi: " + e.getMessage());                     // loi: amount khong hop le: -1
+        }
+
+        try {
+            gia.plus(new Money(1, "USD"));
+        } catch (IllegalArgumentException e) {
+            IO.println("loi: " + e.getMessage());                     // loi: khac currency: VND vs USD
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật:</p>
+
+    <div class="codeblock error">
+      <pre><code>gia      : 250000 VND
+tong     : 280000 VND
+giam gia : 230000 VND
+amount 0 : 0 VND
+gia sau tat ca phep tinh: 250000 VND
+loi: amount khong hop le: -1
+loi: khac currency: VND vs USD</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">gia</code> không bao giờ đổi</strong> sau <code class="inline">plus</code>, <code class="inline">minus</code>, <code class="inline">withAmount</code> — mỗi method trả object mới. Đây là khác biệt cốt lõi so với setter.</li>
+      <li><strong>Validate ngay trong constructor</strong> — không tồn tại <code class="inline">Money</code> âm hay sai currency. Vì vậy mọi method khác không cần kiểm tra lại.</li>
+      <li><strong>Tên method không có tiền tố <code class="inline">get</code></strong> — <code class="inline">amount()</code>, <code class="inline">currency()</code> theo phong cách value object/record (giống <code class="inline">BigDecimal.scale()</code>, <code class="inline">LocalDate.getYear()</code> thì cũ vẫn dùng get).</li>
+      <li><strong>Phép tính khác loại tiền bị chặn</strong> — đây là invariant nghiệp vụ được mã hóa vào class, client không thể cộng VND với USD.</li>
+    </ul>
+
+    <div class="note">Tiền tệ production thường dùng <code class="inline">BigDecimal</code> thay <code class="inline">long</code> khi cần phần thập phân; nguyên tắc bất biến và validate giữ nguyên. Xem <a href="data-types.html#biginteger">Data Types — mục 12</a> và <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>.</div>
+
+    <h2 id="defensive-copy">6. Copy phòng thủ (defensive copy) <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Defensive copy</strong> là sao chép dữ liệu mutable tại biên của object — lúc nhận vào (constructor) và lúc trả ra (getter) — để bên ngoài không bao giờ giữ được reference tới state nội bộ. Không có bước này, "immutable" chỉ là danh nghĩa.</p>
+
+    <p>Xem lỗ hổng kinh điển: getter trả thẳng list nội bộ.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Order {
+    private final String code;
+    private final List&lt;String&gt; items = new ArrayList&lt;&gt;();
+
+    Order(String code) {
+        this.code = code;
+    }
+
+    void addItem(String item) {
+        items.add(item);
+    }
+
+    List&lt;String&gt; getItems() {
+        return items;
+    }
+
+    public static void main() {
+        Order don = new Order("DH-001");
+        don.addItem("ao thun");
+        List&lt;String&gt; tuBenNgoai = don.getItems();
+        tuBenNgoai.add("hang la");
+        IO.println("items cua don: " + don.getItems()); // [ao thun, hang la]
+        IO.println("ai do da chen duoc vao list noi bo!");
+    }
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật — object <code class="inline">Order</code> bị sửa từ bên ngoài mà nó không hề hay biết:</p>
+
+    <div class="codeblock error">
+      <pre><code>items cua don: [ao thun, hang la]
+ai do da chen duoc vao list noi bo!</code></pre>
+    </div>
+
+    <p>Sửa bằng copy phòng thủ ở cả hai đầu: constructor nhận <code class="inline">List.copyOf</code>, getter cũng trả <code class="inline">List.copyOf</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Order {
+    private final String code;
+    private final List&lt;String&gt; items;
+
+    Order(String code, List&lt;String&gt; items) {
+        this.code = code;
+        this.items = List.copyOf(items);
+    }
+
+    List&lt;String&gt; getItems() {
+        return List.copyOf(items);
+    }
+
+    public static void main() {
+        List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("ao thun"));
+        Order don = new Order("DH-001", goc);
+
+        goc.add("hang la tu ben ngoai");
+        IO.println("sau khi sua list goc : " + don.getItems()); // [ao thun]
+
+        List&lt;String&gt; tuBenNgoai = don.getItems();
+        try {
+            tuBenNgoai.add("hang la");
+        } catch (Exception e) {
+            IO.println("khong sua duoc list tra ve: " + e.getClass().getSimpleName()); // UnsupportedOperationException
+        }
+        IO.println("items cua don van     : " + don.getItems()); // [ao thun]
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau khi sua list goc : [ao thun]
+khong sua duoc list tra ve: UnsupportedOperationException
+items cua don van     : [ao thun]</code></pre>
+    </div>
+
+    <h3><code class="inline">List.copyOf</code> — công cụ chính</h3>
+
+    <ul>
+      <li>Trả về <strong>snapshot bất biến</strong>: list gốc đổi sau đó không ảnh hưởng gì (dòng "sau khi sửa list gốc" vẫn là <code class="inline">[ao thun]</code>).</li>
+      <li>Mọi thao tác sửa trên list trả về ném <code class="inline">UnsupportedOperationException</code> (đã kiểm chứng thật ở trên).</li>
+      <li>Ném <code class="inline">NullPointerException</code> nếu collection hoặc bất kỳ phần tử nào là <code class="inline">null</code> — vừa là điểm cần biết, vừa là lá chắn dữ liệu bẩn (bài tập 12).</li>
+      <li>Muốn bản mutable để tự do sửa: <code class="inline">new ArrayList&lt;&gt;(items)</code> — nhưng khi đó bạn tự chịu trách nhiệm copy đúng chỗ.</li>
+    </ul>
+
+    <p>Về bản chất, đây cũng là câu chuyện reference đã học ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>: gán <code class="inline">this.items = items</code> chỉ copy địa chỉ, hai bên cùng trỏ một list. Copy phòng thủ tạo một object mới thật sự.</p>
+
+    <div class="note warn"><strong>Copy nông vs copy sâu:</strong> <code class="inline">List.copyOf</code> chỉ copy một lớp ngoài cùng. Nếu phần tử là object mutable (ví dụ <code class="inline">List&lt;List&lt;String&gt;&gt;</code>, <code class="inline">List&lt;int[]&gt;</code>), bên ngoài vẫn sửa được ruột của từng phần tử. Cách xử lý: copy sâu từng phần tử, hoặc tốt hơn — làm phần tử cũng immutable. So sánh shallow/deep copy ở <a href="index.html#copy">Biến trong Java — mục 17</a>.</div>
+
+    <h2 id="record">7. Record &amp; bất biến nông <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Record (Java 16+, <a href="https://openjdk.org/jeps/395" target="_blank" rel="noreferrer">JEP 395</a>) là cú pháp gọn để khai báo data carrier. Compiler tự sinh: field <code class="inline">private final</code> cho từng component, accessor cùng tên, <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code>. Không có setter — record mặc định bất biến.</p>
+
+    <p>Nhưng chỉ <strong>bất biến nông</strong> (shallowly immutable): field là <code class="inline">final</code>, còn nếu field trỏ tới list/array/object mutable thì ruột của chúng vẫn sửa được. Đúng như tài liệu JDK mô tả: record là "shallowly immutable, transparent carrier".</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class ProductionDemo {
+    record Order(String code, List&lt;String&gt; items) {}
+
+    public static void main() {
+        List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("ao thun", "quan jean"));
+        Order don = new Order("DH-001", goc);
+        goc.add("giay");
+        IO.println("items cua don: " + don.items()); // [ao thun, quan jean, giay]
+        IO.println("record 'bat bien' nhung da bi doi!");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>items cua don: [ao thun, quan jean, giay]
+record 'bat bien' nhung da bi doi!</code></pre>
+    </div>
+
+    <p>Cách sửa chuẩn: copy phòng thủ trong <strong>compact constructor</strong>. Record cho phép viết constructor rút gọn không cần danh sách tham số; bạn validate và chuẩn hóa, compiler tự gán field ở cuối:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class ProductionDemo {
+    record Order(String code, List&lt;String&gt; items) {
+        Order {
+            Objects.requireNonNull(code, "code khong duoc null");
+            items = List.copyOf(items);
+        }
+    }
+
+    public static void main() {
+        List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("ao thun", "quan jean"));
+        Order don = new Order("DH-001", goc);
+        goc.add("giay");
+        IO.println("items cua don    : " + don.items()); // [ao thun, quan jean]
+
+        List&lt;String&gt; lay = don.items();
+        try {
+            lay.add("mu");
+        } catch (Exception e) {
+            IO.println("khong sua duoc    : " + e.getClass().getSimpleName()); // UnsupportedOperationException
+        }
+        IO.println("items cua don van : " + don.items()); // [ao thun, quan jean]
+        IO.println("hai record cung du lieu equals nhau: "
+                + new Order("DH-001", List.of("ao", "quan")).equals(new Order("DH-001", List.of("ao", "quan")))); // true
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>items cua don    : [ao thun, quan jean]
+khong sua duoc    : UnsupportedOperationException
+items cua don van : [ao thun, quan jean]
+hai record cung du lieu equals nhau: true</code></pre>
+    </div>
+
+    <div class="note"><strong>Bẫy compact constructor:</strong> bạn <strong>không được gán <code class="inline">this.items</code></strong> trong thân compact constructor — đó là lỗi compile. Cách đúng là gán lại chính <em>parameter</em> <code class="inline">items = List.copyOf(items);</code>; compiler sẽ tự chuyển giá trị parameter vào field khi kết thúc constructor (đã kiểm chứng với JDK 25):</div>
+
+    <div class="errblock">
+      <pre>ProductionDemo.java:6: error: cannot assign a value to final variable items
+            this.items = List.copyOf(items);
+                ^
+1 error</pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Dùng record</th><th>Dùng class thường</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mục đích</td><td>Chở dữ liệu + validate + vài method phái sinh</td><td>Object có vòng đời, state thay đổi theo nghiệp vụ</td></tr>
+        <tr><td>State</td><td>Cố định sau khi tạo</td><td>Thay đổi qua method (deposit/withdraw/cancel...)</td></tr>
+        <tr><td>Kế thừa</td><td>Không extends được (đã là final, không kế thừa class khác)</td><td>Kế thừa/abstract được</td></tr>
+        <tr><td>Độ vừa</td><td>1-5 field, ít hành vi</td><td>Nhiều field + logic phức tạp, builder</td></tr>
+        <tr><td>Ví dụ</td><td><code class="inline">Money</code>, DTO, kết quả trả về nhiều giá trị</td><td><code class="inline">User</code>/<code class="inline">Order</code> có thao tác làm thay đổi state</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Record có thể dùng luôn cho cả immutable class "nặng" như mục 5 nếu bạn chấp nhận accessor cùng tên component. Chỉ chuyển sang class thường khi cần class mutable, cần kế thừa, hoặc muốn nhiều constructor/factory tùy biến.</div>
+
+    <h2 id="loi-ich">8. Lợi ích của immutable <span class="badge b-prod">Production</span></h2>
+
+    <p>Vì sao production ưu tiên immutable cho value object/DTO? Bốn lợi ích lớn:</p>
+
+    <ol>
+      <li><strong>Thread-safe mặc định</strong> — không ai sửa được state thì nhiều thread chỉ đọc cùng lúc không đụng độ. Không cần lock, không cần lo thứ tự truy cập; đây là lý do <code class="inline">String</code>, <code class="inline">Integer</code>, <code class="inline">LocalDate</code> an toàn khắp nơi. (Concurrency học ở <a href="roadmap.html#phase-4">4.2 Threads &amp; concurrency</a>.)</li>
+      <li><strong>Làm key <code class="inline">HashMap</code> an toàn</strong> — key mutable là bẫy chết người (xem ngay dưới).</li>
+      <li><strong>Cache/chia sẻ thoải mái</strong> — một hằng như <code class="inline">BigDecimal.ZERO</code>, <code class="inline">List.of()</code> có thể chia sẻ cho mọi nơi vì không ai phá được.</li>
+      <li><strong>Dễ suy luận và test</strong> — nhìn constructor là biết toàn bộ state tồn tại mãi; không cần dựng lại ngữ cảnh chuỗi gọi method.</li>
+    </ol>
+
+    <h3>Vì sao key <code class="inline">HashMap</code> phải immutable?</h3>
+
+    <p><code class="inline">HashMap</code> tìm bucket theo <code class="inline">hashCode</code> tại thời điểm <code class="inline">put</code>. Nếu key đổi state sau đó, hashCode đổi theo và map "mất" entry dù dữ liệu vẫn nằm đâu đó. Record làm key lý tưởng vì bất biến + tự sinh <code class="inline">equals</code>/<code class="inline">hashCode</code> (chi tiết ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+
+public class ProductionDemo {
+    record User(String email, String name) {}
+
+    public static void main() {
+        Map&lt;User, String&gt; quyen = new HashMap&lt;&gt;();
+        quyen.put(new User("an@example.com", "An"), "ADMIN");
+        IO.println("tra cuu bang object moi cung gia tri: "
+                + quyen.get(new User("an@example.com", "An"))); // ADMIN
+        IO.println("immutable key: hash khong bao gio doi");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tra cuu bang object moi cung gia tri: ADMIN
+immutable key: hash khong bao gio doi</code></pre>
+    </div>
+
+    <p>Đổi sang key mutable — setter đổi <code class="inline">email</code>, hashCode đổi — và entry biến mất khỏi tầm tra cứu:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+
+public class User {
+    private String email;
+
+    User(String email) {
+        this.email = email;
+    }
+
+    void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof User other &amp;&amp; email.equals(other.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return email.hashCode();
+    }
+
+    public static void main() {
+        Map&lt;User, String&gt; quyen = new HashMap&lt;&gt;();
+        User an = new User("an@example.com");
+        quyen.put(an, "ADMIN");
+
+        IO.println("truoc khi doi: " + quyen.get(new User("an@example.com"))); // ADMIN
+        an.setEmail("an2@example.com");
+        IO.println("sau khi doi   : " + quyen.get(new User("an@example.com"))); // null
+        IO.println("sau khi doi   : " + quyen.get(an));                         // null
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>truoc khi doi: ADMIN
+sau khi doi   : null
+sau khi doi   : null</code></pre>
+    </div>
+
+    <h2 id="danh-doi">9. Đánh đổi &amp; khi nào không nên immutable</h2>
+
+    <p>Immutable không phải viên đạn bạc. Các đánh đổi cần biết để chọn đúng chỗ:</p>
+
+    <ul>
+      <li><strong>Tạo nhiều object</strong> — mỗi lần "sửa" là một object mới, tăng áp lực GC. Với value object nhỏ (Money, DTO) chi phí này thường không đáng kể so với lợi ích an toàn và dễ đọc.</li>
+      <li><strong>Cập nhật liên tục trong vòng lặp</strong> — cộng dồn hàng triệu lần bằng object mới là lãng phí; dùng biến local mutable rồi "chốt" thành immutable object khi xong.</li>
+      <li><strong>API/build tool cần mutable</strong> — <code class="inline">StringBuilder</code> tồn tại để nối chuỗi trong vòng lặp, thay vì tạo vô số <code class="inline">String</code>.</li>
+      <li><strong>Framework cần set field</strong> — JPA/Hibernate cần entity mutable: chúng tạo proxy, set field qua reflection, theo dõi dirty state. Đừng cố ép entity immutable; hãy giữ entity trong tầng persistence và trả DTO immutable ra ngoài (mục <a href="#production-patterns">10</a>). Nội dung này học ở giai đoạn backend (<a href="roadmap.html#phase-5">5 Backend stack</a>).</li>
+      <li><strong>Cấu trúc lồng sâu</strong> — copy sâu tốn kém và dễ viết thiếu; ưu tiên thiết kế phần tử cũng immutable để copy nông là đủ.</li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr><th>Loại object</th><th>Lựa chọn hợp lý</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Value object (Money, tọa độ, khoảng thời gian)</td><td>Immutable (record hoặc class final)</td><td>So sánh theo giá trị, chia sẻ an toàn, làm key được</td></tr>
+        <tr><td>DTO ra/vào API</td><td>Record immutable</td><td>Chỉ chở dữ liệu, không cần vòng đời</td></tr>
+        <tr><td>Entity JPA</td><td>Mutable</td><td>Framework quản lý state; không phải lựa chọn tùy ý</td></tr>
+        <tr><td>Config khởi tạo một lần</td><td>Immutable</td><td>Đọc khắp nơi không lo bị sửa</td></tr>
+        <tr><td>Bộ đếm, accumulator</td><td>Mutable (local)</td><td>Hiệu năng; giữ phạm vi hẹp</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="production-patterns">10. Patterns trong production <span class="badge b-prod">Production</span></h2>
+
+    <p>Các pattern dưới đây gặp hàng ngày trong codebase thật:</p>
+
+    <ul>
+      <li><strong>Value object</strong> — object nhỏ, bất biến, so sánh theo giá trị: <code class="inline">Money</code>, <code class="inline">Email</code>, <code class="inline">PhoneNumber</code>, <code class="inline">DateRange</code>. Đây là nơi immutability + validate + defensive copy tỏa sáng nhất.</li>
+      <li><strong>DTO bằng record</strong> — request/response của API là record immutable; Jackson hiện đại (2.12+) deserialize record được, không cần setter. Đừng dùng <code class="inline">Map&lt;String, Object&gt;</code> mơ hồ làm DTO.</li>
+      <li><strong>Không trả entity ra ngoài</strong> — entity mutable, gắn với persistence context (lazy loading, proxy); serialize thẳng vừa lộ cấu trúc DB, vừa cho client cơ hội sửa state ngoài ý muốn. Hãy map sang DTO record rồi trả.</li>
+      <li><strong>Builder khi nhiều field</strong> — immutable object có 5-10 field khó dựng bằng constructor (nhiều tổ hợp, boolean khó đọc). Builder cho "named arguments" rồi <code class="inline">build()</code> ra object immutable. Chi tiết ở <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</li>
+      <li><strong>Static factory + <code class="inline">withX()</code></strong> — <code class="inline">Money.vnd(250_000)</code> rõ nghĩa hơn constructor; <code class="inline">withAmount(...)</code> tạo bản sao có một field đổi — đúng phong cách <code class="inline">java.time</code> (<code class="inline">plusDays</code>, <code class="inline">withYear</code>).</li>
+    </ul>
+
+    <div class="note"><strong>Quy tắc thực dụng:</strong> dữ liệu băng qua nhiều tầng (API → service → repository) nên immutable; state sống trong một tầng hẹp có thể mutable. Càng ít nơi sửa được state, càng ít bug "ai đổi cái này?".</div>
+
+    <h2 id="pitfalls">11. Pitfalls thường gặp</h2>
+
+    <table>
+      <thead>
+        <tr><th>Pitfall</th><th>Ví dụ</th><th>Hệ quả</th><th>Cách sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Field <code class="inline">public</code></td>
+          <td><code class="inline">public long balance;</code></td>
+          <td>Mọi nơi gán giá trị bất kỳ, invariant sụp đổ, không thể đổi implementation</td>
+          <td><code class="inline">private</code> + method nghiệp vụ có validate</td>
+        </tr>
+        <tr>
+          <td>Getter trả reference mutable</td>
+          <td><code class="inline">List&lt;String&gt; getItems() { return items; }</code></td>
+          <td>Client thêm/xóa phần tử của state nội bộ từ xa</td>
+          <td>Trả <code class="inline">List.copyOf(items)</code></td>
+        </tr>
+        <tr>
+          <td>Tưởng <code class="inline">final</code> là immutable</td>
+          <td><code class="inline">final List&lt;String&gt; items = new ArrayList&lt;&gt;(); items.add(...)</code></td>
+          <td>Object "bất biến" vẫn đổi nội dung</td>
+          <td>Khóa nội dung: object immutable hoặc copy phòng thủ</td>
+        </tr>
+        <tr>
+          <td>Copy nông cho cấu trúc lồng</td>
+          <td><code class="inline">List&lt;List&lt;String&gt;&gt;</code> copy lớp ngoài</td>
+          <td>List con bên trong vẫn sửa được</td>
+          <td>Copy sâu, hoặc làm phần tử immutable ngay từ đầu</td>
+        </tr>
+        <tr>
+          <td>Record chứa list/array/map</td>
+          <td><code class="inline">record Order(String code, List&lt;String&gt; items) {}</code></td>
+          <td>Đối số truyền vào sửa được sau khi tạo; accessor lộ ruột</td>
+          <td><code class="inline">items = List.copyOf(items)</code> trong compact constructor (+ override accessor nếu cần)</td>
+        </tr>
+        <tr>
+          <td>Setter phá invariant</td>
+          <td><code class="inline">setBalance(-50_000)</code> không validate</td>
+          <td>Object rơi vào trạng thái vô lý, lỗi lan xa nguồn</td>
+          <td>Validate trong setter, hoặc bỏ setter thay bằng <code class="inline">deposit</code>/<code class="inline">withdraw</code></td>
+        </tr>
+        <tr>
+          <td>Quên validate constructor</td>
+          <td><code class="inline">new User("x", -100)</code> tạo object hỏng</td>
+          <td>Object sinh ra đã sai; mọi method sau phải phòng thủ</td>
+          <td>Fail fast ngay trong constructor</td>
+        </tr>
+        <tr>
+          <td>Dùng mutable object làm key <code class="inline">HashMap</code></td>
+          <td>Đổi state của key sau khi <code class="inline">put</code></td>
+          <td><code class="inline">get</code> trả <code class="inline">null</code>, entry mất tích</td>
+          <td>Dùng key immutable (record, String, Integer...)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">12. Góc Node.js — #private, Object.freeze &amp; spread</h2>
+
+    <p>Nếu bạn đến từ JavaScript, ba điểm sau hay bị đánh đồng với Java nhưng bản chất khác nhau:</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Giấu field</td><td><code class="inline">#private</code> (ES2022) — chặn ở tầng cú pháp, không truy cập được từ ngoài class</td><td><code class="inline">private</code> — chặn khi compile, nhưng reflection có thể phá (không nên)</td></tr>
+        <tr><td>"Khóa" object</td><td><code class="inline">Object.freeze</code> chỉ khóa <strong>một lớp</strong> thuộc tính của object</td><td><code class="inline">final</code> khóa reference; immutable class khóa cả nội dung</td></tr>
+        <tr><td>Copy nông</td><td><code class="inline">{ ...obj }</code> copy property, object con vẫn chung reference</td><td><code class="inline">List.copyOf</code> tạo snapshot bất biến một lớp</td></tr>
+        <tr><td>Quote code convention</td><td>Field public là mặc định, phổ biến trong JS</td><td>Field private là mặc định nên theo, API mở dần</td></tr>
+      </tbody>
+    </table>
+
+    <p>Field <code class="inline">#private</code> thật sự kín: in trực tiếp không thấy, truy cập bằng tên động không được (chạy thật bằng Node v22):</p>
+
+    <div class="codeblock">
+      <pre><code>class User {
+  #balance = 0;
+
+  deposit(amount) {
+    if (amount &lt;= 0) throw new Error("amount phai duong");
+    this.#balance += amount;
+  }
+
+  getBalance() {
+    return this.#balance;
+  }
+}
+
+const u = new User();
+u.deposit(100);
+console.log(u.getBalance());  // 100
+console.log(u["#balance"]);   // undefined - khong truy cap duoc tu ngoai
+</code></pre>
+    </div>
+
+    <p><code class="inline">Object.freeze</code> chỉ nông — thuộc tính của object bị khóa, nhưng mảng/object bên trong vẫn sửa bình thường (chạy thật, chế độ strict nên gán field ném <code class="inline">TypeError</code>):</p>
+
+    <div class="codeblock">
+      <pre><code>"use strict";
+
+const order = Object.freeze({ code: "DH-01", items: ["ao thun"] });
+
+try {
+  order.code = "DH-02";
+} catch (e) {
+  console.log("strict mode: " + e.constructor.name); // TypeError
+}
+
+order.items.push("quan jean"); // items la object rieng, freeze chi khoa lop ngoai
+console.log(order.code);       // DH-01
+console.log(order.items);      // [ 'ao thun', 'quan jean' ]
+</code></pre>
+    </div>
+
+    <p>Spread copy cũng nông y hệt <code class="inline">List.copyOf</code> cho một lớp, nhưng spread còn <strong>không</strong> ngăn được sửa bản copy. Muốn bất biến thật trong JS phải copy sâu (structuredClone) hoặc dùng object lồng immutable:</p>
+
+    <div class="codeblock">
+      <pre><code>const goc = { code: "DH-01", items: ["ao thun"] };
+const copy = { ...goc };
+
+copy.code = "DH-02";           // copy doi, goc khong doi
+copy.items.push("quan jean");  // items chi duoc copy reference
+
+console.log(goc.code);  // DH-01
+console.log(goc.items); // [ 'ao thun', 'quan jean' ]
+</code></pre>
+    </div>
+
+    <div class="note">Điểm chung của cả hai ngôn ngữ: <strong>copy một lớp chưa đủ</strong>. Java có lợi thế record + <code class="inline">List.copyOf</code> + <code class="inline">final</code> cấp ngôn ngữ để làm immutable rẻ hơn; JS phải tự kỷ luật hoặc dùng thư viện.</div>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Encapsulation và abstraction khác nhau thế nào?</summary>
+      <div class="answer">Encapsulation là <em>cơ chế</em> giấu chi tiết bên trong (private field, method công khai, validate); abstraction là <em>cách chọn mức trừu tượng</em> phù hợp để lộ ra bên ngoài. Ví dụ: vô lăng và bàn đạp là abstraction của việc lái xe; nắp ca-pô đóng kín, không cho bạn chọc vào động cơ là encapsulation. Hai khái niệm bổ trợ chứ không thay thế nhau.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Chỉ cần private field + getter/setter là đã đóng gói tốt chưa?</summary>
+      <div class="answer">Chưa. Nếu getter/setter chỉ chuyển tiếp thẳng field, client vẫn phụ thuộc cấu trúc nội bộ và invariant vẫn bị phá nếu setter không validate. Đóng gói tốt là lộ ra <strong>hành vi nghiệp vụ</strong> (<code class="inline">deposit</code>, <code class="inline">withdraw</code>, <code class="inline">cancel</code>) và bảo vệ dữ liệu; setter chỉ tồn tại khi "gán giá trị bất kỳ" thật sự là hành vi hợp lệ (DTO/config).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Vì sao field nên private?</summary>
+      <div class="answer">Ba lý do: chặn truy cập/sửa tùy tiện để giữ invariant; cho phép đổi implementation bên trong (kiểu dữ liệu, cache, cách tính) mà không phá client; và giới hạn điểm thay đổi logic vào một chỗ. Nhớ thêm: <code class="inline">private</code> trong Java là theo <em>class</em>, nên hai object cùng class vẫn truy cập private của nhau.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Các bước tạo một immutable class?</summary>
+      <div class="answer">Năm bước: (1) class <code class="inline">final</code>; (2) mọi field <code class="inline">private final</code>; (3) không setter — method "sửa" trả object mới; (4) validate mọi thứ trong constructor; (5) defensive copy field mutable khi nhận (constructor) và khi trả (getter). Thiếu bước 5 là lỗ hổng phổ biến nhất.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Biến <code class="inline">final</code> đã đảm bảo object bất biến chưa? Vì sao?</summary>
+      <div class="answer">Chưa. <code class="inline">final</code> khóa <em>reference</em> — biến chỉ gán một lần — nhưng không khóa nội dung object. <code class="inline">final List&lt;String&gt; items = new ArrayList&lt;&gt;()</code> vẫn <code class="inline">add</code>/<code class="inline">remove</code> bình thường; chỉ khi gán lại <code class="inline">items = ...</code> mới lỗi compile. Muốn bất biến phải dùng object immutable hoặc defensive copy.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Defensive copy là gì? Khi nào cần?</summary>
+      <div class="answer">Là sao chép dữ liệu mutable ở biên của object — trong constructor khi nhận vào và trong getter khi trả ra — để bên ngoài không giữ được reference tới state nội bộ. Cần khi field là mutable: <code class="inline">List</code>, <code class="inline">Map</code>, mảng, object mutable. Với field immutable (String, record...), copy là dư thừa.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Record có bất biến hoàn toàn không?</summary>
+      <div class="answer">Không. Record bất biến <strong>nông</strong>: các component là field <code class="inline">final</code> và không có setter, nhưng nếu component là <code class="inline">List</code>, mảng hay object mutable thì nội dung vẫn sửa được từ bên ngoài. Cần defensive copy trong compact constructor (và override accessor nếu muốn chặn cả đường trả ra).</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 8. Vì sao immutable object thread-safe?</summary>
+      <div class="answer">Vì sau khi tạo không có thao tác nào thay đổi state, nên nhiều thread chỉ đọc đồng thời không tranh chấp gì — không cần lock, không có race condition. Đây là lý do <code class="inline">String</code>, <code class="inline">Integer</code>, <code class="inline">LocalDate</code> dùng an toàn ở khắp nơi, kể cả chia sẻ giữa các thread.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Vì sao <code class="inline">String</code> immutable?</summary>
+      <div class="answer">Bốn lý do chính: an toàn khi chia sẻ qua string pool (nhiều biến cùng trỏ một chuỗi không sợ ai sửa); hashCode được cache nên dùng làm key <code class="inline">HashMap</code> rất hiệu quả; thread-safe; và an toàn bảo mật — path, URL, tên class, mật khẩu không bị sửa lén sau khi kiểm tra. Chi tiết ở <a href="index.html#string">Biến trong Java — mục 14</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao key <code class="inline">HashMap</code> phải immutable?</summary>
+      <div class="answer">Vì <code class="inline">HashMap</code> chọn bucket theo <code class="inline">hashCode</code> tại thời điểm <code class="inline">put</code>. Key mutable đổi state → hashCode đổi → lần <code class="inline">get</code> sau tìm sai bucket và trả <code class="inline">null</code> dù entry vẫn còn. Record, <code class="inline">String</code>, wrapper class là key lý tưởng (kèm <code class="inline">equals</code>/<code class="inline">hashCode</code> đúng — xem <a href="object-contract.html">2.6</a>).</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 11. Tell-don't-ask là gì? Liên hệ gì tới encapsulation?</summary>
+      <div class="answer">Thay vì "hỏi" dữ liệu rồi tự xử lý bên ngoài (<code class="inline">getBalance</code> rồi <code class="inline">setBalance</code>), hãy "bảo" object làm việc (<code class="inline">withdraw</code>). Cách này giữ quy tắc nghiệp vụ và invariant bên trong class, tránh mỗi call site copy lại một phiên bản logic — đúng tinh thần encapsulation.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Copy constructor là gì? Java có tự sinh không?</summary>
+      <div class="answer">Là constructor nhận một object cùng loại và sao chép state của nó, ví dụ <code class="inline">new ArrayList&lt;&gt;(otherList)</code>. Java <strong>không</strong> tự sinh copy constructor (khác C++); muốn phải tự viết, và nếu object có field mutable thì cần copy sâu để tránh chia sẻ reference.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 13. Unmodifiable collection và immutable collection khác nhau thế nào?</summary>
+      <div class="answer">Unmodifiable thường là <em>view</em>: chặn sửa qua nó nhưng collection gốc đổi thì view đổi theo. Immutable là snapshot độc lập, không bao giờ đổi — <code class="inline">List.copyOf</code> và <code class="inline">List.of</code> cho snapshot như vậy. Muốn chia sẻ an toàn giữa các nơi, dùng bản immutable.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 14. Vì sao class immutable nên được đánh dấu <code class="inline">final</code>?</summary>
+      <div class="answer">Nếu cho phép kế thừa, subclass có thể thêm field mutable, override method để thay đổi hành vi, hoặc phá invariant mà class cha không kiểm soát được. <code class="inline">final</code> chặn con đường đó. Cách thay thế: giữ constructor private và cung cấp static factory.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 15. Validate trong constructor có phải là một phần của encapsulation?</summary>
+      <div class="answer">Có. Encapsulation không chỉ là giấu field mà còn là đảm bảo object luôn ở trạng thái hợp lệ. Validate trong constructor (fail fast) nghĩa là object sinh ra đã đúng invariant; mọi method sau đó không cần kiểm tra lại và không có "cửa sổ" object ở trạng thái hỏng.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 16. Khi nào nên có setter?</summary>
+      <div class="answer">Khi "gán giá trị bất kỳ" thật sự hợp lệ: DTO/request object cho framework deserialize, config đơn giản, hoặc field không có invariant. Kể cả vậy, setter phải validate nếu field có điều kiện ràng buộc. Với entity/value object, ưu tiên method nghiệp vụ thay vì setter.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 17. Nhược điểm của immutable object là gì?</summary>
+      <div class="answer">Mỗi thay đổi tạo object mới nên tăng lượng rác cho GC; cập nhật nhiều field liên tục phải "copy rồi sửa", có thể dùng builder cho gọn; một số framework (JPA) bắt buộc entity mutable. Với value object nhỏ, chi phí này thường nhỏ hơn nhiều so với lợi ích an toàn và dễ đọc.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 18. <code class="inline">List.copyOf</code> khác <code class="inline">List.of</code> và <code class="inline">new ArrayList&lt;&gt;(...)</code> thế nào?</summary>
+      <div class="answer"><code class="inline">List.of</code> tạo list bất biến từ các phần tử truyền vào; <code class="inline">List.copyOf</code> tạo snapshot bất biến từ một collection có sẵn. Cả hai đều unmodifiable và đều ném <code class="inline">NullPointerException</code> khi gặp <code class="inline">null</code>. <code class="inline">new ArrayList&lt;&gt;(...)</code> là bản sao mutable — dùng khi cần tiếp tục sửa.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 19. Vì sao không nên trả entity trực tiếp ra API?</summary>
+      <div class="answer">Entity thường mutable, gắn với persistence context (lazy loading, proxy) và phản ánh cấu trúc DB — serialize thẳng dễ lộ schema, lỗi lazy initialization, và client có thể gửi ngược entity đã bị sửa. Chuẩn production là map sang DTO immutable (record) rồi trả ra ngoài.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 20. Pattern <code class="inline">withX()</code> là gì? Vì sao object bất biến cần nó?</summary>
+      <div class="answer"><code class="inline">withX(value)</code> trả về object mới giống hệt bản cũ nhưng field X đổi giá trị, các field khác giữ nguyên (kiểu <code class="inline">LocalDate.withYear</code>, <code class="inline">Money.withAmount</code>). Vì object bất biến không có setter, đây là cách "cập nhật" hợp lệ — dùng nội bộ để tái sử dụng logic tạo object và giữ validate ở một chỗ.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1 — getter trả collection nội bộ</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class Order {
+    private final List&lt;String&gt; items = new ArrayList&lt;&gt;(List.of("ao"));
+
+    List&lt;String&gt; getItems() {
+        return items;
+    }
+
+    public static void main() {
+        Order don = new Order();
+        don.getItems().add("quan");
+        IO.println(don.getItems());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[ao, quan]</code>. <code class="inline">getItems()</code> trả thẳng reference của list nội bộ, nên <code class="inline">add("quan")</code> bên ngoài sửa chính state của <code class="inline">Order</code>. Sửa bằng <code class="inline">return List.copyOf(items);</code> — khi đó lời gọi <code class="inline">add</code> sẽ ném <code class="inline">UnsupportedOperationException</code> thay vì âm thầm phá object.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2 — cố gán lại biến final</summary>
+      <div class="codeblock">
+        <pre><code class="java">final int x = 1;
+x = 2;
+IO.println(x);</code></pre>
+      </div>
+      <div class="answer"><strong>Không chạy được.</strong> Lỗi compile: <code class="inline">VariablesDemo.java:4: error: cannot assign a value to final variable x</code>. <code class="inline">final</code> chỉ cho gán một lần, dù là biến local hay field.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3 — final List vẫn sửa được nội dung</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class VariablesDemo {
+    public static void main() {
+        final List&lt;String&gt; items = new ArrayList&lt;&gt;();
+        items.add("ao");
+        items.add("quan");
+        IO.println(items);
+        IO.println(items.size());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[ao, quan]</code> rồi <code class="inline">2</code>. Không có lỗi nào vì <code class="inline">final</code> chỉ khóa reference; nội dung list vẫn mutable. Muốn list thật sự bất biến phải dùng <code class="inline">List.of</code>/<code class="inline">List.copyOf</code> (và khi đó <code class="inline">add</code> ném <code class="inline">UnsupportedOperationException</code>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4 — viết <code class="inline">Money.plus</code> và đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class ProductionDemo {
+    record Money(long amount, String currency) {
+        Money plus(Money other) {
+            return new Money(amount + other.amount, currency);
+        }
+    }
+
+    public static void main() {
+        Money a = new Money(100_000, "VND");
+        Money b = new Money(50_000, "VND");
+        Money c = a.plus(b);
+        IO.println(a);
+        IO.println(c);
+        IO.println(a.equals(c));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra:<br><code class="inline">Money[amount=100000, currency=VND]</code><br><code class="inline">Money[amount=150000, currency=VND]</code><br><code class="inline">false</code><br><code class="inline">plus</code> trả object mới nên <code class="inline">a</code> không đổi; <code class="inline">a.equals(c)</code> là <code class="inline">false</code> vì amount khác nhau. Nếu so hai object cùng amount + currency, record trả <code class="inline">true</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5 — tìm chỗ thiếu defensive copy</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class Order {
+    private final List&lt;String&gt; items;
+
+    Order(List&lt;String&gt; items) {
+        this.items = items;
+    }
+
+    List&lt;String&gt; getItems() {
+        return items;
+    }
+}</code></pre>
+      </div>
+      <div class="answer">Thiếu copy ở <strong>cả hai đầu</strong>: constructor nhận thẳng list của bên ngoài (họ sửa sau khi tạo cũng ảnh hưởng object), và getter trả thẳng list nội bộ. Sửa: <code class="inline">this.items = List.copyOf(items);</code> và <code class="inline">return List.copyOf(items);</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6 — chọn record hay class thường?</summary>
+      <div class="codeblock">
+        <pre><code class="java">// (a) Du lieu toa do 2D chi doc, so sanh theo gia tri
+// (b) Tai khoan game co mau/level thay doi lien tuc khi choi
+// (c) Money can validate trong constructor + plus/withAmount tra object moi</code></pre>
+      </div>
+      <div class="answer">(a) <strong>record</strong> — chỉ chở dữ liệu, so sánh giá trị, bất biến. (b) <strong>class thường</strong> — state thay đổi liên tục theo nghiệp vụ, cần method cập nhật. (c) <strong>record</strong> — record vẫn validate được trong compact constructor và viết được method trả object mới; chỉ chuyển sang class khi cần kế thừa hoặc logic phình to.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7 — phương thức <code class="inline">withAmount()</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">public class ProductionDemo {
+    record Money(long amount, String currency) {
+        Money withAmount(long newAmount) {
+            return new Money(newAmount, currency);
+        }
+    }
+
+    public static void main() {
+        Money m = new Money(100_000, "VND");
+        Money m2 = m.withAmount(0);
+        IO.println(m);
+        IO.println(m2);
+        IO.println(m == m2);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra:<br><code class="inline">Money[amount=100000, currency=VND]</code><br><code class="inline">Money[amount=0, currency=VND]</code><br><code class="inline">false</code><br><code class="inline">m == m2</code> là <code class="inline">false</code> vì <code class="inline">withAmount</code> tạo object mới — đúng bản chất bất biến. Muốn so giá trị phải dùng <code class="inline">equals</code> (và ở đây cũng <code class="inline">false</code> vì amount khác).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8 — setter phá invariant</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class User {
+    private long balance;
+
+    User(long balance) {
+        this.balance = balance;
+    }
+
+    long getBalance() {
+        return balance;
+    }
+
+    void setBalance(long balance) {
+        this.balance = balance;
+    }
+
+    public static void main() {
+        User u = new User(100_000);
+        u.setBalance(-50_000);
+        IO.println(u.getBalance());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-50000</code>. Setter không validate đã phá invariant "số dư không âm"; object rơi vào trạng thái vô lý mà không báo lỗi. Sửa: validate trong setter (như mục 2) hoặc bỏ setter, thay bằng <code class="inline">withdraw</code>/<code class="inline">deposit</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9 — record + copy phòng thủ trong compact constructor</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class ProductionDemo {
+    record Order(String code, List&lt;String&gt; items) {
+        Order {
+            items = List.copyOf(items);
+        }
+    }
+
+    public static void main() {
+        List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("ao"));
+        Order o = new Order("DH-01", goc);
+        goc.add("quan");
+        IO.println(o.items());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[ao]</code>. Compact constructor đã copy list lúc nhận, nên việc <code class="inline">goc.add("quan")</code> sau đó không ảnh hưởng record. Nếu bỏ dòng <code class="inline">items = List.copyOf(items);</code> thì in ra <code class="inline">[ao, quan]</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10 — record chứa mảng mutable</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class ProductionDemo {
+    record Order(String code, int[] quantities) {}
+
+    public static void main() {
+        int[] soLuong = {1, 2};
+        Order don = new Order("DH-01", soLuong);
+        soLuong[0] = 99;
+        IO.println(don.quantities()[0]);
+        IO.println(java.util.Arrays.toString(don.quantities()));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">99</code> rồi <code class="inline">[99, 2]</code>. Mảng không bao giờ bất biến, nên bên ngoài sửa lọt vào record — bất biến nông. Sửa: <code class="inline">quantities = quantities.clone();</code> trong compact constructor và override accessor trả <code class="inline">quantities.clone()</code>; khi đó in ra <code class="inline">1</code> rồi <code class="inline">[1, 2]</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11 — mutable key của HashMap</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+
+public class User {
+    private String email;
+
+    User(String email) {
+        this.email = email;
+    }
+
+    void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof User other &amp;&amp; email.equals(other.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return email.hashCode();
+    }
+
+    public static void main() {
+        Map&lt;User, String&gt; quyen = new HashMap&lt;&gt;();
+        User an = new User("an@example.com");
+        quyen.put(an, "ADMIN");
+        IO.println(quyen.get(new User("an@example.com")));
+        an.setEmail("an2@example.com");
+        IO.println(quyen.get(new User("an@example.com")));
+        IO.println(quyen.get(an));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">ADMIN</code>, rồi <code class="inline">null</code>, rồi <code class="inline">null</code>. Sau khi đổi email, hashCode của key thay đổi nên cả key mới cùng giá trị cũ lẫn chính object key đều tìm sai bucket. Đây là lý do key <code class="inline">HashMap</code> phải immutable.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12 — <code class="inline">List.copyOf</code> gặp phần tử null</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.Arrays;
+import java.util.List;
+
+public class ProductionDemo {
+    public static void main() {
+        try {
+            List&lt;String&gt; items = List.copyOf(Arrays.asList("ao", null));
+            IO.println(items);
+        } catch (NullPointerException e) {
+            IO.println("NPE: " + e.getMessage());
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">NPE: null</code> — <code class="inline">List.copyOf</code> ném <code class="inline">NullPointerException</code> ngay khi thấy phần tử <code class="inline">null</code> (không tạo ra list chứa null). Nếu đây là dữ liệu đầu vào, hãy validate trước khi copy và báo lỗi rõ nghĩa hơn.</div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Giấu dữ liệu</td><td>Field <code class="inline">private</code>; chỉ mở method nghiệp vụ (<code class="inline">deposit</code>, <code class="inline">withdraw</code>)</td></tr>
+        <tr><td>Getter an toàn cho collection</td><td><code class="inline">return List.copyOf(items);</code></td></tr>
+        <tr><td>Nhận collection an toàn</td><td><code class="inline">this.items = List.copyOf(items);</code> trong constructor</td></tr>
+        <tr><td>Immutable class</td><td><code class="inline">final class</code> + field <code class="inline">private final</code> + không setter + validate + defensive copy</td></tr>
+        <tr><td>"Sửa" object bất biến</td><td>Method trả object mới: <code class="inline">withAmount(...)</code>, <code class="inline">plus(...)</code></td></tr>
+        <tr><td>Record + list an toàn</td><td>Compact constructor: <code class="inline">items = List.copyOf(items);</code> (không gán <code class="inline">this.items</code>)</td></tr>
+        <tr><td><code class="inline">final</code> nghĩa là gì</td><td>Khóa reference, gán một lần — <strong>không</strong> khóa nội dung object</td></tr>
+        <tr><td>Key <code class="inline">HashMap</code></td><td>Phải immutable (record, String, wrapper) + <code class="inline">equals</code>/<code class="inline">hashCode</code> đúng</td></tr>
+        <tr><td>Unmodifiable vs immutable</td><td>Unmodifiable là view; <code class="inline">List.copyOf</code>/<code class="inline">List.of</code> là snapshot bất biến</td></tr>
+        <tr><td>Validate ở đâu</td><td>Fail fast trong constructor và mọi lối vào có thể (setter, factory)</td></tr>
+        <tr><td>Tell-don't-ask</td><td><code class="inline">user.withdraw(100_000)</code> thay vì <code class="inline">getBalance</code> + <code class="inline">setBalance</code></td></tr>
+        <tr><td>Node.js tương ứng</td><td><code class="inline">#private</code> kín thật; <code class="inline">Object.freeze</code> và spread chỉ nông</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được encapsulation và immutability khác nhau thế nào, kèm ví dụ ATM.</li>
+      <li>Kể đủ 4 mức access modifier và mặc định field nên là gì.</li>
+      <li>Viết được immutable class đủ 5 bước không cần tra cứu.</li>
+      <li>Giải thích vì sao <code class="inline">final</code> chưa đủ, kèm ví dụ <code class="inline">final List</code> vẫn <code class="inline">add</code> được.</li>
+      <li>Viết được defensive copy ở cả constructor lẫn getter bằng <code class="inline">List.copyOf</code>.</li>
+      <li>Giải thích vì sao record chỉ bất biến nông và sửa được bằng compact constructor.</li>
+      <li>Nhớ bẫy không được gán <code class="inline">this.field</code> trong compact constructor — gán lại parameter.</li>
+      <li>Trả lời được vì sao immutable thread-safe và vì sao key <code class="inline">HashMap</code> phải immutable.</li>
+      <li>Nêu được 3 trường hợp không nên có setter (immutable, tell-don't-ask, id/createdAt/status).</li>
+      <li>Phân biệt copy nông và copy sâu, biết khi nào cần cái nào.</li>
+      <li>Biết unmodifiable view khác immutable snapshot ở điểm nào.</li>
+      <li>Liệt kê được 2-3 pattern production dùng immutable (value object, DTO record, config).</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html" target="_blank" rel="noreferrer">Oracle Tutorial — Controlling Access to Members of a Class</a></li>
+      <li><a href="https://dev.java/learn/language/oop/records/" target="_blank" rel="noreferrer">Dev.java — Using Records to Model Immutable Data</a></li>
+      <li><a href="https://openjdk.org/jeps/395" target="_blank" rel="noreferrer">JEP 395 — Records</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" target="_blank" rel="noreferrer">JDK 25 API — java.lang.Record</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html#copyOf(java.util.Collection)" target="_blank" rel="noreferrer">JDK 25 API — List.copyOf</a></li>
+      <li><a href="https://dev.java/learn/classes-objects/" target="_blank" rel="noreferrer">Dev.java — Classes &amp; Objects</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Encapsulation &amp; Immutability · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

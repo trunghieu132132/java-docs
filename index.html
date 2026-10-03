@@ -23,7 +23,7 @@
 
     <nav class="tree" id="tree">
       <details class="group" open>
-        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
         <a class="item" href="roadmap.html">Lộ trình học Java</a>
         <a class="item active" href="index.html">Biến trong Java</a>
         <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
@@ -32,6 +32,18 @@
         <a class="item" href="methods.html">Methods</a>
         <a class="item" href="arrays.html">Arrays</a>
         <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
       </details>
     </nav>
   </aside>
@@ -906,7 +918,7 @@ gridClone[0][0] = 99;
 IO.println("clone 2D     : " + Arrays.deepToString(grid)); // [[99, 2], [3, 4]]</code></pre>
     </div>
 
-    <div class="note warn"><strong>Muốn immutable thật:</strong> class/record phải copy phòng thủ khi nhận và khi trả field mutable — constructor làm <code class="inline">this.items = List.copyOf(items)</code>, getter trả <code class="inline">List.copyOf(items)</code>. Chi tiết defensive copy sẽ gặp lại ở mục 2.2 của <a href="roadmap.html#phase-2">lộ trình OOP</a>.</div>
+    <div class="note warn"><strong>Muốn immutable thật:</strong> class/record phải copy phòng thủ khi nhận và khi trả field mutable — constructor làm <code class="inline">this.items = List.copyOf(items)</code>, getter trả <code class="inline">List.copyOf(items)</code>. Chi tiết defensive copy sẽ gặp lại ở doc <a href="encapsulation.html">Encapsulation &amp; Immutability</a> (mục 2.2).</div>
 
     <h3>Góc Node.js</h3>
 

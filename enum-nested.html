@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enum, nested &amp; sealed classes — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item active" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="enum-nested">Enum, nested &amp; sealed classes — kiểu dữ liệu đóng &amp; class lồng nhau</h1>
+
+    <p class="lead">Enum là cách Java mô hình hoá một <strong>tập giá trị hữu hạn</strong>: trạng thái đơn hàng, ngày trong tuần, màu sắc... thay cho các hằng <code class="inline">int</code>/<code class="inline">String</code> dễ sai. Nested class cho phép đặt class này trong class khác khi chúng gắn chặt với nhau; <strong>sealed</strong> (Java 17) đóng khung cây kế thừa để compiler biết hết subtype — kết hợp pattern matching switch (Java 21) tạo ra union type an toàn. Trang này bắt đầu từ enum cơ bản rồi đi sâu tới singleton, EnumMap/EnumSet, bốn loại nested class và sealed hierarchy.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#enum-co-ban">Enum cơ bản — Color</a></li>
+        <li><a href="#enum-field">Enum có field, constructor &amp; method</a></li>
+        <li><a href="#enum-nang-cao">Enum nâng cao — abstract method, interface, singleton</a></li>
+        <li><a href="#enum-collections">EnumMap &amp; EnumSet</a></li>
+        <li><a href="#enum-pitfalls">Pitfalls của enum</a></li>
+        <li><a href="#nested-tong-quan">Nested classes — bốn loại</a></li>
+        <li><a href="#static-vs-inner">Static nested vs inner class</a></li>
+        <li><a href="#local-anonymous">Local &amp; anonymous class</a></li>
+        <li><a href="#sealed">Sealed classes &amp; interfaces</a></li>
+        <li><a href="#pattern-switch">Switch exhaustive &amp; pattern matching</a></li>
+        <li><a href="#pitfalls-nested">Pitfalls nested &amp; sealed</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p><strong>Enum</strong> (enumeration — kiểu liệt kê) là kiểu dữ liệu đặc biệt: bạn khai báo một danh sách hữu hạn các hằng có tên, và Java đảm bảo biến chỉ nhận đúng một trong các hằng đó. Ví dụ trạng thái đơn hàng chỉ có thể là <code class="inline">PENDING</code>, <code class="inline">PAID</code>, <code class="inline">SHIPPED</code>, <code class="inline">CANCELLED</code> — không có giá trị thứ năm nào khác.</p>
+
+    <p>Trước Java 5, người ta thường dùng hằng <code class="inline">int</code> (<code class="inline">static final int PAID = 2;</code>) hoặc <code class="inline">String</code> (<code class="inline">"PAID"</code>). Cách này có ba vấn đề lớn:</p>
+    <ul>
+      <li><strong>Không type-safe</strong> — <code class="inline">setStatus(999)</code> hay <code class="inline">setStatus("PADI")</code> (gõ sai một ký tự) vẫn compile bình thường, lỗi chỉ lộ ra lúc chạy.</li>
+      <li><strong>Magic number/string rải rác</strong> — cùng một trạng thái được so sánh với <code class="inline">2</code> ở chỗ này, <code class="inline">"PAID"</code> ở chỗ khác, đổi giá trị là đi sửa khắp nơi.</li>
+      <li><strong>Không gắn được hành vi</strong> — không thể viết <code class="inline">status.label()</code>; phải tạo <code class="inline">switch</code> hoặc <code class="inline">Map</code> tra cứu ở ngoài.</li>
+    </ul>
+
+    <p>Enum giải quyết cả ba. Điểm cần khắc sâu ngay từ đầu: <strong>mỗi hằng enum là một object singleton duy nhất</strong> của enum class, được JVM tạo đúng một lần khi class được nạp. Vì vậy so sánh enum bằng <code class="inline">==</code> vừa đúng vừa nhanh (không cần gọi <code class="inline">equals</code>), và <code class="inline">switch</code> trên enum rất hiệu quả.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 2.7 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo enum (kể cả có field/constructor/method); dùng <code class="inline">values()</code>/<code class="inline">valueOf()</code>/<code class="inline">name()</code>/<code class="inline">ordinal()</code> đúng chỗ; viết switch trên enum; phân biệt 4 loại nested class và chọn đúng loại; viết sealed hierarchy + switch exhaustive không cần <code class="inline">default</code>.</li>
+      <li><strong>Phải hiểu</strong> — vì sao không lưu <code class="inline">ordinal()</code> vào DB; vì sao enum constructor chỉ private; vì sao inner class giữ outer reference và có thể gây memory leak; vì sao sealed giúp compiler kiểm tra đủ nhánh.</li>
+      <li><strong>Nhận biết</strong> — enum singleton idiom (Effective Java); EnumMap/EnumSet và lý do tối ưu; pattern matching switch + record pattern (Java 21); <code class="inline">non-sealed</code>; lambda thay thế anonymous class (học ở <a href="roadmap.html#phase-3">3.6 Lambda &amp; functional interfaces</a>).</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn khối kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ. Các file ví dụ là <em>compact source file</em>: chạy trực tiếp <code class="inline">java TenFile.java</code>, không cần khai báo class bao ngoài cho hàm <code class="inline">main</code>.</div>
+
+    <h3>Góc Node.js — nhìn trước một chút</h3>
+
+    <p>JavaScript <strong>không có enum</strong>. TypeScript có <code class="inline">enum</code>, nhưng nó chỉ là cú pháp được biên dịch thành object thường: <code class="inline">enum Color { Red, Green }</code> numeric chạy ra object có cả chiều xuôi (<code class="inline">Color.Red === 0</code>) lẫn chiều ngược (<code class="inline">Color[0] === "Red"</code>). Kiểu được cộng đồng ưa hơn là <strong>const object + union type</strong>: <code class="inline">const Color = {...} as const</code>. Java enum mạnh hơn hẳn: nó là một class thật, có field, constructor, method, thậm chí mỗi hằng có hành vi riêng — và compiler kiểm tra giúp bạn mọi lúc. Phần so sánh đầy đủ ở <a href="#goc-nodejs">mục 13</a>.</p>
+
+    <h2 id="enum-co-ban">2. Enum cơ bản — Color <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Khai báo enum gọn nhất: danh sách hằng viết hoa, ngăn cách bằng dấu phẩy. Nếu còn thân enum (field, method) thì kết thúc danh sách bằng dấu chấm phẩy.</p>
+
+    <div class="signature">
+      <span class="sig-muted">[access]</span> <span class="tok-kw">enum</span> <span class="tok-typ">Color</span> <span class="sig-muted">{</span> <span class="sig-var">RED</span><span class="sig-muted">,</span> <span class="sig-var">GREEN</span><span class="sig-muted">,</span> <span class="sig-var">BLUE</span> <span class="sig-muted">}</span>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN, BLUE }
+
+void main() {
+    Color c = Color.GREEN;
+    IO.println("c = " + c);                                      // GREEN
+    IO.println("name = " + c.name());                            // GREEN
+    IO.println("ordinal = " + c.ordinal());                      // 1
+    IO.println("valueOf = " + Color.valueOf("RED"));             // RED
+    IO.println("values = " + Arrays.toString(Color.values()));   // [RED, GREEN, BLUE]
+    IO.println("so luong = " + Color.values().length);           // 3
+
+    Color a = Color.valueOf("RED");
+    IO.println("a == Color.RED: " + (a == Color.RED));           // true
+    IO.println("a.equals(Color.RED): " + a.equals(Color.RED));   // true
+
+    switch (c) {
+        case RED -&gt; IO.println("Dung lai");
+        case GREEN -&gt; IO.println("Di tiep");
+        case BLUE -&gt; IO.println("Cham lai");
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy thật <code class="inline">java ColorDemo.java</code>:</p>
+
+    <div class="codeblock error">
+      <pre><code>c = GREEN
+name = GREEN
+ordinal = 1
+valueOf = RED
+values = [RED, GREEN, BLUE]
+so luong = 3
+a == Color.RED: true
+a.equals(Color.RED): true
+Di tiep</code></pre>
+    </div>
+
+    <h3>Các method có sẵn của mọi enum</h3>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Ý nghĩa</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">values()</code></td><td>Mảng tất cả hằng theo <strong>thứ tự khai báo</strong></td><td>Tạo mảng mới mỗi lần gọi — không gọi trong vòng lặp nóng; đừng sửa mảng đó rồi mong enum đổi theo</td></tr>
+        <tr><td><code class="inline">valueOf(String)</code></td><td>Trả hằng đúng theo tên</td><td>Không tìm thấy → <code class="inline">IllegalArgumentException</code>; khớp chính xác chữ hoa/thường</td></tr>
+        <tr><td><code class="inline">name()</code></td><td>Tên hằng đúng như khai báo</td><td><code class="inline">final</code> — không override được; dùng để lưu DB/API</td></tr>
+        <tr><td><code class="inline">ordinal()</code></td><td>Vị trí 0-based theo thứ tự khai báo</td><td><code class="inline">final</code>; <strong>không</strong> dùng để lưu trữ (xem <a href="#enum-pitfalls">mục 6</a>)</td></tr>
+        <tr><td><code class="inline">compareTo(...)</code></td><td>So theo <code class="inline">ordinal()</code></td><td>Enum implements sẵn <code class="inline">Comparable</code></td></tr>
+        <tr><td><code class="inline">toString()</code></td><td>Mặc định in ra <code class="inline">name()</code></td><td>Override được để in nhãn tiếng Việt</td></tr>
+      </tbody>
+    </table>
+
+    <h3>switch trên enum</h3>
+
+    <p>Case label là <strong>tên hằng trần</strong>, không viết <code class="inline">Color.RED</code> (compiler đã biết kiểu selector). Switch expression trên enum trở nên <strong>exhaustive</strong> nếu bạn liệt kê đủ hằng — không cần <code class="inline">default</code>; thêm hằng mới mà quên nhánh là lỗi compile ngay (chi tiết ở <a href="#enum-pitfalls">mục 6</a>).</p>
+
+    <div class="note warn"><strong>Bẫy <code class="inline">null</code>:</strong> switch trên biến enum đang là <code class="inline">null</code> sẽ ném <code class="inline">NullPointerException</code> — enum không "khớp default" như bạn có thể tưởng. Từ Java 21 có thể thêm <code class="inline">case null</code> để xử lý tường minh (xem <a href="#pattern-switch">mục 11</a>).</div>
+
+    <p>Enum cũng là object nên đặt vào collection thoải mái:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">List&lt;Color&gt; ds = List.of(Color.RED, Color.BLUE);
+Set&lt;Color&gt; tap = new HashSet&lt;&gt;(ds);
+IO.println(ds);              // [RED, BLUE]
+IO.println(tap.contains(Color.RED)); // true</code></pre>
+    </div>
+
+    <p>Với hai collection chuyên biệt cho enum là <code class="inline">EnumMap</code> và <code class="inline">EnumSet</code>, bạn nên dùng chúng thay <code class="inline">HashMap</code>/<code class="inline">HashSet</code> — lý do ở <a href="#enum-collections">mục 5</a>.</p>
+
+    <h2 id="enum-field">3. Enum có field, constructor &amp; method <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Enum là class thật, nên hoàn toàn có thể mang dữ liệu và hành vi. Ví dụ trạng thái đơn hàng kèm nhãn hiển thị và mã số nghiệp vụ:</p>
+
+    <div class="signature">
+      <span class="tok-kw">enum</span> <span class="tok-typ">OrderStatus</span> <span class="sig-muted">{</span> <span class="sig-var">PENDING</span><span class="sig-muted">("Cho xu ly", 1),</span> <span class="sig-var">PAID</span><span class="sig-muted">("Da thanh toan", 2);</span> <span class="sig-muted">... constructor + getter }</span>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">enum OrderStatus {
+    PENDING("Cho xu ly", 1),
+    PAID("Da thanh toan", 2),
+    SHIPPED("Dang giao", 3),
+    CANCELLED("Da huy", 0);
+
+    private final String label;
+    private final int code;
+
+    OrderStatus(String label, int code) {   // constructor ngam private
+        this.label = label;
+        this.code = code;
+    }
+
+    String label() {
+        return label;
+    }
+
+    int code() {
+        return code;
+    }
+
+    static OrderStatus fromCode(int code) {
+        for (OrderStatus s : values()) {
+            if (s.code == code) {
+                return s;
+            }
+        }
+        throw new IllegalArgumentException("code khong hop le: " + code);
+    }
+}
+
+void main() {
+    OrderStatus s = OrderStatus.fromCode(2);
+    IO.println(s + " -&gt; " + s.label() + " (" + s.code() + ")");
+
+    for (OrderStatus x : OrderStatus.values()) {
+        IO.println(x.ordinal() + ": " + x.label());
+    }
+
+    try {
+        OrderStatus.fromCode(99);
+    } catch (IllegalArgumentException e) {
+        IO.println("loi: " + e.getMessage());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>PAID -&gt; Da thanh toan (2)
+0: Cho xu ly
+1: Da thanh toan
+2: Dang giao
+3: Da huy
+loi: code khong hop le: 99</code></pre>
+    </div>
+
+    <h3>Constructor của enum chỉ được là private</h3>
+
+    <p>Bạn không bao giờ gọi <code class="inline">new OrderStatus(...)</code> — hằng enum do JVM tạo. Vì vậy Java bắt constructor của enum phải là private (viết trống hoặc <code class="inline">private</code>; <code class="inline">public</code>/<code class="inline">protected</code> là lỗi compile):</p>
+
+    <div class="errblock">
+      <pre>EnumCtorErr.java:4: error: modifier public not allowed here
+    public Color() {
+           ^
+1 error</pre>
+    </div>
+
+    <p>Constructor chạy <strong>đúng một lần cho mỗi hằng</strong>, theo thứ tự khai báo, vào lúc enum class được nạp lần đầu — không phải mỗi lần bạn truy cập hằng. Điều này giải thích vì sao enum là singleton tự nhiên. Bài tập 2 ở <a href="#bai-tap">cuối trang</a> sẽ kiểm tra bạn có đoán đúng thứ tự này không.</p>
+
+    <div class="note"><strong>Đã gặp ở đâu?</strong> Doc <a href="index.html#production">Biến trong Java — mục 15.4</a> mới giới thiệu enum kèm field ở mức làm quen; phần trên đi sâu hơn: static factory <code class="inline">fromCode</code>, ràng buộc constructor, và quan hệ với dữ liệu lưu trữ (dùng <code class="inline">code</code> riêng thay vì <code class="inline">ordinal()</code>).</div>
+
+    <h2 id="enum-nang-cao">4. Enum nâng cao — abstract method, interface, singleton <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <h3>Mỗi hằng một hành vi — abstract method</h3>
+
+    <p>Enum có thể khai báo abstract method, và <strong>từng hằng bắt buộc override bằng thân riêng</strong>. Cú pháp: hằng viết như <code class="inline">TEN { ... }</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Day {
+    MONDAY {
+        @Override
+        boolean isWeekend() {
+            return false;
+        }
+    },
+    SATURDAY {
+        @Override
+        boolean isWeekend() {
+            return true;
+        }
+    },
+    SUNDAY {
+        @Override
+        boolean isWeekend() {
+            return true;
+        }
+    };
+
+    abstract boolean isWeekend();
+}
+
+void main() {
+    IO.println(Day.MONDAY + " -&gt; " + Day.MONDAY.isWeekend());
+    IO.println(Day.SATURDAY + " -&gt; " + Day.SATURDAY.isWeekend());
+    IO.println(Day.SUNDAY + " -&gt; " + Day.SUNDAY.isWeekend());
+    IO.println("lop that cua SATURDAY: " + Day.SATURDAY.getClass().getName());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>MONDAY -&gt; false
+SATURDAY -&gt; true
+SUNDAY -&gt; true
+lop that cua SATURDAY: DayDemo$Day$2</code></pre>
+    </div>
+
+    <p>Dòng cuối tiết lộ cơ chế: hằng <strong>có thân riêng trở thành một anonymous subclass</strong> của enum (<code class="inline">Day$2</code> là class vô danh thứ hai). Hằng không có thân riêng dùng chung class enum. Đây là lý do <code class="inline">getClass()</code> của hai hằng có thể khác nhau — đừng bao giờ viết <code class="inline">day.getClass() == Day.class</code>.</p>
+
+    <h3>Enum implements interface</h3>
+
+    <p>Enum <strong>không extends được class khác</strong> (đã extends <code class="inline">java.lang.Enum</code> ngầm), nhưng implements bao nhiêu interface cũng được. Kết hợp với abstract method per constant, bạn có bảng chiến lược cực gọn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.IntBinaryOperator;
+
+enum PhepTinh implements IntBinaryOperator {
+    CONG("cong") {
+        @Override
+        public int applyAsInt(int a, int b) {
+            return a + b;
+        }
+    },
+    TRU("tru") {
+        @Override
+        public int applyAsInt(int a, int b) {
+            return a - b;
+        }
+    },
+    NHAN("nhan") {
+        @Override
+        public int applyAsInt(int a, int b) {
+            return a * b;
+        }
+    };
+
+    private final String ten;
+
+    PhepTinh(String ten) {
+        this.ten = ten;
+    }
+
+    String ten() {
+        return ten;
+    }
+}
+
+void main() {
+    IO.println(PhepTinh.CONG.ten() + ": " + PhepTinh.CONG.applyAsInt(3, 4));
+    IO.println(PhepTinh.TRU.ten() + ": " + PhepTinh.TRU.applyAsInt(10, 4));
+    IO.println(PhepTinh.NHAN.ten() + ": " + PhepTinh.NHAN.applyAsInt(3, 4));
+
+    IntBinaryOperator f = PhepTinh.CONG;
+    IO.println("qua interface: " + f.applyAsInt(1, 2));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>cong: 7
+tru: 6
+nhan: 12
+qua interface: 3</code></pre>
+    </div>
+
+    <p><code class="inline">IntBinaryOperator</code> là functional interface chuẩn của JDK — nghĩa là mỗi hằng enum cũng dùng được như một lambda/strategy truyền vào method khác. JDK có sẵn ví dụ tương tự: <code class="inline">java.util.concurrent.TimeUnit</code> vừa là enum vừa có method chuyển đổi đơn vị.</p>
+
+    <h3>Enum singleton — cách viết singleton an toàn nhất</h3>
+
+    <p>Vì mỗi hằng enum là singleton do JVM quản lý, chỉ cần một hằng <code class="inline">INSTANCE</code> là có ngay singleton. Effective Java gọi đây là cách viết singleton tốt nhất: an toàn với đa luồng, an toàn với serialization (JVM tự đảm bảo đọc ra vẫn là cùng instance), và chống cả reflection (không thể <code class="inline">new</code> enum bằng constructor).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum AppConfig {
+    INSTANCE;
+
+    private final String env = "prod";
+    private final int timeout = 30;
+
+    String env() {
+        return env;
+    }
+
+    int timeout() {
+        return timeout;
+    }
+}
+
+void main() {
+    AppConfig a = AppConfig.INSTANCE;
+    AppConfig b = AppConfig.INSTANCE;
+    IO.println(a.env() + " / timeout=" + a.timeout());
+    IO.println("cung mot object: " + (a == b));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>prod / timeout=30
+cung mot object: true</code></pre>
+    </div>
+
+    <p>Trong production hiện đại, singleton thường được để cho container (Spring) quản lý thay vì tự viết. Nhưng enum singleton vẫn xuất hiện đầy trong codebase — nhất là các utility/config không phụ thuộc framework. Xem thêm ở <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</p>
+
+    <h2 id="enum-collections">5. EnumMap &amp; EnumSet <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">EnumMap</code> và <code class="inline">EnumSet</code> là hai collection chuyên cho enum key, được thiết kế tối ưu dựa trên đặc điểm enum có tập hằng cố định và <code class="inline">ordinal()</code> liên tục:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Day { MON, TUE, WED, THU, FRI, SAT, SUN }
+
+void main() {
+    EnumMap&lt;Day, String&gt; lich = new EnumMap&lt;&gt;(Day.class);
+    lich.put(Day.FRI, "review sprint");
+    lich.put(Day.MON, "hop team");
+    IO.println("EnumMap: " + lich);
+
+    EnumSet&lt;Day&gt; cuoiTuan = EnumSet.of(Day.SAT, Day.SUN);
+    IO.println("EnumSet: " + cuoiTuan);
+    IO.println("co SUN? " + cuoiTuan.contains(Day.SUN));
+    IO.println("tat ca: " + EnumSet.allOf(Day.class));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>EnumMap: {MON=hop team, FRI=review sprint}
+EnumSet: [SAT, SUN]
+co SUN? true
+tat ca: [MON, TUE, WED, THU, FRI, SAT, SUN]</code></pre>
+    </div>
+
+    <p>Hai chi tiết đáng chú ý trong output:</p>
+    <ul>
+      <li><strong>Thứ tự duyệt luôn là thứ tự khai báo hằng</strong> — dù <code class="inline">FRI</code> được put trước <code class="inline">MON</code>, <code class="inline">EnumMap</code> vẫn in <code class="inline">{MON=..., FRI=...}</code>. Không phụ thuộc hash, kết quả ổn định giữa các lần chạy.</li>
+      <li><strong>Không nhận key/element <code class="inline">null</code></strong> — <code class="inline">EnumMap</code> và <code class="inline">EnumSet</code> ném <code class="inline">NullPointerException</code> thay vì lưu null.</li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr><th></th><th>HashMap / HashSet</th><th>EnumMap / EnumSet</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cấu trúc bên trong</td><td>Bảng băm, tính hashCode từng key</td><td><code class="inline">EnumMap</code>: mảng index theo <code class="inline">ordinal()</code>; <code class="inline">EnumSet</code>: bit vector, enum ≤ 64 hằng chỉ cần một <code class="inline">long</code></td></tr>
+        <tr><td>Lookup</td><td>Băm rồi dò bucket</td><td>O(1) truy cập mảng / kiểm tra bit — nhanh hơn và không cấp phát thêm</td></tr>
+        <tr><td>Thứ tự duyệt</td><td>Không đảm bảo</td><td>Thứ tự khai báo hằng</td></tr>
+        <tr><td>null</td><td>Cho phép tùy collection</td><td>Không cho phép</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">API hữu ích của <code class="inline">EnumSet</code>: <code class="inline">allOf</code>, <code class="inline">noneOf</code>, <code class="inline">of</code>, <code class="inline">range</code>, <code class="inline">complementOf</code>. Chúng dùng để mô hình hoá cờ quyền/trạng thái (permission flags) gọn hơn bitmask thủ công.</div>
+
+    <h2 id="enum-pitfalls">6. Pitfalls của enum <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lưu <code class="inline">ordinal()</code> vào DB hoặc gửi qua API</td><td>Chen/xoá/sắp xếp lại hằng làm ordinal dịch chuyển; dữ liệu cũ trỏ sai trạng thái</td><td>Lưu <code class="inline">name()</code>, hoặc tốt hơn là một code riêng ổn định + <code class="inline">fromCode()</code></td></tr>
+        <tr><td>So sánh enum bằng <code class="inline">equals</code> vì sợ <code class="inline">==</code> "sai"</td><td>Đúng kết quả nhưng thừa; enum singleton nên <code class="inline">==</code> an toàn và nhanh hơn</td><td>Dùng <code class="inline">==</code>; <code class="inline">equals</code> của enum cũng chỉ là so identity</td></tr>
+        <tr><td>Cho enum <code class="inline">extends</code> class khác</td><td>Lỗi compile — enum đã extends <code class="inline">java.lang.Enum</code> ngầm (đơn kế thừa)</td><td>Chỉ implements interface; cần state/hành vi chung thì viết method trong enum</td></tr>
+        <tr><td>Khai báo constructor <code class="inline">public</code>/<code class="inline">protected</code></td><td>Lỗi compile "modifier public not allowed here"</td><td>Để trống (ngầm private) hoặc viết <code class="inline">private</code></td></tr>
+        <tr><td>Gọi <code class="inline">values()</code> trong vòng lặp nóng</td><td>Mỗi lần gọi tạo một mảng mới — cấp phát vô ích</td><td>Gọi một lần rồi cache lại nếu dùng nhiều</td></tr>
+        <tr><td>Switch expression thiếu nhánh hằng</td><td>Lỗi compile "the switch expression does not cover all possible input values" — dễ sửa, nhưng phải biết</td><td>Thêm nhánh hoặc <code class="inline">default</code>; đây là <em>feature</em> giúp bạn không quên khi thêm hằng</td></tr>
+        <tr><td>Sửa mảng trả về từ <code class="inline">values()</code> rồi tưởng enum đổi</td><td>Lần gọi sau vẫn trả dữ liệu gốc vì <code class="inline">values()</code> clone mảng mỗi lần</td><td>Muốn dữ liệu động thì giữ collection riêng; enum constants là bất biến</td></tr>
+        <tr><td>Quên <code class="inline">null</code> khi switch</td><td><code class="inline">NullPointerException</code> lúc chạy</td><td>Kiểm tra null trước, dùng <code class="inline">case null</code> (Java 21), hoặc <code class="inline">Optional</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ kinh điển của bẫy ordinal — cùng tên hằng, vị trí đổi khi thêm giá trị mới vào giữa:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Ban dau: PAID.ordinal() = 1, da luu 1 vao DB
+enum OrderStatus { PENDING, PAID, SHIPPED; }
+
+// Sau nay can them REFUNDED vao giua danh sach
+enum OrderStatus { PENDING, REFUNDED, PAID, SHIPPED; }
+// PAID.ordinal() bay gio = 2 -&gt; moi ban ghi cu (1) bi doc thanh REFUNDED</code></pre>
+    </div>
+
+    <p>Switch expression trên enum cũng exhaustive như sealed — thiếu một hằng là lỗi compile, chạy thật với JDK 25:</p>
+
+    <div class="errblock">
+      <pre>EnumSwitchExpr.java:5: error: the switch expression does not cover all possible input values
+        return switch (c) {
+               ^
+1 error</pre>
+    </div>
+
+    <p>Ngược lại, <code class="inline">switch</code> dạng <em>statement</em> truyền thống không bắt buộc đủ nhánh và không yêu cầu <code class="inline">default</code> — nên khi nào nhánh thiếu nhánh quan trọng, hãy ưu tiên switch expression. Chi tiết switch expression ở <a href="control-flow.html#switch-expression">Control Flow — mục 4</a>.</p>
+
+    <h2 id="nested-tong-quan">7. Nested classes — bốn loại <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Java cho phép khai báo class/interface/enum/record bên trong một class khác — gọi chung là <strong>nested type</strong>. Mục đích: gom những kiểu chỉ có nghĩa trong ngữ cảnh của class ngoài (outer), che giấu implementation, và giữ code gần nhau. Effective Java khuyên: <em>chỉ dùng nested class khi nó thực sự phục vụ outer</em>; nếu không, tách ra top-level class cho dễ đọc.</p>
+
+    <p>Có đúng <strong>4 loại</strong>, phân biệt bởi nơi khai báo và cách tạo instance:</p>
+
+    <table>
+      <thead>
+        <tr><th>Loại</th><th>Khai báo ở đâu</th><th>Cần instance outer?</th><th>Có tên?</th><th>Dùng khi nào</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Static nested</strong></td><td>Trong thân class, có modifier <code class="inline">static</code></td><td>Không — <code class="inline">new Outer.Inner()</code></td><td>Có</td><td>Thành phần phụ trợ: Builder, cache, <code class="inline">Entry</code>, tiện ích nội bộ. <strong>Mặc định nên chọn loại này.</strong></td></tr>
+        <tr><td><strong>Inner</strong> (non-static)</td><td>Trong thân class, không có <code class="inline">static</code></td><td>Có — <code class="inline">outer.new Inner()</code></td><td>Có</td><td>Cần truy cập state instance của outer: Iterator, view, callback gắn với object</td></tr>
+        <tr><td><strong>Local</strong></td><td>Trong thân method/block</td><td>Phụ thuộc ngữ cảnh (nếu trong instance method thì có)</td><td>Có</td><td>Class chỉ dùng trong đúng một method, cần đặt tên rõ ràng</td></tr>
+        <tr><td><strong>Anonymous</strong></td><td>Ngay tại biểu thức <code class="inline">new</code></td><td>Phụ thuộc ngữ cảnh</td><td><strong>Không</strong></td><td>Implementation dùng một lần; lambda thay được nếu là functional interface</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nested class <strong>truy cập được cả thành viên private của outer</strong> (và ngược lại) — compiler coi cả "họ" là một đơn vị tin cậy. Từ Java 11 (JEP 181, nest-based access control), việc này diễn ra trực tiếp qua <em>nestmates</em> thay vì sinh method synthetic như trước.</p>
+
+    <div class="note">Interface lồng bên trong interface/class cũng là static ngầm; field trong interface là <code class="inline">public static final</code>. Vì vậy enum/record lồng trong interface không bao giờ là inner.</div>
+
+    <h2 id="static-vs-inner">8. Static nested vs inner class <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <h3>Static nested class</h3>
+
+    <p>Đúng như tên gọi: nó là class nằm trong namespace của outer nhưng <strong>không gắn với instance nào</strong> của outer. Tạo thẳng bằng <code class="inline">new Outer.Inner()</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class Outer {
+    private static String loiNhan = "static nested doc duoc field private static cua Outer";
+    private String ten = "outer instance";
+
+    static class Inner {
+        void in() {
+            IO.println(loiNhan);
+        }
+    }
+
+    public static void main() {
+        Outer.Inner inner = new Outer.Inner();
+        inner.in();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>static nested doc duoc field private static cua Outer</code></pre>
+    </div>
+
+    <p><code class="inline">Inner</code> ở trên giống hệt một top-level class, chỉ khác là được "đóng gói" trong <code class="inline">Outer</code>. Nó đọc được field private static của outer, nhưng <strong>không</strong> đọc được <code class="inline">ten</code> (field instance) vì không có instance outer nào cả.</p>
+
+    <h3>Inner class (non-static)</h3>
+
+    <p>Bỏ chữ <code class="inline">static</code> đi, mọi instance của <code class="inline">Inner</code> sẽ gắn chặt với <strong>một</strong> instance của <code class="inline">Outer</code> — Java giữ ngầm một reference tới outer đó. Cú pháp tạo đặc biệt: <code class="inline">outer.new Inner()</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class Outer {
+    private String ten = "Outer";
+    private int dem = 0;
+
+    class Inner {
+        private String ten = "Inner";
+
+        void in() {
+            IO.println("this.ten       = " + this.ten);
+            IO.println("Outer.this.ten = " + Outer.this.ten);
+            dem++;
+        }
+    }
+
+    public static void main() {
+        Outer outer = new Outer();
+        Outer.Inner inner = outer.new Inner();
+        inner.in();
+        inner.in();
+        IO.println("dem = " + outer.dem);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>this.ten       = Inner
+Outer.this.ten = Outer
+this.ten       = Inner
+Outer.this.ten = Outer
+dem = 2</code></pre>
+    </div>
+
+    <p>Hai chi tiết đắt giá: <code class="inline">Outer.this</code> cho phép phân biệt khi tên field bị trùng, và <code class="inline">dem++</code> chứng minh inner sửa được state private của chính outer instance mà nó gắn vào — hai lần gọi cùng một inner thì <code class="inline">dem = 2</code>.</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Static nested</th><th>Inner (non-static)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cú pháp tạo</td><td><code class="inline">new Outer.Inner()</code></td><td><code class="inline">outer.new Inner()</code></td></tr>
+        <tr><td>Reference tới outer</td><td>Không</td><td>Có, ngầm (implicit) trong mọi instance</td></tr>
+        <tr><td>Truy cập field instance của outer</td><td>Không</td><td>Có, kể cả private; phân biệt bằng <code class="inline">Outer.this</code></td></tr>
+        <tr><td>Memory</td><td>Không tốn thêm reference</td><td>Tốn thêm một reference; giữ outer sống theo</td></tr>
+        <tr><td>Tạo object trong static context</td><td>Thoải mái</td><td>Phải có sẵn instance outer</td></tr>
+        <tr><td>Khi nào dùng</td><td>Builder, helper, DTO nội bộ — mặc định</td><td>Iterator/view cần đọc state của outer instance</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Memory leak: inner class giữ outer sống theo</h3>
+
+    <p>Vì inner giữ ngầm reference tới outer, nếu bạn đưa inner vào nơi sống lâu (static collection, cache, listener, thread pool), <strong>outer cũng không bao giờ được thu gom rác</strong> dù code không còn dùng outer nữa:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static final List&lt;Outer.Inner&gt; CACHE = new ArrayList&lt;&gt;();
+
+static void nho(Outer outer) {
+    CACHE.add(outer.new Inner());   // Inner giu ngam reference toi outer
+}
+
+// outer khong con bien nao tro toi, nhung CACHE con Inner
+// -&gt; ca Inner lan Outer deu nam lai trong bo nho mai mai</code></pre>
+    </div>
+
+    <p>Cách tránh rất đơn giản: <strong>nếu inner không cần state instance của outer, hãy khai báo nó là static nested</strong>. Đây cũng là lý do các Builder, DTO, cache key trong production hầu hết là static nested. (Từ Java 16, inner class được phép khai báo static member — trước đó là lỗi compile — nhưng điều đó <em>không</em> làm nó thôi giữ outer reference.)</p>
+
+    <h3>Builder — ứng dụng kinh điển của static nested</h3>
+
+    <p>Builder pattern (đã giới thiệu ở <a href="methods.html#tham-so-mac-dinh">Methods — mục 4</a>) chuẩn mực nhất là một static nested class, vì builder không cần instance của class đích cho tới lúc <code class="inline">build()</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class OrderDemo {
+    static final class Order {
+        private final String ma;
+        private final long tongTien;
+
+        private Order(Builder b) {
+            this.ma = b.ma;
+            this.tongTien = b.tongTien;
+        }
+
+        static class Builder {
+            private String ma = "DH-000";
+            private long tongTien;
+
+            Builder ma(String ma) {
+                this.ma = ma;
+                return this;
+            }
+
+            Builder tongTien(long tongTien) {
+                this.tongTien = tongTien;
+                return this;
+            }
+
+            Order build() {
+                return new Order(this);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Order[ma=" + ma + ", tongTien=" + tongTien + "]";
+        }
+    }
+
+    public static void main() {
+        Order o = new Order.Builder().ma("DH-042").tongTien(250_000).build();
+        IO.println(o);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Order[ma=DH-042, tongTien=250000]</code></pre>
+    </div>
+
+    <p>Chú ý constructor <code class="inline">Order</code> là <code class="inline">private</code> — chỉ <code class="inline">Builder</code> (cùng nest) gọi được. Nhờ đó object <code class="inline">Order</code> bất biến và luôn được tạo hợp lệ.</p>
+
+    <h2 id="local-anonymous">9. Local &amp; anonymous class <span class="badge b-junior">Junior+</span></h2>
+
+    <h3>Local class — class trong method</h3>
+
+    <p>Local class khai báo ngay trong thân method, chỉ tồn tại trong phạm vi đó. Nó hữu ích khi logic phụ cần một type có tên, nhiều method, nhưng không đáng tách ra ngoài:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    String tienTo = "DH-";
+    int so = 42;
+
+    class Inner {
+        void in() {
+            IO.println(tienTo + so);
+        }
+    }
+
+    Inner inner = new Inner();
+    inner.in();
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>DH-42</code></pre>
+    </div>
+
+    <p>Local class <strong>capture biến local xung quanh</strong>, nhưng chỉ khi biến đó <em>effectively final</em> — tức không được gán lại sau lần khởi tạo đầu tiên. Cố tình gán lại sẽ lỗi compile:</p>
+
+    <div class="errblock">
+      <pre>CaptureErr.java:6: error: local variables referenced from an inner class must be final or effectively final
+            IO.println(so);
+                       ^
+1 error</pre>
+    </div>
+
+    <p>Lý do: biến local sống trên stack và biến mất khi method return, còn object của local class có thể sống lâu hơn — nên Java copy giá trị vào object và cấm thay đổi để tránh hai nguồn sự thật. Muốn "biến đổi được" thì dùng một field của object (như <code class="inline">int[]</code>, <code class="inline">AtomicInteger</code>, hoặc field instance).</p>
+
+    <h3>Anonymous class — implementation không tên</h3>
+
+    <p>Anonymous class vừa khai báo vừa tạo object trong một biểu thức <code class="inline">new</code>. Ví dụ trước thời lambda, đây là cách duy nhất truyền hành vi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Runnable chao = new Runnable() {
+        @Override
+        public void run() {
+            IO.println("Chay trong anonymous class");
+        }
+    };
+    chao.run();
+
+    int lan = 2;
+    Runnable dem = new Runnable() {
+        @Override
+        public void run() {
+            IO.println("lan = " + lan);   // capture bien effectively final
+        }
+    };
+    dem.run();
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Chay trong anonymous class
+lan = 2</code></pre>
+    </div>
+
+    <p>Ví dụ thực chiến hơn — sắp xếp danh sách mà không cần tạo class riêng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    List&lt;String&gt; ds = new ArrayList&lt;&gt;(List.of("Java", "JS", "TypeScript", "C"));
+    ds.sort(new Comparator&lt;String&gt;() {
+        @Override
+        public int compare(String a, String b) {
+            return a.length() - b.length();
+        }
+    });
+    IO.println(ds);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[C, JS, Java, TypeScript]</code></pre>
+    </div>
+
+    <p>Từ Java 8, hầu hết anonymous class cho functional interface (Runnable, Comparator, Callable...) được thay bằng <strong>lambda</strong> gọn hơn hẳn — sẽ học ở <a href="roadmap.html#phase-3">3.6 Lambda &amp; functional interfaces</a>. Anonymous class vẫn còn chỗ đứng khi:</p>
+    <ul>
+      <li>Cần extends một <strong>abstract class</strong> (lambda chỉ dùng cho interface).</li>
+      <li>Interface/class có <strong>nhiều hơn một method</strong> cần implement.</li>
+      <li>Cần <strong>state riêng</strong> hoặc instance initializer cho object dùng một lần. Anonymous class không có constructor, nhưng có khối khởi tạo <code class="inline">{ ... }</code>.</li>
+      <li>Logic dài hơn vài dòng — dù vậy khi đó thường local class có tên sẽ dễ đọc hơn.</li>
+    </ul>
+
+    <div class="note warn">Anonymous và local class nằm trong method của instance cũng giữ ngầm outer reference y như inner class — bẫy memory leak ở <a href="#static-vs-inner">mục 8</a> áp dụng cho cả ba loại.</div>
+
+    <h2 id="sealed">10. Sealed classes &amp; interfaces <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Bình thường, bất kỳ ai cũng extends/implements được class/interface của bạn (trừ khi <code class="inline">final</code>). <strong>Sealed</strong> (Java 17, JEP 409) là lựa chọn ở giữa: bạn mở kế thừa <em>có kiểm soát</em>, liệt kê chính xác ai được phép là subtype qua <code class="inline">permits</code>.</p>
+
+    <div class="signature">
+      <span class="tok-kw">sealed</span> <span class="sig-muted">[class|interface]</span> <span class="tok-typ">Shape</span> <span class="sig-muted">permits</span> <span class="sig-var">Circle, Rectangle, Square</span> <span class="sig-muted">{ }</span>
+    </div>
+
+    <p>Ví dụ với cây kế thừa <code class="inline">Shape</code> quen thuộc từ <a href="polymorphism.html#casting">Polymorphism — mục 4</a>, giờ đây đóng khung thành đúng ba subtype:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Shape permits Circle, Rectangle, Square {
+}
+
+record Circle(double r) implements Shape {
+}
+
+record Rectangle(double w, double h) implements Shape {
+}
+
+record Square(double canh) implements Shape {
+}
+
+double dienTich(Shape s) {
+    return switch (s) {
+        case Circle(double r) -&gt; Math.PI * r * r;
+        case Rectangle(double w, double h) -&gt; w * h;
+        case Square(double c) -&gt; c * c;
+    };
+}
+
+void main() {
+    Shape[] shapes = { new Circle(1), new Rectangle(2, 3), new Square(4) };
+    for (Shape s : shapes) {
+        IO.println(s + " -&gt; " + dienTich(s));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Circle[r=1.0] -&gt; 3.141592653589793
+Rectangle[w=2.0, h=3.0] -&gt; 6.0
+Square[canh=4.0] -&gt; 16.0</code></pre>
+    </div>
+
+    <h3>Luật của sealed</h3>
+
+    <ul>
+      <li>Mỗi subtype trực tiếp phải khai báo là <code class="inline">final</code> (đóng nhánh), <code class="inline">sealed</code> (đóng tiếp có danh sách), hoặc <code class="inline">non-sealed</code> (mở lại tự do). Thiếu modifier là lỗi compile — xem errblock bên dưới.</li>
+      <li><strong>record và enum mặc định final</strong>, nên chỉ cần <code class="inline">implements Shape</code> là hợp lệ (như ví dụ trên).</li>
+      <li>Sealed class/interface phải có ít nhất một subtype.</li>
+      <li>Subtype phải nằm cùng <strong>module</strong> (named module) hoặc cùng <strong>package</strong> (unnamed module) với class cha.</li>
+      <li>Nếu tất cả subtype nằm chung một file, có thể <strong>bỏ qua <code class="inline">permits</code></strong> — compiler tự suy ra. Ví dụ trên đã bỏ <code class="inline">permits</code> vì mọi record cùng file.</li>
+      <li><code class="inline">sealed</code> không có nghĩa là abstract: sealed class không abstract vẫn <code class="inline">new</code> được, chỉ là hạn chế kế thừa.</li>
+    </ul>
+
+    <div class="errblock">
+      <pre>SealedSubErr.java:4: error: sealed, non-sealed or final modifiers expected
+class Circle implements Shape {
+^
+1 error</pre>
+    </div>
+
+    <h3>non-sealed — mở lại một nhánh</h3>
+
+    <p>Đôi khi bạn muốn đóng 95% cây kế thừa nhưng chừa một nhánh cho phép mở rộng tự do (plugin, extension point). <code class="inline">non-sealed</code> làm đúng việc đó:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Shape permits Circle, Polygon {
+}
+
+record Circle(double r) implements Shape {
+}
+
+non-sealed class Polygon implements Shape {
+}
+
+class Square extends Polygon {
+}
+
+void main() {
+    Shape s = new Square();
+    IO.println("Square la Polygon: " + (s instanceof Polygon));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Square la Polygon: true</code></pre>
+    </div>
+
+    <p><code class="inline">non-sealed</code> chỉ hợp lệ khi class đó là subtype trực tiếp của một sealed type. Đặt ở top-level hoặc ở class không có cha sealed sẽ lỗi:</p>
+
+    <div class="errblock">
+      <pre>NonSealedErr.java:1: error: non-sealed modifier not allowed here
+non-sealed class BadNonSealed {
+           ^
+  (class BadNonSealed does not have any sealed supertypes)
+1 error</pre>
+    </div>
+
+    <p>So sánh ba thái cực: <code class="inline">final</code> (không ai extends), <code class="inline">sealed</code> (chỉ danh sách cho phép), mở hoàn toàn (mặc định). Sealed class đã được nhắc ở <a href="inheritance.html#sealed">Inheritance — mục 13</a> và sealed interface ở <a href="abstract-interface.html#marker-sealed">Abstract vs Interface — mục 12</a>; phần dưới đây khai thác lợi ích lớn nhất của nó.</p>
+
+    <h2 id="pattern-switch">11. Switch exhaustive &amp; pattern matching <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Java 21 hoàn thiện <strong>pattern matching for switch</strong> (JEP 441) cùng <strong>record pattern</strong> (JEP 440). Ba thứ mới đáng nhớ: <code class="inline">case</code> theo kiểu, bóc tách record, và guard <code class="inline">when</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Shape permits Circle, Rectangle, Square {
+}
+
+record Circle(double r) implements Shape {
+}
+
+record Rectangle(double w, double h) implements Shape {
+}
+
+record Square(double canh) implements Shape {
+}
+
+String moTa(Shape s) {
+    return switch (s) {
+        case Circle c when c.r() &gt; 10 -&gt; "hinh tron lon";
+        case Circle c -&gt; "hinh tron nho";
+        case Rectangle r -&gt; "hinh chu nhat";
+        case Square q -&gt; "hinh vuong";
+    };
+}
+
+void main() {
+    IO.println(moTa(new Circle(20)));
+    IO.println(moTa(new Circle(2)));
+    IO.println(moTa(new Square(4)));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>hinh tron lon
+hinh tron nho
+hinh vuong</code></pre>
+    </div>
+
+    <p>Vì <code class="inline">Shape</code> là sealed, compiler biết chính xác ba subtype và switch expression trên <strong>không cần <code class="inline">default</code></strong>. Quên một nhánh là lỗi compile ngay khi build, chạy thật với JDK 25:</p>
+
+    <div class="errblock">
+      <pre>ErrMissingCase.java:11: error: the switch expression does not cover all possible input values
+    return switch (s) {
+           ^
+1 error</pre>
+    </div>
+
+    <p>Đó chính là giá trị lớn nhất của sealed: <strong>thêm subtype mới, toàn bộ switch liên quan lập tức báo lỗi</strong> để bạn cập nhật, thay vì âm thầm rơi vào <code class="inline">default</code> và sai logic lúc chạy. Nếu bỏ <code class="inline">sealed</code>, switch buộc phải có <code class="inline">default</code> và mất hoàn toàn sự bảo vệ này.</p>
+
+    <p><code class="inline">case null</code> (Java 21) xử lý luôn giá trị null thay vì ném NPE:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN, BLUE }
+
+String ten(Color c) {
+    return switch (c) {
+        case null -&gt; "khong co mau";
+        case RED -&gt; "do";
+        case GREEN -&gt; "xanh la";
+        case BLUE -&gt; "xanh duong";
+    };
+}
+
+void main() {
+    IO.println(ten(null));
+    IO.println(ten(Color.GREEN));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>khong co mau
+xanh la</code></pre>
+    </div>
+
+    <div class="note">Enum cũng là "sealed" theo nghĩa tập hằng cố định, nên switch expression trên enum cũng exhaustive và không cần <code class="inline">default</code> khi liệt kê đủ hằng (xem <a href="#enum-pitfalls">mục 6</a>). Pattern matching switch còn áp dụng cho bất kỳ reference type nào — xem thêm <a href="polymorphism.html#casting">Polymorphism — mục 4</a>.</div>
+
+    <h2 id="pitfalls-nested">12. Pitfalls nested &amp; sealed <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dùng inner khi không cần outer instance</td><td>Mọi instance tốn thêm reference; memory leak khi bị giữ lâu</td><td>Mặc định khai báo <code class="inline">static</code>; chỉ bỏ khi thật cần state outer</td></tr>
+        <tr><td>Cache/listener/thread giữ inner hoặc anonymous class</td><td>Outer bị giữ theo, không bao giờ GC</td><td>static nested, hủy đăng ký listener, hoặc <code class="inline">WeakReference</code></td></tr>
+        <tr><td>Anonymous class dài vài chục dòng, nhiều method</td><td>Khó đọc, khó debug, stack trace toàn <code class="inline">$1</code></td><td>Tách thành local class có tên, static nested, hoặc lambda nếu là functional interface</td></tr>
+        <tr><td>Capture rồi gán lại biến local</td><td>Lỗi "must be final or effectively final"</td><td>Không gán lại sau khởi tạo; hoặc dùng field/atomic/array</td></tr>
+        <tr><td>Subtype của sealed thiếu <code class="inline">final</code>/<code class="inline">sealed</code>/<code class="inline">non-sealed</code></td><td>Lỗi compile "sealed, non-sealed or final modifiers expected"</td><td>Thêm modifier đúng cho từng subtype; record/enum đã final sẵn</td></tr>
+        <tr><td>Đặt <code class="inline">non-sealed</code> ở top-level hoặc class không có cha sealed</td><td>Lỗi compile "non-sealed modifier not allowed here"</td><td><code class="inline">non-sealed</code> chỉ dùng cho subtype trực tiếp của sealed type</td></tr>
+        <tr><td>Quên cập nhật switch khi thêm subtype</td><td>Không xảy ra nếu sealed — compiler báo ngay; nhưng nếu đã có <code class="inline">default</code> thì bug ẩn</td><td>Đừng thêm <code class="inline">default</code> vào switch expression trên sealed khi không cần</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Đừng lạm dụng nested.</strong> Mỗi tầng lồng làm tên class dài thêm (<code class="inline">Outer$Inner$Deeper</code> trong log), tăng chi phí đọc hiểu và làm phức tạp dependency. Nested chỉ nên tồn tại vì outer cần nó — còn lại hãy tách file.</div>
+
+    <h2 id="goc-nodejs">13. Góc Node.js — enum, closure &amp; inner class</h2>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / TypeScript</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Enum</td><td>JS không có. TS có <code class="inline">enum</code> nhưng chỉ là object sau biên dịch; phổ biến hơn là const object <code class="inline">as const</code></td><td>Class thật với field/constructor/method; compiler ép kiểu</td></tr>
+        <tr><td>Tập giá trị đóng</td><td>Union type của TS chỉ tồn tại lúc compile, runtime không kiểm tra</td><td>Kiểm tra ngay trong ngôn ngữ: biến chỉ nhận hằng hợp lệ</td></tr>
+        <tr><td>Gắn dữ liệu/hành vi</td><td>Object map: <code class="inline">{ PAID: { label: '...' } }</code>, tự tay đồng bộ</td><td>Constructor enum gắn thẳng vào từng hằng</td></tr>
+        <tr><td>Bắt lỗi thiếu nhánh</td><td>TS có exhaustiveness check với union + <code class="inline">never</code>, nhưng dễ lách qua <code class="inline">any</code>/default</td><td>Sealed + switch expression do compiler thực thi, không lách được</td></tr>
+        <tr><td>Giữ scope</td><td>Closure giữ biến trong lexical scope; vòng đời do GC của engine quản lý</td><td>Inner/anonymous class giữ ngầm reference tới outer instance — cùng kiểu "giữ scope" nhưng nặng hơn</td></tr>
+        <tr><td>Hàm vô danh</td><td>Arrow function thay hầu hết callback</td><td>Lambda (Java 8+) cho functional interface; anonymous class cho phần còn lại</td></tr>
+      </tbody>
+    </table>
+
+    <p>Javascript "enum" thực dụng nhất là const object bị đóng băng, và closure giữ biến y hệt inner class giữ outer reference. Chạy thật bằng Node v22:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+const Color = Object.freeze({ RED: 'RED', GREEN: 'GREEN', BLUE: 'BLUE' });
+console.log(Color.GREEN);          // GREEN
+console.log(Object.isFrozen(Color)); // true
+console.log(Object.keys(Color));   // [ 'RED', 'GREEN', 'BLUE' ]
+console.log(Color[0]);             // undefined - khong co reverse mapping
+
+function taoBoDem() {
+  let dem = 0;                     // closure giu bien dem
+  return { tang: () =&gt; ++dem, giaTri: () =&gt; dem };
+}
+
+const boDem = taoBoDem();
+boDem.tang();
+boDem.tang();
+console.log(boDem.giaTri());       // 2</code></pre>
+    </div>
+
+    <p>Hai điểm khác biệt cốt lõi cần nhớ khi chuyển từ Node sang Java:</p>
+    <ul>
+      <li><strong>TS numeric enum có reverse mapping</strong> (<code class="inline">Color[0] === "Red"</code>), nhưng đó chỉ là hệ quả của object sinh ra chứ không phải tính năng thiết kế; ai cần "tên từ giá trị" trong Java thì dùng <code class="inline">values()</code> + <code class="inline">name()</code>/<code class="inline">code</code> tường minh.</li>
+      <li><strong>Closure JS giữ biến và cho phép biến đổi</strong> (<code class="inline">dem++</code> hợp lệ), còn inner/local class Java chỉ capture biến <em>effectively final</em>. Java chặt hơn để tránh hai bản sao dữ liệu lệch nhau; muốn mutable state thì gói vào object.</li>
+    </ul>
+
+    <div class="note">Nhớ lại <a href="#static-vs-inner">mục 8</a>: closure giữ biến giống inner class giữ outer — nếu object sống lâu và giữ reference vô ích, cả hai đều là memory leak. Khác biệt là Java có <code class="inline">static nested class</code> để tránh hẳn việc giữ outer, còn JS không có lựa chọn tương đương rõ ràng như vậy.</div>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Enum là gì? Khác gì so với dùng hằng <code class="inline">int</code>/<code class="inline">String</code>?</summary>
+      <div class="answer">Enum là kiểu dữ liệu mô tả một <strong>tập giá trị hữu hạn có tên</strong>; mỗi hằng là một object singleton của enum class, được JVM tạo một lần khi class nạp. So với hằng <code class="inline">int</code>/<code class="inline">String</code>: enum type-safe (truyền sai giá trị là lỗi compile, không cần kiểm tra runtime), có namespace riêng, in ra tên có nghĩa, gắn được field/method, và dùng được trong switch/EnumMap/EnumSet. String constant vẫn nhận giá trị lạ; int constant có thể trùng giá trị mà compiler không biết.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Mỗi hằng enum có phải singleton không? So sánh enum bằng <code class="inline">==</code> được không?</summary>
+      <div class="answer">Đúng — mỗi hằng được JVM khởi tạo đúng một lần cho mỗi classloader, và không có cách nào tạo thêm instance (constructor là private, không thể gọi <code class="inline">new</code>, reflection cũng bị chặn). Vì là singleton, <code class="inline">==</code> so identity chính là so đúng hằng: an toàn, nhanh, không lo NPE từ <code class="inline">equals</code>. <code class="inline">equals</code> của enum cũng chỉ là so identity, nên hai cách tương đương — nhưng <code class="inline">==</code> là chuẩn mực.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Enum có field, constructor, method không? Constructor có modifier gì?</summary>
+      <div class="answer">Có đầy đủ như class thường: field (nên <code class="inline">private final</code>), constructor, method, static method. Constructor của enum <strong>ngầm là private</strong>; viết <code class="inline">public</code>/<code class="inline">protected</code> bị lỗi "modifier public not allowed here". Mỗi hằng truyền tham số trong ngoặc ngay sau tên, và constructor chạy một lần cho mỗi hằng theo thứ tự khai báo.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Enum <code class="inline">extends</code> class khác được không? <code class="inline">implements</code> interface thì sao?</summary>
+      <div class="answer">Không extends được class nào — enum đã extends <code class="inline">java.lang.Enum</code> ngầm, và Java chỉ cho đơn kế thừa. Bù lại, enum implements <strong>bao nhiêu interface cũng được</strong>, kể cả functional interface như <code class="inline">IntBinaryOperator</code>, và có thể implement ở cấp enum hoặc override riêng từng hằng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">values()</code>, <code class="inline">valueOf()</code>, <code class="inline">name()</code>, <code class="inline">ordinal()</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">values()</code> trả mảng tất cả hằng theo thứ tự khai báo — và <strong>tạo mảng mới mỗi lần gọi</strong>. <code class="inline">valueOf(String)</code> trả hằng theo tên (khớp chính xác), không có thì ném <code class="inline">IllegalArgumentException</code>. <code class="inline">name()</code> là tên hằng đúng như khai báo, <code class="inline">final</code>. <code class="inline">ordinal()</code> là vị trí 0-based, cũng <code class="inline">final</code>. <code class="inline">compareTo</code> so theo ordinal; <code class="inline">getDeclaringClass()</code> trả enum class thật (khác <code class="inline">getClass()</code> với hằng có thân riêng).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Vì sao không nên lưu <code class="inline">ordinal()</code> vào database?</summary>
+      <div class="answer">Vì <code class="inline">ordinal()</code> phụ thuộc <strong>thứ tự khai báo</strong>. Chỉ cần chèn một hằng mới vào giữa, xoá một hằng, hoặc sắp xếp lại danh sách, mọi ordinal phía sau dịch chuyển — dữ liệu cũ đọc lên sẽ trỏ sai trạng thái. An toàn hơn: lưu <code class="inline">name()</code> (nhưng đổi tên hằng vẫn phá), hoặc tốt nhất là lưu một <code class="inline">code</code> nghiệp vụ ổn định kèm static factory <code class="inline">fromCode()</code> như mục 3.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Switch trên enum có cần <code class="inline">default</code> không? Biến enum là <code class="inline">null</code> thì sao?</summary>
+      <div class="answer">Switch <em>expression</em> chỉ cần <code class="inline">default</code> nếu bạn không liệt kê đủ hằng — liệt kê đủ thì không cần (enum exhaustive), và thiếu hằng là lỗi compile. Switch <em>statement</em> truyền thống không bắt buộc đủ nhánh. Biến đang là <code class="inline">null</code> mà switch sẽ ném <code class="inline">NullPointerException</code>, không rơi vào <code class="inline">default</code>; Java 21 có <code class="inline">case null</code> để xử lý tường minh.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Enum override <code class="inline">toString()</code> được không? <code class="inline">name()</code> thì sao?</summary>
+      <div class="answer"><code class="inline">toString()</code> override thoải mái để in nhãn thân thiện, ví dụ <code class="inline">"Da thanh toan"</code>. Còn <code class="inline">name()</code> là <code class="inline">final</code>, không override được, và <code class="inline">valueOf</code> dùng đúng <code class="inline">name()</code>. Vì vậy đừng parse <code class="inline">toString()</code> để lưu trữ hoặc tra ngược — hãy dùng <code class="inline">name()</code> hoặc code riêng.</div>
+    </details>
+
+    <h3>Junior+</h3>
+
+    <details class="qa">
+      <summary>Câu 9. Abstract method trong enum hoạt động thế nào?</summary>
+      <div class="answer">Enum khai báo <code class="inline">abstract</code> method, mỗi hằng có thân riêng thì override method đó. Cơ chế: hằng có thân riêng trở thành một <strong>anonymous subclass</strong> của enum — <code class="inline">Day.SATURDAY.getClass()</code> in ra dạng <code class="inline">DayDemo$Day$2</code>, khác class enum gốc. Hằng không có thân riêng dùng chung class enum. Vì vậy đừng so sánh kiểu bằng <code class="inline">getClass()</code>; hãy so hằng bằng <code class="inline">==</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Enum singleton idiom là gì? Vì sao được coi là cách viết singleton an toàn nhất?</summary>
+      <div class="answer">Chỉ cần một hằng <code class="inline">INSTANCE</code>: <code class="inline">enum AppConfig { INSTANCE; ... }</code>, truy cập <code class="inline">AppConfig.INSTANCE</code>. An toàn với <strong>đa luồng</strong> (JVM khởi tạo class một lần, có cơ chế đồng bộ sẵn), với <strong>serialization</strong> (đọc ra vẫn đúng instance, không tạo bản sao), và với <strong>reflection</strong> (constructor enum không accessible). Không cần viết double-checked locking hay holder class. Pattern này được Effective Java khuyến nghị; xem thêm <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. EnumMap/EnumSet hiệu quả hơn HashMap/HashSet ở đâu? Khi nào dùng?</summary>
+      <div class="answer">Vì enum có tập hằng cố định và <code class="inline">ordinal()</code> liên tục, <code class="inline">EnumMap</code> bên trong dùng <strong>mảng index theo ordinal</strong> thay vì bảng băm, còn <code class="inline">EnumSet</code> dùng <strong>bit vector</strong> (enum ≤ 64 hằng chỉ cần một <code class="inline">long</code>). Kết quả: tra cứu O(1) không băm, tiết kiệm bộ nhớ, duyệt theo đúng thứ tự khai báo. Dùng khi key/element là enum: đếm trạng thái, mapping message, bộ cờ quyền. Lưu ý cả hai đều không nhận <code class="inline">null</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Static nested class và inner class khác nhau ở đâu?</summary>
+      <div class="answer">Static nested không giữ reference tới outer, tạo bằng <code class="inline">new Outer.Inner()</code> — giống top-level class chỉ khác namespace, truy cập được static member của outer. Inner class gắn với một instance outer cụ thể, tạo bằng <code class="inline">outer.new Inner()</code>, có <code class="inline">Outer.this</code>, truy cập được mọi member instance (kể cả private) của outer — đổi lại giữ outer sống theo. Quy tắc thực dụng: <strong>mặc định static nested, chỉ dùng inner khi cần state của outer instance</strong>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Inner class gây memory leak như thế nào?</summary>
+      <div class="answer">Mỗi instance inner giữ ngầm một reference tới outer instance. Nếu inner được lưu ở nơi sống lâu — static collection, cache, event listener, thread — thì outer cũng bị giữ theo và không bao giờ được GC, dù code không còn dùng outer nữa. Anonymous/local class trong ngữ cảnh instance cũng vậy. Cách tránh: dùng static nested nếu không cần outer state; hủy đăng ký listener đúng lúc; hoặc dùng <code class="inline">WeakReference</code> khi buộc phải giữ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Nested class có truy cập private của outer không? Compiler làm gì?</summary>
+      <div class="answer">Có — cả hai chiều, kể cả field/method private, vì chúng cùng một "nest". Trước Java 11, compiler phải sinh các synthetic accessor method để vượt qua rào cản truy cập; từ Java 11 (JEP 181, nest-based access control), bytecode khai báo <code class="inline">NestHost</code>/<code class="inline">NestMembers</code> và các class cùng nest truy cập private trực tiếp, không cần accessor trung gian.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Khi nào dùng anonymous class thay vì lambda?</summary>
+      <div class="answer">Lambda chỉ thay được cho <strong>functional interface</strong> (đúng một abstract method). Còn anonymous class khi: cần extends một abstract class; interface có nhiều abstract method; cần state riêng/instance initializer; hoặc cần override thêm method khác ngoài method chính. Ngược lại, nếu logic chỉ một vài dòng và là functional interface, lambda gọn và rõ hơn; nếu logic dài, local class có tên sẽ dễ đọc hơn cả hai.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Local class capture biến xung quanh theo quy tắc nào?</summary>
+      <div class="answer">Chỉ capture được biến local (và parameter) <strong>final hoặc effectively final</strong> — nghĩa là không gán lại sau lần khởi tạo đầu tiên. Gán lại sẽ lỗi compile "local variables referenced from an inner class must be final or effectively final". Lý do: biến stack có thể biến mất khi method return, nên Java copy giá trị vào object; cấm thay đổi để tránh hai nguồn dữ liệu lệch nhau. Cần mutable state thì dùng field của object, <code class="inline">AtomicInteger</code>, hoặc mảng một phần tử.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Khi nào nên dùng nested class thay vì top-level class?</summary>
+      <div class="answer">Khi class chỉ có nghĩa trong ngữ cảnh outer: Builder của outer, <code class="inline">Node</code> của cây, <code class="inline">Entry</code> của Map, Iterator, cache key nội bộ. Lợi ích: đóng gói (có thể private), giữ code liên quan gần nhau, giảm namespace, và với static nested thì không tốn gì so với top-level. Nếu class vẫn hữu ích độc lập hoặc file bắt đầu rối, hãy tách ra top-level — Effective Java: nested chỉ để phục vụ outer.</div>
+    </details>
+
+    <h3>Nâng cao</h3>
+
+    <details class="qa">
+      <summary>Câu 18. Sealed class/interface là gì? Subtype phải khai báo gì?</summary>
+      <div class="answer">Sealed (Java 17, JEP 409) giới hạn tập subtype đúng bằng danh sách <code class="inline">permits</code>. Mỗi subtype trực tiếp phải là <code class="inline">final</code>, <code class="inline">sealed</code>, hoặc <code class="inline">non-sealed</code>; record/enum mặc định final nên chỉ cần <code class="inline">implements</code>. Có thể bỏ <code class="inline">permits</code> nếu mọi subtype nằm cùng file, nhưng subtype phải cùng module (named module) hoặc cùng package (unnamed module) với cha. Sealed không nhất thiết abstract.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Sealed + switch exhaustive lợi gì khi thêm subtype mới?</summary>
+      <div class="answer">Compiler biết chính xác tất cả subtype nên switch expression không cần <code class="inline">default</code>, và khi bạn thêm subtype mới mà quên nhánh tương ứng, build <strong>fail ngay</strong> với "the switch expression does not cover all possible input values". Đây là refactor an toàn: không thể quên xử lý case mới. Nếu không sealed, buộc phải có <code class="inline">default</code> — và mọi case mới sẽ âm thầm rơi vào default, sinh bug runtime khó phát hiện.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. <code class="inline">non-sealed</code> dùng khi nào? Đặt sai chỗ thì sao?</summary>
+      <div class="answer"><code class="inline">non-sealed</code> mở lại một nhánh của cây sealed cho phép kế thừa tự do — hữu ích cho extension point/plugin. Nó chỉ hợp lệ khi class đó là subtype <strong>trực tiếp</strong> của một sealed type. Đặt ở top-level hoặc class không có cha sealed sẽ lỗi "non-sealed modifier not allowed here (class ... does not have any sealed supertypes)". Lưu ý: nhánh non-sealed làm switch trên sealed gốc mất tính exhaustive — cần <code class="inline">default</code> hoặc xử lý theo kiểu cụ thể.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Pattern matching for switch (Java 21) có gì mới?</summary>
+      <div class="answer">Ba thứ chính: <strong>type pattern</strong> <code class="inline">case Circle c -&gt;</code> (vừa kiểm tra kiểu vừa gán biến), <strong>record pattern</strong> <code class="inline">case Circle(double r) -&gt;</code> (bóc tách component), và <strong>guard</strong> <code class="inline">when</code> (<code class="inline">case Circle c when c.r() &gt; 10 -&gt;</code>) để lọc thêm điều kiện. Ngoài ra có <code class="inline">case null</code>. Kết hợp với sealed, switch trở thành exhaustive không cần default. Đã finalized ở Java 21 (JEP 441 cùng record patterns JEP 440).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Khi nào chọn enum, khi nào chọn sealed class/interface, khi nào final class?</summary>
+      <div class="answer"><strong>Enum</strong> khi các giá trị là hằng thuần nhất, không mang bộ dữ liệu riêng khác nhau (trạng thái, ngày, phương thức thanh toán). <strong>Sealed interface + records</strong> khi mỗi "case" mang dữ liệu khác nhau (Circle bán kính, Rectangle hai cạnh) — union type có kiểm soát. <strong>Final class</strong> khi chỉ cần chặn kế thừa, không cần biết danh sách subtype. Ba công cụ kết hợp được: enum có thể là subtype của sealed interface, record có thể thay hằng có hành vi riêng.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1 — method cơ bản</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Color { RED, GREEN, BLUE }
+
+void main() {
+    IO.println(Color.GREEN.ordinal());
+    IO.println(Color.valueOf("BLUE").name());
+    IO.println(Color.values()[0]);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code>, <code class="inline">BLUE</code>, <code class="inline">RED</code>. <code class="inline">GREEN</code> đứng vị trí thứ hai nên ordinal = 1; <code class="inline">name()</code> trả tên hằng; <code class="inline">values()[0]</code> là hằng đầu tiên theo thứ tự khai báo.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2 — thứ tự chạy constructor</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Day {
+    MONDAY, TUESDAY;
+
+    Day() {
+        IO.println("tao " + name());
+    }
+
+    static {
+        IO.println("static init");
+    }
+}
+
+void main() {
+    IO.println(Day.TUESDAY);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">tao MONDAY</code>, <code class="inline">tao TUESDAY</code>, <code class="inline">static init</code>, <code class="inline">TUESDAY</code>. Khi class <code class="inline">Day</code> được nạp, JVM tạo lần lượt từng hằng theo thứ tự khai báo (constructor chạy hết), rồi mới chạy các khối static còn lại; cuối cùng <code class="inline">main</code> in hằng ra.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3 — abstract method mỗi hằng</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Day {
+    MONDAY {
+        boolean isWeekend() { return false; }
+    },
+    SATURDAY {
+        boolean isWeekend() { return true; }
+    };
+
+    abstract boolean isWeekend();
+}
+
+void main() {
+    IO.println(Day.MONDAY.isWeekend());
+    IO.println(Day.SATURDAY.isWeekend());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code> rồi <code class="inline">true</code>. Mỗi hằng override theo thân riêng: <code class="inline">MONDAY</code> là anonymous subclass trả false, <code class="inline">SATURDAY</code> trả true.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4 — so sánh enum</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Color { RED, GREEN }
+
+void main() {
+    Color a = Color.valueOf("RED");
+    Color b = Color.RED;
+    IO.println(a == b);
+    IO.println(a.equals(b));
+    IO.println(a.hashCode() == b.hashCode());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">true</code>, <code class="inline">true</code>. <code class="inline">valueOf("RED")</code> trả đúng instance singleton <code class="inline">Color.RED</code>, nên cả <code class="inline">==</code>, <code class="inline">equals</code> lẫn <code class="inline">hashCode</code> đều khớp.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5 — EnumMap &amp; EnumSet</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Day { MON, FRI, SAT }
+
+void main() {
+    EnumMap&lt;Day, Integer&gt; dem = new EnumMap&lt;&gt;(Day.class);
+    dem.put(Day.SAT, 2);
+    dem.put(Day.MON, 1);
+    IO.println(dem);
+    IO.println(EnumSet.of(Day.SAT, Day.MON));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">{MON=1, SAT=2}</code> rồi <code class="inline">[MON, SAT]</code>. Dù put <code class="inline">SAT</code> trước <code class="inline">MON</code>, cả hai collection duyệt theo thứ tự khai báo hằng (MON trước FRI, SAT).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6 — static nested class</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class Outer {
+    static class Inner {
+        String ten() {
+            return "static nested";
+        }
+    }
+
+    public static void main() {
+        IO.println(new Outer.Inner().ten());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">static nested</code>. Static nested tạo được trực tiếp bằng <code class="inline">new Outer.Inner()</code> mà không cần instance <code class="inline">Outer</code> nào.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7 — inner class và <code class="inline">Outer.this</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">public class Outer {
+    private String ten = "Outer";
+
+    class Inner {
+        String moTa() {
+            return Outer.this.ten + " -&gt; Inner";
+        }
+    }
+
+    public static void main() {
+        Outer.Inner i = new Outer().new Inner();
+        IO.println(i.moTa());
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Outer -&gt; Inner</code>. Inner đọc được field private instance của outer qua <code class="inline">Outer.this</code>; object inner được tạo từ instance outer bằng cú pháp <code class="inline">new Outer().new Inner()</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8 — anonymous comparator</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() {
+    List&lt;String&gt; ds = new ArrayList&lt;&gt;(List.of("Java", "JS", "TypeScript", "C"));
+    ds.sort(new Comparator&lt;String&gt;() {
+        @Override
+        public int compare(String a, String b) {
+            return b.length() - a.length();
+        }
+    });
+    IO.println(ds);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[TypeScript, Java, JS, C]</code> — sắp xếp giảm dần theo độ dài. Anonymous class implement <code class="inline">Comparator</code> truyền thẳng vào <code class="inline">sort</code>; từ Java 8 đoạn này có thể viết gọn bằng lambda <code class="inline">(a, b) -&gt; b.length() - a.length()</code> (học ở <a href="roadmap.html#phase-3">3.6</a>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9 — local class</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() {
+    int a = 3;
+
+    class Inner {
+        int binhPhuong() {
+            return a * a;
+        }
+    }
+
+    IO.println(new Inner().binhPhuong());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">9</code>. Local class khai báo trong method, capture được <code class="inline">a</code> (effectively final) và dùng ngay trong phạm vi method.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10 — sealed + switch exhaustive</summary>
+      <div class="codeblock">
+        <pre><code class="java">sealed interface Shape permits Circle, Square {
+}
+
+record Circle(double r) implements Shape {
+}
+
+record Square(double c) implements Shape {
+}
+
+void main() {
+    Shape s = new Square(3);
+    IO.println(switch (s) {
+        case Circle c -&gt; "tron";
+        case Square q -&gt; "vuong";
+    });
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">vuong</code>. Switch expression trên sealed <code class="inline">Shape</code> bao đủ hai subtype nên không cần <code class="inline">default</code>; object thật là <code class="inline">Square</code> nên khớp nhánh thứ hai.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11 — thiếu nhánh switch</summary>
+      <div class="codeblock">
+        <pre><code class="java">sealed interface Shape permits Circle, Rectangle {
+}
+
+record Circle(double r) implements Shape {
+}
+
+record Rectangle(double w, double h) implements Shape {
+}
+
+double moTa(Shape s) {
+    return switch (s) {
+        case Circle c -&gt; 1.0;
+    };
+}
+
+void main() {
+    IO.println(moTa(new Circle(1)));
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi thật khi chạy <code class="inline">javac</code>:
+        <div class="codeblock error">
+          <pre><code>ErrMissingCase.java:11: error: the switch expression does not cover all possible input values
+    return switch (s) {
+           ^
+1 error</code></pre>
+        </div>
+        Phải thêm nhánh <code class="inline">case Rectangle r</code> (không được ỷ lại vào <code class="inline">default</code> nếu muốn giữ sự bảo vệ của sealed).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12 — ordinal khi thêm hằng vào giữa</summary>
+      <div class="codeblock">
+        <pre><code class="java">enum OrderStatus { PENDING, PAID, SHIPPED }
+
+enum OrderStatus2 { PENDING, REFUNDED, PAID, SHIPPED }
+
+void main() {
+    IO.println(OrderStatus.PAID.ordinal());
+    IO.println(OrderStatus2.PAID.ordinal());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code> rồi <code class="inline">2</code>. Chỉ cần chèn <code class="inline">REFUNDED</code> vào giữa, ordinal của <code class="inline">PAID</code> đã dịch từ 1 lên 2 — minh hoạ sống động vì sao không lưu ordinal vào DB.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13 — sửa mảng <code class="inline">values()</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">enum Color { RED, GREEN }
+
+void main() {
+    Color[] mang = Color.values();
+    mang[0] = Color.GREEN;
+    IO.println(mang[0]);
+    IO.println(Color.values()[0]);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">GREEN</code> rồi <code class="inline">RED</code>. Bạn sửa được mảng clone ở lần gọi đầu, nhưng <code class="inline">values()</code> lần sau trả mảng mới tinh từ enum — hằng enum là bất biến, không sửa được qua mảng.</div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Enum đơn giản</td><td><code class="inline">enum Color { RED, GREEN, BLUE }</code></td></tr>
+        <tr><td>Enum có dữ liệu</td><td>Hằng truyền tham số + field <code class="inline">private final</code> + constructor (ngầm private)</td></tr>
+        <tr><td>Lấy danh sách/tên/vị trí</td><td><code class="inline">values()</code> (mảng mới mỗi lần) · <code class="inline">valueOf("RED")</code> · <code class="inline">name()</code> · <code class="inline">ordinal()</code></td></tr>
+        <tr><td>Đừng lưu vào DB</td><td><code class="inline">ordinal()</code>; dùng <code class="inline">name()</code> hoặc code riêng + <code class="inline">fromCode()</code></td></tr>
+        <tr><td>So sánh enum</td><td>Dùng <code class="inline">==</code> (singleton, an toàn, nhanh)</td></tr>
+        <tr><td>Hành vi riêng mỗi hằng</td><td><code class="inline">CONST { ... override ... }</code> + abstract method trong enum</td></tr>
+        <tr><td>Enum implements interface</td><td><code class="inline">enum X implements I { ... }</code>; không extends class khác</td></tr>
+        <tr><td>Singleton an toàn nhất</td><td><code class="inline">enum X { INSTANCE; ... }</code></td></tr>
+        <tr><td>Map/Set key là enum</td><td><code class="inline">EnumMap&lt;K, V&gt;</code> / <code class="inline">EnumSet</code> — nhanh, duyệt theo thứ tự khai báo</td></tr>
+        <tr><td>Switch trên enum</td><td>Switch expression: đủ hằng là exhaustive; <code class="inline">case null</code> (Java 21)</td></tr>
+        <tr><td>Static nested class</td><td><code class="inline">new Outer.Inner()</code>; không giữ outer reference — mặc định chọn loại này</td></tr>
+        <tr><td>Inner class</td><td><code class="inline">outer.new Inner()</code>; <code class="inline">Outer.this</code>; giữ outer reference — coi chừng leak</td></tr>
+        <tr><td>Local class</td><td>Khai báo trong method; capture biến final/effectively final</td></tr>
+        <tr><td>Anonymous class</td><td><code class="inline">new Interface() { ... }</code>; không có tên/constructor; lambda thay cho functional interface</td></tr>
+        <tr><td>Sealed</td><td><code class="inline">sealed interface S permits A, B {}</code>; subtype <code class="inline">final</code>/<code class="inline">sealed</code>/<code class="inline">non-sealed</code>; bỏ permits được nếu cùng file</td></tr>
+        <tr><td>Pattern switch (Java 21)</td><td><code class="inline">case Circle c when c.r() &gt; 0 -&gt;</code> · record pattern <code class="inline">case Circle(double r) -&gt;</code> · <code class="inline">case null</code></td></tr>
+        <tr><td>Giữ an toàn khi refactor</td><td>Sealed + switch exhaustive không <code class="inline">default</code> — thêm subtype là compiler báo ngay</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được enum là gì và vì sao thay được hằng int/String.</li>
+      <li>Khẳng định chắc chắn: mỗi hằng enum là singleton, so sánh bằng <code class="inline">==</code>.</li>
+      <li>Khai báo thành thạo enum có field/constructor/method mà không cần tra cứu.</li>
+      <li>Nhớ constructor enum ngầm private và giải thích vì sao.</li>
+      <li>Phân biệt <code class="inline">values()</code>/<code class="inline">valueOf()</code>/<code class="inline">name()</code>/<code class="inline">ordinal()</code> và bẫy <code class="inline">values()</code> tạo mảng mới.</li>
+      <li>Giải thích được vì sao không lưu ordinal vào DB, nêu cách thay thế.</li>
+      <li>Viết được enum có abstract method với hành vi riêng từng hằng và biết nó là anonymous subclass.</li>
+      <li>Kể tên ít nhất hai trường hợp dùng EnumMap/EnumSet thay HashMap/HashSet.</li>
+      <li>Phân biệt 4 loại nested class và chọn đúng loại cho tình huống cụ thể.</li>
+      <li>Viết được hai câu lệnh tạo static nested và inner class, giải thích <code class="inline">Outer.this</code>.</li>
+      <li>Giải thích được inner class gây memory leak thế nào và cách tránh.</li>
+      <li>Nêu được khi nào anonymous class còn hợp lý hơn lambda.</li>
+      <li>Viết được sealed hierarchy + switch exhaustive không <code class="inline">default</code>.</li>
+      <li>Nêu luật subtype của sealed (final/sealed/non-sealed) và lỗi khi vi phạm.</li>
+      <li>Giải thích vì sao thêm subtype mới làm compiler báo lỗi ở mọi switch.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.9" target="_blank" rel="noreferrer">JLS §8.9 — Enum Classes</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.1.1.2" target="_blank" rel="noreferrer">JLS §8.1.1.2 — sealed Classes and Interfaces</a></li>
+      <li><a href="https://openjdk.org/jeps/409" target="_blank" rel="noreferrer">JEP 409 — Sealed Classes (Java 17)</a></li>
+      <li><a href="https://openjdk.org/jeps/441" target="_blank" rel="noreferrer">JEP 441 — Pattern Matching for switch (Java 21)</a></li>
+      <li><a href="https://openjdk.org/jeps/440" target="_blank" rel="noreferrer">JEP 440 — Record Patterns (Java 21)</a></li>
+      <li><a href="https://openjdk.org/jeps/181" target="_blank" rel="noreferrer">JEP 181 — Nest-Based Access Control (Java 11)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html" target="_blank" rel="noreferrer">Oracle Tutorial — Nested Classes</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/enum.html" target="_blank" rel="noreferrer">Oracle Tutorial — Enum Types</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Enum, nested &amp; sealed · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

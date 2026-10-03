@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classes &amp; Objects — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item active" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="classes-objects">Classes &amp; Objects — class và object trong Java</h1>
+
+    <p class="lead"><strong>Class</strong> (lớp) là bản thiết kế; <strong>object</strong> (đối tượng) là thực thể cụ thể được tạo ra từ bản thiết kế đó bằng từ khóa <code class="inline">new</code>. Đây là bước ngoặt của khóa học: thay vì các biến rời rạc, bạn gom dữ liệu (field) và hành vi (method) vào cùng một class. Trang này đi từ class đầu tiên, constructor, <code class="inline">this</code>, <code class="inline">static</code>, thứ tự khởi tạo, access modifier, package, JavaBean tới các bẫy phỏng vấn và production.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#class-object">Class &amp; object đầu tiên</a></li>
+        <li><a href="#constructor">Constructor</a></li>
+        <li><a href="#this">this</a></li>
+        <li><a href="#static">static</a></li>
+        <li><a href="#khoi-tao">Thứ tự khởi tạo</a></li>
+        <li><a href="#access-modifiers">Access modifiers</a></li>
+        <li><a href="#package-import">Package &amp; import</a></li>
+        <li><a href="#javabean-pojo">JavaBean &amp; POJO</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#jdk25">Ghi chú JDK 25</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Hãy hình dung xây nhà: <strong>bản thiết kế</strong> (bản vẽ) quy định căn nhà có mấy phòng, cửa mở thế nào; còn <strong>ngôi nhà thật</strong> là thực thể được xây từ bản vẽ đó. Từ một bản thiết kế bạn xây được nhiều ngôi nhà, mỗi ngôi nhà có màu sơn, đồ đạc riêng. Class và object y hệt:</p>
+
+    <ul>
+      <li><strong>Class</strong> — bản thiết kế: khai báo class có những field (trạng thái) và method (hành vi) nào. Ví dụ: <code class="inline">BankAccount</code> có <code class="inline">owner</code>, <code class="inline">balance</code>, <code class="inline">deposit()</code>, <code class="inline">withdraw()</code>.</li>
+      <li><strong>Object</strong> — một thực thể cụ thể tạo bằng <code class="inline">new BankAccount()</code>: tài khoản của An, tài khoản của Bình... Mỗi object có dữ liệu riêng nhưng dùng chung code của class.</li>
+    </ul>
+
+    <p>Vì sao Java gom mọi thứ vào class? Vì Java <strong>không có hàm tự do</strong> như JavaScript: mọi field, method — kể cả <code class="inline">main</code> — đều phải nằm trong class, interface, enum hoặc record. Ngay cả file compact của JDK 25 (mục <a href="#jdk25">11</a>) cũng chỉ là cách viết tắt cho một class ẩn. Đây chính là điều làm Java nghiêm ngặt hơn JS nhưng cũng rõ ràng hơn khi codebase lớn.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 2.1 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo class với field/method; tạo object bằng <code class="inline">new</code>; viết constructor (mặc định, có tham số, overload, chaining <code class="inline">this(...)</code>); phân biệt <code class="inline">this</code> và <code class="inline">static</code>; đọc thành thạo bảng access modifier; đặt package/import đúng.</li>
+      <li><strong>Phải hiểu</strong> — object nằm trên heap còn biến reference nằm trên stack (ôn lại <a href="index.html#stack-heap">Biến trong Java — mục 7</a>); thứ tự static → instance initializer → constructor; default constructor chỉ được sinh khi bạn không khai báo constructor nào; static field dùng chung giữa mọi object nên rất dễ thành bẫy.</li>
+      <li><strong>Nhận biết</strong> — JEP 512 (file compact, instance main, <code class="inline">IO.println</code>) và JEP 513 (linh hoạt vị trí <code class="inline">this()</code>/<code class="inline">super()</code>) của JDK 25; record thay thế JavaBean cho DTO bất biến (<a href="encapsulation.html">2.2 Encapsulation</a>); Singleton dùng private constructor (<a href="solid-patterns.html">2.8 SOLID &amp; patterns</a>).</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet &amp; checklist</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <h3>Góc Node.js — nhìn nhanh</h3>
+
+    <p>JavaScript tạo object "tức thì" bằng object literal: <code class="inline">const acc = { owner: "An", balance: 0 };</code> — không cần class nào cả. Java thì ngược lại: phải <strong>khai báo class trước</strong>, rồi mới <code class="inline">new</code> ra object. Ngoài ra <code class="inline">this</code> trong JS thay đổi theo cách gọi hàm, còn <code class="inline">this</code> trong Java cố định là object hiện tại. Bảng so sánh đầy đủ ở mục <a href="#goc-nodejs">12</a>.</p>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ. Các ví dụ chạy bằng <code class="inline">java TenFile.java</code> (không cần <code class="inline">javac</code>).</div>
+
+    <h2 id="class-object">2. Class &amp; object đầu tiên</h2>
+
+    <p>Một class tối thiểu gồm <strong>field</strong> (dữ liệu của object) và <strong>method</strong> (hành vi xử lý dữ liệu đó):</p>
+
+    <div class="signature">
+      <span class="sig-muted">[access modifier] class</span> <span class="sig-var">TenClass</span> <span class="sig-muted">{ field...; method...; }</span>
+    </div>
+
+    <p>Ví dụ đầy đủ đầu tiên — tài khoản ngân hàng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    String owner;
+    long balance;
+
+    void deposit(long amount) {
+        balance += amount;
+    }
+
+    void withdraw(long amount) {
+        if (amount &gt; balance) {
+            IO.println("So du khong du");           // So du khong du
+            return;
+        }
+        balance -= amount;
+    }
+
+    public static void main() {
+        BankAccount acc = new BankAccount();
+        acc.owner = "An";
+        acc.balance = 500_000;
+        acc.deposit(200_000);
+        IO.println(acc.owner + ": " + acc.balance); // An: 700000
+        acc.withdraw(1_000_000);
+        acc.withdraw(300_000);
+        IO.println(acc.owner + ": " + acc.balance); // An: 400000
+    }
+}</code></pre>
+    </div>
+
+    <p>Đọc từng phần:</p>
+    <ul>
+      <li><code class="inline">String owner; long balance;</code> — hai <strong>field</strong> (còn gọi là instance variable). Mỗi object có bản riêng. Field chưa gán vẫn có giá trị mặc định: <code class="inline">null</code> cho reference, <code class="inline">0</code> cho số, <code class="inline">false</code> cho boolean.</li>
+      <li><code class="inline">deposit()</code>, <code class="inline">withdraw()</code> — <strong>method</strong> thao tác trên chính field của object đang gọi (ngầm hiểu là <code class="inline">this.balance</code>).</li>
+      <li><code class="inline">new BankAccount()</code> — cấp phát object mới trên <strong>heap</strong>, gọi constructor (ở ví dụ này là default constructor vì chưa khai báo constructor nào), rồi trả về địa chỉ của object.</li>
+      <li><code class="inline">BankAccount acc</code> — biến reference nằm trên <strong>stack</strong>, chứa địa chỉ trỏ tới object trên heap. Gán <code class="inline">acc = null</code> nghĩa là không trỏ tới đâu cả.</li>
+    </ul>
+
+    <p>Một class tạo được vô số object độc lập — sửa object này không ảnh hưởng object kia:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BankAccount a = new BankAccount();
+BankAccount b = new BankAccount();
+a.owner = "An";
+b.owner = "Binh";
+IO.println(a.owner);   // An
+IO.println(b.owner);   // Binh</code></pre>
+    </div>
+
+    <div class="note">Truyền object vào method cũng là pass-by-value với reference copy — đã học kỹ ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>. Cả hai biến cùng trỏ một object thì sửa nội dung thấy nhau, nhưng gán lại biến này không đổi biến kia.</div>
+
+    <h2 id="constructor">3. Constructor <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Constructor</strong> là khối code chạy đúng một lần khi object được tạo bằng <code class="inline">new</code>, dùng để đưa object về trạng thái hợp lệ ban đầu. Cú pháp:</p>
+
+    <div class="signature">
+      <span class="sig-muted">[access modifier]</span> <span class="sig-var">TenClass</span><span class="sig-muted">(</span><span class="tok-typ">kieuThamSo</span> <span class="sig-var">tenThamSo</span><span class="sig-muted">, ...) { }</span>
+    </div>
+
+    <ul>
+      <li>Tên constructor <strong>trùng tên class</strong>, <strong>không có kiểu trả về</strong> — viết <code class="inline">void BankAccount()</code> là biến nó thành method thường, không phải constructor.</li>
+      <li>Không được kế thừa, không gọi trực tiếp như method thường; chỉ chạy qua <code class="inline">new</code> hoặc qua <code class="inline">this(...)</code>/<code class="inline">super(...)</code>.</li>
+      <li><strong>Default constructor</strong> (constructor mặc định, không tham số, thân rỗng) chỉ được compiler sinh ra khi class <strong>không khai báo constructor nào</strong>. Nó có cùng access modifier với class.</li>
+    </ul>
+
+    <p>Class không khai báo constructor nào vẫn tạo được object — field nhận giá trị mặc định:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    String owner;
+    long balance;
+
+    public static void main() {
+        BankAccount acc = new BankAccount();   // dung default constructor
+        IO.println(acc.owner);                 // null
+        IO.println(acc.balance);               // 0
+    }
+}</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy kinh điển:</strong> chỉ cần bạn khai báo <em>một</em> constructor có tham số, default constructor <strong>biến mất</strong>. Gọi <code class="inline">new BankAccount()</code> lúc đó là lỗi compile:</div>
+
+    <div class="errblock">
+      <pre>BankAccount.java:9: error: constructor BankAccount in class BankAccount cannot be applied to given types;
+        new BankAccount();
+        ^
+  required: String
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+1 error</pre>
+    </div>
+
+    <h3>Constructor có tham số &amp; overload</h3>
+
+    <p>Constructor cũng overload được như method: cùng tên class, khác danh sách tham số. Các constructor có thể gọi nhau bằng <code class="inline">this(...)</code> — gọi là <strong>constructor chaining</strong> — để tránh lặp code khởi tạo:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    String owner;
+    long balance;
+
+    BankAccount() {
+        this("Chua ro");               // goi BankAccount(String)
+    }
+
+    BankAccount(String owner) {
+        this(owner, 0);                // goi BankAccount(String, long)
+    }
+
+    BankAccount(String owner, long balance) {
+        this.owner = owner;
+        this.balance = balance;
+    }
+
+    public static void main() {
+        BankAccount a = new BankAccount();
+        BankAccount b = new BankAccount("Binh");
+        BankAccount c = new BankAccount("Cuong", 1_000_000);
+        IO.println(a.owner + " / " + a.balance);   // Chua ro / 0
+        IO.println(b.owner + " / " + b.balance);   // Binh / 0
+        IO.println(c.owner + " / " + c.balance);   // Cuong / 1000000
+    }
+}</code></pre>
+    </div>
+
+    <p><code class="inline">new BankAccount()</code> chạy constructor 0 tham số → nó gọi <code class="inline">this("Chua ro")</code> → constructor 1 tham số lại gọi <code class="inline">this("Chua ro", 0)</code> → constructor đầy đủ gán field. Chuỗi <code class="inline">this(...)</code> luôn kết thúc ở constructor "đầy đủ nhất".</p>
+
+    <h3>JDK 25 — JEP 513: <code class="inline">this(...)</code> không còn buộc phải đứng đầu</h3>
+
+    <p>Quy tắc cổ điển (mọi tài liệu và đề phỏng vấn trước đây): <code class="inline">this(...)</code>/<code class="inline">super(...)</code> <strong>phải là câu lệnh đầu tiên</strong>. Từ JDK 25, JEP 513 (Flexible Constructor Bodies) cho phép đặt một số câu lệnh trước, miễn là chúng <strong>không đọc</strong> object đang được tạo (được phép gán field của chính class đó, tính toán, validate). Đọc field hoặc gọi instance method trước <code class="inline">this(...)</code> vẫn là lỗi compile:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BankAccount() {
+    IO.println(this.owner);   // loi compile: chua duoc doc instance
+    this("An");
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>BankAccount.java:9: error: cannot reference this before supertype constructor has been called
+        IO.println(this.owner);
+                   ^
+1 error</pre>
+    </div>
+
+    <div class="note">Khi phỏng vấn, hãy trả lời theo cách cổ điển ("phải là câu lệnh đầu tiên") rồi bổ sung: từ JDK 25 (JEP 513) quy tắc được nới lỏng cho các câu lệnh không chạm vào object đang tạo. Khi viết code, cứ đặt <code class="inline">this(...)</code> đầu tiên cho dễ đọc — đó vẫn là style phổ biến.</div>
+
+    <h3>Constructor private</h3>
+
+    <p>Constructor có thể mang access modifier. <code class="inline">private</code> nghĩa là chỉ class đó gọi được — bên ngoài không tạo được object trực tiếp. Đây là nền tảng của <strong>Singleton</strong> (học ở <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>) và của static factory method:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// BankAccount.java
+public class BankAccount {
+    private BankAccount() {
+    }
+}
+
+// SavingsAccount.java
+public class SavingsAccount {
+    void moTaiKhoan() {
+        new BankAccount();
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>SavingsAccount.java:3: error: BankAccount() has private access in BankAccount
+        new BankAccount();
+        ^
+1 error</pre>
+    </div>
+
+    <h2 id="this">4. <code class="inline">this</code></h2>
+
+    <p><code class="inline">this</code> là reference trỏ tới <strong>object hiện tại</strong> — object đang gọi instance method hoặc đang được constructor tạo. Bốn công dụng chính:</p>
+
+    <ul>
+      <li><strong>Phân biệt field với tham số/local trùng tên</strong> (shadowing): <code class="inline">this.owner = owner;</code> — bên trái là field, bên phải là tham số.</li>
+      <li><strong>Gọi method của chính object</strong>: <code class="inline">this.log(...)</code> — thường viết gọn <code class="inline">log(...)</code> là đủ, dùng <code class="inline">this.</code> khi cần nhấn mạnh.</li>
+      <li><strong>Gọi constructor khác</strong>: <code class="inline">this(...)</code> (đã học ở mục <a href="#constructor">3</a>).</li>
+      <li><strong>Truyền chính object này đi nơi khác</strong>: <code class="inline">other.receive(this, amount)</code>, hoặc <code class="inline">return this;</code> để nối chuỗi method (fluent API).</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    String owner;
+    long balance;
+
+    BankAccount(String owner, long balance) {
+        this.owner = owner;                    // this.owner la field
+        this.balance = balance;                // owner/balance ben phai la tham so
+    }
+
+    void withdraw(long amount) {
+        if (amount &gt; balance) {
+            IO.println("Khong du tien");       // in khi rut qua so du
+            return;
+        }
+        balance -= amount;
+        this.log("rut " + amount);             // goi method qua this
+    }
+
+    void log(String giaoDich) {
+        IO.println(this.owner + ": " + giaoDich);   // An: rut 200000
+    }
+
+    void transfer(BankAccount other, long amount) {
+        this.withdraw(amount);
+        other.receive(this, amount);           // truyen chinh object nay
+    }
+
+    void receive(BankAccount from, long amount) {
+        balance += amount;
+        IO.println(owner + " nhan " + amount + " tu " + from.owner);
+        // Binh nhan 200000 tu An
+    }
+
+    BankAccount deposit(long amount) {          // tra ve this -&gt; chain duoc
+        balance += amount;
+        return this;
+    }
+
+    public static void main() {
+        BankAccount an = new BankAccount("An", 500_000);
+        BankAccount binh = new BankAccount("Binh", 100_000);
+        an.transfer(binh, 200_000);
+        an.deposit(50_000).deposit(30_000);     // fluent API
+        IO.println("An: " + an.balance);        // An: 380000
+        IO.println("Binh: " + binh.balance);    // Binh: 300000
+    }
+}</code></pre>
+    </div>
+
+    <p>Nhờ <code class="inline">deposit</code> trả về <code class="inline">this</code>, ta gọi được <code class="inline">an.deposit(50_000).deposit(30_000)</code> — kết quả cộng dồn 80.000. Đây là cách <code class="inline">StringBuilder</code> và mọi builder/fluent API hoạt động (đã gặp ở <a href="methods.html#chaining">Methods — mục 10</a>).</p>
+
+    <div class="note warn"><code class="inline">this</code> chỉ tồn tại trong <strong>instance context</strong>. Trong static method không có object nào gắn với lời gọi, nên <code class="inline">this</code> không tồn tại — xem mục <a href="#static">5</a>.</div>
+
+    <h2 id="static">5. <code class="inline">static</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">static</code> nghĩa là "thuộc về <strong>class</strong>, không thuộc về object nào". Có 3 dạng bạn cần nắm: static field, static method, static block (và biến thể <code class="inline">static final</code> cho hằng số).</p>
+
+    <h3>5.1 Static field — dữ liệu dùng chung</h3>
+
+    <p>Field thường: mỗi object một bản. Static field: <strong>một bản duy nhất</strong> cho cả class, mọi object cùng đọc/ghi. Ví dụ đếm số tài khoản đã tạo:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    static int soTaiKhoan = 0;      // cua class, dung chung
+    String owner;                   // cua tung object
+
+    BankAccount(String owner) {
+        this.owner = owner;
+        soTaiKhoan++;               // moi object tao ra tang bien chung
+    }
+
+    static int tongSoTaiKhoan() {
+        return soTaiKhoan;
+    }
+
+    public static void main() {
+        new BankAccount("An");
+        new BankAccount("Binh");
+        new BankAccount("Cuong");
+        IO.println(BankAccount.tongSoTaiKhoan());    // 3
+        IO.println("soTaiKhoan = " + soTaiKhoan);    // soTaiKhoan = 3
+    }
+}</code></pre>
+    </div>
+
+    <h3>5.2 Static method — không có <code class="inline">this</code></h3>
+
+    <p>Static method thuộc class, gọi qua <code class="inline">TenClass.method()</code>, <strong>không có</strong> <code class="inline">this</code>, nên không đọc/ghi được field instance một cách trực tiếp. Vi phạm bị chặn ngay khi compile:</p>
+
+    <div class="errblock">
+      <pre>BankAccount.java:5: error: non-static variable balance cannot be referenced from a static context
+        balance = 0;
+        ^
+1 error</pre>
+    </div>
+
+    <p>Vì sao <code class="inline">main</code> phải static? JVM gọi <code class="inline">main</code> <strong>trước khi có object nào</strong> — không thể gọi instance method khi chưa có object. Tương tự, các hàm tiện ích thuần túy như <code class="inline">Math.max</code>, <code class="inline">Objects.requireNonNull</code>, <code class="inline">Integer.parseInt</code> đều là static.</p>
+
+    <h3>5.3 Static block — chạy một lần khi class được nạp</h3>
+
+    <p>Static block chạy <strong>một lần duy nhất</strong> khi class được khởi tạo lần đầu (lười — chỉ khi class thật sự được dùng, không phải lúc mở chương trình). Dùng để khởi tạo <code class="inline">static final</code> phức tạp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    static final String BANK_NAME = "Java Bank";
+    static final long MIN_BALANCE;
+
+    static {                                     // chay 1 lan khi class duoc nap
+        MIN_BALANCE = 50_000;
+        IO.println("static block chay 1 lan khi class duoc nap");
+    }
+
+    String owner;
+
+    BankAccount(String owner) {
+        this.owner = owner;
+    }
+
+    public static void main() {
+        new BankAccount("An");
+        new BankAccount("Binh");
+        IO.println(BANK_NAME + " / MIN_BALANCE = " + MIN_BALANCE);
+        // Ket qua 2 dong:
+        // static block chay 1 lan khi class duoc nap
+        // Java Bank / MIN_BALANCE = 50000
+    }
+}</code></pre>
+    </div>
+
+    <p>Hai object được tạo nhưng dòng trong static block chỉ in <strong>một lần</strong>. <code class="inline">static final</code> là hằng số: quy ước đặt tên <code class="inline">UPPER_SNAKE_CASE</code>.</p>
+
+    <h3>5.4 Static import</h3>
+
+    <p>Static import cho phép gọi thành viên static mà không cần tên class:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import static java.lang.Math.PI;
+import static java.lang.Math.max;
+
+public class BankAccount {
+    public static void main() {
+        IO.println(PI);             // 3.141592653589793
+        IO.println(max(100, 200));  // 200
+    }
+}</code></pre>
+    </div>
+
+    <p>Nhưng lạm dụng dễ gây trùng tên — hai static import cùng tên làm lời gọi mơ hồ, lỗi compile:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import static java.lang.Math.min;
+import static java.lang.StrictMath.min;
+
+public class BankAccount {
+    public static void main() {
+        IO.println(min(1, 2));   // loi compile: min mo ho
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>BankAccount.java:6: error: reference to min is ambiguous
+        IO.println(min(1, 2));
+                   ^
+  both method min(int,int) in StrictMath and method min(int,int) in Math match
+1 error</pre>
+    </div>
+
+    <div class="note">Chỉ static import khi thật rõ nghĩa (<code class="inline">Math.PI</code>, hằng số của chính dự án). Tránh <code class="inline">import static ...*</code> vì khó biết tên nào đến từ đâu.</div>
+
+    <div class="note warn"><strong>Static mutable là bẫy production lớn nhất:</strong> static field dùng chung giữa mọi thread; <code class="inline">count++</code> không nguyên tử nên nhiều thread xen kẽ sẽ mất cập nhật (race condition). Nguyên tắc: hạn chế tối đa static mutable, cần đếm thì dùng <code class="inline">AtomicLong</code> — chi tiết ở <a href="index.html#production">Biến trong Java — mục 15.3</a>.</div>
+
+    <table>
+      <thead>
+        <tr><th>Nên static</th><th>Không nên static</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hằng số <code class="inline">static final</code>; hàm tiện ích thuần túy (<code class="inline">Math.max</code>)</td><td>State mutable dùng chung (nguồn race condition)</td></tr>
+        <tr><td>Static factory method: <code class="inline">BigDecimal.valueOf</code>, <code class="inline">List.of</code></td><td>Service/Repository trong Spring: là bean instance, không static (giai đoạn 5)</td></tr>
+        <tr><td>Đếm/tổng hợp cấp class (chấp nhận state, nên hạn chế)</td><td>Method cần đọc/ghi field của từng object</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="khoi-tao">6. Thứ tự khởi tạo đầy đủ <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Đây là câu hỏi phỏng vấn kinh điển. Khi bạn <code class="inline">new BankAccount()</code>, thứ tự diễn ra như sau:</p>
+
+    <ol>
+      <li><strong>Class initialization</strong> (một lần cho mỗi class loader, khi class được dùng lần đầu): static field initializer và static block chạy <strong>theo đúng thứ tự khai báo trong source</strong>.</li>
+      <li><strong>Cấp phát object trên heap</strong>: mọi field instance nhận giá trị mặc định (<code class="inline">0</code>, <code class="inline">false</code>, <code class="inline">null</code>).</li>
+      <li>Gọi constructor. Nếu constructor gọi <code class="inline">this(...)</code> thì chạy constructor được trỏ tới; nếu không, compiler chèn <code class="inline">super()</code> ngầm (class cha chạy trước — học ở <a href="inheritance.html">2.3 Inheritance</a>).</li>
+      <li><strong>Instance field initializer và instance initializer block</strong> chạy theo thứ tự khai báo (chỉ một lần, ở constructor được gọi cuối cùng trong chuỗi).</li>
+      <li>Phần đầu constructor thực thi — nơi bạn thấy các dòng <code class="inline">IO.println</code>.</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    static int soTaiKhoan = dem("1. static field");
+
+    static {
+        IO.println("2. static block");              // 2. static block
+    }
+
+    String owner = datTen("3. instance field");
+    long balance;
+
+    {
+        IO.println("4. instance initializer");      // 4. instance initializer
+    }
+
+    BankAccount() {
+        IO.println("5. constructor");               // 5. constructor
+    }
+
+    static int dem(String nhan) {
+        IO.println(nhan);                           // 1. static field
+        return 0;
+    }
+
+    static String datTen(String nhan) {
+        IO.println(nhan);                           // 3. instance field
+        return "An";
+    }
+
+    public static void main() {
+        IO.println("--- new lan 1 ---");
+        new BankAccount();
+        IO.println("--- new lan 2 ---");
+        new BankAccount();
+    }
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật (JDK 25):</p>
+
+    <div class="codeblock">
+      <pre><code>1. static field
+2. static block
+--- new lan 1 ---
+3. instance field
+4. instance initializer
+5. constructor
+--- new lan 2 ---
+3. instance field
+4. instance initializer
+5. constructor</code></pre>
+    </div>
+
+    <ul>
+      <li>Phần static chạy <strong>trước cả dòng đầu tiên của <code class="inline">main</code></strong> vì gọi <code class="inline">main</code> đã kích hoạt class initialization của <code class="inline">BankAccount</code>.</li>
+      <li>Instance field initializer + instance initializer block chạy lại <strong>mỗi lần <code class="inline">new</code></strong>, nhưng luôn trước thân constructor.</li>
+      <li>Nếu class được dùng từ một class khác, static block chỉ chạy ở <strong>lần dùng đầu tiên</strong>, có thể muộn hơn thời điểm chương trình bắt đầu.</li>
+    </ul>
+
+    <div class="note">Class cha khởi tạo trước class con, và constructor cha chạy trước constructor con. Chủ đề này sẽ học kỹ ở <a href="inheritance.html">2.3 Inheritance</a>; ở đây chỉ cần nhớ thứ tự static → instance init → constructor.</div>
+
+    <h2 id="access-modifiers">7. Access modifiers <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Java có 4 mức truy cập, xếp từ hẹp tới rộng: <code class="inline">private</code> &lt; <em>default (package-private)</em> &lt; <code class="inline">protected</code> &lt; <code class="inline">public</code>. Bảng dưới là thứ bạn phải nhớ chính xác:</p>
+
+    <table>
+      <thead>
+        <tr><th>Modifier</th><th>Cùng class</th><th>Cùng package</th><th>Subclass khác package</th><th>Khác package</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">private</code></td><td>Có</td><td>Không</td><td>Không</td><td>Không</td></tr>
+        <tr><td>không viết gì (default / package-private)</td><td>Có</td><td>Có</td><td>Không</td><td>Không</td></tr>
+        <tr><td><code class="inline">protected</code></td><td>Có</td><td>Có</td><td>Có (qua reference kiểu subclass)</td><td>Không</td></tr>
+        <tr><td><code class="inline">public</code></td><td>Có</td><td>Có</td><td>Có</td><td>Có</td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><strong>Top-level class</strong> chỉ được là <code class="inline">public</code> hoặc không viết gì (package-private). Không được <code class="inline">private</code>/<code class="inline">protected</code> — vì "riêng tư với ai?" không có nghĩa ở cấp file. Class lồng nhau (nested) mới dùng được đủ 4 mức (học ở <a href="enum-nested.html">2.7 Enum, nested &amp; sealed</a>).</li>
+      <li><strong>Best practice:</strong> field luôn để <code class="inline">private</code>; chỉ mở method cần thiết. Đây chính là encapsulation — học sâu ở <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>.</li>
+      <li><code class="inline">protected</code> có "điều kiện": subclass ở package khác chỉ truy cập được qua reference có kiểu là chính subclass đó (hoặc con của nó), không truy cập qua reference kiểu class cha.</li>
+    </ul>
+
+    <p>Kiểm chứng điều kiện của <code class="inline">protected</code> — cùng đoạn code, một dòng lỗi một dòng hợp lệ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// package acc.p1
+package acc.p1;
+
+public class BankAccount {
+    protected long balance = 500_000;
+}
+
+// package acc.p2
+package acc.p2;
+
+import acc.p1.BankAccount;
+
+public class SavingsAccount extends BankAccount {
+    void suaQuaThamSo(BankAccount other) {
+        other.balance = 1;         // loi compile
+    }
+
+    void suaQuaChinhMinh(SavingsAccount other) {
+        other.balance = 2;         // hop le
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>acc/p2/SavingsAccount.java:7: error: balance has protected access in BankAccount
+        other.balance = 1;
+             ^
+1 error</pre>
+    </div>
+
+    <div class="note">Java không có từ khóa <code class="inline">friend</code> như C++. "Bạn cùng nhà" trong Java chính là <strong>cùng package</strong> (mức default) — dùng để chia sẻ class nội bộ trong một module mà không lộ ra API công khai.</div>
+
+    <h2 id="package-import">8. Package &amp; import</h2>
+
+    <p><strong>Package</strong> là cách Java tổ chức class thành namespace: tránh trùng tên, phân quyền truy cập, và nhóm code theo nghiệp vụ. Khai báo <code class="inline">package</code> phải là dòng đầu tiên của file, và <strong>đường dẫn thư mục phải khớp tên package</strong>:</p>
+
+    <div class="signature">
+      <span class="sig-muted">package</span> <span class="sig-var">com.shop.bank</span><span class="sig-muted">;</span> <span class="sig-muted">// file nằm ở com/shop/bank/TenFile.java</span>
+    </div>
+
+    <p>Ví dụ hai class cùng package <code class="inline">shop</code> truy cập được thành viên package-private của nhau:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// File: shop/BankAccount.java
+package shop;
+
+public class BankAccount {
+    String owner = "An";            // package-private
+
+    void inThongTin() {             // package-private
+        IO.println("Tai khoan cua " + owner);
+    }
+
+    public static void main() {
+        new SavingsAccount().moTaiKhoan();
+    }
+}
+
+// File: shop/SavingsAccount.java
+package shop;
+
+public class SavingsAccount {
+    void moTaiKhoan() {
+        BankAccount acc = new BankAccount();
+        acc.inThongTin();           // cung package -&gt; truy cap duoc
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy từ thư mục cha: <code class="inline">java shop/BankAccount.java</code> — kết quả một dòng <code class="inline">Tai khoan cua An</code>. Nếu đặt file sai chỗ so với package, launcher báo lỗi ngay:</p>
+
+    <div class="errblock">
+      <pre>error: end of path to source file does not match its package name shop: BankAccount.java</pre>
+    </div>
+
+    <p>Về <strong>import</strong>:</p>
+    <ul>
+      <li><code class="inline">import java.util.List;</code> — import một class cụ thể; <code class="inline">import java.util.*;</code> — import cả package (on-demand). Trong code production nên import cụ thể để thấy rõ phụ thuộc.</li>
+      <li>Không import gì thì vẫn dùng được <strong>fully-qualified name</strong>: <code class="inline">java.math.BigDecimal x = new java.math.BigDecimal("10.5");</code>.</li>
+      <li>Package <code class="inline">java.lang</code> được <strong>tự động import</strong> trong mọi file: <code class="inline">String</code>, <code class="inline">Math</code>, <code class="inline">System</code>, và cả <code class="inline">IO</code> của JDK 25.</li>
+      <li><strong>Static import</strong> đã học ở mục <a href="#static">5.4</a>.</li>
+    </ul>
+
+    <div class="note">Quy ước đặt tên package: chữ thường, tên miền đảo ngược — <code class="inline">com.shop.bank</code> cho <code class="inline">shop.com</code>. Dự án học tập không có tên miền thì dùng <code class="inline">com.example</code> hoặc <code class="inline">shop</code> như ví dụ trên. Package ảnh hưởng trực tiếp tới access modifier — xem lại bảng ở mục <a href="#access-modifiers">7</a>.</div>
+
+    <h2 id="javabean-pojo">9. JavaBean &amp; POJO <span class="badge b-prod">Production</span></h2>
+
+    <p>Hai thuật ngữ bạn gặp liên tục trong tài liệu Spring/JPA/Jackson:</p>
+    <ul>
+      <li><strong>POJO</strong> (Plain Old Java Object) — class Java "thuần": chỉ có field, constructor, method, không kế thừa class framework, không implement interface đặc biệt. Nghĩa rộng, gần như mọi class bạn tự viết.</li>
+      <li><strong>JavaBean</strong> — POJO theo bộ quy ước chặt: (1) constructor không tham số, (2) field <code class="inline">private</code>, (3) truy cập qua cặp getter/setter theo tên property, (4) thường <code class="inline">implements Serializable</code>.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    private String owner;
+    private long balance;
+
+    public BankAccount() {
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public long getBalance() {
+        return balance;
+    }
+
+    public void setBalance(long balance) {
+        this.balance = balance;
+    }
+
+    public static void main() {
+        BankAccount acc = new BankAccount();
+        acc.setOwner("An");
+        acc.setBalance(500_000);
+        IO.println(acc.getOwner() + ": " + acc.getBalance());   // An: 500000
+    }
+}</code></pre>
+    </div>
+
+    <p>Vì sao phải đúng quy ước? Vì framework dùng <strong>reflection</strong> (học ở <a href="annotations-reflection.html">2.9 Annotations &amp; Reflection</a>) để đọc/ghi property theo tên method: Jackson cần no-arg constructor + getter/setter để chuyển object sang JSON và ngược lại; JPA/Hibernate cần no-arg constructor + field không <code class="inline">final</code> để tạo entity từ DB. Quy ước getter boolean là <code class="inline">isActive()</code> chứ không phải <code class="inline">getActive()</code>.</p>
+
+    <div class="note">Với DTO <strong>bất biến</strong>, record gọn và an toàn hơn JavaBean: chỉ một dòng <code class="inline">record BankAccount(String owner, long balance) {}</code> là có constructor, accessor, <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code>. Khi nào dùng record thay JavaBean — xem <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>. JPA entity thì <em>không</em> dùng record được vì cần no-arg constructor.</div>
+
+    <h2 id="pitfalls">10. Pitfalls thường gặp <span class="badge b-prod">Production</span></h2>
+
+    <p>Bảng tổng hợp các bẫy hay gặp nhất, kèm cách phòng tránh:</p>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Ví dụ / biểu hiện</th><th>Hậu quả &amp; cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Quên <code class="inline">new</code></td>
+          <td><code class="inline">BankAccount acc = null; acc.deposit(100);</code></td>
+          <td><code class="inline">NullPointerException</code> khi gọi method. Compiler không bắt được vì kiểu vẫn đúng — luôn khởi tạo trước khi dùng.</td>
+        </tr>
+        <tr>
+          <td>So object bằng <code class="inline">==</code></td>
+          <td><code class="inline">a == b</code> với hai object cùng nội dung</td>
+          <td><code class="inline">==</code> so địa chỉ, không so nội dung → <code class="inline">false</code>. Dùng <code class="inline">equals()</code> — đào sâu ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</td>
+        </tr>
+        <tr>
+          <td>Shadowing khi gán trong constructor</td>
+          <td><code class="inline">BankAccount(String owner) { owner = owner; }</code></td>
+          <td>Gán tham số cho chính nó, field giữ <code class="inline">null</code>. Luôn viết <code class="inline">this.owner = owner;</code>.</td>
+        </tr>
+        <tr>
+          <td>Static field mutable</td>
+          <td><code class="inline">static int count;</code> rồi <code class="inline">count++</code> từ nhiều thread</td>
+          <td>Race condition, kết quả mỗi lần chạy một khác. Dùng <code class="inline">AtomicLong</code> hoặc tránh static mutable (<a href="index.html#production">Biến — 15.3</a>).</td>
+        </tr>
+        <tr>
+          <td>Constructor gọi method overridable</td>
+          <td>Constructor gọi method mà class con có thể override</td>
+          <td>Method của class con chạy khi field class con chưa được khởi tạo → thấy <code class="inline">0</code>/<code class="inline">null</code>. Chỉ gọi phương thức <code class="inline">private</code>/<code class="inline">final</code>/<code class="inline">static</code> trong constructor (<a href="inheritance.html">2.3 Inheritance</a>).</td>
+        </tr>
+        <tr>
+          <td>Hai class public trong một file</td>
+          <td><code class="inline">public class BankAccount {}</code> + <code class="inline">public class SavingsAccount {}</code> chung file</td>
+          <td>Lỗi compile; mỗi file chỉ tối đa một top-level class public, tên file phải trùng tên class đó.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Quên <code class="inline">new</code> — lỗi runtime phổ biến nhất của người mới học, JDK 25 cho message khá rõ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    static BankAccount acc;        // mac dinh null - quen new
+    long balance;
+
+    void deposit(long amount) {
+        balance += amount;
+    }
+
+    public static void main() {
+        try {
+            acc.deposit(100);
+        } catch (NullPointerException e) {
+            IO.println(e.getMessage());
+            // Cannot invoke "BankAccount.deposit(long)" because "BankAccount.acc" is null
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Hai object cùng nội dung vẫn là hai thực thể khác nhau trên heap:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BankAccount {
+    String owner;
+
+    BankAccount(String owner) {
+        this.owner = owner;
+    }
+
+    public static void main() {
+        BankAccount a = new BankAccount("An");
+        BankAccount b = new BankAccount("An");
+        BankAccount c = a;
+        IO.println(a == b);                   // false
+        IO.println(a == c);                   // true
+        IO.println(a.owner.equals(b.owner));  // true
+    }
+}</code></pre>
+    </div>
+
+    <h2 id="jdk25">11. Ghi chú JDK 25</h2>
+
+    <p>Ba điểm mới của JDK 25 ảnh hưởng trực tiếp tới chủ đề này:</p>
+
+    <ul>
+      <li><strong><code class="inline">IO.println</code> (JEP 512)</strong> — class <code class="inline">java.lang.IO</code> nằm trong <code class="inline">java.lang</code> nên được import tự động ở mọi file. Đây là cách viết gọn thay <code class="inline">System.out.println</code> trong tài liệu cũ; bản chất <code class="inline">IO</code> vẫn ghi ra <code class="inline">System.out</code>.</li>
+      <li><strong>Compact source file &amp; instance main (JEP 512)</strong> — file đơn không bắt buộc khai báo class, có thể dùng <code class="inline">void main()</code> (không static):</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    IO.println("compact source file: khong can khai bao class");
+}
+
+// chay: java CompactDemo.java
+// compact source file: khong can khai bao class</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Flexible constructor bodies (JEP 513)</strong> — <code class="inline">this(...)</code>/<code class="inline">super(...)</code> không còn bắt buộc là câu lệnh đầu tiên (đã trình bày ở mục <a href="#constructor">3</a>).</li>
+    </ul>
+
+    <div class="note">Khi đọc code production hoặc đề phỏng vấn, bạn vẫn sẽ gặp <code class="inline">public class X { public static void main(String[] args) { ... } }</code> cùng <code class="inline">System.out.println</code>. Compact source chỉ là cú pháp tiện cho học tập/script nhỏ; class đầy đủ vẫn là chuẩn của dự án lớn (Spring Boot, Maven/Gradle).</div>
+
+    <h2 id="goc-nodejs">12. Góc Node.js — class JS vs class Java</h2>
+
+    <p>JavaScript tạo object theo hai cách: object literal (nhanh, không cần class) và class (ES6). Java chỉ có một con đường: khai báo class rồi <code class="inline">new</code>. Đoạn Node.js sau chạy thật (Node v22):</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+const acc = { owner: "An", balance: 0 };
+acc.balance += 200_000;
+console.log(acc.balance);   // 200000
+console.log(acc.owner2);    // undefined - thuoc tinh khong ton tai
+
+class BankAccount {
+  #balance = 0;
+  deposit(amount) { this.#balance += amount; return this; }
+  get balance() { return this.#balance; }
+}
+console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150000</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo object</td><td><code class="inline">{ owner: "An" }</code> không cần class; hoặc class ES6</td><td>Bắt buộc class/record/enum + <code class="inline">new</code></td></tr>
+        <tr><td>Thêm/xóa thuộc tính lúc chạy</td><td>Thoải mái: <code class="inline">acc.owner2 = "x"</code></td><td>Phải khai báo field từ trước; không thêm tùy ý</td></tr>
+        <tr><td>Field chưa gán</td><td><code class="inline">undefined</code></td><td><code class="inline">0</code> / <code class="inline">false</code> / <code class="inline">null</code> tùy kiểu</td></tr>
+        <tr><td>Kiểu dữ liệu</td><td>Động, kiểm tra lúc chạy</td><td>Tĩnh, kiểm tra lúc compile</td></tr>
+        <tr><td><code class="inline">this</code></td><td>Phụ thuộc cách gọi; đổi được bằng <code class="inline">bind</code>/<code class="inline">call</code>/<code class="inline">apply</code></td><td>Cố định là object hiện tại trong instance method; không có trong static method</td></tr>
+        <tr><td>Constructor</td><td>Chỉ một constructor, dùng default parameter cho linh hoạt</td><td>Overload nhiều constructor; <code class="inline">this(...)</code> chaining</td></tr>
+        <tr><td>Thành viên static</td><td><code class="inline">static</code> trong class</td><td>static field/method/block + <code class="inline">static final</code></td></tr>
+        <tr><td>Đóng gói</td><td><code class="inline">#private</code>; còn lại public</td><td>4 mức: private / default / protected / public</td></tr>
+        <tr><td>So sánh object</td><td><code class="inline">===</code> so reference; <code class="inline">Object.is</code></td><td><code class="inline">==</code> so reference; <code class="inline">equals()</code> so nội dung (<a href="object-contract.html">2.6</a>)</td></tr>
+        <tr><td>In object</td><td><code class="inline">console.log(obj)</code> in nội dung</td><td><code class="inline">IO.println(obj)</code> gọi <code class="inline">toString()</code> → mặc định <code class="inline">ClassName@hash</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Điểm dễ quên nhất khi từ Node.js sang Java: object Java <strong>không linh động</strong> như JS object — muốn thêm dữ liệu mới phải sửa class. Bù lại compiler kiểm tra giúp bạn, và IDE refactor an toàn. Khi thật cần "túi dữ liệu động", dùng <code class="inline">Map&lt;String, Object&gt;</code> (học ở giai đoạn 3.3).</div>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Class và object khác nhau thế nào? Cho ví dụ ngoài đời.</summary>
+      <div class="answer">Class là bản thiết kế/bản vẽ — quy định có field và method nào nhưng chưa chiếm dữ liệu thật. Object là thực thể cụ thể tạo bằng <code class="inline">new</code> từ bản thiết kế đó. Ví dụ: class <code class="inline">BankAccount</code> là biểu mẫu mở tài khoản; object là tài khoản của An với <code class="inline">owner = "An"</code>, <code class="inline">balance = 500000</code>. Từ một class tạo được vô số object độc lập.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Constructor khác method thường ở những điểm nào?</summary>
+      <div class="answer">Bốn điểm: (1) tên trùng tên class; (2) <strong>không có kiểu trả về</strong> — viết <code class="inline">void TenClass()</code> là method chứ không phải constructor; (3) chỉ chạy qua <code class="inline">new</code> hoặc <code class="inline">this(...)</code>/<code class="inline">super(...)</code>, không gọi như method; (4) không được kế thừa. Method thường có return type (hoặc void), tên bất kỳ, gọi trực tiếp, và kế thừa được.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Default constructor được sinh khi nào? Nó có tham số/access gì?</summary>
+      <div class="answer">Chỉ sinh khi class <strong>không khai báo bất kỳ constructor nào</strong>. Nó không tham số, thân rỗng (chỉ gọi <code class="inline">super()</code> ngầm), và có cùng access modifier với class (class public → constructor public). Chỉ cần bạn viết một constructor có tham số, default constructor biến mất — <code class="inline">new BankAccount()</code> sẽ lỗi compile nếu class chỉ có <code class="inline">BankAccount(String owner)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. <code class="inline">this</code> là gì? Dùng để làm gì?</summary>
+      <div class="answer"><code class="inline">this</code> là reference tới object hiện tại trong instance method/constructor. Dùng để: phân biệt field với tham số trùng tên (<code class="inline">this.owner = owner</code>), gọi method của chính object, gọi constructor khác (<code class="inline">this(...)</code>), truyền/trả chính object này (<code class="inline">return this</code> cho fluent API).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">this(...)</code> và <code class="inline">super(...)</code> khác nhau thế nào? <code class="inline">this()</code> có bắt buộc là câu lệnh đầu tiên không?</summary>
+      <div class="answer"><code class="inline">this(...)</code> gọi constructor khác <em>trong cùng class</em>; <code class="inline">super(...)</code> gọi constructor <em>class cha</em>. Nếu không viết cả hai, compiler chèn <code class="inline">super()</code> ngầm. Trả lời phỏng vấn chuẩn: "trước JDK 25 bắt buộc là câu lệnh đầu tiên; từ JDK 25 (JEP 513) được phép có câu lệnh trước miễn không đọc instance đang tạo". Tốt nhất cho điểm: nói quy tắc cổ điển trước, rồi bổ sung JEP 513.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Static field khác instance field thế nào?</summary>
+      <div class="answer">Instance field: mỗi object một bản, chỉ tồn tại khi có object, truy cập qua <code class="inline">obj.field</code>. Static field: một bản duy nhất thuộc class, dùng chung mọi object, truy cập qua <code class="inline">TenClass.field</code>, tồn tại theo vòng đời class. Static field hợp cho hằng số và bộ đếm; là nguồn race condition nếu mutable.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Vì sao <code class="inline">main</code> phải là <code class="inline">static</code>?</summary>
+      <div class="answer">JVM gọi <code class="inline">main</code> làm entry point khi chưa tạo object nào. Instance method cần object để gọi, nên không dùng được. <code class="inline">public</code> để JVM ngoài package gọi được; <code class="inline">void</code> vì JVM không nhận giá trị trả về. Từ JDK 25, file compact có thể dùng instance <code class="inline">void main()</code> — JVM tự tạo object (JEP 512).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Static method có dùng được <code class="inline">this</code> hoặc gọi trực tiếp field instance không?</summary>
+      <div class="answer">Không. Static method không gắn với object nào nên <code class="inline">this</code> không tồn tại và compiler chặn truy cập field instance: <code class="inline">non-static variable balance cannot be referenced from a static context</code>. Muốn dùng field instance từ static method phải truyền object vào làm tham số rồi <code class="inline">obj.field</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Bốn access modifier khác nhau thế nào? Xếp theo độ mở.</summary>
+      <div class="answer"><code class="inline">private</code> (chỉ trong class) &lt; default/package-private (thêm cùng package) &lt; <code class="inline">protected</code> (thêm subclass ở package khác, có điều kiện qua reference kiểu subclass) &lt; <code class="inline">public</code> (mọi nơi). Field nên để <code class="inline">private</code>, API công khai tối thiểu — đó là encapsulation.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Top-level class được khai báo với những modifier nào?</summary>
+      <div class="answer">Chỉ <code class="inline">public</code> hoặc không viết gì (package-private). Không được <code class="inline">private</code>/<code class="inline">protected</code>; cũng không được <code class="inline">static</code>/<code class="inline">final</code> ở top-level (final chỉ dùng cho class lồng). Mỗi file chỉ một class public và tên file phải trùng tên class đó.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. package-private (default) là gì? Khi nào nên dùng?</summary>
+      <div class="answer">Là mức truy cập khi không viết modifier nào: mọi class cùng package truy cập được, ngoài package thì không (kể cả subclass). Dùng cho class/method nội bộ của một module — "bạn cùng nhà" của Java, che giấu chi tiết triển khai khỏi API công khai.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 12. Static block chạy khi nào và bao nhiêu lần?</summary>
+      <div class="answer">Chạy khi class được khởi tạo (class initialization) — lần đầu class được dùng thật: tạo object đầu tiên, gọi static method/field, hoặc tạo subclass. Thường lười, không phải lúc chương trình bắt đầu. Mỗi class loader chạy đúng một lần, theo thứ tự khai báo cùng static field initializer. Dùng để khởi tạo <code class="inline">static final</code> phức tạp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Thứ tự khởi tạo đầy đủ khi tạo một object?</summary>
+      <div class="answer">(0) Static field initializer + static block theo thứ tự khai báo, một lần khi class được nạp; (1) cấp phát object, field nhận giá trị mặc định; (2) constructor chạy: <code class="inline">this(...)</code> hoặc <code class="inline">super()</code> ngầm; (3) instance field initializer + instance initializer block theo thứ tự khai báo; (4) thân constructor. Class cha chạy trước class con.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Field và biến local khác nhau thế nào về giá trị mặc định và vòng đời?</summary>
+      <div class="answer">Field tự nhận giá trị mặc định (<code class="inline">0</code>, <code class="inline">0.0</code>, <code class="inline">false</code>, <code class="inline">null</code>) ngay khi object được cấp phát. Biến local <strong>không</strong> có giá trị mặc định — compiler bắt bạn gán trước khi dùng. Field sống theo object (trên heap); local sống trong stack frame của method, mất khi method kết thúc.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Hai constructor cùng signature có được không? Điều gì xảy ra?</summary>
+      <div class="answer">Không — lỗi compile: <code class="inline">constructor BankAccount(String) is already defined in class BankAccount</code>. Java phân biệt constructor/method bằng tên + danh sách kiểu tham số, tên tham số không tính. Muốn "nhiều lựa chọn", đổi số lượng/kiểu tham số (overload).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Constructor private dùng để làm gì?</summary>
+      <div class="answer">Chặn bên ngoài tạo object trực tiếp, buộc đi qua "cửa chính" do class kiểm soát: static factory method, Singleton (một instance duy nhất), hoặc utility class chứa toàn static method. Ví dụ JDK: <code class="inline">Collections</code>, <code class="inline">Math</code> có constructor private. Chi tiết Singleton ở <a href="solid-patterns.html">2.8 SOLID &amp; patterns</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. JavaBean là gì? POJO khác gì? Khi nào dùng record thay?</summary>
+      <div class="answer">POJO là class Java thuần, không phụ thuộc framework. JavaBean là POJO theo quy ước: no-arg constructor + private field + getter/setter (+ Serializable). Framework như Jackson/JPA/Hibernate dựa vào quy ước này để hoạt động qua reflection. Record thay thế JavaBean khi cần DTO bất biến — gọn hơn và tự sinh accessor/equals/hashCode/toString; nhưng JPA entity không dùng record được vì cần no-arg constructor và field mutable.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Static import là gì? Có nên dùng không?</summary>
+      <div class="answer">Là import thành viên static để gọi không cần tên class: <code class="inline">import static java.lang.Math.PI;</code> rồi dùng <code class="inline">PI</code>. Nên dùng cho hằng số/utility thật rõ nghĩa; tránh wildcard và tránh import hai thành viên trùng tên vì lời gọi sẽ mơ hồ (lỗi compile "reference to ... is ambiguous").</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. In trực tiếp một object ra console thì được gì? Muốn đẹp thì làm sao?</summary>
+      <div class="answer">Mặc định dùng <code class="inline">Object.toString()</code>: chuỗi dạng <code class="inline">BankAccount@52525845</code> — tên class + dấu <code class="inline">@</code> + hashCode dạng hex, <strong>phần sau @ đổi mỗi lần chạy</strong>. Muốn đẹp thì override <code class="inline">toString()</code> (học ở <a href="object-contract.html">2.6 Object contract</a>); record tự sinh toString dạng <code class="inline">BankAccount[owner=An, balance=500000]</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Vì sao không nên so sánh hai object bằng <code class="inline">==</code>?</summary>
+      <div class="answer"><code class="inline">==</code> so địa chỉ (có phải cùng một object không), không so nội dung. Hai object cùng dữ liệu vẫn <code class="inline">==</code> cho <code class="inline">false</code>. Dùng <code class="inline">equals()</code> cho nội dung — nhưng chỉ đúng nếu class override đúng cặp <code class="inline">equals</code>/<code class="inline">hashCode</code> (2.6). Ngoại lệ: enum và record so <code class="inline">==</code> được.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Import khác package khác gì so với cùng package? <code class="inline">java.lang</code> có cần import không?</summary>
+      <div class="answer">Cùng package: dùng trực tiếp, không cần import, và truy cập được thành viên package-private. Khác package: phải import (hoặc dùng fully-qualified name), và chỉ truy cập được thành viên public/protected phù hợp. <code class="inline">java.lang</code> được tự động import trong mọi file — <code class="inline">String</code>, <code class="inline">Math</code>, <code class="inline">System</code>, <code class="inline">IO</code> không cần import.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Vì sao static mutable field nguy hiểm trong đa luồng?</summary>
+      <div class="answer">Vì nó là state dùng chung giữa mọi thread. <code class="inline">count++</code> gồm ba bước đọc → cộng → ghi; hai thread xen kẽ sẽ mất cập nhật (race condition), kết quả mỗi lần chạy một khác. Cách xử lý: tránh static mutable, dùng <code class="inline">AtomicLong</code>/<code class="inline">AtomicInteger</code>, hoặc <code class="inline">synchronized</code>; chỉ giữ static final immutable. Chi tiết ở <a href="index.html#production">Biến trong Java — mục 15.3</a>.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Đoán thứ tự in khi có static, instance initializer và constructor</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    static int count = init("static field");
+    static { IO.println("static block"); }
+    String owner = name("instance field");
+    { IO.println("instance initializer"); }
+    BankAccount() { IO.println("constructor"); }
+
+    static int init(String s) { IO.println(s); return 0; }
+    static String name(String s) { IO.println(s); return "An"; }
+
+    public static void main() {
+        new BankAccount();
+        new BankAccount();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra:</p>
+        <div class="codeblock"><pre><code>static field
+static block
+instance field
+instance initializer
+constructor
+instance field
+instance initializer
+constructor</code></pre></div>
+        <p>Phần static chỉ chạy một lần; phần instance chạy lại mỗi lần <code class="inline">new</code>, luôn trước constructor.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Viết class BankAccount có deposit/withdraw rồi đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">BankAccount acc = new BankAccount();
+acc.owner = "An";
+acc.balance = 500_000;
+acc.deposit(200_000);
+IO.println(acc.owner + ": " + acc.balance);
+acc.withdraw(1_000_000);
+acc.withdraw(300_000);
+IO.println(acc.owner + ": " + acc.balance);</code></pre>
+      </div>
+      <div class="answer">
+        <p>Class cần có field <code class="inline">String owner; long balance;</code>, method <code class="inline">deposit</code> cộng tiền, <code class="inline">withdraw</code> trừ tiền nếu đủ (không thì in thông báo). Output:</p>
+        <div class="codeblock"><pre><code>An: 700000
+So du khong du
+An: 400000</code></pre></div>
+        <p>Rút 1.000.000 thất bại nên số dư giữ 700.000; rút tiếp 300.000 còn 400.000.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Chuyện gì xảy ra khi quên <code class="inline">new</code>?</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    static BankAccount acc;
+    long balance;
+
+    void deposit(long amount) { balance += amount; }
+
+    public static void main() {
+        try {
+            acc.deposit(100);
+        } catch (NullPointerException e) {
+            IO.println(e.getMessage());
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra message của <code class="inline">NullPointerException</code> (JDK 25 có "helpful NPE" chỉ rõ nguyên nhân):</p>
+        <div class="codeblock"><pre><code>Cannot invoke "BankAccount.deposit(long)" because "BankAccount.acc" is null</code></pre></div>
+        <p>Code compile bình thường vì kiểu của <code class="inline">acc</code> vẫn đúng — lỗi chỉ lộ ra lúc chạy. Đây là lý do phải luôn <code class="inline">new</code>/khởi tạo trước khi dùng object.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. Đếm object bằng static counter — đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    static int soTaiKhoan = 0;
+    String owner;
+
+    BankAccount(String owner) {
+        this.owner = owner;
+        soTaiKhoan++;
+    }
+
+    public static void main() {
+        new BankAccount("An");
+        new BankAccount("Binh");
+        new BankAccount("Cuong");
+        IO.println(soTaiKhoan);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra <code class="inline">3</code>. Mỗi constructor tăng biến chung <code class="inline">soTaiKhoan</code>; ba object được tạo nên biến bằng 3.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Tìm và sửa lỗi shadowing thiếu <code class="inline">this</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    String owner;
+
+    BankAccount(String owner) {
+        owner = owner;
+    }
+
+    public static void main() {
+        BankAccount acc = new BankAccount("An");
+        IO.println(acc.owner);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra <code class="inline">null</code>. Dòng <code class="inline">owner = owner</code> gán tham số cho chính nó, field <code class="inline">this.owner</code> không hề được gán (giữ mặc định <code class="inline">null</code>). Sửa thành <code class="inline">this.owner = owner;</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. Object in mặc định ra gì?</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    String owner;
+    long balance;
+
+    BankAccount(String owner, long balance) {
+        this.owner = owner;
+        this.balance = balance;
+    }
+
+    public static void main() {
+        IO.println(new BankAccount("An", 500_000));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra dạng <code class="inline">BankAccount@&lt;hashCode hex&gt;</code>, ví dụ một lần chạy thật:</p>
+        <div class="codeblock"><pre><code>BankAccount@52525845</code></pre></div>
+        <p>Phần sau dấu <code class="inline">@</code> <strong>thay đổi mỗi lần chạy</strong> nên không đoán chính xác được — chỉ cần nhận dạng đúng định dạng. Muốn in đẹp, override <code class="inline">toString()</code> (2.6).</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Đoán thứ tự khi nhiều constructor gọi <code class="inline">this()</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    BankAccount() {
+        this("An");
+        IO.println("constructor 0 tham so");
+    }
+
+    BankAccount(String owner) {
+        this(owner, 0);
+        IO.println("constructor 1 tham so: " + owner);
+    }
+
+    BankAccount(String owner, long balance) {
+        IO.println("constructor 2 tham so");
+    }
+
+    public static void main() {
+        new BankAccount();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra theo thứ tự ngược từ constructor đầy đủ rồi quay lại:</p>
+        <div class="codeblock"><pre><code>constructor 2 tham so
+constructor 1 tham so: An
+constructor 0 tham so</code></pre></div>
+        <p><code class="inline">new BankAccount()</code> → <code class="inline">this("An")</code> → <code class="inline">this("An", 0)</code>; constructor đích chạy thân trước, rồi trả về chạy tiếp phần còn lại của các constructor đã gọi nó.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Tìm lỗi compile: gọi constructor không tồn tại</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    String owner;
+
+    BankAccount(String owner) {
+        this.owner = owner;
+    }
+
+    public static void main() {
+        new BankAccount();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p><strong>Không compile</strong> vì class chỉ có constructor 1 tham số, default constructor không được sinh:</p>
+        <div class="errblock"><pre>BankAccount.java:9: error: constructor BankAccount in class BankAccount cannot be applied to given types;
+        new BankAccount();
+        ^
+  required: String
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+1 error</pre></div>
+        <p>Sửa: thêm constructor không tham số, hoặc gọi <code class="inline">new BankAccount("An")</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. Static method truy cập field instance — chuyện gì xảy ra?</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    long balance;
+
+    static void reset() {
+        balance = 0;
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p><strong>Không compile.</strong> Static method không có object nào để biết "balance của ai":</p>
+        <div class="errblock"><pre>BankAccount.java:5: error: non-static variable balance cannot be referenced from a static context
+        balance = 0;
+        ^
+1 error</pre></div>
+        <p>Sửa: biến <code class="inline">reset</code> thành instance method, hoặc cho <code class="inline">balance</code> thành static (cân nhắc bẫy static mutable).</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. <code class="inline">==</code> hay <code class="inline">equals</code>? Đoán output</summary>
+      <div class="codeblock">
+        <pre><code class="java">BankAccount a = new BankAccount("An");
+BankAccount b = new BankAccount("An");
+BankAccount c = a;
+IO.println(a == b);
+IO.println(a == c);
+IO.println(a.owner.equals(b.owner));</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra:</p>
+        <div class="codeblock"><pre><code>false
+true
+true</code></pre></div>
+        <p><code class="inline">a</code> và <code class="inline">b</code> là hai object khác nhau trên heap nên <code class="inline">==</code> false; <code class="inline">c</code> trỏ cùng object với <code class="inline">a</code> nên true; hai field <code class="inline">String</code> bằng nội dung nên <code class="inline">equals</code> true.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Subclass không đọc được field private của class cha</summary>
+      <div class="codeblock">
+        <pre><code class="java">class BankAccount {
+    private long balance = 500_000;
+}
+
+class SavingsAccount extends BankAccount {
+    long xem() {
+        return balance;
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p><strong>Không compile</strong> — private chỉ mở trong chính class khai báo, subclass cũng không ngoại lệ:</p>
+        <div class="errblock"><pre>BankAccount.java:7: error: balance has private access in BankAccount
+        return balance;
+               ^
+1 error</pre></div>
+        <p>Muốn subclass đọc được, class cha phải cung cấp getter <code class="inline">public</code>/<code class="inline">protected</code> — đúng tinh thần encapsulation.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Static import trùng tên — vì sao lỗi?</summary>
+      <div class="codeblock">
+        <pre><code class="java">import static java.lang.Math.min;
+import static java.lang.StrictMath.min;
+
+public class BankAccount {
+    public static void main() {
+        IO.println(min(1, 2));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Hai static import cùng tên <code class="inline">min</code> làm lời gọi mơ hồ:</p>
+        <div class="errblock"><pre>BankAccount.java:6: error: reference to min is ambiguous
+        IO.println(min(1, 2));
+                   ^
+  both method min(int,int) in StrictMath and method min(int,int) in Math match
+1 error</pre></div>
+        <p>Sửa: bỏ một import và gọi rõ <code class="inline">Math.min(1, 2)</code> — best practice là tránh static import trùng tên.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13. Method trùng tên class nhưng có <code class="inline">void</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BankAccount {
+    void BankAccount() {
+        IO.println("method trung ten class");
+    }
+
+    BankAccount() {
+        IO.println("constructor that");
+    }
+
+    public static void main() {
+        BankAccount acc = new BankAccount();
+        acc.BankAccount();
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Compile được nhưng gây nhầm lẫn. In ra:</p>
+        <div class="codeblock"><pre><code>constructor that
+method trung ten class</code></pre></div>
+        <p><code class="inline">new BankAccount()</code> gọi constructor thật (không có void); <code class="inline">acc.BankAccount()</code> gọi method có return type <code class="inline">void</code>. Vì nhìn giống constructor mà không phải, đây là code xấu — không bao giờ viết như vậy.</p>
+      </div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Khai báo class</td><td><code class="inline">[public] class TenClass { fields; constructors; methods; }</code></td></tr>
+        <tr><td>Tạo object</td><td><code class="inline">TenClass obj = new TenClass(...);</code> — biến reference trên stack, object trên heap</td></tr>
+        <tr><td>Constructor</td><td>Tên trùng class, không return type; chạy khi <code class="inline">new</code></td></tr>
+        <tr><td>Default constructor</td><td>Chỉ sinh khi không khai báo constructor nào; cùng access với class</td></tr>
+        <tr><td>Constructor chaining</td><td><code class="inline">this(...)</code> gọi constructor khác; từ JDK 25 không bắt buộc đứng đầu (JEP 513)</td></tr>
+        <tr><td>Private constructor</td><td>Chặn tạo object ngoài class: Singleton, static factory, utility class</td></tr>
+        <tr><td>Phân biệt field/tham số</td><td><code class="inline">this.owner = owner;</code></td></tr>
+        <tr><td>Fluent API</td><td>Instance method trả về <code class="inline">this</code> để chain</td></tr>
+        <tr><td>Static</td><td>Thuộc class, không có <code class="inline">this</code>; static field dùng chung; static block chạy 1 lần khi class nạp</td></tr>
+        <tr><td>Hằng số</td><td><code class="inline">static final</code> + <code class="inline">UPPER_SNAKE_CASE</code></td></tr>
+        <tr><td>Thứ tự khởi tạo</td><td>static → cấp phát + default values → constructor (super/this → instance init → thân)</td></tr>
+        <tr><td>Access modifiers</td><td><code class="inline">private</code> &lt; default &lt; <code class="inline">protected</code> &lt; <code class="inline">public</code>; top-level class chỉ public/default</td></tr>
+        <tr><td>Package</td><td><code class="inline">package com.shop.bank;</code> dòng đầu; thư mục khớp; tên miền đảo ngược</td></tr>
+        <tr><td>Import</td><td><code class="inline">import java.util.List;</code>; <code class="inline">java.lang</code> tự động import; static import cho thành viên static</td></tr>
+        <tr><td>JavaBean / POJO</td><td>POJO = class thuần; JavaBean = no-arg ctor + private field + getter/setter</td></tr>
+        <tr><td>In object</td><td>Mặc định <code class="inline">ClassName@hash</code>; override <code class="inline">toString()</code> hoặc dùng record</td></tr>
+        <tr><td>So object</td><td><code class="inline">==</code> so reference; <code class="inline">equals()</code> so nội dung (2.6)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được class vs object bằng ví dụ ngoài đời, không cần đọc định nghĩa.</li>
+      <li>Khai báo class có field, constructor, method và tạo object bằng <code class="inline">new</code> mà không tra cứu.</li>
+      <li>Phân biệt object trên heap và biến reference trên stack; giải thích pass-by-value với reference.</li>
+      <li>Nêu đúng khi nào default constructor được sinh và vì sao nó "biến mất" khi có constructor khác.</li>
+      <li>Viết được constructor overload + chuỗi <code class="inline">this(...)</code> và giải thích thứ tự chạy.</li>
+      <li>Trả lời được câu "this() có bắt buộc đầu tiên không?" kèm thông tin JEP 513 của JDK 25.</li>
+      <li>Phân biệt <code class="inline">this</code> và <code class="inline">static</code>; giải thích vì sao static method không có <code class="inline">this</code>.</li>
+      <li>Thuộc lòng bảng 4 access modifier theo 4 phạm vi; biết top-level class chỉ public/default.</li>
+      <li>Giải thích package ảnh hưởng truy cập thế nào; viết đúng khai báo package/import.</li>
+      <li>Vẽ lại được thứ tự khởi tạo: static → instance initializer → constructor (kèm ví dụ).</li>
+      <li>Giải thích static mutable nguy hiểm gì và cách thay bằng <code class="inline">AtomicLong</code>.</li>
+      <li>Nhận dạng JavaBean, biết khi nào record thay thế được và khi nào không (JPA entity).</li>
+      <li>Nêu 3 lỗi kinh điển: quên new, <code class="inline">==</code> thay equals, shadowing thiếu <code class="inline">this</code>.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.1" target="_blank" rel="noreferrer">JLS §8.1 — Class Declarations</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.8" target="_blank" rel="noreferrer">JLS §8.8 — Constructors</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-12.html#jls-12.4" target="_blank" rel="noreferrer">JLS §12.4 — Initialization of Classes</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-6.html#jls-6.6" target="_blank" rel="noreferrer">JLS §6.6 — Access Control</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+      <li><a href="https://openjdk.org/jeps/513" target="_blank" rel="noreferrer">JEP 513 — Flexible Constructor Bodies (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/classes.html" target="_blank" rel="noreferrer">Oracle Tutorial — Classes</a></li>
+      <li><a href="https://dev.java/learn/classes-objects/" target="_blank" rel="noreferrer">Dev.java — Classes &amp; Objects</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Classes &amp; Objects · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

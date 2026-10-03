@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>equals / hashCode / toString — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item active" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là tài liệu Java tự soạn để học, chạy hoàn toàn offline trên máy bạn. Mọi ví dụ đã được chạy thật bằng JDK 25 trước khi đưa vào.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="object-contract">Object contract — equals / hashCode / toString</h1>
+
+    <p class="lead">Mọi class trong Java đều là con của <code class="inline">Object</code> và thừa hưởng ba method "hợp đồng": <code class="inline">equals</code>, <code class="inline">hashCode</code>, <code class="inline">toString</code>. Hiểu sai ba method này là nguyên nhân của những bug khó nhất khi dùng <code class="inline">HashMap</code>/<code class="inline">HashSet</code>, khi so sánh trong test và khi ghi log. Trang này đi hết: mặc định của <code class="inline">Object</code>, năm tính chất của <code class="inline">equals</code>, ba điều khoản của <code class="inline">hashCode</code>, cách viết đúng từng bước, các demo chạy thật khi hợp đồng bị vi phạm, và những cái bẫy production.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#tostring">toString — in object cho dễ đọc</a></li>
+        <li><a href="#so-bang">== vs equals</a></li>
+        <li><a href="#equals-contract">Hợp đồng equals — 5 tính chất</a></li>
+        <li><a href="#viet-equals">Viết equals đúng — từng bước</a></li>
+        <li><a href="#record">record — value object làm sẵn</a></li>
+        <li><a href="#hashcode-contract">Hợp đồng hashCode</a></li>
+        <li><a href="#vi-pham">Hậu quả khi vi phạm — demo chạy thật</a></li>
+        <li><a href="#hashmap">HashMap / HashSet hoạt động thế nào</a></li>
+        <li><a href="#kieu-dac-biet">Các kiểu đặc biệt: BigDecimal, mảng, String, enum</a></li>
+        <li><a href="#cong-cu">IDE, Lombok &amp; production</a></li>
+        <li><a href="#kiem-thu">Kiểm thử equals / hashCode</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js — equality trong JS/TS</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p><code class="inline">Object</code> là class cha ngầm của mọi class trong Java. Không cần <code class="inline">extends Object</code>, bạn vẫn có sẵn ba method quan trọng nhất:</p>
+
+    <ul>
+      <li><strong><code class="inline">equals(Object)</code></strong> — định nghĩa "hai object này có bằng nhau về giá trị không". Mặc định <code class="inline">Object</code> chỉ so địa chỉ (<em>identity</em>), giống hệt toán tử <code class="inline">==</code>.</li>
+      <li><strong><code class="inline">hashCode()</code></strong> — trả về một số nguyên đại diện cho object, là "mã bucket" để <code class="inline">HashMap</code>/<code class="inline">HashSet</code> tìm nhanh. Mặc định là hash định danh, khác nhau giữa các object khác nhau.</li>
+      <li><strong><code class="inline">toString()</code></strong> — mô tả object dạng chuỗi, dùng khi log, debug hoặc nối chuỗi. Mặc định cho ra thứ khó đọc kiểu <code class="inline">Point@b59d31</code>.</li>
+    </ul>
+
+    <p>Vì sao chủ đề này quan trọng? Ba lý do thực chiến: (1) <code class="inline">HashMap</code>, <code class="inline">HashSet</code>, dedupe danh sách, <code class="inline">Set.contains</code> đều xây trên <code class="inline">equals</code> + <code class="inline">hashCode</code>; viết sai thì dữ liệu "biến mất" một cách vô hình. (2) Log/debug và thông báo lỗi test dựa vào <code class="inline">toString</code>; thiếu nó, bạn chỉ thấy địa chỉ bộ nhớ. (3) Đây là câu hỏi phỏng vấn kinh điển, xuất hiện ở gần như mọi buổi phỏng vấn Java từ junior trở lên.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 2.6 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết bộ ba <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code> đúng chuẩn; dùng <code class="inline">Objects.equals</code>, <code class="inline">Objects.hash</code>; xử lý field <code class="inline">null</code>, mảng, <code class="inline">BigDecimal</code>; dùng record cho value object; viết test kiểm tra hợp đồng.</li>
+      <li><strong>Phải hiểu</strong> — 5 tính chất của <code class="inline">equals</code>; 3 điều khoản của <code class="inline">hashCode</code>; vì sao phải override cả hai cùng lúc; chuỗi hash → bucket → equals của <code class="inline">HashMap</code>; vì sao key phải bất biến; <code class="inline">getClass</code> vs <code class="inline">instanceof</code>.</li>
+      <li><strong>Nhận biết</strong> — bẫy scale của <code class="inline">BigDecimal</code>; bẫy cache của wrapper; mảng dùng <code class="inline">Arrays.equals</code>; Lombok <code class="inline">@EqualsAndHashCode(callSuper = true)</code>; entity JPA với id sinh tự động; hash của record có thể khác giữa các lần chạy JVM.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ. Mọi ví dụ trong trang chạy được bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <h3>Góc Node.js — nhìn nhanh</h3>
+
+    <p>Trong JavaScript, hai object có cùng nội dung vẫn <strong>không bằng nhau</strong> vì phép so sánh object luôn theo reference:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript (Node 22)
+const a = { sku: "SKU-1" };
+const b = { sku: "SKU-1" };
+
+console.log(a === b);                                  // false
+console.log(JSON.stringify(a) === JSON.stringify(b)); // true
+console.log(JSON.stringify({ x: 1, y: 2 }) ===
+            JSON.stringify({ y: 2, x: 1 }));           // false - bay thu tu key</code></pre>
+    </div>
+
+    <p>Java mặc định <strong>giống hệt</strong> <code class="inline">===</code>: <code class="inline">equals</code> của <code class="inline">Object</code> cũng so reference. Khác biệt là Java cho bạn <em>override</em> <code class="inline">equals</code> để đổi ngữ nghĩa sang so giá trị, và <code class="inline">HashMap</code>/<code class="inline">HashSet</code> tự động dùng ngữ nghĩa đó. JavaScript không override được toán tử, nên phải gọi hàm so sánh thủ công: tự viết, <code class="inline">JSON.stringify</code>, lodash <code class="inline">isEqual</code>, hay <code class="inline">util.isDeepStrictEqual</code> của Node. Chi tiết đầy đủ ở <a href="#goc-nodejs">mục 14</a>.</p>
+
+    <h2 id="tostring">2. <code class="inline">toString</code> — in object cho dễ đọc <span class="badge b-junior">Junior+</span></h2>
+
+    <div class="signature">
+      <span class="sig-muted">public</span> <span class="tok-typ">String</span> <span class="sig-var">toString</span><span class="sig-muted">()</span>
+    </div>
+
+    <p>Mặc định, <code class="inline">Object.toString()</code> trả về chuỗi theo công thức: tên class + <code class="inline">@</code> + hash code dạng hex. Chạy thật file <code class="inline">Point.java</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class Point {
+    int x;
+    int y;
+
+    Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public static void main() {
+        Point p = new Point(3, 4);
+        IO.println(p);
+        IO.println("p = " + p);
+        IO.println(p.getClass().getName() + "@" + Integer.toHexString(p.hashCode()));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Point@b59d31
+p = Point@b59d31
+Point@b59d31</code></pre>
+    </div>
+
+    <p>Dòng cuối chính là công thức mặc định được viết tường minh. Số <code class="inline">b59d31</code> là hash định danh — <strong>có thể khác</strong> khi chạy lại hoặc trên JVM khác, đừng bao giờ ghi nhớ hay parse nó.</p>
+
+    <p>Vấn đề: <code class="inline">Point@b59d31</code> không cho bạn biết toạ độ là (3, 4). Override <code class="inline">toString</code> để log/debug đọc được ngay:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">final class Product {
+    private final String name;
+    private final long price;
+
+    Product(String name, long price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    @Override
+    public String toString() {
+        return "Product{name='" + name + "', price=" + price + "}";
+    }
+}
+
+void main() {
+    Product p = new Product("Ao thun", 199_000);
+    IO.println(p);
+    IO.println("Chi tiet: " + p);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Product{name='Ao thun', price=199000}
+Chi tiet: Product{name='Ao thun', price=199000}</code></pre>
+    </div>
+
+    <h3>record tự sinh toString</h3>
+
+    <p>Với record, bạn không phải viết gì — JDK tự sinh <code class="inline">toString</code> dạng <code class="inline">TenRecord[field=value, ...]</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Point(int x, int y) {}
+
+record Product(String sku, long price) {}
+
+void main() {
+    IO.println(new Point(3, 4));
+    IO.println(new Product("SKU-1", 199_000));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Point[x=3, y=4]
+Product[sku=SKU-1, price=199000]</code></pre>
+    </div>
+
+    <h3>Quy ước khi viết toString</h3>
+
+    <ul>
+      <li><strong>Ngắn gọn, đủ field nhận diện</strong> — thường là tên class + các field chính, không cần in toàn bộ object graph.</li>
+      <li><strong>Format ổn định</strong> — đừng đổi format liên tục vì log cũ và thông báo test sẽ khó so; nhưng cũng <strong>đừng parse</strong> <code class="inline">toString</code> bằng code (nhất là <code class="inline">toString</code> của record — JDK ghi rõ format có thể thay đổi).</li>
+      <li><strong>Không chứa dữ liệu nhạy cảm</strong> — mật khẩu, token, số thẻ, email... Ghi log object là ghi cả chuỗi này ra file/console:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">@Override
+public String toString() {
+    return "User{email=" + email + ", password=" + password + "}"; // RO RI MAT KHAU
+}
+
+@Override
+public String toString() {
+    return "User{id=" + id + ", email=" + email + "}"; // an toan hon
+}</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Cẩn thận với lazy loading:</strong> nếu <code class="inline">toString</code> chạm vào quan hệ JPA lười tải (ví dụ <code class="inline">order.getItems()</code>), ghi log có thể kéo cả bảng dữ liệu (N+1 query) hoặc ném <code class="inline">LazyInitializationException</code>. Chỉ in state thật sự cần, hoặc dùng DTO cho log. IDE (IntelliJ, VS Code) có generate sẵn — xem <a href="#cong-cu">mục 11</a>.</div>
+
+    <h2 id="so-bang">3. <code class="inline">==</code> vs <code class="inline">equals</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Hai toán tử trông giống nhau nhưng đo hai thứ khác nhau:</p>
+
+    <ul>
+      <li><code class="inline">==</code> so <strong>giá trị bit</strong> với primitive (<code class="inline">int</code>, <code class="inline">double</code>...), và so <strong>địa chỉ / reference</strong> với object: hai biến <code class="inline">==</code> nhau khi cùng trỏ vào một object.</li>
+      <li><code class="inline">equals</code> là một method. Bản gốc trong <code class="inline">Object</code> viết đúng một dòng: <code class="inline">return this == obj;</code> — tức mặc định cũng là identity. Sức mạnh chỉ đến khi bạn <strong>override</strong> nó để so nội dung.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">final class Product {
+    final String name;
+
+    Product(String name) {
+        this.name = name;
+    }
+}
+
+void main() {
+    Product a = new Product("Ao thun");
+    Product b = new Product("Ao thun");
+    Product c = a;
+
+    IO.println("a == b        : " + (a == b));
+    IO.println("a.equals(b)   : " + a.equals(b));
+    IO.println("a == c        : " + (a == c));
+
+    String s1 = "java";
+    String s2 = "java";
+    String s3 = new String("java");
+    IO.println("s1 == s2      : " + (s1 == s2));
+    IO.println("s1 == s3      : " + (s1 == s3));
+    IO.println("s1.equals(s3) : " + s1.equals(s3));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a == b        : false
+a.equals(b)   : false
+a == c        : true
+s1 == s2      : true
+s1 == s3      : false
+s1.equals(s3) : true</code></pre>
+    </div>
+
+    <p>Đọc kết quả: <code class="inline">Product</code> chưa override <code class="inline">equals</code> nên hai sản phẩm cùng tên vẫn "khác nhau" — đúng như <code class="inline">===</code> trong JS. Với <code class="inline">String</code>: hai literal cùng nội dung được chia sẻ trong <em>string pool</em> nên <code class="inline">s1 == s2</code> là <code class="inline">true</code> (may mắn), nhưng <code class="inline">new String(...)</code> tạo object mới nên <code class="inline">s1 == s3</code> là <code class="inline">false</code>. Quy tắc sống còn: <strong>so nội dung thì luôn dùng <code class="inline">equals</code></strong> (Strings sẽ học sâu ở <a href="strings.html">1.7 Strings</a>).</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">==</code></th><th><code class="inline">equals</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Primitive</td><td>So giá trị</td><td>Không gọi được (primitive không phải object)</td></tr>
+        <tr><td>Object mặc định</td><td>So reference</td><td>So reference (<code class="inline">Object.equals</code>)</td></tr>
+        <tr><td>Object override</td><td>Vẫn so reference</td><td>So giá trị theo logic bạn viết</td></tr>
+        <tr><td>Ném NPE</td><td>Không</td><td>Có nếu gọi trên biến <code class="inline">null</code></td></tr>
+        <tr><td>Dùng cho</td><td>So reference/primitive, enum, singleton</td><td>So giá trị: Product, Point, String, BigDecimal...</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khi nào cần <em>value equality</em>? Khi object đại diện cho một giá trị trong nghiệp vụ — mã sản phẩm, toạ độ, số tiền, đơn hàng — chứ không phải một thực thể có danh tính riêng. Lúc đó hãy override <code class="inline">equals</code> (và <code class="inline">hashCode</code>), hoặc dùng <code class="inline">record</code> để JDK làm giúp.</p>
+
+    <h2 id="equals-contract">4. Hợp đồng <code class="inline">equals</code> — 5 tính chất <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Javadoc của <code class="inline">Object.equals</code> quy định <code class="inline">equals</code> phải là một <strong>quan hệ tương đương</strong> (equivalence relation) với 5 tính chất. Phỏng vấn gần như luôn hỏi điều này:</p>
+
+    <ol>
+      <li><strong>Reflexive</strong> — <code class="inline">x.equals(x)</code> luôn <code class="inline">true</code>.</li>
+      <li><strong>Symmetric</strong> — <code class="inline">x.equals(y)</code> bằng <code class="inline">y.equals(x)</code>. Không bao giờ có chuyện một chiều.</li>
+      <li><strong>Transitive</strong> — nếu <code class="inline">x.equals(y)</code> và <code class="inline">y.equals(z)</code> thì <code class="inline">x.equals(z)</code>.</li>
+      <li><strong>Consistent</strong> — gọi nhiều lần cho cùng kết quả, miễn là state dùng để so không đổi. Đừng để <code class="inline">equals</code> phụ thuộc thời gian, ngẫu nhiên, DNS, hay field bị mutate.</li>
+      <li><strong>Non-nullity</strong> — <code class="inline">x.equals(null)</code> phải trả <code class="inline">false</code>, không được ném <code class="inline">NullPointerException</code>.</li>
+    </ol>
+
+    <h3>Vi phạm symmetric — ví dụ chạy thật</h3>
+
+    <p>Lớp cha dùng <code class="inline">instanceof</code>, lớp con thêm state và dùng <code class="inline">getClass()</code> — thế là <code class="inline">equals</code> một chiều:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Point {
+    final int x;
+    final int y;
+
+    Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Point p)) return false;
+        return x == p.x &amp;&amp; y == p.y;
+    }
+}
+
+void main() {
+    Point p = new Point(1, 2);
+    Point cp = new Point(1, 2) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return super.equals(o);
+        }
+    };
+
+    IO.println("p.equals(cp)     : " + p.equals(cp));
+    IO.println("cp.equals(p)     : " + cp.equals(p));
+    IO.println("vi pham symmetry : " + (p.equals(cp) != cp.equals(p)));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>p.equals(cp)     : true
+cp.equals(p)     : false
+vi pham symmetry : true</code></pre>
+    </div>
+
+    <p>Đây không phải tình huống hiếm gặp — chính JDK mắc lỗi này. <code class="inline">java.sql.Timestamp</code> kế thừa <code class="inline">java.util.Date</code> và thêm field <code class="inline">nanos</code>. Javadoc của <code class="inline">Timestamp</code> ghi rõ: <em>"Timestamp.equals(Object) never returns true when passed an object that isn't an instance of Timestamp... not symmetric with respect to Date.equals"</em>. Chạy thật (nanos bằng 0):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.sql.Timestamp;
+import java.util.Date;
+
+void main() {
+    Date date = new Date(1_000_000_000_000L);
+    Timestamp ts = new Timestamp(1_000_000_000_000L);
+
+    IO.println("date.equals(ts) : " + date.equals(ts));
+    IO.println("ts.equals(date) : " + ts.equals(date));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>date.equals(ts) : true
+ts.equals(date) : false</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bài học từ Effective Java:</strong> không thể vừa mở rộng một class có <code class="inline">equals</code> theo giá trị, vừa giữ đúng hợp đồng <code class="inline">equals</code> — trừ khi chấp nhận bỏ qua state của lớp con (mà như thế thì <code class="inline">equals</code> cũng vô nghĩa). Cách an toàn: <strong>ưu tiên composition hơn inheritance</strong> cho value object, hoặc chặn hẳn việc kế thừa bằng <code class="inline">final</code>.</div>
+
+    <h3><code class="inline">getClass</code> hay <code class="inline">instanceof</code>?</h3>
+
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">getClass() != o.getClass()</code></th><th><code class="inline">o instanceof Product</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Phạm vi bằng nhau</td><td>Chỉ khi cùng class chính xác</td><td>Cho phép class con bằng class cha nếu field chung khớp</td></tr>
+        <tr><td>Symmetry</td><td>An toàn hơn</td><td>Dễ vỡ nếu class con thêm state và override <code class="inline">equals</code> (Timestamp)</td></tr>
+        <tr><td>Kế thừa thêm state</td><td>Lớp con không bao giờ bằng lớp cha (có thể gây ngạc nhiên)</td><td>Lớp con có thể "giả" bằng lớp cha — một chiều</td></tr>
+        <tr><td>Khuyến nghị</td><td>Class thường, không chắc về lớp con</td><td>Class <code class="inline">final</code>, hoặc kiểm soát chặt lớp con</td></tr>
+      </tbody>
+    </table>
+
+    <p>Kinh nghiệm: nếu class của bạn <code class="inline">final</code> (hoặc là record — luôn final), <code class="inline">instanceof</code> hoặc <code class="inline">getClass</code> cho kết quả như nhau và đều đúng hợp đồng. Nếu class mở cho kế thừa, dùng <code class="inline">getClass</code> để bảo vệ symmetry, và nhớ rằng lớp con thêm field sẽ không bằng lớp cha — hãy thiết kế lớp cha là "tất cả những gì cần cho equality".</p>
+
+    <h2 id="viet-equals">5. Viết <code class="inline">equals</code> đúng — từng bước <span class="badge b-junior">Junior+</span></h2>
+
+    <div class="signature">
+      <span class="sig-muted">public boolean</span> <span class="sig-var">equals</span><span class="sig-muted">(</span><span class="tok-typ">Object</span> <span class="sig-var">o</span><span class="sig-muted">)</span>
+    </div>
+
+    <p>Chữ ký <strong>bắt buộc</strong> nhận <code class="inline">Object</code>. Công thức 5 bước, làm đúng thứ tự:</p>
+
+    <ol>
+      <li><code class="inline">if (this == o) return true;</code> — fast path, cũng xử lý luôn trường hợp <code class="inline">x.equals(x)</code>.</li>
+      <li><code class="inline">if (o == null || getClass() != o.getClass()) return false;</code> — loại null và sai class trước khi cast.</li>
+      <li>Cast: <code class="inline">Product other = (Product) o;</code></li>
+      <li>So từng field: primitive dùng <code class="inline">==</code>; object dùng <code class="inline">Objects.equals(a, b)</code> (null-safe); mảng dùng <code class="inline">Arrays.equals</code>/<code class="inline">Arrays.deepEquals</code>; <code class="inline">double</code>/<code class="inline">float</code> dùng <code class="inline">Double.compare</code>/<code class="inline">Float.compare</code>.</li>
+      <li><code class="inline">@Override</code> trên method để compiler kiểm tra chữ ký, và override <code class="inline">hashCode</code> theo cùng bộ field (mục <a href="#hashcode-contract">7</a>).</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Objects;
+
+final class Product {
+    private final String sku;
+    private final String name;
+    private final long price;
+
+    Product(String sku, String name, long price) {
+        this.sku = sku;
+        this.name = name;
+        this.price = price;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Product other = (Product) o;
+        return price == other.price
+                &amp;&amp; Objects.equals(sku, other.sku)
+                &amp;&amp; Objects.equals(name, other.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sku, name, price);
+    }
+}
+
+void main() {
+    Product a = new Product("SKU-1", "Ao thun", 199_000);
+    Product b = new Product("SKU-1", "Ao thun", 199_000);
+    Product c = new Product("SKU-1", "Ao thun", 250_000);
+
+    IO.println("a == b      : " + (a == b));
+    IO.println("a.equals(b) : " + a.equals(b));
+    IO.println("a.equals(c) : " + a.equals(c));
+    IO.println("hash a      : " + a.hashCode());
+    IO.println("hash b      : " + b.hashCode());
+    IO.println("hash c      : " + c.hashCode());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a == b      : false
+a.equals(b) : true
+a.equals(c) : false
+hash a      : 949354521
+hash b      : 949354521
+hash c      : 949405521</code></pre>
+    </div>
+
+    <p>Chú ý <code class="inline">Objects.equals(sku, other.sku)</code>: nếu <code class="inline">sku</code> là <code class="inline">null</code>, cả hai phía <code class="inline">null</code> vẫn cho <code class="inline">true</code>, một phía <code class="inline">null</code> cho <code class="inline">false</code> — không ném NPE. Nếu tự viết <code class="inline">sku.equals(other.sku)</code> bạn phải tự chống null bằng tay.</p>
+
+    <h3>Bẫy chữ ký: <code class="inline">equals(Product)</code> chỉ là overload</h3>
+
+    <p>Nếu bạn quên <code class="inline">@Override</code> và viết tham số kiểu cụ thể, compiler coi đó là một method mới — nó <strong>không</strong> override <code class="inline">Object.equals</code>:</p>
+
+    <div class="errblock">
+      <pre>EqualsSignatureErr.java:8: error: method does not override or implement a method from a supertype
+    @Override
+    ^
+1 error</pre>
+    </div>
+
+    <p>Bỏ <code class="inline">@Override</code> thì code compile được nhưng hành vi rất quái — tuỳ kiểu tĩnh của biến gọi mà chọn overload hay <code class="inline">Object.equals</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">final class Product {
+    final String sku;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    public boolean equals(Product other) { // THIEU @Override, sai kieu tham so
+        return sku.equals(other.sku);
+    }
+}
+
+void main() {
+    Product a = new Product("SKU-1");
+    Product b = new Product("SKU-1");
+    Object c = a;
+
+    IO.println("a.equals(b)          : " + a.equals(b));
+    IO.println("c.equals(b)          : " + c.equals(b));
+    IO.println("a.equals((Object) b) : " + a.equals((Object) b));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a.equals(b)          : true
+c.equals(b)          : false
+a.equals((Object) b) : false</code></pre>
+    </div>
+
+    <p>Nguy hiểm nhất là khi object của bạn nằm trong <code class="inline">HashSet</code>: collection luôn gọi qua kiểu <code class="inline">Object</code>, nên overload của bạn bị bỏ qua hoàn toàn. Luôn có <code class="inline">@Override</code> và tham số <code class="inline">Object</code>.</p>
+
+    <div class="note"><strong>So sánh <code class="inline">double</code>:</strong> <code class="inline">price == other.price</code> sai với <code class="inline">NaN</code> (NaN khác chính nó) và coi <code class="inline">-0.0</code> khác <code class="inline">0.0</code>. Dùng <code class="inline">Double.compare(price, other.price) == 0</code>. Với <code class="inline">BigDecimal</code>, nhớ bẫy scale ở <a href="#kieu-dac-biet">mục 10</a>.</div>
+
+    <h2 id="record">6. <code class="inline">record</code> — value object làm sẵn <span class="badge b-prod">Production</span></h2>
+
+    <p>Record tự sinh constructor, accessor, <code class="inline">equals</code>, <code class="inline">hashCode</code>, <code class="inline">toString</code> dựa trên danh sách component. Với value object, đây là cách viết ít code và ít bug nhất:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Point(int x, int y) {}
+
+record Product(String sku, long price) {}
+
+void main() {
+    Point p1 = new Point(1, 2);
+    Point p2 = new Point(1, 2);
+    Product a = new Product("SKU-1", 199_000);
+    Product b = new Product("SKU-1", 199_000);
+
+    IO.println("p1 == p2           : " + (p1 == p2));
+    IO.println("p1.equals(p2)      : " + p1.equals(p2));
+    IO.println("hash p1 == hash p2 : " + (p1.hashCode() == p2.hashCode()));
+    IO.println("p1                 : " + p1);
+    IO.println("a.equals(b)        : " + a.equals(b));
+    IO.println("a                  : " + a);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>p1 == p2           : false
+p1.equals(p2)      : true
+hash p1 == hash p2 : true
+p1                 : Point[x=1, y=2]
+a.equals(b)        : true
+a                  : Product[sku=SKU-1, price=199000]</code></pre>
+    </div>
+
+    <p>Record là <code class="inline">final</code> và bất biến (component là <code class="inline">private final</code>) nên cực hợp làm key của <code class="inline">HashMap</code>/<code class="inline">HashSet</code>: không ai sửa được field sau khi put. Javadoc <code class="inline">Record.hashCode</code> nói rõ: thuật toán hash cụ thể <strong>không được đảm bảo</strong> và có thể khác giữa các lần chạy JVM, kể cả khi hash của các component không đổi — đừng lưu hash của record xuống DB hay cache ngoài tiến trình.</p>
+
+    <div class="note warn"><strong>Bẫy record chứa mảng:</strong> <code class="inline">equals</code> của record so từng component bằng <code class="inline">Objects.equals</code>, mà <code class="inline">Objects.equals(int[], int[])</code> là so reference — hai mảng cùng nội dung vẫn khác nhau:</div>
+
+    <div class="codeblock">
+      <pre><code class="java">record Product(String sku, int[] sizes) {}
+
+void main() {
+    Product a = new Product("SKU-1", new int[]{38, 39});
+    Product b = new Product("SKU-1", new int[]{38, 39});
+    IO.println("a.equals(b)     : " + a.equals(b));
+    IO.println("a.hashCode == b : " + (a.hashCode() == b.hashCode()));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a.equals(b)     : false
+a.hashCode == b : false</code></pre>
+    </div>
+
+    <p>Muốn record chứa nhiều giá trị, dùng <code class="inline">List</code> bất biến (<code class="inline">List.copyOf</code>) thay vì mảng, hoặc tự override <code class="inline">equals</code>/<code class="inline">hashCode</code> với <code class="inline">Arrays.equals</code>/<code class="inline">Arrays.hashCode</code>.</p>
+
+    <h2 id="hashcode-contract">7. Hợp đồng <code class="inline">hashCode</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="signature">
+      <span class="sig-muted">public int</span> <span class="sig-var">hashCode</span><span class="sig-muted">()</span>
+    </div>
+
+    <p>Javadoc <code class="inline">Object.hashCode</code> có đúng 3 điều khoản:</p>
+
+    <ol>
+      <li><strong>Consistent trong một lần chạy</strong> — cùng một object, gọi <code class="inline">hashCode()</code> nhiều lần phải cho cùng kết quả, miễn là field dùng để tính hash không đổi. Giữa các lần chạy JVM khác nhau thì <strong>không cần</strong> giống nhau.</li>
+      <li><strong>Equal objects → equal hash codes</strong> — nếu <code class="inline">a.equals(b)</code> thì <code class="inline">a.hashCode() == b.hashCode()</code>. Đây là điều khoản bắt buộc, không phải "nên".</li>
+      <li><strong>Unequal objects có thể trùng hash</strong> — không bắt buộc khác nhau, nhưng hash càng rải đều thì <code class="inline">HashMap</code> càng nhanh. Trùng hash gọi là <em>collision</em>, hoàn toàn bình thường.</li>
+    </ol>
+
+    <p>Mặc định <code class="inline">Object.hashCode()</code> là <strong>identity hash</strong> — gắn với danh tính object, không phải địa chỉ bộ nhớ thật (JVM có thể di chuyển object mà hash không đổi). Nó đảm bảo hai object khác nhau "hầu như luôn" có hash khác nhau, nhưng không hứa con số cụ thể và không ổn định giữa các lần chạy.</p>
+
+    <h3>Objects.hash và cái bẫy một tham số</h3>
+
+    <p><code class="inline">Objects.hash(a, b, c)</code> tiện và null-safe, nhưng nó thực chất là <code class="inline">Arrays.hashCode(new Object[]{...})</code> — tức luôn "trộn" mảng theo công thức bắt đầu bằng 31. Hệ quả: với đúng <strong>một</strong> tham số, kết quả không bằng <code class="inline">hashCode</code> của object đó:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Objects;
+
+void main() {
+    String sku = "SKU-1";
+    IO.println("sku.hashCode()        : " + sku.hashCode());
+    IO.println("Objects.hash(sku)     : " + Objects.hash(sku));
+    IO.println("Objects.hashCode(sku) : " + Objects.hashCode(sku));
+    IO.println("Objects.hash == hash  : " + (Objects.hash(sku) == sku.hashCode()));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sku.hashCode()        : 78969697
+Objects.hash(sku)     : 78969728
+Objects.hashCode(sku) : 78969697
+Objects.hash == hash  : false</code></pre>
+    </div>
+
+    <p>Nếu class chỉ có một field và bạn muốn <code class="inline">hashCode()</code> trả thẳng hash của field, dùng <code class="inline">Objects.hashCode(field)</code> (trả <code class="inline">0</code> cho <code class="inline">null</code>). Dùng <code class="inline">Objects.hash</code> cho từ 2 field trở lên là chuẩn và không có gì sai — chỉ cần nhớ nó không phải "hash của một field".</p>
+
+    <div class="note"><strong>Bộ field trong hashCode phải khớp equals:</strong> field nào <code class="inline">equals</code> bỏ qua thì <code class="inline">hashCode</code> cũng phải bỏ qua, và ngược lại field nào <code class="inline">equals</code> dùng thì <code class="inline">hashCode</code> phải dùng. Lệch nhau phá điều khoản 2 — đây là bug phổ biến nhất của chủ đề này, xem <a href="#vi-pham">mục 8</a>.</div>
+
+    <h2 id="vi-pham">8. Hậu quả khi vi phạm — demo chạy thật <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <h3>Case A — equals đúng nhưng hashCode lệch</h3>
+
+    <p>Đây là hậu quả của việc "quên" <code class="inline">hashCode</code>: hash định danh của mỗi object mỗi khác, nên hai object equal rơi vào hai bucket khác nhau. Để ví dụ chạy lại luôn cho cùng kết quả (hash định danh thay đổi theo tiến trình), phần chạy dùng <code class="inline">hashCode() { return id; }</code> — về bản chất giống hệt việc không override, vì mặc định cũng là hash riêng cho từng object:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+final class Product {
+    private static int dem = 0;
+    final String sku;
+    final int id = dem++;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return sku.equals(p.sku);
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
+    public String toString() {
+        return "Product[sku=" + sku + "]";
+    }
+}
+
+void main() {
+    Product p1 = new Product("SKU-1");
+    Product p2 = new Product("SKU-1");
+    IO.println("p1.equals(p2) : " + p1.equals(p2));
+
+    Set&lt;Product&gt; set = new HashSet&lt;&gt;();
+    set.add(p1);
+    set.add(p2);
+    IO.println("set           : " + set);
+    IO.println("set.size()    : " + set.size());
+
+    Map&lt;Product, Integer&gt; map = new HashMap&lt;&gt;();
+    map.put(p1, 10);
+    IO.println("map.get(moi)  : " + map.get(new Product("SKU-1")));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>p1.equals(p2) : true
+set           : [Product[sku=SKU-1], Product[sku=SKU-1]]
+set.size()    : 2
+map.get(moi)  : null</code></pre>
+    </div>
+
+    <p>Hai sản phẩm <em>equal</em> mà <code class="inline">HashSet</code> giữ cả hai, <code class="inline">HashMap</code> không tìm thấy key. Dữ liệu vẫn nằm trong map — chỉ là không tìm được bằng key nữa.</p>
+
+    <h3>Case B — hashCode đúng nhưng equals mặc định</h3>
+
+    <p>Ngược lại, chỉ override <code class="inline">hashCode</code> mà quên <code class="inline">equals</code> thì mọi object vào cùng bucket nhưng vẫn <code class="inline">equals</code> theo identity:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashSet;
+import java.util.Set;
+
+final class Product {
+    final String sku;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    @Override
+    public int hashCode() {
+        return 42;
+    }
+
+    @Override
+    public String toString() {
+        return "Product[sku=" + sku + "]";
+    }
+}
+
+void main() {
+    Product p1 = new Product("SKU-1");
+    Product p2 = new Product("SKU-1");
+    IO.println("p1.equals(p2)  : " + p1.equals(p2));
+    IO.println("hash bang nhau : " + (p1.hashCode() == p2.hashCode()));
+
+    Set&lt;Product&gt; set = new HashSet&lt;&gt;();
+    set.add(p1);
+    set.add(p2);
+    IO.println("set            : " + set);
+    IO.println("set.size()     : " + set.size());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>p1.equals(p2)  : false
+hash bang nhau : true
+set            : [Product[sku=SKU-1], Product[sku=SKU-1]]
+set.size()     : 2</code></pre>
+    </div>
+
+    <p>Đúng theo hợp đồng (unequal được phép trùng hash), nhưng mọi thứ dồn vào một bucket khiến <code class="inline">HashMap</code> mất khả năng tìm nhanh; nhiều key hơn nữa còn có thể khiến bucket chuyển thành cây đỏ-đen.</p>
+
+    <h3>Case C — sửa object sau khi put vào HashMap</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+final class Product {
+    String sku;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return Objects.equals(sku, p.sku);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sku);
+    }
+
+    @Override
+    public String toString() {
+        return "Product[sku=" + sku + "]";
+    }
+}
+
+void main() {
+    Map&lt;Product, Integer&gt; tonKho = new HashMap&lt;&gt;();
+    Product p = new Product("SKU-1");
+    tonKho.put(p, 10);
+
+    IO.println("get(p) truoc sua  : " + tonKho.get(p));
+    IO.println("hash truoc sua    : " + p.hashCode());
+    p.sku = "SKU-2";
+    IO.println("hash sau sua      : " + p.hashCode());
+    IO.println("get(p) sau sua    : " + tonKho.get(p));
+    IO.println("containsValue(10) : " + tonKho.containsValue(10));
+    IO.println("tonKho            : " + tonKho);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>get(p) truoc sua  : 10
+hash truoc sua    : 78969728
+hash sau sua      : 78969729
+get(p) sau sua    : null
+containsValue(10) : true
+tonKho            : {Product[sku=SKU-2]=10}</code></pre>
+    </div>
+
+    <p>Entry vẫn nằm nguyên trong map (value <code class="inline">10</code> vẫn còn), nhưng key đã "đổi chỗ" sang bucket khác nên <code class="inline">get</code> trả về <code class="inline">null</code>. Quy tắc: <strong>key của <code class="inline">HashMap</code>/<code class="inline">HashSet</code> phải bất biến</strong> (record, String, wrapper, hoặc class final với field final). Nếu buộc phải sửa, hãy <code class="inline">remove</code> ra trước, sửa xong put lại.</p>
+
+    <h2 id="hashmap">9. HashMap / HashSet hoạt động thế nào <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Ở mức giới thiệu đủ để hiểu hợp đồng, một lần <code class="inline">map.get(key)</code> đi qua 4 bước:</p>
+
+    <ol>
+      <li>Gọi <code class="inline">key.hashCode()</code>.</li>
+      <li>Trộn bit: <code class="inline">h ^ (h &gt;&gt;&gt; 16)</code> (spread) để các bit cao tham gia vào index.</li>
+      <li>Chọn bucket: <code class="inline">(n - 1) &amp; spread</code>, với <code class="inline">n</code> là số bucket (mặc định 16).</li>
+      <li>Đi trong bucket, dùng <code class="inline">equals</code> để tìm đúng key. Tìm thấy → trả value; không → trả <code class="inline">null</code>.</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    String key = "Aa";
+    int h = key.hashCode();
+    int spread = h ^ (h &gt;&gt;&gt; 16);
+
+    IO.println("hash          : " + h);
+    IO.println("spread        : " + spread);
+    IO.println("bucket (n=16) : " + (spread &amp; 15));
+    IO.println("bucket (n=32) : " + (spread &amp; 31));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>hash          : 2112
+spread        : 2112
+bucket (n=16) : 0
+bucket (n=32) : 0</code></pre>
+    </div>
+
+    <h3>Collision là bình thường</h3>
+
+    <p><code class="inline">"Aa"</code> và <code class="inline">"BB"</code> có cùng hash 2112 — một ví dụ nổi tiếng. Cả hai vào bucket 0, nhưng <code class="inline">equals</code> là <code class="inline">false</code>, nên cả hai vẫn được giữ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashSet;
+import java.util.Set;
+
+final class Product {
+    final String sku;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return sku.equals(p.sku);
+    }
+
+    @Override
+    public int hashCode() {
+        return 1;
+    }
+
+    @Override
+    public String toString() {
+        return "Product[sku=" + sku + "]";
+    }
+}
+
+void main() {
+    IO.println("\"Aa\".hashCode() : " + "Aa".hashCode());
+    IO.println("\"BB\".hashCode() : " + "BB".hashCode());
+    IO.println("\"Aa\".equals(\"BB\"): " + "Aa".equals("BB"));
+
+    Set&lt;Product&gt; set = new HashSet&lt;&gt;();
+    for (int i = 0; i &lt; 5; i++) {
+        set.add(new Product("SKU-" + i));
+    }
+    IO.println("set.size() : " + set.size());
+    IO.println("set        : " + set);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>"Aa".hashCode() : 2112
+"BB".hashCode() : 2112
+"Aa".equals("BB"): false
+set.size() : 5
+set        : [Product[sku=SKU-0], Product[sku=SKU-1], Product[sku=SKU-2], Product[sku=SKU-3], Product[sku=SKU-4]]</code></pre>
+    </div>
+
+    <p>Năm object cùng hash nhưng vẫn nằm đủ 5 phần tử vì <code class="inline">equals</code> khác nhau. Trong OpenJDK hiện tại, khi một bucket có từ 8 phần tử trở lên, nó chuyển từ danh sách liên kết sang cây đỏ-đen để tra cứu vẫn nhanh (khoảng O(log n) thay vì O(n) cho bucket đó).</p>
+
+    <h3>put trùng key và thứ tự in</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+void main() {
+    Set&lt;String&gt; ma = new HashSet&lt;&gt;();
+    ma.add("Aa");
+    ma.add("BB");
+    IO.println("set  : " + ma);
+    IO.println("size : " + ma.size());
+
+    Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+    map.put("mot", 1);
+    map.put("hai", 2);
+    map.put("ba", 3);
+    IO.println("map  : " + map);
+    map.put("mot", 100);
+    IO.println("sau put lai \"mot\": " + map);
+    IO.println("get(\"mot\") : " + map.get("mot"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>set  : [Aa, BB]
+size : 2
+map  : {hai=2, mot=1, ba=3}
+sau put lai "mot": {hai=2, mot=100, ba=3}
+get("mot") : 100</code></pre>
+    </div>
+
+    <p><code class="inline">HashSet.add</code> dùng hash + equals để dedupe; <code class="inline">HashMap.put</code> với key đã tồn tại (equals) chỉ <strong>ghi đè value</strong>, không thêm entry mới. Lưu ý: thứ tự in của <code class="inline">HashMap</code>/<code class="inline">HashSet</code> phụ thuộc hash, capacity và <strong>không được đảm bảo</strong> — output trên là một lần chạy thật với JDK 25, đừng viết code dựa vào thứ tự đó. Cần thứ tự ổn định thì dùng <code class="inline">LinkedHashMap</code> (theo thứ tự chèn) hoặc <code class="inline">TreeMap</code> (theo khoá) — sẽ học ở GĐ3 Collections (3.3, chưa có doc trong site này).</p>
+
+    <div class="note">Capacity mặc định 16, load factor 0.75: khi số entry vượt <code class="inline">16 × 0.75 = 12</code>, map nhân đôi số bucket và phân bố lại. Chi phí trung bình của <code class="inline">get/put</code> là O(1). Đây là kiến thức nền; phần tối ưu sâu (capacity, load factor, va chạm hash) thuộc GĐ3.</div>
+
+    <h2 id="kieu-dac-biet">10. Các kiểu đặc biệt: BigDecimal, mảng, String, enum <span class="badge b-junior">Junior+</span></h2>
+
+    <h3>BigDecimal — equals so cả scale</h3>
+
+    <p><code class="inline">BigDecimal.equals</code> yêu cầu <strong>cùng giá trị và cùng scale</strong>, còn <code class="inline">compareTo</code> chỉ so giá trị. Vì vậy <code class="inline">1.0</code> và <code class="inline">1.00</code> là equal theo <code class="inline">compareTo</code> nhưng unequal theo <code class="inline">equals</code> — kéo theo hash khác nhau:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
+
+void main() {
+    BigDecimal a = new BigDecimal("1.0");
+    BigDecimal b = new BigDecimal("1.00");
+
+    IO.println("a.equals(b)         : " + a.equals(b));
+    IO.println("a.compareTo(b) == 0 : " + (a.compareTo(b) == 0));
+    IO.println("a.hashCode()        : " + a.hashCode());
+    IO.println("b.hashCode()        : " + b.hashCode());
+
+    Set&lt;BigDecimal&gt; hash = new HashSet&lt;&gt;();
+    hash.add(a);
+    hash.add(b);
+    IO.println("HashSet size        : " + hash.size());
+
+    Set&lt;BigDecimal&gt; tree = new TreeSet&lt;&gt;();
+    tree.add(a);
+    tree.add(b);
+    IO.println("TreeSet size        : " + tree.size());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a.equals(b)         : false
+a.compareTo(b) == 0 : true
+a.hashCode()        : 311
+b.hashCode()        : 3102
+HashSet size        : 2
+TreeSet size        : 1</code></pre>
+    </div>
+
+    <p>Hệ quả: cùng là 1 đồng nhưng <code class="inline">HashSet</code> giữ 2 phần tử, <code class="inline">TreeSet</code> giữ 1. Nghiệp vụ tiền tệ nên so bằng <code class="inline">compareTo(...) == 0</code>. Nếu buộc dùng làm key, hãy chuẩn hoá scale trước (<code class="inline">stripTrailingZeros()</code> hoặc quy định mọi giá trị cùng scale như <code class="inline">setScale(2)</code>).</p>
+
+    <h3>Mảng — equals mặc định là identity</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Arrays;
+
+void main() {
+    int[] a = {1, 2, 3};
+    int[] b = {1, 2, 3};
+
+    IO.println("a == b              : " + (a == b));
+    IO.println("a.equals(b)         : " + a.equals(b));
+    IO.println("Arrays.equals(a, b) : " + Arrays.equals(a, b));
+
+    String[][] x = {{"a", "b"}};
+    String[][] y = {{"a", "b"}};
+    IO.println("Arrays.equals(x, y)     : " + Arrays.equals(x, y));
+    IO.println("Arrays.deepEquals(x, y) : " + Arrays.deepEquals(x, y));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a == b              : false
+a.equals(b)         : false
+Arrays.equals(a, b) : true
+Arrays.equals(x, y)     : false
+Arrays.deepEquals(x, y) : true</code></pre>
+    </div>
+
+    <p>Mảng không override <code class="inline">equals</code>/<code class="inline">hashCode</code>, nên làm key <code class="inline">HashMap</code> gần như luôn là bug: hai mảng cùng nội dung vẫn khác key. Dùng <code class="inline">Arrays.equals</code> (một chiều), <code class="inline">Arrays.deepEquals</code> (nhiều chiều), <code class="inline">Arrays.hashCode</code>. Muốn dùng làm key, chuyển sang <code class="inline">List.of(...)</code> hoặc gói trong record với override phù hợp.</p>
+
+    <h3>String và wrapper</h3>
+
+    <p><code class="inline">String.equals</code> so nội dung, <code class="inline">String.hashCode</code> có công thức ổn định (<code class="inline">s[0]*31^(n-1) + ...</code>) nên rất hợp làm key. Wrapper (<code class="inline">Integer</code>, <code class="inline">Long</code>...) cũng so giá trị, nhưng nhớ bẫy cache: <code class="inline">Integer.valueOf</code> cache sẵn từ -128 đến 127 theo JLS, ngoài khoảng đó mỗi lần boxing có thể tạo object mới:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Integer a = 127;
+    Integer b = 127;
+    Integer c = 128;
+    Integer d = 128;
+
+    IO.println("a == b        : " + (a == b));
+    IO.println("c == d        : " + (c == d));
+    IO.println("c.equals(d)   : " + c.equals(d));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a == b        : true
+c == d        : false
+c.equals(d)   : true</code></pre>
+    </div>
+
+    <p>Vì vậy <code class="inline">==</code> đôi khi đúng với số nhỏ và sai với số lớn — <strong>không bao giờ</strong> dùng <code class="inline">==</code> để so wrapper, luôn dùng <code class="inline">equals</code>.</p>
+
+    <h3>enum — <code class="inline">==</code> an toàn</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">enum OrderStatus { NEW, PAID, SHIPPED }
+
+void main() {
+    OrderStatus s1 = OrderStatus.PAID;
+    OrderStatus s2 = OrderStatus.valueOf("PAID");
+    IO.println("s1 == s2      : " + (s1 == s2));
+    IO.println("s1.equals(s2) : " + s1.equals(s2));
+
+    String a = "java";
+    String b = "java";
+    String c = new String("java");
+    IO.println("a == b        : " + (a == b));
+    IO.println("a == c        : " + (a == c));
+    IO.println("a.equals(c)   : " + a.equals(c));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>s1 == s2      : true
+s1.equals(s2) : true
+a == b        : true
+a == c        : false
+a.equals(c)   : true</code></pre>
+    </div>
+
+    <p>Mỗi hằng enum là một singleton duy nhất, và <code class="inline">Enum.equals</code> được <code class="inline">final</code> hoá, bên trong dùng <code class="inline">==</code>. Do đó với enum, <code class="inline">==</code> vừa đúng vừa nhanh, lại còn an toàn <code class="inline">null</code> (trả <code class="inline">false</code> thay vì NPE) — đây là ngoại lệ của quy tắc "so object bằng equals".</p>
+
+    <h2 id="cong-cu">11. IDE, Lombok &amp; production <span class="badge b-prod">Production</span></h2>
+
+    <h3>Generate bằng IDE</h3>
+
+    <ul>
+      <li><strong>IntelliJ IDEA:</strong> đặt con trỏ trong class → <code class="inline">Alt + Insert</code> (macOS: <code class="inline">Cmd + N</code>) → <code class="inline">equals() and hashCode()</code> → chọn template (IntelliJ default dùng <code class="inline">instanceof</code>, có tuỳ chọn <code class="inline">getClass</code>) → chọn field.</li>
+      <li><strong>VS Code (Extension Pack for Java):</strong> chuột phải trong editor → <code class="inline">Source Action...</code> → <code class="inline">Generate hashCode() and equals()...</code>.</li>
+      <li>IDE hiện đại sinh code dùng <code class="inline">Objects.equals</code>/<code class="inline">Objects.hash</code> (template "java.util.Objects" / Java 7+), thay cho kiểu if-else dài của template cũ.</li>
+    </ul>
+
+    <h3>Lombok</h3>
+
+    <p>Lombok sinh bộ ba bằng annotation, code ngắn hơn nhiều — nhưng cần dependency nên ví dụ dưới đây không chạy trong môi trường thuần của trang này:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Can dependency Lombok trong build (Maven/Gradle)
+@EqualsAndHashCode
+public class Product {
+    private final String sku;
+    private final long price;
+}
+
+// Co ke thua: PHAI them callSuper = true
+@EqualsAndHashCode(callSuper = true)
+public class DiscountedProduct extends Product {
+    private final double discountRate;
+}</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Ba cảnh báo Lombok:</strong> (1) Kế thừa mà quên <code class="inline">callSuper = true</code> thì equals/hashCode của lớp con bỏ qua state lớp cha — sai hợp đồng. (2) <code class="inline">@EqualsAndHashCode</code> mặc định gom mọi field non-static, non-transient — với entity JPA, field <code class="inline">id</code> là <code class="inline">null</code> trước khi persist nên nhiều entity "mới" sẽ equal nhau; quan hệ lười tải cũng có thể bị <code class="inline">equals</code> chạm vào. (3) Entity JPA tốt nhất dùng <strong>business key</strong> (mã đơn hàng, sku) hoặc viết equals/hashCode thủ công theo id.</div>
+
+    <h3>Value object trong production</h3>
+
+    <ul>
+      <li>Giá trị thuần (toạ độ, tiền tệ, mã sản phẩm, DTO) → <strong>record</strong>; hết bug quên hashCode.</li>
+      <li>Key của <code class="inline">HashMap</code>/<code class="inline">HashSet</code> → phải bất biến; không dùng entity mutable có id sinh tự động.</li>
+      <li>Class có <code class="inline">equals</code> theo giá trị mà muốn yên tâm về symmetry → để <code class="inline">final</code> hoặc dùng composition thay vì kế thừa.</li>
+      <li>Đừng đưa field "phái sinh"/cache/logger vào <code class="inline">equals</code> — chỉ field định danh giá trị.</li>
+    </ul>
+
+    <h2 id="kiem-thu">12. Kiểm thử equals / hashCode <span class="badge b-prod">Production</span></h2>
+
+    <p>Giống tinh thần "kiểm thử method ngay khi viết" ở <a href="methods.html#kiem-thu">1.5 Methods</a>, hãy kiểm tra hợp đồng bằng các ca cố định trước khi tin vào class của mình. Chạy thật bộ test thủ công:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Objects;
+
+final class Product {
+    final String sku;
+    final long price;
+
+    Product(String sku, long price) {
+        this.sku = sku;
+        this.price = price;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return price == p.price &amp;&amp; Objects.equals(sku, p.sku);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sku, price);
+    }
+}
+
+Product p(String sku, long price) {
+    return new Product(sku, price);
+}
+
+void check(String ten, boolean dieuKien) {
+    IO.println((dieuKien ? "PASS " : "FAIL ") + ten);
+}
+
+void main() {
+    Product a = p("SKU-1", 100);
+    Product b = p("SKU-1", 100);
+    Product c = p("SKU-1", 100);
+    Product d = p("SKU-2", 100);
+
+    check("reflexive  a.equals(a)", a.equals(a));
+    check("symmetric  a=b =&gt; b=a", a.equals(b) == b.equals(a));
+    check("transitive a=b, b=c =&gt; a=c", !(a.equals(b) &amp;&amp; b.equals(c)) || a.equals(c));
+    check("consistent lap lai cung ket qua", a.equals(b) &amp;&amp; a.equals(b));
+    check("non-null   a.equals(null) == false", !a.equals(null));
+    check("hash       a=b =&gt; hash bang nhau", a.hashCode() == b.hashCode());
+    check("khac sku   a.equals(d) == false", !a.equals(d));
+    check("Objects.equals(null, \"x\") == false", !Objects.equals(null, "x"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>PASS reflexive  a.equals(a)
+PASS symmetric  a=b =&gt; b=a
+PASS transitive a=b, b=c =&gt; a=c
+PASS consistent lap lai cung ket qua
+PASS non-null   a.equals(null) == false
+PASS hash       a=b =&gt; hash bang nhau
+PASS khac sku   a.equals(d) == false
+PASS Objects.equals(null, "x") == false</code></pre>
+    </div>
+
+    <p>Bộ ca tối thiểu nên có: <strong>reflexive</strong>, <strong>symmetric</strong> (cả hai chiều, thử thêm với lớp con nếu có), <strong>transitive</strong> (cần object thứ ba), <strong>consistent</strong> (gọi lặp lại), <strong>null</strong>, <strong>equal → equal hash</strong>, <strong>khác field chính → unequal</strong>, và bài test thực chiến: <code class="inline">HashSet.add</code> hai object equal phải cho <code class="inline">size == 1</code>; <code class="inline">HashMap.put</code> rồi <code class="inline">get</code> bằng object equal khác phải trả đúng value. Sang GĐ4 (4.4 Testing) các ca này chuyển thành JUnit <code class="inline">assertEquals</code>/<code class="inline">assertNotEquals</code> chạy tự động — không dùng <code class="inline">IO.println</code> làm test trong production.</p>
+
+    <h2 id="pitfalls">13. Pitfalls thường gặp</h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Hậu quả thật</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Override <code class="inline">equals</code> quên <code class="inline">hashCode</code></td>
+          <td><code class="inline">HashSet</code> giữ trùng, <code class="inline">HashMap.get</code> trả <code class="inline">null</code> dù key "có trong map"</td>
+          <td>Luôn override cả hai theo cùng bộ field; hoặc dùng record</td>
+        </tr>
+        <tr>
+          <td><code class="inline">hashCode</code> hoặc <code class="inline">equals</code> dùng field mutable</td>
+          <td>Sửa object sau khi put → không tìm thấy key nữa</td>
+          <td>Key phải bất biến; remove trước khi sửa rồi put lại</td>
+        </tr>
+        <tr>
+          <td>Cha dùng <code class="inline">instanceof</code>, con thêm state và <code class="inline">equals</code> một chiều</td>
+          <td>Vỡ symmetry (như <code class="inline">Timestamp</code> vs <code class="inline">Date</code>)</td>
+          <td>Chọn <code class="inline">getClass</code> hoặc để cha <code class="inline">final</code>; ưu tiên composition</td>
+        </tr>
+        <tr>
+          <td>So mảng bằng <code class="inline">==</code> hoặc <code class="inline">equals</code></td>
+          <td>Luôn <code class="inline">false</code> dù nội dung giống hệt</td>
+          <td><code class="inline">Arrays.equals</code>/<code class="inline">Arrays.deepEquals</code>; đừng làm key</td>
+        </tr>
+        <tr>
+          <td>So <code class="inline">String</code>/wrapper bằng <code class="inline">==</code></td>
+          <td>Đúng hay sai tuỳ interning/cache (-128..127) — bug chập chờn</td>
+          <td><code class="inline">equals</code> hoặc <code class="inline">Objects.equals</code></td>
+        </tr>
+        <tr>
+          <td>Gọi <code class="inline">a.equals(null)</code> với <code class="inline">a</code> null</td>
+          <td><code class="inline">NullPointerException</code> ngay tại call site</td>
+          <td><code class="inline">Objects.equals(a, b)</code> hoặc <code class="inline">hangSo.equals(bien)</code></td>
+        </tr>
+        <tr>
+          <td><code class="inline">BigDecimal</code> làm key với scale khác nhau</td>
+          <td><code class="inline">1.0</code> và <code class="inline">1.00</code> là hai key khác nhau</td>
+          <td>Chuẩn hoá scale (<code class="inline">setScale</code>/<code class="inline">stripTrailingZeros</code>) hoặc so <code class="inline">compareTo</code></td>
+        </tr>
+        <tr>
+          <td>Viết <code class="inline">equals(Product)</code> thay vì <code class="inline">equals(Object)</code></td>
+          <td>Chỉ là overload; collection bỏ qua, hành vi tuỳ kiểu tĩnh</td>
+          <td>Luôn <code class="inline">@Override public boolean equals(Object o)</code></td>
+        </tr>
+        <tr>
+          <td><code class="inline">hashCode</code> dùng field không có trong <code class="inline">equals</code> (hoặc ngược lại)</td>
+          <td>Hai object equal rơi vào bucket khác nhau</td>
+          <td>Hai method dùng chung một bộ field, cùng thứ tự</td>
+        </tr>
+        <tr>
+          <td><code class="inline">toString</code> chứa mật khẩu/token hoặc gọi lazy-load</td>
+          <td>Rò rỉ dữ liệu ra log; N+1 query, <code class="inline">LazyInitializationException</code></td>
+          <td>Che dữ liệu nhạy cảm; <code class="inline">toString</code> chỉ đọc state đơn giản</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">14. Góc Node.js — equality trong JS/TS <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Đây là một trong những khác biệt tư duy lớn nhất giữa hai hệ sinh thái. JavaScript không có cơ chế override toán tử hay "hợp đồng" cho object equality; Java thì có <code class="inline">equals</code>/<code class="inline">hashCode</code> và các collection tự dùng chúng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>So object mặc định</td><td><code class="inline">===</code> so reference; <code class="inline">{a:1} === {a:1}</code> là <code class="inline">false</code></td><td><code class="inline">equals</code> mặc định cũng là identity; override được để đổi sang so giá trị</td></tr>
+        <tr><td>Toán tử <code class="inline">==</code></td><td>Loose equality, tự ép kiểu (<code class="inline">"1" == 1</code> true) — bẫy kinh điển</td><td>Luôn so reference/primitive, không ép kiểu</td></tr>
+        <tr><td>So giá trị</td><td>Tự viết, <code class="inline">JSON.stringify</code>, lodash <code class="inline">isEqual</code>, <code class="inline">util.isDeepStrictEqual</code></td><td><code class="inline">equals</code>/<code class="inline">Objects.equals</code>; record tự sinh</td></tr>
+        <tr><td>Hash collection</td><td><code class="inline">Map</code>/<code class="inline">Set</code> dùng SameValueZero → object key theo reference</td><td><code class="inline">HashMap</code>/<code class="inline">HashSet</code> dùng <code class="inline">hashCode</code> + <code class="inline">equals</code> → key theo giá trị nếu override</td></tr>
+        <tr><td>Bất biến</td><td><code class="inline">Object.freeze</code> chỉ nông, dễ vượt qua</td><td><code class="inline">record</code>, <code class="inline">final</code> class/field là ràng buộc thật, compiler kiểm tra</td></tr>
+        <tr><td>So trong test</td><td><code class="inline">assert.deepStrictEqual</code> (Node), <code class="inline">toEqual</code> (Jest)</td><td><code class="inline">assertEquals</code> dùng <code class="inline">equals</code> của object</td></tr>
+      </tbody>
+    </table>
+
+    <p>Các cách so giá trị trong JS và bẫy của từng cách (chạy thật bằng Node 22):</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript (Node 22)
+const { isDeepStrictEqual } = require("node:util");
+
+const a = { sku: "SKU-1" };
+const b = { sku: "SKU-1" };
+
+console.log(a === b);                                 // false
+console.log(JSON.stringify(a) === JSON.stringify(b)); // true
+console.log(isDeepStrictEqual(a, b));                 // true
+console.log(JSON.stringify({ x: 1, y: 2 }) ===
+            JSON.stringify({ y: 2, x: 1 }));          // false - bay thu tu key
+
+const m = new Map();
+m.set(a, 1);
+console.log(m.get(b));                                // undefined - key theo reference</code></pre>
+    </div>
+
+    <p><code class="inline">JSON.stringify</code> có ba bẫy: thứ tự key quyết định kết quả, field <code class="inline">undefined</code>/function bị bỏ qua, còn <code class="inline">Date</code>/<code class="inline">Map</code>/<code class="inline">Set</code> bị serialize sai (hoặc rỗng); object vòng tròn thì ném <code class="inline">TypeError</code>. Nghiêm túc thì dùng <code class="inline">isDeepStrictEqual</code> của Node hoặc lodash <code class="inline">isEqual</code>. Còn trong Java, bạn chỉ cần override <code class="inline">equals</code> một lần là toàn bộ <code class="inline">HashMap</code>, <code class="inline">HashSet</code>, test assert dùng chung ngữ nghĩa đó.</p>
+
+    <h2 id="qa">15. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Hợp đồng <code class="inline">equals</code> gồm những tính chất nào?</summary>
+      <div class="answer">Năm tính chất: <strong>reflexive</strong> (<code class="inline">x.equals(x)</code> true), <strong>symmetric</strong> (<code class="inline">x.equals(y) == y.equals(x)</code>), <strong>transitive</strong> (x=y, y=z ⇒ x=z), <strong>consistent</strong> (kết quả ổn định nếu state không đổi), và <strong>non-nullity</strong> (<code class="inline">x.equals(null)</code> trả false, không ném NPE). Nói cách khác <code class="inline">equals</code> phải là quan hệ tương đương trên các object.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. <code class="inline">==</code> và <code class="inline">equals</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">==</code> so giá trị với primitive và so reference với object. <code class="inline">equals</code> mặc định trong <code class="inline">Object</code> cũng so reference (<code class="inline">return this == obj;</code>), nhưng có thể override để so giá trị. Vì vậy với object chưa override, hai khái niệm giống nhau; sau khi override, <code class="inline">equals</code> là "so nội dung" còn <code class="inline">==</code> vẫn là "cùng một object".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Mặc định <code class="inline">Object</code> cho ta những gì ở ba method này?</summary>
+      <div class="answer"><code class="inline">equals</code> so identity (<code class="inline">this == obj</code>); <code class="inline">hashCode</code> trả identity hash — khác nhau giữa các object khác nhau nhưng không hứa con số cụ thể và có thể khác giữa các lần chạy JVM; <code class="inline">toString</code> trả <code class="inline">getClass().getName() + "@" + Integer.toHexString(hashCode())</code>, ví dụ <code class="inline">Point@b59d31</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Vì sao nên override <code class="inline">toString</code>?</summary>
+      <div class="answer">Để log, debugger và thông báo lỗi test hiển thị dữ liệu có nghĩa thay vì <code class="inline">Product@1b6d3586</code>. Nối chuỗi (<code class="inline">"x=" + obj</code>) cũng tự gọi <code class="inline">toString</code>. Record tự sinh sẵn theo dạng <code class="inline">Product[sku=SKU-1, price=199000]</code>. Lưu ý không đưa dữ liệu nhạy cảm vào và đừng parse output của <code class="inline">toString</code> bằng code.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Vì sao override <code class="inline">equals</code> thì phải override <code class="inline">hashCode</code>?</summary>
+      <div class="answer">Vì điều khoản 2 của <code class="inline">hashCode</code>: object equal phải có hash bằng nhau. <code class="inline">HashMap</code>/<code class="inline">HashSet</code> tìm bucket bằng <code class="inline">hashCode</code> trước rồi mới so <code class="inline">equals</code>. Nếu equal mà hash khác, hai object rơi vào hai bucket khác nhau và collection "không nhìn thấy" nhau dù <code class="inline">equals</code> trả true.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Chỉ override <code class="inline">equals</code> mà quên <code class="inline">hashCode</code> thì chuyện gì xảy ra?</summary>
+      <div class="answer"><code class="inline">HashSet.add</code> hai object equal sẽ giữ cả hai (size 2), <code class="inline">contains</code>/<code class="inline">get</code> bằng object equal khác trả về false/null — dù bản thân <code class="inline">a.equals(b)</code> là true. Đây là bug kinh điển; xem demo đầy đủ ở <a href="#vi-pham">mục 8</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Chỉ override <code class="inline">hashCode</code> mà không <code class="inline">equals</code> thì sao?</summary>
+      <div class="answer">Không dedupe được: <code class="inline">equals</code> vẫn theo identity nên hai object cùng nội dung vẫn bị coi là khác nhau, <code class="inline">HashSet</code> giữ cả hai. Nếu <code class="inline">hashCode</code> trả cùng một giá trị cho mọi object, chúng dồn vào một bucket → tìm kiếm chậm dần. Hợp đồng không bị vi phạm (unequal được phép trùng hash), nhưng class vô dụng về mặt value equality.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. record tự sinh gì và <code class="inline">equals</code> của nó có đúng hợp đồng không?</summary>
+      <div class="answer">Record tự sinh constructor, accessor, <code class="inline">equals</code>, <code class="inline">hashCode</code>, <code class="inline">toString</code> dựa trên các component, và <code class="inline">equals</code> tuân đủ 5 tính chất. Bẫy: component là mảng thì so reference (<code class="inline">Objects.equals</code> trên mảng), component mutable thì record vẫn có thể bị mutate; hash của record không được đảm bảo giống nhau giữa các lần chạy JVM.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Hai object không <code class="inline">equals</code> có thể cùng <code class="inline">hashCode</code> không?</summary>
+      <div class="answer">Có, gọi là collision và hoàn toàn hợp lệ — ví dụ <code class="inline">"Aa"</code> và <code class="inline">"BB"</code> đều có hash 2112. Vì không gian hash chỉ 32 bit nên không thể đảm bảo khác nhau cho mọi object. Collision chỉ ảnh hưởng hiệu năng (bucket dài), tính đúng đắn do <code class="inline">equals</code> quyết định.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">hashCode</code> có phải giống nhau giữa các lần chạy chương trình không?</summary>
+      <div class="answer">Không. Hợp đồng chỉ yêu cầu <em>consistent trong một lần thực thi</em> khi state không đổi. <code class="inline">Object.hashCode</code> (identity hash) và hash của record có thể khác giữa các lần chạy. Ngoại lệ: các class như <code class="inline">String</code>, <code class="inline">Integer</code> có công thức hash được đặc tả nên ổn định. Vì vậy đừng lưu hash vào DB/file rồi so sánh ở lần chạy sau.</div>
+    </details>
+
+    <h3>Junior+</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Trong <code class="inline">equals</code> nên dùng <code class="inline">getClass</code> hay <code class="inline">instanceof</code>?</summary>
+      <div class="answer">Nếu class <code class="inline">final</code>/record, cả hai tương đương. Nếu mở kế thừa: <code class="inline">getClass</code> bảo vệ symmetry (chỉ cùng class chính xác mới equal) nhưng lớp con thêm field sẽ không bao giờ bằng lớp cha; <code class="inline">instanceof</code> cho lớp con bằng lớp cha nếu field chung khớp, dễ vỡ symmetry nếu lớp con thêm state và override <code class="inline">equals</code> — đúng như <code class="inline">Timestamp</code> vs <code class="inline">Date</code>. Effective Java khuyên ưu tiên composition hơn kế thừa cho value object.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Cho ví dụ vi phạm tính symmetric.</summary>
+      <div class="answer">Kinh điển trong JDK: <code class="inline">Timestamp</code> kế thừa <code class="inline">Date</code> và thêm <code class="inline">nanos</code>; <code class="inline">date.equals(ts)</code> là <code class="inline">true</code> còn <code class="inline">ts.equals(date)</code> là <code class="inline">false</code> — javadoc của <code class="inline">Timestamp</code> thừa nhận điều này. Tự tạo cũng dễ: lớp cha dùng <code class="inline">instanceof</code>, lớp con thêm field và dùng <code class="inline">getClass</code> → một chiều. Demo chạy thật ở <a href="#equals-contract">mục 4</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Vì sao dùng object mutable làm key <code class="inline">HashMap</code> rất nguy hiểm?</summary>
+      <div class="answer">Vì <code class="inline">HashMap</code> chọn bucket theo hash tại thời điểm <code class="inline">put</code>. Sửa field tham gia tính hash sau đó làm hash đổi, entry nằm ở bucket cũ nhưng <code class="inline">get</code> lại tìm ở bucket mới → trả <code class="inline">null</code> dù entry vẫn còn (value vẫn thấy qua <code class="inline">containsValue</code>/duyệt map). Cách phòng: key bất biến (record/String/wrapper), hoặc <code class="inline">remove</code> trước khi sửa và put lại.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">Objects.equals</code> và <code class="inline">Objects.hash</code> có gì hay, có bẫy gì?</summary>
+      <div class="answer"><code class="inline">Objects.equals(a, b)</code> null-safe: cả hai null → true, một null → false, không NPE. <code class="inline">Objects.hash(...)</code> gọn cho nhiều field nhưng thực chất là <code class="inline">Arrays.hashCode(new Object[]{...})</code>; bẫy: với đúng một tham số, <code class="inline">Objects.hash(sku) != sku.hashCode()</code> (nó cộng thêm 31). Muốn hash của một field, dùng <code class="inline">Objects.hashCode(field)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. <code class="inline">BigDecimal</code> khác nhau thế nào giữa <code class="inline">equals</code> và <code class="inline">compareTo</code>?</summary>
+      <div class="answer"><code class="inline">equals</code> yêu cầu cùng giá trị <em>và</em> cùng scale nên <code class="inline">new BigDecimal("1.0").equals(new BigDecimal("1.00"))</code> là false; <code class="inline">compareTo(...) == 0</code> là true. Hash của hai object cũng khác nên <code class="inline">HashSet</code> giữ 2 phần tử trong khi <code class="inline">TreeSet</code> giữ 1. Nghiệp vụ tiền nên so <code class="inline">compareTo</code>; làm key thì chuẩn hoá scale trước.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. So sánh hai mảng trong Java thế nào cho đúng?</summary>
+      <div class="answer">Không dùng <code class="inline">==</code> hay <code class="inline">equals</code> (mảng không override, luôn so reference → false). Dùng <code class="inline">Arrays.equals(a, b)</code> cho mảng một chiều và <code class="inline">Arrays.deepEquals(a, b)</code> cho mảng lồng nhau; hash bằng <code class="inline">Arrays.hashCode</code>/<code class="inline">Arrays.deepHashCode</code>. Tốt nhất là tránh dùng mảng làm key/field của value object.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Vì sao so String phải dùng <code class="inline">equals</code>? Vì sao <code class="inline">Integer a == b</code> lúc đúng lúc sai?</summary>
+      <div class="answer">String literal cùng nội dung được chia sẻ trong string pool nên <code class="inline">==</code> đôi khi true, nhưng chuỗi tạo động (<code class="inline">new String</code>, nối chuỗi, <code class="inline">substring</code>) là object mới nên <code class="inline">==</code> false. Wrapper có cache -128..127 theo JLS: <code class="inline">Integer</code> 127 <code class="inline">==</code> 127 true, 128 <code class="inline">==</code> 128 false. Quy tắc: luôn <code class="inline">equals</code>/<code class="inline">Objects.equals</code> cho mọi object.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Vì sao enum so sánh bằng <code class="inline">==</code> là an toàn?</summary>
+      <div class="answer">Mỗi hằng enum là một singleton do JVM tạo đúng một lần, nên reference là duy nhất cho mỗi hằng. <code class="inline">Enum.equals</code> được <code class="inline">final</code> và bên trong dùng <code class="inline">==</code>. Dùng <code class="inline">==</code> còn an toàn null (trả false thay vì NPE) và nhanh hơn gọi method — đây là ngoại lệ được khuyến nghị của quy tắc "so object bằng equals".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Vì sao phải viết <code class="inline">equals(Object)</code> mà không phải <code class="inline">equals(Product)</code>?</summary>
+      <div class="answer">Vì <code class="inline">equals</code> được khai báo trong <code class="inline">Object</code> với tham số <code class="inline">Object</code>; viết tham số cụ thể chỉ tạo <em>overload</em> mới, không override. Collection và framework luôn gọi qua kiểu <code class="inline">Object</code> nên method của bạn bị bỏ qua. Luôn dùng <code class="inline">@Override</code> để compiler báo lỗi nếu chữ ký sai (xem <a href="#viet-equals">mục 5</a>).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. <code class="inline">a.equals(null)</code> có ném lỗi không? <code class="inline">null.equals(a)</code> thì sao?</summary>
+      <div class="answer"><code class="inline">a.equals(null)</code> phải trả <code class="inline">false</code> theo hợp đồng (implementation đúng kiểm tra <code class="inline">o == null</code> trước khi cast). Nhưng <code class="inline">null.equals(a)</code> ném <code class="inline">NullPointerException</code> vì bạn gọi method trên reference null. Vì vậy: dùng <code class="inline">Objects.equals(a, b)</code>, hoặc đặt hằng số/giá trị chắc chắn khác null ở bên trái như <code class="inline">"ADMIN".equals(role)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Lombok <code class="inline">@EqualsAndHashCode</code> có bẫy gì?</summary>
+      <div class="answer">Ba bẫy chính: (1) class kế thừa mà quên <code class="inline">callSuper = true</code> thì equals/hashCode bỏ qua state lớp cha — sai hợp đồng; (2) mặc định gom mọi field non-static/non-transient, kể cả field cache hoặc quan hệ lười tải; (3) entity JPA với <code class="inline">id</code> sinh tự động: <code class="inline">id</code> là null trước khi persist nên mọi entity mới equal nhau — nên viết tay theo business key hoặc id.</div>
+    </details>
+
+    <h3>Production</h3>
+
+    <details class="qa">
+      <summary>Câu 22. Chọn field nào để đưa vào <code class="inline">equals</code>/<code class="inline">hashCode</code>?</summary>
+      <div class="answer">Chọn đúng những field định danh giá trị của object (sku, toạ độ, số tiền…), bất biến và ổn định. Hai method phải dùng <strong>cùng một bộ field, cùng thứ tự</strong>. Loại bỏ field phái sinh (tính lại được), field cache/logger, field thay đổi theo thời gian (lastUpdated, viewCount). Với entity, dùng business key hoặc id; tránh id sinh tự động còn null.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 23. <code class="inline">toString</code> có được chứa dữ liệu nhạy cảm không? Có nên gọi DB trong <code class="inline">toString</code>?</summary>
+      <div class="answer">Không nên chứa mật khẩu, token, số thẻ, thông tin cá nhân — log bị ghi ra file, console, hệ thống log tập trung, rất khó thu hồi. Cũng không nên để <code class="inline">toString</code> kích hoạt lazy loading (gọi quan hệ JPA) vì dễ gây N+1 query hoặc <code class="inline">LazyInitializationException</code>. <code class="inline">toString</code> chỉ nên đọc state đơn giản, đã che dữ liệu nếu cần.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 24. Khi nào nên dùng record thay vì tự viết bộ ba method?</summary>
+      <div class="answer">Khi object là value object/DTO bất biến và các component không phải mảng/mutable object — record cho code ngắn nhất, đúng hợp đồng nhất, tự cập nhật khi thêm component. Không phù hợp khi cần mutable state, constructor rỗng (framework cũ), hoặc class có hành vi phức tạp kiểu entity JPA — lúc đó viết class thường (hoặc dùng Lombok cẩn thận). Nhớ hash của record có thể khác giữa các lần chạy JVM nên đừng lưu lại.</div>
+    </details>
+
+    <h2 id="bai-tap">16. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    final String name;
+
+    Product(String name) {
+        this.name = name;
+    }
+}
+
+void main() {
+    Product a = new Product("Ao thun");
+    Product b = new Product("Ao thun");
+    IO.println(a == b);
+    IO.println(a.equals(b));
+    IO.println(a.equals(a));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">false</code>, <code class="inline">true</code>. Class không override <code class="inline">equals</code> nên <code class="inline">Object.equals</code> so identity: hai object khác nhau dù cùng tên → false; còn <code class="inline">a.equals(a)</code> đúng tính reflexive → true.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    private static int dem = 0;
+    final String sku;
+    final int id = dem++;
+
+    Product(String sku) { this.sku = sku; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return sku.equals(p.sku);
+    }
+
+    @Override
+    public int hashCode() { return id; }
+}
+
+void main() {
+    Product p1 = new Product("SKU-1");
+    Product p2 = new Product("SKU-1");
+    IO.println(p1.equals(p2));
+
+    Set&lt;Product&gt; set = new HashSet&lt;&gt;();
+    set.add(p1);
+    set.add(p2);
+    IO.println(set.size());
+    IO.println(set.contains(new Product("SKU-1")));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">2</code>, <code class="inline">false</code>. <code class="inline">equals</code> theo sku là đúng, nhưng <code class="inline">hashCode</code> theo <code class="inline">id</code> (mỗi object một số khác nhau, giống hệt hash định danh mặc định) nên hai object equal nằm ở hai bucket: set giữ cả hai và <code class="inline">contains</code> với object mới trả false. Đây là lỗi "equals một đằng, hashCode một nẻo".</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    final String sku;
+
+    Product(String sku) { this.sku = sku; }
+
+    @Override
+    public int hashCode() { return 42; }
+}
+
+void main() {
+    Product p1 = new Product("SKU-1");
+    Product p2 = new Product("SKU-1");
+    IO.println(p1.equals(p2));
+    IO.println(p1.hashCode() == p2.hashCode());
+
+    Set&lt;Product&gt; set = new HashSet&lt;&gt;();
+    set.add(p1);
+    set.add(p2);
+    IO.println(set.size());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">true</code>, <code class="inline">2</code>. Không override <code class="inline">equals</code> nên vẫn so identity → false; hash bằng nhau không cứu được vì set dedupe theo <code class="inline">equals</code>, nên giữ đủ 2 phần tử.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    final String sku;
+    final String name;
+
+    Product(String sku, String name) {
+        this.sku = sku;
+        this.name = name;
+    }
+
+    public boolean equals(Product other) {
+        return sku == other.sku &amp;&amp; name == other.name;
+    }
+}
+
+void main() {
+    Product a = new Product("SKU-1", "Ao thun");
+    Product b = new Product("SKU-1", "Ao thun");
+    IO.println(a.equals(b));
+}</code></pre>
+      </div>
+      <div class="answer"><strong>In ra <code class="inline">false</code> — và class có 3 lỗi.</strong> (1) Thiếu <code class="inline">@Override</code> và sai kiểu tham số nên đây chỉ là overload, không phải <code class="inline">equals(Object)</code> mà collection gọi; (2) so <code class="inline">String</code> bằng <code class="inline">==</code> nên hai chuỗi tạo từ tham số khác reference; (3) hoàn toàn thiếu <code class="inline">hashCode</code>. Bản sửa: đổi thành <code class="inline">equals(Object o)</code> có <code class="inline">@Override</code>, so bằng <code class="inline">Objects.equals</code>, thêm <code class="inline">hashCode() { return Objects.hash(sku, name); }</code> — khi đó in ra <code class="inline">true</code> và hash hai object bằng nhau.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+final class Product {
+    String sku;
+
+    Product(String sku) { this.sku = sku; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product p = (Product) o;
+        return Objects.equals(sku, p.sku);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(sku); }
+}
+
+void main() {
+    Map&lt;Product, Integer&gt; tonKho = new HashMap&lt;&gt;();
+    Product p = new Product("SKU-1");
+    tonKho.put(p, 10);
+
+    IO.println(tonKho.get(p));
+    p.sku = "SKU-2";
+    IO.println(tonKho.get(p));
+    IO.println(tonKho.containsValue(10));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">10</code>, <code class="inline">null</code>, <code class="inline">true</code>. Trước khi sửa key tìm thấy bình thường. Sau khi đổi <code class="inline">sku</code>, hash đổi nên <code class="inline">get</code> tìm sai bucket → null, nhưng entry cũ vẫn nằm trong map nên <code class="inline">containsValue(10)</code> vẫn true. Key đã bị "mồ côi" — đây là lý do key phải bất biến.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    final String sku;
+    final long price;
+
+    Product(String sku, long price) {
+        this.sku = sku;
+        this.price = price;
+    }
+
+    // Viet toString o day
+}
+
+void main() {
+    IO.println(new Product("SKU-1", 199_000));
+}</code></pre>
+      </div>
+      <div class="answer">Đáp án mẫu: <code class="inline">return "Product{sku='" + sku + "', price=" + price + "}";</code> → in ra <code class="inline">Product{sku='SKU-1', price=199000}</code>. Không có format bắt buộc, miễn là ngắn gọn, đủ nhận diện và không lộ dữ liệu nhạy cảm. Nếu đổi class thành <code class="inline">record Product(String sku, long price) {}</code> thì JDK tự in <code class="inline">Product[sku=SKU-1, price=199000]</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">// Cho class Point voi x, y: viet equals, hashCode, toString
+// Sao cho in ra Point(1, 2), a.equals(b) true, hash bang nhau
+
+final class Point {
+    private final int x;
+    private final int y;
+
+    Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    // viet tiep o day
+}
+
+void main() {
+    Point a = new Point(1, 2);
+    Point b = new Point(1, 2);
+    IO.println(a);
+    IO.println(a.equals(b));
+    IO.println(a.hashCode() == b.hashCode());
+}</code></pre>
+      </div>
+      <div class="answer">Đáp án mẫu (chạy thật cho <code class="inline">Point(1, 2)</code>, <code class="inline">true</code>, <code class="inline">true</code>):
+        <div class="codeblock">
+          <pre><code class="java">@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Point p = (Point) o;
+    return x == p.x &amp;&amp; y == p.y;
+}
+
+@Override
+public int hashCode() {
+    return Objects.hash(x, y);
+}
+
+@Override
+public String toString() {
+    return "Point(" + x + ", " + y + ")";
+}</code></pre>
+        </div>
+        Với class <code class="inline">final</code>, dùng <code class="inline">getClass</code> hay <code class="inline">instanceof</code> đều đúng; ở đây chọn <code class="inline">getClass</code> cho chặt chẽ. Chú ý <code class="inline">Objects.hash</code> cần <code class="inline">import java.util.Objects;</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">BigDecimal a = new BigDecimal("1.0");
+BigDecimal b = new BigDecimal("1.00");
+
+IO.println(a.equals(b));
+IO.println(a.compareTo(b) == 0);
+
+Set&lt;BigDecimal&gt; hash = new HashSet&lt;&gt;();
+hash.add(a);
+hash.add(b);
+IO.println(hash.size());
+
+Set&lt;BigDecimal&gt; tree = new TreeSet&lt;&gt;();
+tree.add(a);
+tree.add(b);
+IO.println(tree.size());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">true</code>, <code class="inline">2</code>, <code class="inline">1</code>. <code class="inline">equals</code> so cả scale (1.0 khác 1.00) và hash cũng khác (311 vs 3102), nên <code class="inline">HashSet</code> giữ 2. <code class="inline">TreeSet</code> dùng <code class="inline">compareTo</code> → hai giá trị bằng nhau về toán học nên chỉ giữ 1.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+int[] b = {1, 2, 3};
+
+IO.println(a == b);
+IO.println(a.equals(b));
+IO.println(Arrays.equals(a, b));
+
+String[][] x = {{"a", "b"}};
+String[][] y = {{"a", "b"}};
+IO.println(Arrays.equals(x, y));
+IO.println(Arrays.deepEquals(x, y));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">false</code>, <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">true</code>. Mảng không override <code class="inline">equals</code> (identity), <code class="inline">Arrays.equals</code> so từng phần tử một chiều; mảng hai chiều cần <code class="inline">Arrays.deepEquals</code> vì <code class="inline">Arrays.equals</code> chỉ so reference của các mảng con.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.sql.Timestamp;
+import java.util.Date;
+
+Date date = new Date(1_000_000_000_000L);
+Timestamp ts = new Timestamp(1_000_000_000_000L);
+
+IO.println(date.equals(ts));
+IO.println(ts.equals(date));
+IO.println(date.equals(ts) == ts.equals(date));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">false</code>. Đây là vi phạm symmetry có thật trong JDK: <code class="inline">Timestamp</code> kế thừa <code class="inline">Date</code>, thêm <code class="inline">nanos</code>, và javadoc ghi rõ <code class="inline">Timestamp.equals</code> không symmetric với <code class="inline">Date.equals</code>. Khi <code class="inline">nanos == 0</code>, <code class="inline">Date</code> thấy hai mốc thời gian bằng nhau còn <code class="inline">Timestamp</code> từ chối object không phải <code class="inline">Timestamp</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">record Product(String sku, int[] sizes) {}
+
+void main() {
+    Product a = new Product("SKU-1", new int[]{38, 39});
+    Product b = new Product("SKU-1", new int[]{38, 39});
+    IO.println(a.equals(b));
+    IO.println(a.hashCode() == b.hashCode());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code> và <code class="inline">false</code>. Record so component bằng <code class="inline">Objects.equals</code>, mà với mảng thì đó là so reference: hai mảng cùng nội dung vẫn là hai object khác nhau (hash cũng dựa trên identity của mảng). Sửa bằng cách dùng <code class="inline">List.copyOf</code> thay cho mảng, hoặc tự override <code class="inline">equals</code>/<code class="inline">hashCode</code> với <code class="inline">Arrays.equals</code>/<code class="inline">Arrays.hashCode</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">final class Product {
+    final String sku;
+
+    Product(String sku) { this.sku = sku; }
+
+    public boolean equals(Product other) {
+        return sku.equals(other.sku);
+    }
+}
+
+void main() {
+    Product a = new Product("SKU-1");
+    Product b = new Product("SKU-1");
+    Object c = a;
+
+    IO.println(a.equals(b));
+    IO.println(c.equals(b));
+    IO.println(a.equals((Object) b));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">false</code>. <code class="inline">equals(Product)</code> chỉ là overload. <code class="inline">a.equals(b)</code> kiểu tĩnh là <code class="inline">Product</code> nên chọn overload → true; <code class="inline">c</code> kiểu <code class="inline">Object</code> nên gọi <code class="inline">Object.equals</code> (identity) → false; ép về <code class="inline">Object</code> cũng đi vào <code class="inline">Object.equals</code> → false. Collection cũng luôn gọi qua <code class="inline">Object</code>, nên overload thực tế vô dụng. Sửa: <code class="inline">@Override public boolean equals(Object o)</code> và thêm <code class="inline">hashCode</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">17. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Chữ ký equals</td><td><code class="inline">@Override public boolean equals(Object o)</code> — không bao giờ dùng kiểu cụ thể</td></tr>
+        <tr><td>Chữ ký hashCode</td><td><code class="inline">@Override public int hashCode()</code> — cùng bộ field với equals</td></tr>
+        <tr><td>Chữ ký toString</td><td><code class="inline">@Override public String toString()</code> — ngắn gọn, không lộ dữ liệu nhạy cảm</td></tr>
+        <tr><td>Mẫu 5 bước viết equals</td><td><code class="inline">this == o</code> → <code class="inline">o == null || getClass() != o.getClass()</code> → cast → so field → <code class="inline">@Override</code></td></tr>
+        <tr><td>So field null-safe</td><td><code class="inline">Objects.equals(a, b)</code>; so hằng trước: <code class="inline">"ADMIN".equals(role)</code></td></tr>
+        <tr><td>Tính hash nhiều field</td><td><code class="inline">Objects.hash(f1, f2, f3)</code>; một field thì <code class="inline">Objects.hashCode(f)</code> (không dùng <code class="inline">Objects.hash</code>)</td></tr>
+        <tr><td>Mảng</td><td><code class="inline">Arrays.equals</code>/<code class="inline">Arrays.deepEquals</code>; hash bằng <code class="inline">Arrays.hashCode</code>; không làm key</td></tr>
+        <tr><td>BigDecimal</td><td>So bằng <code class="inline">compareTo(...) == 0</code>; làm key thì <code class="inline">stripTrailingZeros()</code>/<code class="inline">setScale(...)</code> trước</td></tr>
+        <tr><td>String / wrapper</td><td>Luôn <code class="inline">equals</code>/<code class="inline">Objects.equals</code>, không <code class="inline">==</code></td></tr>
+        <tr><td>enum</td><td><code class="inline">==</code> an toàn và được khuyến nghị</td></tr>
+        <tr><td>Value object mới</td><td>Dùng <code class="inline">record</code>; cẩn thận component là mảng/mutable</td></tr>
+        <tr><td>Key HashMap/HashSet</td><td>Bất biến (record/String/wrapper); không sửa sau khi put</td></tr>
+        <tr><td>Class mở kế thừa</td><td>Dùng <code class="inline">getClass</code> trong equals, hoặc để <code class="inline">final</code>; ưu tiên composition</td></tr>
+        <tr><td>IntelliJ generate</td><td><code class="inline">Alt + Insert</code> (macOS <code class="inline">Cmd + N</code>) → equals() and hashCode()</td></tr>
+        <tr><td>Lombok kế thừa</td><td><code class="inline">@EqualsAndHashCode(callSuper = true)</code></td></tr>
+        <tr><td>3 điều khoản hashCode</td><td>Consistent trong 1 lần chạy · equal ⇒ equal hash · unequal được phép trùng hash</td></tr>
+        <tr><td>5 tính chất equals</td><td>Reflexive · symmetric · transitive · consistent · non-null</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Kể đúng 5 tính chất của <code class="inline">equals</code> và 3 điều khoản của <code class="inline">hashCode</code> không cần nhìn tài liệu.</li>
+      <li>Giải thích được vì sao override <code class="inline">equals</code> phải override <code class="inline">hashCode</code>, kèm hậu quả cụ thể trên <code class="inline">HashSet</code>.</li>
+      <li>Viết được <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code> hoàn chỉnh cho một class có field nullable.</li>
+      <li>Nhớ vì sao phải là <code class="inline">equals(Object)</code> và <code class="inline">@Override</code> chặn được bẫy overload.</li>
+      <li>Phân biệt và chọn được <code class="inline">getClass</code> vs <code class="inline">instanceof</code>, kể ví dụ vi phạm symmetry.</li>
+      <li>Giải thích được vì sao mutable key phá <code class="inline">HashMap</code>, và cách phòng.</li>
+      <li>Kể được ví dụ collision (<code class="inline">"Aa"</code>/<code class="inline">"BB"</code>) và vì sao collision không sai.</li>
+      <li>Xử lý đúng: mảng, <code class="inline">BigDecimal</code>, wrapper, <code class="inline">String</code>, enum khi so sánh.</li>
+      <li>Dùng thành thạo <code class="inline">Objects.equals</code>, <code class="inline">Objects.hash</code>, <code class="inline">Objects.hashCode</code>.</li>
+      <li>Biết record tự sinh gì và hai bẫy của record (mảng, hash đổi giữa các lần chạy).</li>
+      <li>Nêu được bộ test tối thiểu cho một class có <code class="inline">equals</code> tự viết.</li>
+      <li>Nhớ <code class="inline">toString</code> không chứa dữ liệu nhạy cảm và không gọi lazy-load.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" target="_blank" rel="noreferrer">JDK 25 — java.lang.Object (equals, hashCode, toString)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Objects.html" target="_blank" rel="noreferrer">JDK 25 — java.util.Objects (equals, hash, hashCode)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html" target="_blank" rel="noreferrer">JDK 25 — java.lang.Record (equals/hashCode/toString)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.sql/java/sql/Timestamp.html" target="_blank" rel="noreferrer">JDK 25 — java.sql.Timestamp (vi phạm symmetry với Date)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/IandI/objectclass.html" target="_blank" rel="noreferrer">Oracle Tutorial — Methods of the Object class</a></li>
+      <li><a href="https://openjdk.org/jeps/395" target="_blank" rel="noreferrer">JEP 395 — Records</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · equals / hashCode / toString · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
