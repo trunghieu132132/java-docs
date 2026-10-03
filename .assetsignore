@@ -1,5 +1,6 @@
 .git
 .gitignore
+.wrangler
 AGENTS.md
 *.md
 wrangler.toml
