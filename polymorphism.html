@@ -104,7 +104,7 @@
       <li>Đoán output của mỗi ví dụ <strong>trước khi</strong> nhìn comment kết quả — đặc biệt các ví dụ về chọn overload và field hiding.</li>
       <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
       <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet &amp; checklist</a> trước buổi phỏng vấn.</li>
-      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+      <li>Gặp câu hỏi lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
     </ol>
 
     <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ gặp trong đề phỏng vấn và tài liệu cũ. Mọi ví dụ Java trong trang là compact source file, chạy bằng <code class="inline">java TenFile.java</code>.</div>
@@ -171,7 +171,7 @@ Shape.draw</code></pre>
 
     <h3>Góc Node.js — duck typing vs nominal typing</h3>
 
-    <p>JavaScript không có khái niệm "kế thừa để đa hình": object nào có method <code class="inline">draw()</code> thì dùng được, bất kể nó được tạo ra thế nào. Kiểu này gọi là <strong>duck typing</strong> (structural typing): "nếu nó đi như vịt và kêu như vịt thì là vịt". Java thì ngược lại — <strong>nominal typing</strong>: muốn được coi là <code class="inline">Shape</code>, bạn phải khai báo <code class="inline">extends Shape</code> hoặc <code class="inline">implements Shape</code>, không quan trọng bạn có đủ method hay không.</p>
+    <p>JavaScript không có khái niệm "kế thừa để đa hình": object nào có method <code class="inline">draw()</code> thì dùng được, bất kể nó được tạo ra thế nào. Kiểu này gọi là <strong>duck typing</strong> (kiểm tra cấu trúc <em>lúc chạy</em> — khác <em>structural typing</em> tĩnh của TypeScript): "nếu nó đi như vịt và kêu như vịt thì là vịt". Java thì ngược lại — <strong>nominal typing</strong>: muốn được coi là <code class="inline">Shape</code>, bạn phải khai báo <code class="inline">extends Shape</code> hoặc <code class="inline">implements Shape</code>, không quan trọng bạn có đủ method hay không.</p>
 
     <div class="codeblock">
       <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
@@ -247,7 +247,7 @@ Xin chao An
 Binh (20 tuoi)</code></pre>
     </div>
 
-    <p>Chỉ khác return type là <strong>không đủ</strong> để tạo overload — Java phân biệt method bằng tên + kiểu tham số (method descriptor). Đoạn sau lỗi ngay khi compile:</p>
+    <p>Chỉ khác return type là <strong>không đủ</strong> để tạo overload — signature theo JLS chỉ gồm tên + kiểu tham số, không tính return type. Đoạn sau lỗi ngay khi compile:</p>
 
     <div class="errblock">
       <pre>OverloadReturnErr.java:6: error: method moTa() is already defined in class Shape
@@ -256,7 +256,7 @@ Binh (20 tuoi)</code></pre>
 1 error</pre>
     </div>
 
-    <p>Trong bytecode, tên method luôn được gắn kèm kiểu tham số; chạy <code class="inline">javap</code> bạn sẽ thấy các dòng như <code class="inline">chao(String)</code>, <code class="inline">chao(String, int)</code> là các method hoàn toàn khác nhau.</p>
+    <p>Trong bytecode, mỗi method có một <em>descriptor</em> (JVMS) gồm kiểu tham số <strong>và</strong> kiểu trả về — ví dụ <code class="inline">void chao(String)</code> có descriptor <code class="inline">(Ljava/lang/String;)V</code>. Chính vì descriptor gồm cả return type nên bytecode mới chứa được bridge method (mục 9); còn Java vẫn <strong>không cho overload</strong> chỉ khác return type.</p>
 
     <h3>Overload resolution — compiler chọn bản nào?</h3>
 
@@ -610,6 +610,8 @@ java.lang.ClassCastException</code></pre>
       <li>Từ Java 16, <strong>pattern matching instanceof</strong> cho phép khai báo luôn biến đã ép kiểu: <code class="inline">s instanceof Circle c</code> — không còn dòng ép thủ công.</li>
     </ul>
 
+    <div class="note"><code class="inline">null instanceof X</code> luôn trả về <code class="inline">false</code> với mọi kiểu <code class="inline">X</code> — kể cả <code class="inline">null instanceof Object</code>. Nhờ vậy nhánh <code class="inline">instanceof</code> tự bỏ qua <code class="inline">null</code> mà không cần kiểm tra riêng.</div>
+
     <h3>Pattern matching for switch &amp; record pattern (Java 21)</h3>
 
     <p>Kết hợp <code class="inline">sealed</code> + <code class="inline">switch</code> theo kiểu + record pattern, bạn có dạng đa hình "có kiểm soát" rất gọn. Compiler biết mọi subtype (nhờ <code class="inline">permits</code>) nên bắt buộc switch expression phải bao hết trường hợp:</p>
@@ -666,6 +668,10 @@ class Circle extends Shape {
     String layTen() {
         return ten;
     }
+
+    String tenCha() {
+        return super.ten;
+    }
 }
 
 void main() {
@@ -676,6 +682,7 @@ void main() {
     Circle c = new Circle();
     IO.println(c.ten);           // Circle
     IO.println(((Shape) c).ten); // Shape  - ep len cha thi thay field cha
+    IO.println(c.tenCha());      // Shape  - super.ten doc field cua cha
 }</code></pre>
     </div>
 
@@ -683,12 +690,13 @@ void main() {
       <pre><code>Shape
 Circle
 Circle
+Shape
 Shape</code></pre>
     </div>
 
-    <p>Cùng một object <code class="inline">Circle</code> mà <code class="inline">s.ten</code> in <code class="inline">Shape</code> còn <code class="inline">s.layTen()</code> in <code class="inline">Circle</code> — đây là câu hỏi phỏng vấn rất hay gặp. Lời khuyên production: <strong>field để private, truy cập qua getter/setter</strong>; khi đó mọi hành vi đi qua method và đa hình hoạt động đúng.</p>
+    <p>Cùng một object <code class="inline">Circle</code> mà <code class="inline">s.ten</code> in <code class="inline">Shape</code> còn <code class="inline">s.layTen()</code> in <code class="inline">Circle</code> — đây là câu hỏi phỏng vấn rất hay gặp. Trong lớp con, <code class="inline">super.ten</code> đọc field bị che của cha (vẫn theo nơi khai báo, không theo object). Lời khuyên production: <strong>field để private, truy cập qua getter/setter</strong>; khi đó mọi hành vi đi qua method và đa hình hoạt động đúng.</p>
 
-    <p><code class="inline">static</code> method cũng vậy — nó bị <em>hide</em>, không override. Gọi static qua biến thực chất là compiler thay bằng tên class theo static type:</p>
+    <p><code class="inline">static</code> method cũng vậy — nó bị <em>hide</em>, không override. Gọi static qua biến, compiler chọn method theo static type của biến; receiver vẫn được đánh giá rồi bỏ kết quả (nên side effect trong biểu thức receiver vẫn chạy):</p>
 
     <div class="codeblock">
       <pre><code class="java">class Shape {
@@ -935,6 +943,31 @@ Circle r=5.0</code></pre>
 
     <p>Qua biến <code class="inline">Shape</code>, <code class="inline">s.copy()</code> vẫn khai báo trả về <code class="inline">Shape</code>; nhưng qua biến <code class="inline">Circle</code>, compiler biết <code class="inline">c.copy()</code> trả về <code class="inline">Circle</code>. Để giữ tương thích bytecode, compiler sinh thêm một <em>bridge method</em> có return type <code class="inline">Shape</code> gọi tới bản covariant — đây là chi tiết nhận biết, gặp khi đọc <code class="inline">javap</code>. JDK dùng nhiều: interface <code class="inline">Appendable</code> khai báo <code class="inline">append(CharSequence)</code> trả về <code class="inline">Appendable</code>, còn <code class="inline">StringBuilder</code> override trả về chính <code class="inline">StringBuilder</code> — nhờ vậy bạn chain được <code class="inline">.append(...).append(...)</code> (xem lại <a href="methods.html#chaining">Methods — mục 10</a>).</p>
 
+    <h3>Array cũng covariant — cái giá là ArrayStoreException</h3>
+
+    <p>Khác generic (bất biến), mảng trong Java <strong>covariant</strong>: <code class="inline">String[]</code> là subtype của <code class="inline">Object[]</code> nên gán được. Compiler cho qua, nhưng JVM kiểm tra kiểu phần tử mỗi lần ghi, sai sẽ ném <code class="inline">ArrayStoreException</code> lúc chạy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Object[] a = new String[1];   // mang that su la String[]
+    a[0] = "hello";               // OK
+    IO.println(a[0]);
+
+    try {
+        a[0] = 42;                // JVM phat hien sai kieu luc chay
+    } catch (ArrayStoreException e) {
+        IO.println("ArrayStoreException: " + e.getMessage());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>hello
+ArrayStoreException: java.lang.Integer</code></pre>
+    </div>
+
+    <p>Đó là lý do generic được thiết kế <em>bất biến</em> (<code class="inline">List&lt;String&gt;</code> không phải là <code class="inline">List&lt;Object&gt;</code>): kiểm tra ngay lúc compile thay vì để lỗi nổ lúc chạy như mảng.</p>
+
     <h2 id="constructor-trap">10. Bẫy gọi method ảo trong constructor <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
     <p>Gọi một method có thể bị override ngay trong constructor của lớp cha là bẫy kinh điển: override của lớp con chạy <strong>trước khi field của lớp con được khởi tạo</strong>. Thứ tự khởi tạo là: constructor lớp cha → field initializer/instance block của con → thân constructor con.</p>
@@ -978,7 +1011,11 @@ sau khi tao xong: [Circle]</code></pre>
 
     <h2 id="object-methods">11. Object methods dưới góc nhìn đa hình <span class="badge b-junior">Junior+</span></h2>
 
-    <p>Mọi class đều kế thừa <code class="inline">Object</code>, và các method như <code class="inline">toString()</code>, <code class="inline">equals()</code>, <code class="inline">hashCode()</code> đều là method ảo. Đây là lý do <code class="inline">IO.println(object)</code> in ra mô tả tuỳ object thật:</p>
+    <p>Mọi class đều kế thừa <code class="inline">Object</code>, và các method như <code class="inline">toString()</code>, <code class="inline">equals()</code>, <code class="inline">hashCode()</code> đều là method ảo — đây là lý do <code class="inline">IO.println(object)</code> in ra mô tả tuỳ object thật.</p>
+
+    <h3>11.1 Dynamic dispatch của Object methods</h3>
+
+    <p>Các method này không được JVM "xử lý riêng" khi gọi — chúng vẫn đi qua <code class="inline">invokevirtual</code> và bảng method ảo (vtable) như mọi method khác. Compiler chỉ thấy static type, còn JVM chọn implementation theo runtime class:</p>
 
     <div class="codeblock">
       <pre><code class="java">class Shape {
@@ -997,7 +1034,7 @@ class Circle extends Shape {
 
 void main() {
     Object o = new Circle();
-    IO.println(o);                 // Circle(r=1) - dynamic dispatch
+    IO.println(o);                  // Circle(r=1) - dynamic dispatch
     IO.println("x" + new Circle()); // xCircle(r=1) - cong chuoi cung goi toString
 }</code></pre>
     </div>
@@ -1007,7 +1044,421 @@ void main() {
 xCircle(r=1)</code></pre>
     </div>
 
-    <p>Hệ quả production: <code class="inline">List.contains</code>, <code class="inline">HashMap</code>, logging, assertion đều dựa vào <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code> — tức là dựa vào đa hình. Override sai <code class="inline">equals</code>/<code class="inline">hashCode</code> (vi phạm contract) sẽ tạo bug rất khó tìm. Chi tiết ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</p>
+    <p>Toán tử <code class="inline">+</code> không tự biết nối object: compiler chuyển <code class="inline">"x" + obj</code> thành <code class="inline">new StringBuilder().append("x").append(obj)</code>, rồi <code class="inline">append(Object)</code> gọi <code class="inline">String.valueOf(obj)</code> → <code class="inline">obj.toString()</code>. Tương tự, <code class="inline">IO.println(obj)</code> cũng in qua <code class="inline">String.valueOf</code>. Nghĩa là <strong>mọi nơi nhận chuỗi từ object đều là một call site đa hình</strong>.</p>
+
+    <p>Một góc tối ít biết: override <code class="inline">toString()</code> trả <code class="inline">null</code> vẫn hợp lệ về kiểu (return type là <code class="inline">String</code>) nhưng phá vỡ quy ước. Kiểm chứng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class User {
+    @Override
+    public String toString() {
+        return null;
+    }
+}
+
+void main() {
+    User u = new User();
+
+    IO.println(u);                           // null
+    IO.println("user: " + u);                // user: null
+    IO.println(String.valueOf(u) == null);   // true
+
+    try {
+        String s = u.toString();
+        IO.println(s.length());
+    } catch (NullPointerException e) {
+        IO.println("goi thang toString() roi dung chuoi -&gt; NPE");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>null
+user: null
+true
+goi thang toString() roi dung chuoi -&gt; NPE</code></pre>
+    </div>
+
+    <p>Lý do: <code class="inline">String.valueOf(Object)</code> chỉ kiểm tra <em>object</em> null (<code class="inline">obj == null ? "null" : obj.toString()</code>), không kiểm tra <em>chuỗi trả về</em> — nên <code class="inline">String.valueOf(u)</code> trả thẳng <code class="inline">null</code>. May mắn là <code class="inline">println</code> và <code class="inline">append</code> quy ước chuỗi <code class="inline">null</code> thành <code class="inline">"null"</code>, nên in ấn không nổ; nhưng code gọi thẳng <code class="inline">toString()</code> rồi dùng chuỗi sẽ NPE. <strong>Đừng bao giờ trả <code class="inline">null</code> từ <code class="inline">toString()</code>.</strong></p>
+
+    <ul>
+      <li><strong>Logging:</strong> framework như SLF4J/Logback gọi <code class="inline">toString()</code> khi format message (<code class="inline">log.info("user={}", user)</code>) — override dở thì log vô dụng, override lộ dữ liệu thì log thành lỗ hổng.</li>
+      <li><strong>Collection:</strong> <code class="inline">List.contains</code>/<code class="inline">indexOf</code> gọi <code class="inline">equals(Object)</code>; <code class="inline">HashMap</code>/<code class="inline">HashSet</code> gọi <code class="inline">hashCode()</code> rồi <code class="inline">equals(Object)</code> khi tra cứu. Phần tử/key luôn bị xử lý như <code class="inline">Object</code>, nên overload không bao giờ được gọi (mục 11.3).</li>
+      <li><strong>Assertion:</strong> assertion trong test (JUnit <code class="inline">assertEquals</code>) dựa vào <code class="inline">equals</code>; còn <code class="inline">assert cond : detail;</code> của Java, khi fail, đưa <code class="inline">detail</code> vào <code class="inline">AssertionError</code> — message sinh ra qua <code class="inline">String.valueOf(detail)</code>, tức lại gọi <code class="inline">toString()</code>.</li>
+    </ul>
+
+    <h3>11.2 <code class="inline">toString()</code> — viết cho người đọc, không phải cho parser</h3>
+
+    <p>Quy ước đầy đủ nằm ở <a href="object-contract.html#tostring">2.6 — toString chi tiết</a>; ở đây nhấn góc đa hình: <code class="inline">toString()</code> là API một chiều cho log/debug. Chỉ ghi các field giúp nhận diện object (id, mã, tên ngắn), <strong>tuyệt đối không ghi mật khẩu, hash mật khẩu, token, số thẻ</strong> — vì log, exception message, APM... đều có thể in nó ra file/console/hệ thống bên thứ ba.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">final class Account {
+    private final long id;
+    private final String email;
+    private final String passwordHash;
+
+    Account(long id, String email, String passwordHash) {
+        this.id = id;
+        this.email = email;
+        this.passwordHash = passwordHash;
+    }
+
+    @Override
+    public String toString() {
+        return "Account{id=" + id + ", email=" + email + "}";   // khong lo passwordHash
+    }
+}
+
+record Point(int x, int y) {}
+
+void main() {
+    Account a = new Account(7, "an@shop.vn", "bcrypt$2a$...");
+    IO.println(a);                                     // Account{id=7, email=an@shop.vn}
+    IO.println(new Point(3, 4));                       // Point[x=3, y=4]
+    IO.println(Objects.toString(null, "khong co"));    // khong co
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Account{id=7, email=an@shop.vn}
+Point[x=3, y=4]
+khong co</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">record</code> tự sinh <code class="inline">toString</code> theo mọi component — tiện cho debug, nhưng Javadoc ghi rõ format <strong>không bảo đảm</strong> ổn định, đừng parse (chi tiết ở <a href="object-contract.html#record">2.6 mục 6</a>).</li>
+      <li><strong>toString một chiều:</strong> nó là định dạng cho con người đọc, không phải hợp đồng dữ liệu. Cần trao đổi giữa các hệ thống thì dùng JSON/CSV/DTO có schema rõ ràng; đổi format <code class="inline">toString</code> để log dễ đọc <strong>không được phép</strong> làm vỡ client đi parse nó.</li>
+      <li><code class="inline">Objects.toString(obj, "khong co")</code> là cách null-safe khi chỉ cần "một chuỗi để in"; bản một tham số <code class="inline">Objects.toString(null)</code> trả <code class="inline">"null"</code>.</li>
+    </ul>
+
+    <h3>11.3 <code class="inline">equals</code>/<code class="inline">hashCode</code> nhìn từ đa hình</h3>
+
+    <p>Signature trong <code class="inline">Object</code> là <code class="inline">equals(Object)</code>. Chỉ method <strong>đúng signature này</strong> mới là override và mới được dispatch động; viết <code class="inline">equals(Product)</code> chỉ là overload — collection không bao giờ gọi tới:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">final class Product {
+    final String sku;
+
+    Product(String sku) {
+        this.sku = sku;
+    }
+
+    public boolean equals(Product other) {   // OVERLOAD - khong phai override
+        IO.println("equals(Product) duoc goi");
+        return other != null && sku.equals(other.sku);
+    }
+
+    @Override
+    public String toString() {
+        return "Product(" + sku + ")";
+    }
+}
+
+void main() {
+    Product a = new Product("SP-1");
+    Product b = new Product("SP-1");
+
+    IO.println("a.equals(b)          : " + a.equals(b));           // true
+    IO.println("a.equals((Object) b) : " + a.equals((Object) b));   // false
+
+    List&lt;Product&gt; list = new ArrayList&lt;&gt;();
+    list.add(a);
+    IO.println("list.contains(b)     : " + list.contains(b));      // false
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>equals(Product) duoc goi
+a.equals(b)          : true
+a.equals((Object) b) : false
+list.contains(b)     : false</code></pre>
+    </div>
+
+    <p>Output trông "sai" nhưng đúng luật overload: <code class="inline">a.equals(b)</code> chọn bản <code class="inline">equals(Product)</code> lúc compile (static type của <code class="inline">b</code> là <code class="inline">Product</code>); còn <code class="inline">a.equals((Object) b)</code> và <code class="inline">list.contains(b)</code> bắt buộc đi qua <code class="inline">Object.equals(Object)</code> — bản identity — nên <code class="inline">false</code>, và compiler không hề báo lỗi. Đây là lý do <strong>mọi collection của Java luôn gọi equality qua <code class="inline">Object</code></strong>; xem <a href="object-contract.html#viet-equals">cách viết equals đúng</a> và <a href="object-contract.html#equals-contract">hợp đồng equals</a>.</p>
+
+    <p>Cạm bẫy đối xứng (symmetry) khi override bằng <code class="inline">instanceof</code>: lớp con vẫn "bằng" lớp cha theo một chiều nhưng không bằng chiều ngược lại nếu nó thêm state. Ví dụ kèm hệ quả <code class="inline">hashCode()</code> — method ảo được <code class="inline">HashSet</code>/<code class="inline">HashMap</code> gọi trước <code class="inline">equals</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Point {
+    final int x;
+    final int y;
+
+    Point(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Point p)) {
+            return false;
+        }
+        return p.x == x && p.y == y;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * x + y;
+    }
+}
+
+final class ColoredPoint extends Point {
+    final String color;
+
+    ColoredPoint(int x, int y, String color) {
+        super(x, y);
+        this.color = color;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ColoredPoint cp)) {
+            return false;
+        }
+        return super.equals(cp) && color.equals(cp.color);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * super.hashCode() + color.hashCode();
+    }
+}
+
+void main() {
+    Point p = new Point(1, 2);
+    ColoredPoint cp = new ColoredPoint(1, 2, "do");
+
+    IO.println("p.equals(cp)  : " + p.equals(cp));    // true
+    IO.println("cp.equals(p)  : " + cp.equals(p));    // false - mat doi xung
+
+    Set&lt;Point&gt; set = new HashSet&lt;&gt;();
+    set.add(p);
+    set.add(cp);
+    IO.println("set.size()    : " + set.size());     // 2 - hai hash khac nhau
+    IO.println("set.contains(new Point(1, 2)) : " + set.contains(new Point(1, 2)));   // true
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>p.equals(cp)  : true
+cp.equals(p)  : false
+set.size()    : 2
+set.contains(new Point(1, 2)) : true</code></pre>
+    </div>
+
+    <p><code class="inline">set.size()</code> bằng 2 vì <code class="inline">set.add(cp)</code> dispatch tới <code class="inline">ColoredPoint.hashCode()</code> — hash khác nên <code class="inline">HashSet</code> không buồn gọi <code class="inline">equals</code>; <code class="inline">equals</code> không nhất quán với <code class="inline">hashCode</code> làm mọi collection băm vô hiệu (xem <a href="object-contract.html#vi-pham">hậu quả khi vi phạm</a>). Còn <code class="inline">getClass()</code> giữ đối xứng tuyệt đối nhưng loại subclass/proxy; <code class="inline">instanceof</code> thân thiện subclass nhưng chỉ an toàn khi lớp con <strong>không thêm field ảnh hưởng equality</strong> — nếu thêm, hãy tránh cho lớp con tham gia equality (hoặc dùng composition thay inheritance).</p>
+
+    <h3>11.4 <code class="inline">getClass()</code> — <code class="inline">final native</code>, không thể override</h3>
+
+    <p>Khác <code class="inline">toString</code>/<code class="inline">equals</code>/<code class="inline">hashCode</code>, <code class="inline">Object.getClass()</code> được khai báo <code class="inline">public final native</code>. <code class="inline">final</code> chặn mọi nỗ lực override; <code class="inline">native</code> nghĩa là JVM trả về thẳng đối tượng <code class="inline">Class</code> đại diện runtime class — không có slot nào trong vtable để ghi đè. Thử override sẽ bị chặn ngay lúc compile:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Fake {
+    @Override
+    public Class&lt;?&gt; getClass() {
+        return String.class;
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Fake.java:3: error: getClass() in Fake cannot override getClass() in Object
+    public Class&lt;?&gt; getClass() {
+                    ^
+  overridden method is final
+1 error</pre>
+    </div>
+
+    <p>Vì sao JVM khăng khăng giữ? <code class="inline">getClass()</code> là nền tảng của reflection, class literal, <code class="inline">instanceof</code> và mọi cơ chế kiểm tra kiểu: nếu object tự khai class khác, toàn bộ hệ thống kiểu mất tin cậy — object phải nói đúng class của chính nó. Chính vì không đa hình, <code class="inline">o.getClass() == User.class</code> là phép so <strong>chính xác lớp runtime</strong> (khác <code class="inline">instanceof</code> — chấp nhận cả subclass; xem bảng pitfalls mục 12).</p>
+
+    <p>Nuance enum: hằng enum <strong>có thân riêng</strong> (constant body — xem <a href="enum-nested.html#enum-nang-cao">2.7 enum nâng cao</a>) là instance của một anonymous subclass, nên <code class="inline">getClass()</code> của nó không phải class enum. Muốn lấy class enum "logic", dùng <code class="inline">getDeclaringClass()</code> do <code class="inline">Enum</code> cung cấp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color {
+    RED,
+    BLUE {
+        @Override
+        public String toString() {
+            return "xanh";
+        }
+    }
+}
+
+void main() {
+    IO.println(Color.RED.getClass() == Color.class);              // true
+    IO.println(Color.BLUE.getClass() == Color.class);             // false
+    IO.println(Color.BLUE.getClass().getName());                  // GetClassDemo$Color$1
+    IO.println(Color.BLUE.getDeclaringClass() == Color.class);    // true
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+false
+GetClassDemo$Color$1
+true</code></pre>
+    </div>
+
+    <p>Dòng <code class="inline">getName()</code> phơi ra tên class sinh tự động (<code class="inline">$1</code> là subclass vô danh đầu tiên; tên có tiền tố theo tên file khi chạy <code class="inline">java GetClassDemo.java</code>). Vì vậy đừng viết <code class="inline">color.getClass() == Color.class</code> cho mọi hằng enum — dùng <code class="inline">color.getDeclaringClass() == Color.class</code>. Riêng <code class="inline">switch</code>, <code class="inline">EnumMap</code>, <code class="inline">EnumSet</code> không bị ảnh hưởng vì chúng dựa trên <code class="inline">Enum</code>, không dựa <code class="inline">getClass()</code>.</p>
+
+    <h3>11.5 <code class="inline">clone()</code> — shallow copy và vì sao nên tránh</h3>
+
+    <p><code class="inline">Object.clone()</code> là <code class="inline">protected native</code>: tạo bản sao <strong>shallow</strong> (copy từng field; field là reference thì hai object cùng trỏ một chỗ), và chỉ chạy khi class <code class="inline">implements Cloneable</code> — nếu không sẽ ném <code class="inline">CloneNotSupportedException</code> lúc runtime. Đây là method ảo mà hành vi mặc định còn phụ thuộc một marker interface:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class BadClone {
+    @Override
+    public BadClone clone() throws CloneNotSupportedException {
+        return (BadClone) super.clone();
+    }
+}
+
+final class Order implements Cloneable {
+    int id = 1;
+    int[] items = {10, 20, 30};
+
+    @Override
+    public Order clone() {
+        try {
+            return (Order) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(e);
+        }
+    }
+}
+
+void main() {
+    try {
+        new BadClone().clone();
+    } catch (CloneNotSupportedException e) {
+        IO.println("BadClone khong implements Cloneable -&gt; CloneNotSupportedException");
+    }
+
+    Order a = new Order();
+    Order b = a.clone();
+    b.id = 99;
+    b.items[0] = 99;
+
+    IO.println("a == b            : " + (a == b));               // false
+    IO.println("a.id              : " + a.id);                  // 1
+    IO.println("b.id              : " + b.id);                  // 99
+    IO.println("a.items[0]        : " + a.items[0]);            // 99
+    IO.println("a.items == b.items: " + (a.items == b.items));  // true - shallow
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>BadClone khong implements Cloneable -&gt; CloneNotSupportedException
+a == b            : false
+a.id              : 1
+b.id              : 99
+a.items[0]        : 99
+a.items == b.items: true</code></pre>
+    </div>
+
+    <p>Shallow lộ rõ ở <code class="inline">b.items[0] = 99</code> ảnh hưởng luôn <code class="inline">a</code> — hai object chia sẻ cùng mảng. Muốn deep phải tự copy từng field reference; đó là lý do Effective Java gọi <code class="inline">Cloneable</code> là thiết kế hỏng và khuyên dùng <strong>copy constructor</strong> hoặc <strong>static factory</strong> (<code class="inline">new Order(other)</code>, <code class="inline">Order.copyOf(other)</code>) để API nói rõ shallow/deep, thay vì phụ thuộc <code class="inline">super.clone()</code>. Xem thêm <a href="index.html#copy">17. Shallow copy vs deep copy</a>.</p>
+
+    <h3>11.6 <code class="inline">finalize()</code> &amp; <code class="inline">wait/notify</code> — nhận biết để tránh</h3>
+
+    <p><code class="inline">finalize()</code> từng được kỳ vọng dọn tài nguyên trước khi GC thu hồi, nhưng nó <strong>deprecated từ Java 9</strong> và JDK 18 đánh dấu <em>for removal</em> (JEP 421). Ở JDK 25 nó vẫn tồn tại để tương thích ngược, nhưng override chỉ sinh cảnh báo từ javac:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Connection {
+    @Override
+    protected void finalize() {
+        IO.println("dong ket noi");
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Connection.java:3: warning: [removal] finalize() in Object has been deprecated and marked for removal
+    protected void finalize() {
+                   ^
+1 warning</pre>
+    </div>
+
+    <p>Đừng dùng <code class="inline">finalize</code>: thời điểm chạy không xác định, có thể không bao giờ chạy, chạy trên thread của GC và làm chậm quá trình thu hồi. Thay thế hiện đại: <strong>try-with-resources với <code class="inline">AutoCloseable</code></strong> (tất định, đóng ngay khi hết block) hoặc <code class="inline">java.lang.ref.Cleaner</code> khi thật sự cần "lưới an toàn" sau khi object bị thu hồi.</p>
+
+    <p>Còn <code class="inline">wait()</code>, <code class="inline">notify()</code>, <code class="inline">notifyAll()</code> là các method <code class="inline">final</code> của <code class="inline">Object</code> phục vụ phối hợp giữa các thread qua monitor. Chúng <strong>bắt buộc</strong> gọi khi đang giữ lock; gọi ngoài <code class="inline">synchronized</code> sẽ ném <code class="inline">IllegalMonitorStateException</code> ngay:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Object lock = new Object();
+    try {
+        lock.wait();
+    } catch (IllegalMonitorStateException e) {
+        IO.println("wait ngoai synchronized -&gt; IllegalMonitorStateException");
+    } catch (InterruptedException e) {
+        IO.println("bi ngat");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>wait ngoai synchronized -&gt; IllegalMonitorStateException</code></pre>
+    </div>
+
+    <p>Vì là <code class="inline">final</code> nên bạn không thể override wait/notify — chỉ có thể gọi. Cơ chế thread, <code class="inline">synchronized</code>, deadlock... thuộc <a href="roadmap.html#phase-4">Giai đoạn 4 — Concurrency</a>.</p>
+
+    <h3>11.7 Đừng override Object method tuỳ tiện</h3>
+
+    <p>Tổng hợp quyền override và khuyến nghị cho từng method của <code class="inline">Object</code>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Override được?</th><th>Khuyến nghị</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline">toString()</code></td>
+          <td>Được (virtual)</td>
+          <td>Nên — cho log/debug; che dữ liệu nhạy cảm, không trả <code class="inline">null</code></td>
+        </tr>
+        <tr>
+          <td><code class="inline">equals(Object)</code></td>
+          <td>Được (virtual)</td>
+          <td>Khi cần equality theo nội dung; <strong>phải đi kèm</strong> <code class="inline">hashCode</code>, đúng chữ ký <code class="inline">equals(Object)</code></td>
+        </tr>
+        <tr>
+          <td><code class="inline">hashCode()</code></td>
+          <td>Được (virtual)</td>
+          <td>Override cùng <code class="inline">equals</code>, dùng cùng bộ field</td>
+        </tr>
+        <tr>
+          <td><code class="inline">getClass()</code></td>
+          <td><strong>Không</strong> — <code class="inline">final native</code></td>
+          <td>Dùng để so lớp runtime chính xác; cẩn thận proxy/subclass</td>
+        </tr>
+        <tr>
+          <td><code class="inline">clone()</code></td>
+          <td>Được nhưng <code class="inline">protected native</code></td>
+          <td>Hiện đại khuyên tránh → copy constructor / factory</td>
+        </tr>
+        <tr>
+          <td><code class="inline">finalize()</code></td>
+          <td>Được nhưng deprecated for removal</td>
+          <td><strong>Đừng</strong> → try-with-resources / <code class="inline">Cleaner</code></td>
+        </tr>
+        <tr>
+          <td><code class="inline">wait()/notify()/notifyAll()</code></td>
+          <td><strong>Không</strong> — <code class="inline">final</code></td>
+          <td>Chỉ gọi trong khối <code class="inline">synchronized</code>; học ở GĐ4</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>An toàn với class final/record:</strong> nếu class là <code class="inline">final</code> (hoặc <code class="inline">record</code> — luôn final), không có subclass nên <code class="inline">equals</code> có thể dùng <code class="inline">getClass() == o.getClass()</code> mà vẫn đối xứng. Record còn tự sinh cả <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code> theo component; chỉ override lại nếu thật cần semantics khác (ví dụ bỏ qua field audit) — và khi đó tự chịu trách nhiệm giữ contract.</div>
+
+    <h3>Góc Node.js — prototype chain &amp; dispatch trong JS</h3>
+
+    <ul>
+      <li>Mọi object JS đều "thừa hưởng" <code class="inline">toString</code>/<code class="inline">valueOf</code> qua <strong>prototype chain</strong>; lời gọi method là tra thuộc tính động trên chuỗi prototype — cùng tinh thần dynamic dispatch của Java, nhưng cơ chế là property lookup chứ không phải vtable theo class.</li>
+      <li><code class="inline">"x" + obj</code> ép kiểu qua <code class="inline">ToPrimitive</code>: <code class="inline">Symbol.toPrimitive</code> (nếu có) → <code class="inline">valueOf</code> → <code class="inline">toString</code>, nên <code class="inline">toString</code> của JS không được gọi "chắc chắn" như Java; còn <code class="inline">Object.prototype.toString.call(x)</code> trả tag nội bộ kiểu <code class="inline">[object Array]</code>, không dùng để in object cho người đọc.</li>
+      <li><code class="inline">JSON.stringify</code> gọi <code class="inline">toJSON()</code> nếu có — đây mới là "cửa" serialize, tương ứng Jackson/getter bên Java, <strong>không</strong> liên quan <code class="inline">toString</code>. Còn <code class="inline">console.log(obj)</code> của Node dùng <code class="inline">util.inspect</code> in cây thuộc tính chứ không gọi <code class="inline">toString</code> — muốn thấy chuỗi tuỳ biến phải <code class="inline">console.log(String(obj))</code> hoặc tự gọi <code class="inline">obj.toString()</code>.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">toString</code>/<code class="inline">equals</code>/<code class="inline">hashCode</code> là ảo — mọi <code class="inline">println</code>, nối chuỗi, log, <code class="inline">contains</code>, <code class="inline">HashMap</code> đều dispatch theo object thật, nên override phải chuẩn, không trả <code class="inline">null</code> và không lộ dữ liệu nhạy cảm. <code class="inline">equals(Object)</code> + <code class="inline">hashCode</code> luôn đi đôi; chữ ký sai chỉ là overload vô dụng. <code class="inline">getClass()</code> và wait/notify là <code class="inline">final</code> — không override được; enum có thân riêng nhớ <code class="inline">getDeclaringClass()</code>. Tránh <code class="inline">clone</code>/<code class="inline">finalize</code>, thay bằng copy constructor và try-with-resources.</div>
 
     <h2 id="pitfalls">12. Pitfalls — bảng lỗi thường gặp <span class="badge b-prod">Production</span></h2>
 
@@ -1094,7 +1545,7 @@ xCircle(r=1)</code></pre>
 
     <details class="qa">
       <summary>Câu 4. Vì sao không thể overload chỉ bằng return type?</summary>
-      <div class="answer">Method descriptor trong bytecode gồm tên + kiểu tham số; lời gọi <code class="inline">m(x)</code> chỉ mang tên và argument nên compiler không có cách nào phân biệt nếu hai bản chỉ khác return type. JLS cấm và báo lỗi "method ... is already defined".</div>
+      <div class="answer">Signature theo JLS chỉ gồm tên + kiểu tham số, không tính return type; lời gọi <code class="inline">m(x)</code> chỉ mang tên và argument nên compiler không có cách nào phân biệt nếu hai bản chỉ khác return type. (Descriptor trong bytecode thì gồm cả return type — nhờ vậy bridge method của covariant return mới tồn tại được.) JLS cấm overload kiểu này và báo lỗi "method ... is already defined".</div>
     </details>
 
     <details class="qa">
@@ -1131,7 +1582,7 @@ xCircle(r=1)</code></pre>
 
     <details class="qa">
       <summary>Câu 11. Static method có đa hình không?</summary>
-      <div class="answer">Không. Static method thuộc class, bị hide chứ không override; gọi qua instance thực chất compiler thay bằng tên class theo static type. Static không có <code class="inline">this</code> nên không thể dispatch theo object.</div>
+      <div class="answer">Không. Static method thuộc class, bị hide chứ không override; gọi qua instance thì compiler chọn method theo static type của biến (biểu thức receiver vẫn được đánh giá rồi bỏ kết quả — receiver <code class="inline">null</code> không gây <code class="inline">NullPointerException</code> cho static, nhưng side effect của receiver vẫn chạy). Static không có <code class="inline">this</code> nên không thể dispatch theo object.</div>
     </details>
 
     <details class="qa">
@@ -1183,7 +1634,7 @@ xCircle(r=1)</code></pre>
 
     <details class="qa">
       <summary>Câu 21. Góc Node.js: JS có overload không? Duck typing vs nominal typing?</summary>
-      <div class="answer">JS không có overload thật — khai báo hai function cùng tên thì hàm sau ghi đè hàm trước, tham số không có kiểu tĩnh. JS dùng duck typing (structural): object nào có method phù hợp là dùng được, không cần kế thừa. Java dùng nominal typing: muốn là <code class="inline">Shape</code> phải khai báo <code class="inline">extends</code>/<code class="inline">implements</code>. TypeScript có overload nhưng chỉ ở mức type-check, xoá khi compile; runtime không dispatch như JVM.</div>
+      <div class="answer">JS không có overload thật — khai báo hai function cùng tên thì hàm sau ghi đè hàm trước, tham số không có kiểu tĩnh. JS dùng duck typing (kiểm tra cấu trúc lúc chạy): object nào có method phù hợp là dùng được, không cần kế thừa. Java dùng nominal typing: muốn là <code class="inline">Shape</code> phải khai báo <code class="inline">extends</code>/<code class="inline">implements</code>. TypeScript có overload nhưng chỉ ở mức type-check, xoá khi compile; runtime không dispatch như JVM.</div>
     </details>
 
     <h2 id="bai-tap">14. Bài tập đoán output</h2>

@@ -852,6 +852,137 @@ main() khong tham so van chay</code></pre>
       <li><strong>Trả về object mới</strong> — kiểu <code class="inline">String</code> bất biến: mỗi method trả chuỗi mới, chuỗi gốc không đổi.</li>
     </ul>
 
+    <h3>10.1 return this (mutable) vs return new (immutable)</h3>
+
+    <p>Chaining hoạt động được vì method trả về <strong>một object</strong> để gọi tiếp. Hai chiến lược trả về quyết định toàn bộ hành vi API — ví dụ chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Counter {
+    private int value;
+
+    Counter cong(int n) {          // return this -> sua chinh object
+        value += n;
+        return this;
+    }
+
+    int value() {
+        return value;
+    }
+}
+
+record Point(int x, int y) {
+    Point dich(int dx, int dy) {   // return new -> object moi
+        return new Point(x + dx, y + dy);
+    }
+}
+
+void main() {
+    Counter c = new Counter();
+    Counter c2 = c.cong(5).cong(3);
+    IO.println(c.value() + " / " + c2.value() + " / cung object: " + (c == c2));
+    // 8 / 8 / cung object: true
+
+    Point p = new Point(1, 2);
+    Point p2 = p.dich(1, 0).dich(0, 1);
+    IO.println(p + " / " + p2 + " / cung object: " + (p == p2));
+    // Point[x=1, y=2] / Point[x=2, y=3] / cung object: false
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>8 / 8 / cung object: true
+Point[x=1, y=2] / Point[x=2, y=3] / cung object: false</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">return this</code>: <code class="inline">c</code> và <code class="inline">c2</code> là <strong>cùng một object</strong> — gọi chain là tích luỹ thay đổi, thứ tự gọi quan trọng.</li>
+      <li><code class="inline">return new</code>: mỗi bước tạo object mới, object gốc bất biến — an toàn khi chia sẻ, chain không tác dụng phụ (như <code class="inline">String</code>, <code class="inline">java.time</code>).</li>
+      <li>Đừng trộn: API vừa mutate vừa đôi khi trả new sẽ cực khó đoán. Chọn một triết lý cho cả class.</li>
+    </ul>
+
+    <h3>10.2 Fluent + kế thừa: covariant return / self-type</h3>
+
+    <p>Vấn đề: nếu method fluent của lớp cha trả về <code class="inline">Cha</code>, chuỗi gọi trên object lớp con sẽ mất các method của con. Có hai cách sửa.</p>
+
+    <p><strong>Cách 1 — covariant return</strong>: override ở lớp con trả kiểu hẹp hơn (Java cho phép từ Java 5):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class Animal {
+    String ten = "";
+
+    Animal datTen(String ten) {
+        this.ten = ten;
+        return this;
+    }
+
+    public String toString() {
+        return getClass().getSimpleName() + "(" + ten + ")";
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    Dog datTen(String ten) {      // tra kieu hep hon: Dog thay vi Animal
+        super.datTen(ten);
+        return this;
+    }
+
+    Dog sua() {
+        return this;
+    }
+}
+
+void main() {
+    Dog d = new Dog().datTen("Milu").sua();   // chain duoc nho covariant return
+    IO.println(d);
+    // Dog(Milu)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Dog(Milu)</code></pre>
+    </div>
+
+    <p><strong>Cách 2 — self-type generic</strong>: lớp cha nhận tham số kiểu là chính nó, method fluent ép về <code class="inline">T</code>. Hữu ích khi nhiều lớp con dùng chung một builder base:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class BaseBuilder&lt;T extends BaseBuilder&lt;T&gt;&gt; {
+    protected String ten;
+
+    @SuppressWarnings("unchecked")
+    T ten(String ten) {
+        this.ten = ten;
+        return (T) this;           // ep ve kieu cua lop con
+    }
+}
+
+class UserBuilder extends BaseBuilder&lt;UserBuilder&gt; {
+    private int tuoi;
+
+    UserBuilder tuoi(int tuoi) {
+        this.tuoi = tuoi;
+        return this;
+    }
+
+    String build() {
+        return ten + " (" + tuoi + ")";
+    }
+}
+
+void main() {
+    IO.println(new UserBuilder().ten("An").tuoi(20).build());
+    // An (20)
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>An (20)</code></pre>
+    </div>
+
+    <div class="note">Builder pattern chính là fluent API trưởng thành — cấu hình object từng bước rồi <code class="inline">build()</code> một lần: xem <a href="solid-patterns.html#builder">2.8 SOLID &amp; design patterns — Builder</a>, và ví dụ builder đầy đủ (<code class="inline">SearchRequest</code>) ở <a href="#tham-so-mac-dinh">mục 4</a> của trang này.</div>
+
+    <h3>10.3 Chain thực tế: StringBuilder và Stream</h3>
+
     <div class="codeblock">
       <pre><code class="java">public class ChainingDemo {
     public static void main() {
@@ -880,9 +1011,96 @@ hello</code></pre>
 
     <p>Vì sao <code class="inline">StringBuilder</code> chain được? Mỗi <code class="inline">append</code> trả về <code class="inline">this</code> — cùng một object. <code class="inline">String</code> cũng chain được nhưng tạo object mới mỗi bước; trong vòng lặp nối chuỗi nhiều lần thì <code class="inline">StringBuilder</code> nhanh hơn hẳn (xem <a href="index.html#string">Biến trong Java — mục 14</a>, đào sâu ở <a href="roadmap.html#phase-1">1.7 Strings</a>).</p>
 
-    <p>Builder ở mục 4 chính là fluent API: <code class="inline">.keyword(...).page(2).size(50).build()</code>. Các API <code class="inline">java.time</code> cũng theo phong cách này: <code class="inline">ngay.plusDays(3).withYear(2027)</code> trả về object mới (bất biến). Stream ở <a href="roadmap.html#phase-3">3.8</a> là fluent API mạnh nhất của Java.</p>
+    <p>Stream là fluent API mạnh nhất — chuỗi gồm <strong>nguồn → các bước trung gian (lazy) → bước kết thúc</strong>. Thứ tự gọi ảnh hưởng cả kết quả lẫn hiệu năng:</p>
 
-    <div class="note warn">Chuỗi quá dài khó debug vì breakpoint khó đặt giữa các bước. Nếu chain quá 5-7 bước hoặc cần log trung gian, tách thành biến trung gian có tên.</div>
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.Collectors;
+
+void main() {
+    String kq = List.of("  an ", " BINH", "cuong  ")
+            .stream()
+            .map(String::trim)              // cat khoang trang
+            .filter(s -&gt; !s.isEmpty())      // bo chuoi rong
+            .map(String::toUpperCase)
+            .sorted()
+            .collect(Collectors.joining(", "));
+    IO.println(kq);
+    // AN, BINH, CUONG
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>AN, BINH, CUONG</code></pre>
+    </div>
+
+    <ul>
+      <li>Các bước trung gian (<code class="inline">map</code>, <code class="inline">filter</code>, <code class="inline">sorted</code>) <strong>chưa chạy</strong> khi chưa có bước kết thúc (<code class="inline">collect</code>, <code class="inline">forEach</code>, <code class="inline">count</code>...) — Stream <em>lazy</em>.</li>
+      <li><code class="inline">sorted()</code> là bước trung gian <strong>có state</strong>: phải gom hết phần tử rồi mới sắp xếp. <code class="inline">map</code>/<code class="inline">filter</code> xử lý từng phần tử nên có thể gộp một lượt duyệt.</li>
+      <li>Thứ tự đề xuất: nguồn → <code class="inline">filter</code> bớt phần tử → <code class="inline">map</code> biến đổi → sắp xếp/giới hạn → kết thúc. Riêng ví dụ trên phải <code class="inline">map(trim)</code> trước vì cần cắt khoảng trắng rồi mới biết chuỗi có rỗng không.</li>
+      <li>Các API <code class="inline">java.time</code> cũng theo phong cách này: <code class="inline">ngay.plusDays(3).withYear(2027)</code> trả về object mới (bất biến) — cùng triết lý <code class="inline">return new</code> ở mục 10.1. Stream học sâu ở <a href="roadmap.html#phase-3">3.8</a>.</li>
+    </ul>
+
+    <h3>10.4 Bẫy thường gặp</h3>
+
+    <p><strong>Quên return</strong> là bẫy số một. Nếu method khai báo trả về object mà bạn quên <code class="inline">return</code>, compiler chặn ngay:</p>
+
+    <div class="errblock">
+      <pre>    }
+    ^
+error: missing return statement</pre>
+    </div>
+
+    <p>Nếu cố tình trả <code class="inline">null</code> (ví dụ helper trả null khi lỗi), lỗi nổ ra ở <em>giữa chuỗi</em> — đọc stack trace khó biết bước nào hỏng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ChainingTrapDemo {
+    public static void main() {
+        try {
+            String ten = new Order().khach("An").khach("Binh").khach;
+            IO.println(ten);
+        } catch (NullPointerException e) {
+            IO.println("NPE: " + e.getMessage());
+        }
+    }
+}
+
+class Order {
+    String khach;
+
+    Order khach(String k) {
+        this.khach = k;
+        return null;               // quen return this -> tra null
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>NPE: Cannot invoke "Order.khach(String)" because the return value of "Order.khach(String)" is null</code></pre>
+    </div>
+
+    <p>Ba bẫy còn lại:</p>
+    <ul>
+      <li><strong>Chuỗi quá dài:</strong> 10+ bước thì khó đọc, khó đặt breakpoint/log trung gian. Quy tắc thực dụng: quá 5–7 bước hoặc cần kiểm tra giá trị trung gian thì tách thành biến có tên.</li>
+      <li><strong>Side effect ẩn:</strong> mỗi method trong chain có thể ghi log, sửa field static, gọi API. Chain trông như biểu thức "sạch" nhưng thực chất là nhiều hành động — đọc nhanh rất dễ bỏ sót. Giữ method fluent ở dạng trả dữ liệu, không side effect.</li>
+      <li><strong><code class="inline">peek()</code> không phải để sửa state:</strong> trong Stream, <code class="inline">peek</code> chỉ để debug; đừng dùng làm logic (lazy nên có thể không chạy, và có thể chạy nhiều lần khi nguồn bị duyệt lại).</li>
+      <li><strong>Khi nào KHÔNG nên chain:</strong> khi cần giá trị trung gian để log/so sánh; khi các bước thuộc nghiệp vụ khác nhau (tách theo "một method một việc" ở <a href="#best-practices">mục 12</a>); khi cần xử lý lỗi ở từng bước; khi chain trộn mutable và immutable.</li>
+    </ul>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li><strong>Optional chaining <code class="inline">?.</code>:</strong> JS cho phép <code class="inline">user?.profile?.email</code> — dừng và trả <code class="inline">undefined</code> nếu giữa chuỗi null/undefined. Java không có toán tử này; tương đương gần nhất là <code class="inline">Optional</code> (<code class="inline">user.map(u -&gt; u.email)</code>) hoặc check null từng bước. Chain method Java <strong>không ngắn mạch</strong> — gọi trên <code class="inline">null</code> là NPE ngay (như mục 10.4).</li>
+      <li><strong>Array chaining:</strong> <code class="inline">arr.filter(...).map(...).reduce(...)</code> trông giống Stream nhưng JS array chạy <strong>eager</strong> từng bước và tạo mảng trung gian; Stream Java <strong>lazy</strong>, các bước map/filter gộp lại chạy một lượt khi gặp bước kết thúc.</li>
+      <li><strong>Promise chain:</strong> <code class="inline">fetch(url).then(r =&gt; r.json()).then(...).catch(...)</code> cũng là chaining, nhưng mỗi <code class="inline">then</code> trả về <em>Promise mới</em> (bất biến) và lỗi nhảy xuống <code class="inline">catch</code> gần nhất. Java tương ứng là <code class="inline">CompletableFuture.thenApply/thenCompose</code>; còn chain method thường (<code class="inline">return this</code>) không có cơ chế bắt lỗi tập trung như vậy.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code>// JS
+const email = user?.profile?.email ?? "khong co";
+const ten = arr.filter(x =&gt; x.active).map(x =&gt; x.name).join(", ");</code></pre>
+    </div>
+
+    <div class="note"><strong>Chốt gọn:</strong> chaining = method trả object để gọi tiếp — <code class="inline">return this</code> cho mutable (builder/<code class="inline">StringBuilder</code>), <code class="inline">return new</code> cho immutable (<code class="inline">String</code>/<code class="inline">java.time</code>). Kế thừa thì dùng covariant return hoặc self-type generic. Stream là fluent mạnh nhất (nguồn → trung gian lazy → kết thúc). Quên <code class="inline">return</code>/trả null gây NPE giữa chuỗi; chain quá 5–7 bước, có side effect, hay cần debug từng bước thì tách ra biến trung gian.</div>
 
     <h2 id="kiem-thu">11. Kiểm thử method ngay khi viết <span class="badge b-prod">Production</span></h2>
 

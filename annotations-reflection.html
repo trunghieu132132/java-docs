@@ -118,7 +118,7 @@
 
     <h2 id="built-in">2. Built-in annotations — annotation có sẵn của Java <span class="badge b-junior">Junior+</span></h2>
 
-    <p>JDK có sẵn một bộ annotation nhỏ dùng hằng ngày. Điểm đáng chú ý: hầu hết chúng có retention <code class="inline">SOURCE</code> — chỉ compiler đọc, không tồn tại lúc runtime. Đây là bằng chứng rõ nhất cho câu "annotation cần người đọc".</p>
+    <p>JDK có sẵn một bộ annotation nhỏ dùng hằng ngày. Điểm đáng chú ý: retention khác nhau — <code class="inline">@Override</code>/<code class="inline">@SuppressWarnings</code> là <code class="inline">SOURCE</code> (chỉ compiler đọc), còn <code class="inline">@Deprecated</code>/<code class="inline">@FunctionalInterface</code>/<code class="inline">@SafeVarargs</code> là <code class="inline">RUNTIME</code> (đọc được cả lúc chạy). Đây là bằng chứng rõ nhất cho câu "annotation cần người đọc".</p>
 
     <table>
       <thead>
@@ -212,7 +212,7 @@ void main() {
 
     <h3>@SafeVarargs &amp; @SuppressWarnings</h3>
 
-    <p><code class="inline">@SafeVarargs</code> dùng khi viết method nhận varargs có generic — compiler thường cảnh báo "Possible heap pollution". Bạn cam kết method không ghi sai kiểu vào mảng. Annotation này chỉ hợp lệ trên method <code class="inline">static</code>, <code class="inline">final</code> hoặc <code class="inline">private</code>:</p>
+    <p><code class="inline">@SafeVarargs</code> dùng khi viết method nhận varargs có generic — compiler thường cảnh báo "Possible heap pollution". Bạn cam kết method không ghi sai kiểu vào mảng. Annotation này chỉ hợp lệ trên method <code class="inline">static</code>, <code class="inline">final</code>, <code class="inline">private</code> (từ Java 9) hoặc constructor:</p>
 
     <div class="codeblock">
       <pre><code class="java">import java.util.*;
@@ -328,7 +328,7 @@ tags     : 0
 batBuoc  : false</code></pre>
     </div>
 
-    <div class="note">Annotation type không thể <code class="inline">extends</code>/<code class="inline">implements</code>, mọi element không có tham số và không <code class="inline">throws</code>. Nếu annotation chỉ để compiler/tool dùng (như <code class="inline">@Override</code>), đặt <code class="inline">@Retention(SOURCE)</code> cho gọn bytecode.</div>
+    <div class="note">Annotation type không được khai báo <code class="inline">extends</code>/<code class="inline">implements</code> — nó <em>ngầm</em> extends <code class="inline">java.lang.annotation.Annotation</code>; mọi element không có tham số và không <code class="inline">throws</code>. Nếu annotation chỉ để compiler/tool dùng (như <code class="inline">@Override</code>), đặt <code class="inline">@Retention(SOURCE)</code> cho gọn bytecode.</div>
 
     <h2 id="meta-annotation">4. @Retention, @Target &amp; các meta-annotation <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -376,7 +376,7 @@ Range (RUNTIME)  : true</code></pre>
 
     <h3>@Target — được gắn vào đâu?</h3>
 
-    <p><code class="inline">@Target</code> nhận danh sách <code class="inline">ElementType</code>. Không khai báo <code class="inline">@Target</code> thì mặc định gắn được gần như mọi nơi (trừ <code class="inline">TYPE_PARAMETER</code>/<code class="inline">TYPE_USE</code>).</p>
+    <p><code class="inline">@Target</code> nhận danh sách <code class="inline">ElementType</code>. Không khai báo <code class="inline">@Target</code> thì mặc định gắn được ở <strong>mọi declaration context</strong> — kể cả type parameter, module, record component — nhưng <em>không</em> gắn được ở type context (chỗ cần <code class="inline">TYPE_USE</code>).</p>
 
     <table>
       <thead>
@@ -404,6 +404,8 @@ Range (RUNTIME)  : true</code></pre>
 ^
 1 error</pre>
     </div>
+
+    <div class="note">Annotation <code class="inline">TYPE_USE</code> không đọc bằng <code class="inline">element.getAnnotation(...)</code> (sẽ trả <code class="inline">null</code>) mà phải đi qua <code class="inline">getAnnotatedType()</code>: ví dụ <code class="inline">field.getAnnotatedType().getAnnotation(KhongNull.class)</code> mới thấy annotation gắn trên kiểu.</div>
 
     <h3>@Inherited — kế thừa annotation</h3>
 
@@ -434,6 +436,8 @@ void main() {
       <pre><code>Order    : true
 UserForm : true</code></pre>
     </div>
+
+    <div class="note">Phân biệt với API "declared": <code class="inline">getAnnotations()</code>/<code class="inline">getAnnotation()</code> gồm cả annotation kế thừa qua <code class="inline">@Inherited</code>, còn <code class="inline">getDeclaredAnnotations()</code>/<code class="inline">getDeclaredAnnotation()</code> chỉ trả annotation khai báo trực tiếp trên element đó.</div>
 
     <h3>@Repeatable — gắn nhiều lần (Java 8)</h3>
 
@@ -521,6 +525,8 @@ package   : []</code></pre>
         <tr><td><code class="inline">Class.forName("...")</code></td><td>Tên class chỉ biết lúc runtime (config, JDBC driver cũ)</td><td>Ném <code class="inline">ClassNotFoundException</code> (checked)</td></tr>
       </tbody>
     </table>
+
+    <div class="note"><strong>Chi tiết hay hỏi:</strong> <code class="inline">Class.forName("X")</code> tương đương <code class="inline">forName("X", true, loader)</code> — <strong>khởi tạo</strong> class (chạy static initializer) nếu chưa; muốn chỉ load mà không khởi tạo, dùng <code class="inline">Class.forName("X", false, loader)</code> hoặc <code class="inline">ClassLoader.loadClass(...)</code>.</div>
 
     <p>Khi đã có <code class="inline">Class</code>, bạn liệt kê được mọi thành phần khai báo bên trong. Vì thứ tự field/method do JVM trả về <strong>không được đảm bảo</strong>, ví dụ sort theo tên để output ổn định:</p>
 
@@ -676,7 +682,7 @@ truoc: 25
 sau  : 30</code></pre>
     </div>
 
-    <p>Reflection cho phép bạn làm được những việc mà bình thường compiler cấm — đó là sức mạnh, và cũng là lý do phải dùng hết sức tiết chế. <code class="inline">setAccessible(true)</code> <strong>phá encapsulation</strong>: field <code class="inline">final</code> của instance cũng có thể bị ghi đè trong nhiều trường hợp, invariant của class bị phá vỡ. Chỉ dùng trong framework, thư viện serialize/deserialize, test utility — không dùng trong logic nghiệp vụ.</p>
+    <p>Reflection cho phép bạn làm được những việc mà bình thường compiler cấm — đó là sức mạnh, và cũng là lý do phải dùng hết sức tiết chế. <code class="inline">setAccessible(true)</code> <strong>phá encapsulation</strong>: field <code class="inline">final</code> của instance cũng có thể bị ghi đè trong nhiều trường hợp, invariant của class bị phá vỡ. Từ Java 17+ có ngoại lệ: field <code class="inline">final</code> của <strong>record</strong> (trusted final) và <strong>hidden class</strong> vẫn ném <code class="inline">IllegalAccessException</code> dù đã gọi <code class="inline">setAccessible(true)</code>. Chỉ dùng trong framework, thư viện serialize/deserialize, test utility — không dùng trong logic nghiệp vụ.</p>
 
     <h3>Record — <code class="inline">getRecordComponents()</code></h3>
 
@@ -704,7 +710,7 @@ age : int | accessor: age</code></pre>
 
     <h3>Modifier &amp; erasure của generic</h3>
 
-    <p>Generic trong Java chỉ tồn tại lúc compile — JVM "xóa" thông tin kiểu (type erasure), nên reflection không thể ngăn ai đó nhét <code class="inline">Integer</code> vào <code class="inline">List&lt;String&gt;</code>. Đây vừa là giới hạn, vừa là cách để hiểu vì sao <code class="inline">@SuppressWarnings("unchecked")</code> tồn tại:</p>
+    <p>Generic trong Java chỉ tồn tại lúc compile — javac xóa thông tin kiểu khi biên dịch (type erasure), nên JVM và reflection không thể ngăn ai đó nhét <code class="inline">Integer</code> vào <code class="inline">List&lt;String&gt;</code>. Đây vừa là giới hạn, vừa là cách để hiểu vì sao <code class="inline">@SuppressWarnings("unchecked")</code> tồn tại:</p>
 
     <div class="codeblock">
       <pre><code class="java">import java.lang.reflect.*;
@@ -1076,7 +1082,7 @@ class UserForm {
 
     <details class="qa">
       <summary>Câu 5. Làm sao tự định nghĩa một annotation?</summary>
-      <div class="answer">Khai báo bằng <code class="inline">@interface</code>, các "element" viết như method không tham số, có thể kèm <code class="inline">default</code>. Ví dụ: <code class="inline">@Retention(RUNTIME) @Target(FIELD) @interface Range { int min() default 0; int max() default 100; }</code>. Annotation type không extends/implements được, element không nhận <code class="inline">null</code>, không generic, không throws.</div>
+      <div class="answer">Khai báo bằng <code class="inline">@interface</code>, các "element" viết như method không tham số, có thể kèm <code class="inline">default</code>. Ví dụ: <code class="inline">@Retention(RUNTIME) @Target(FIELD) @interface Range { int min() default 0; int max() default 100; }</code>. Annotation type không được khai báo extends/implements (ngầm extends <code class="inline">java.lang.annotation.Annotation</code>), element không nhận <code class="inline">null</code>, không generic, không throws.</div>
     </details>
 
     <details class="qa">

@@ -119,7 +119,7 @@
       <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
       <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
       <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
-      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+      <li>Gặp câu hỏi lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
     </ol>
 
     <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512) — và dạng class đầy đủ chạy bằng <code class="inline">java TenFile.java</code>. Kết quả chạy thật in ngay bên dưới mỗi ví dụ. Code production vẫn dùng <code class="inline">public static void main(String[] args)</code> như bạn thấy trong đề phỏng vấn.</div>
@@ -138,7 +138,7 @@
         <tr><td><code class="inline">super</code></td><td><code class="inline">super(...)</code> gọi constructor cha; <code class="inline">super.speak()</code> gọi method cha</td><td>Giống về ý tưởng, nhưng có quy tắc chặt hơn</td></tr>
         <tr><td>Đa kế thừa</td><td>Không; mixin bằng <code class="inline">Object.assign</code>/composition</td><td>Không cho class; nhiều interface cho phép implements</td></tr>
         <tr><td>Access modifier</td><td>Chỉ có <code class="inline">#private</code> (mới); còn lại public</td><td><code class="inline">private</code>, package-private, <code class="inline">protected</code>, <code class="inline">public</code></td></tr>
-        <tr><td><code class="inline">this</code> trước <code class="inline">super()</code></td><td>Bắt buộc gọi <code class="inline">super()</code> trước khi chạm <code class="inline">this</code></td><td>Trước JDK 25 giống JS; JDK 25 (JEP 513) cho phép câu lệnh không đụng <code class="inline">this</code> đứng trước <code class="inline">super()</code></td></tr>
+        <tr><td>Câu lệnh trước <code class="inline">super()</code></td><td>Được đặt câu lệnh trước; chạm <code class="inline">this</code> sẽ ném <code class="inline">ReferenceError</code></td><td>Trước JDK 25 bắt buộc <code class="inline">super()/this()</code> là câu đầu tiên; JDK 25 (JEP 513) cho prologue không chạm <code class="inline">this</code> (kể cả gán field)</td></tr>
         <tr><td>Dynamic dispatch</td><td>Dò prototype mỗi lần truy cập (engine tối ưu sau)</td><td>Chọn method theo object thật lúc chạy qua bảng ảo</td></tr>
       </tbody>
     </table>
@@ -231,7 +231,7 @@ Milu: Gau gau!</code></pre>
 
     <p>Ba điều rút ra từ ví dụ:</p>
     <ul>
-      <li><code class="inline">Dog</code> không khai báo <code class="inline">name</code> nhưng vẫn có, vì field <code class="inline">private final String name</code> nằm ở <code class="inline">Animal</code>. Field <code class="inline">private</code> vẫn thuộc về object con — chỉ là code con không truy cập trực tiếp được (đó là encapsulation, không phải "không thừa hưởng").</li>
+      <li><code class="inline">Dog</code> không khai báo <code class="inline">name</code> nhưng object <code class="inline">Dog</code> vẫn chứa field đó, vì field <code class="inline">private final String name</code> nằm ở <code class="inline">Animal</code>. Lưu ý thuật ngữ: theo JLS, member <code class="inline">private</code> <strong>không được thừa hưởng</strong> — lớp con chỉ dùng được qua method <code class="inline">public</code>/<code class="inline">protected</code> của cha (ở đây là <code class="inline">name()</code>), không đọc/ghi trực tiếp được (đó là encapsulation).</li>
       <li><code class="inline">super.speak()</code> gọi thẳng bản của cha; còn <code class="inline">speak()</code> trong <code class="inline">showAll()</code> vẫn dispatch tới bản của <code class="inline">Dog</code> dù code nằm ở đâu.</li>
       <li><code class="inline">Dog(String name) { super(name); }</code> — constructor con bắt buộc lo việc gọi constructor cha (xem quy tắc bên dưới).</li>
     </ul>
@@ -239,7 +239,7 @@ Milu: Gau gau!</code></pre>
     <h3>Constructor khi kế thừa — 4 quy tắc</h3>
 
     <ol>
-      <li><strong>Constructor không được thừa hưởng.</strong> <code class="inline">Animal(String)</code> không tự trở thành constructor của <code class="inline">Dog</code>; mỗi class phải tự khai báo constructor của mình. Vì vậy <code class="inline">new Dog()</code> trong khi Dog chỉ có <code class="inline">Dog(String)</code> là lỗi compile.</li>
+      <li><strong>Constructor không được thừa hưởng.</strong> <code class="inline">Animal(String)</code> không tự trở thành constructor của <code class="inline">Dog</code>; mỗi class dùng constructor của chính mình — nếu không khai báo constructor nào, compiler sinh default constructor. Vì vậy <code class="inline">new Dog()</code> trong khi Dog chỉ có <code class="inline">Dog(String)</code> là lỗi compile.</li>
       <li><strong>Không gọi tường minh thì compiler tự chèn <code class="inline">super()</code></strong> (constructor cha không tham số) vào đầu constructor con. Nếu lớp cha <em>không có</em> constructor no-arg, bạn buộc phải gọi <code class="inline">super(args)</code> — nếu không sẽ lỗi compile:</li>
     </ol>
 
@@ -572,7 +572,7 @@ Integer</code></pre>
         <tr><td>Return type</td><td>Giống, hoặc <strong>covariant</strong> (kiểu con của kiểu cha).</td></tr>
         <tr><td>Visibility</td><td>Không được <strong>giảm</strong>: <code class="inline">public</code> → <code class="inline">protected</code> là lỗi; tăng thì được (<code class="inline">protected</code> → <code class="inline">public</code>).</td></tr>
         <tr><td>Checked exception</td><td>Không được ném <strong>rộng hơn</strong>; hẹp hơn hoặc bỏ hẳn thì được. Unchecked (<code class="inline">RuntimeException</code>) không bị giới hạn.</td></tr>
-        <tr><td>private / static / final</td><td>Không override được. private bị "ẩn" (method mới hoàn toàn), static là hiding (mục 5), final bị cấm compile.</td></tr>
+        <tr><td>private / static / final</td><td>Không override được. private <strong>không được thừa hưởng</strong> (method trùng tên ở con là method hoàn toàn mới), static là hiding (mục 5), final bị cấm compile.</td></tr>
         <tr><td>Access xuyên package</td><td>Lớp con ở package khác chỉ override được method <code class="inline">public</code> hoặc <code class="inline">protected</code>.</td></tr>
       </tbody>
     </table>
@@ -648,6 +648,32 @@ public class Dog extends Animal {
         <tr><td>Exception</td><td>Không mở rộng checked</td><td>Không ràng buộc</td></tr>
       </tbody>
     </table>
+
+    <h3>Bẫy: <code class="inline">m(int...)</code> và <code class="inline">m(int[])</code> là cùng một signature</h3>
+
+    <p>Varargs chỉ là cú pháp đường của mảng: về signature, <code class="inline">m(int...)</code> chính là <code class="inline">m(int[])</code>. Vì vậy không thể khai báo cả hai trong cùng một class:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class VarargsClash {
+    void m(int[] xs) {
+    }
+
+    void m(int... xs) {
+    }
+
+    public static void main() {
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>VarargsClash.java:5: error: cannot declare both m(int...) and m(int[]) in VarargsClash
+    void m(int... xs) {
+         ^
+1 error</pre>
+    </div>
+
+    <p>Ngược lại, lớp con khai báo <code class="inline">void m(int[] xs)</code> với <code class="inline">@Override</code> là hợp lệ — đó là <em>override</em> method <code class="inline">m(int...)</code> của cha, không phải overload.</p>
 
     <h2 id="static-hiding">5. static: hiding chứ không phải override <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -781,7 +807,7 @@ public class Dog extends Animal {
     </div>
 
     <ul>
-      <li><strong>final class</strong> — không class nào extends được. Ví dụ: <code class="inline">String</code>, <code class="inline">Integer</code>, mọi class bao ngoài record, và nhiều class bất biến của JDK:</li>
+      <li><strong>final class</strong> — không class nào extends được. Ví dụ: <code class="inline">String</code>, <code class="inline">Integer</code>, mọi record, và nhiều class bất biến của JDK:</li>
     </ul>
 
     <div class="codeblock">
@@ -1046,11 +1072,46 @@ Loi LSP: Chim canh cut khong bay duoc</code></pre>
     <ul>
       <li>Override mà ném <code class="inline">UnsupportedOperationException</code>, hoặc biến method thành no-op rỗng.</li>
       <li>Code khách hàng phải <code class="inline">instanceof</code>/ép kiểu để xử lý riêng từng lớp con.</li>
-      <li>Lớp con làm yếu precondition (nhận ít hơn), làm mạnh postcondition (trả về ít hơn) so với cha.</li>
+      <li>Lớp con làm mạnh precondition (nhận ít hơn) hoặc làm yếu postcondition (bảo đảm/trả về ít hơn) so với cha.</li>
       <li>Comment kiểu "phải gọi method X trước khi gọi Y" chỉ đúng với một lớp con.</li>
     </ul>
 
     <p>LSP là chữ L trong SOLID — xem thêm ở <a href="solid-patterns.html">2.8 SOLID &amp; design patterns</a>. Nhớ câu thần chú: <strong>kế thừa không phải để tái dùng code, mà để thay thế được (substitutability)</strong>.</p>
+
+    <h3>Interface: xung đột default method — <code class="inline">InterfaceA.super.m()</code></h3>
+
+    <p>Một class <code class="inline">implements</code> nhiều interface có thể gặp hai <code class="inline">default</code> method cùng chữ ký. Luật của Java: <strong>class thắng interface</strong>; còn hai interface xung đột thì compiler buộc class override và chọn tường minh bằng <code class="inline">TenInterface.super.method()</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface BayDuoc {
+    default String moTa() {
+        return "co the bay";
+    }
+}
+
+interface BoiDuoc {
+    default String moTa() {
+        return "co the boi";
+    }
+}
+
+public class VitTroi implements BayDuoc, BoiDuoc {
+    @Override
+    public String moTa() {
+        return BayDuoc.super.moTa() + " va " + BoiDuoc.super.moTa();
+    }
+
+    public static void main() {
+        IO.println(new VitTroi().moTa());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>co the bay va co the boi</code></pre>
+    </div>
+
+    <p>Nếu không override, javac báo <code class="inline">class ... inherits unrelated defaults for moTa() from types BayDuoc and BoiDuoc</code> — Java không tự chọn thay bạn. Đây là lý do interface cho phép "đa kế thừa kiểu" nhưng vẫn tránh được diamond problem của C++.</p>
 
     <h2 id="instanceof-cast">11. instanceof &amp; cast (giới thiệu) <span class="badge b-junior">Junior+</span></h2>
 
@@ -1139,7 +1200,7 @@ Bat duoc: ClassCastException</code></pre>
       </thead>
       <tbody>
         <tr><td>Exception</td><td><code class="inline">Object → Throwable → Exception → IOException</code></td></tr>
-        <tr><td>Collections</td><td><code class="inline">Object → AbstractList → ArrayList</code> (và <code class="inline">List</code> là interface)</td></tr>
+        <tr><td>Collections</td><td><code class="inline">Object → AbstractCollection → AbstractList → ArrayList</code> (và <code class="inline">List</code> là interface)</td></tr>
         <tr><td>Số</td><td><code class="inline">Object → Number → Integer/Double</code> (<code class="inline">BigDecimal</code> cũng extends <code class="inline">Number</code>)</td></tr>
       </tbody>
     </table>
@@ -1186,7 +1247,22 @@ false</code></pre>
 
     <h2 id="sealed">13. sealed — kiểm soát ai được kế thừa <span class="badge b-junior">Junior+</span></h2>
 
-    <p>Từ Java 17, bạn có thể đóng khung một cây kế thừa bằng <code class="inline">sealed</code> + <code class="inline">permits</code>: chỉ những class/interface được liệt kê mới được phép kế thừa. Các lớp con phải là <code class="inline">final</code>, <code class="inline">sealed</code> tiếp, hoặc <code class="inline">non-sealed</code> (mở lại tự do).</p>
+    <p>Từ Java 17 (JEP 409), bạn có thể đóng khung một cây kế thừa bằng <code class="inline">sealed</code> + <code class="inline">permits</code>: chỉ những class/interface được liệt kê mới được phép kế thừa. Đây là mục nhìn từ <strong>góc kế thừa</strong> — chặn/mở kế thừa có kiểm soát; góc nhìn ADT + switch exhaustive nằm ở <a href="enum-nested.html#sealed">Enum, nested &amp; sealed — mục 10</a>.</p>
+
+    <h3>13.1 Cú pháp sealed, permits và luật modifier của subtype</h3>
+
+    <div class="signature">
+      <span class="tok-kw">sealed</span> <span class="sig-muted">[class|interface]</span> <span class="tok-typ">Tên</span> <span class="sig-muted">permits</span> <span class="sig-var">ConA, ConB</span> <span class="sig-muted">{ }</span>
+    </div>
+
+    <ul>
+      <li>Mỗi subtype trực tiếp phải khai báo <code class="inline">final</code> (đóng nhánh), <code class="inline">sealed</code> (đóng tiếp, có danh sách riêng), hoặc <code class="inline">non-sealed</code> (mở lại tự do). Thiếu modifier là lỗi compile; <code class="inline">record</code>/<code class="inline">enum</code> mặc định final nên chỉ cần <code class="inline">extends</code>/<code class="inline">implements</code>.</li>
+      <li><code class="inline">permits</code> được phép bỏ qua khi mọi subtype nằm cùng một file (cùng compilation unit) — compiler tự suy ra. Ở codebase nhiều file, ghi tường minh cho rõ hợp đồng.</li>
+      <li>Subtype phải cùng <strong>package</strong> (unnamed module) hoặc cùng <strong>named module</strong> với sealed type; sealed type phải có ít nhất một subtype.</li>
+      <li><code class="inline">sealed</code> không đồng nghĩa <code class="inline">abstract</code>: sealed class không abstract vẫn <code class="inline">new</code> được, chỉ hạn chế kế thừa.</li>
+    </ul>
+
+    <p>Ví dụ quen thuộc <code class="inline">Animal</code> — để chạy trực tiếp bằng <code class="inline">java File.java</code>, <code class="inline">main</code> đặt ở top-level thay vì trong <code class="inline">Dog</code>:</p>
 
     <div class="codeblock">
       <pre><code class="java">abstract sealed class Animal permits Dog, Cat {
@@ -1200,7 +1276,7 @@ final class Cat extends Animal {
     }
 }
 
-public final class Dog extends Animal {
+final class Dog extends Animal {
     private final String name;
 
     Dog(String name) {
@@ -1211,13 +1287,13 @@ public final class Dog extends Animal {
     String speak() {
         return name + ": Gau gau!";
     }
+}
 
-    public static void main() {
-        Animal a = new Dog("Milu");
-        Animal c = new Cat();
-        IO.println(a.speak());
-        IO.println(c.speak());
-    }
+void main() {
+    Animal a = new Dog("Milu");
+    Animal c = new Cat();
+    IO.println(a.speak());
+    IO.println(c.speak());
 }</code></pre>
     </div>
 
@@ -1226,7 +1302,195 @@ public final class Dog extends Animal {
 Meo meo!</code></pre>
     </div>
 
-    <p>Lợi ích: compiler biết chính xác tập lớp con, nên <code class="inline">switch</code> theo kiểu có thể kiểm tra đủ nhánh mà không cần <code class="inline">default</code>; thêm lớp con mới mà quên xử lý là lỗi compile. <code class="inline">sealed</code> là lựa chọn trung dung giữa "mở hoàn toàn" (mọi class extends) và <code class="inline">final</code> (không ai extends). Chi tiết enum/record/sealed ở <a href="roadmap.html#phase-2">2.7 Enum, nested &amp; sealed classes</a>.</p>
+    <p>Khi mọi subtype cùng file, bỏ <code class="inline">permits</code> vẫn hợp lệ — compiler tự thu thập danh sách, kiểm chứng bằng reflection:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed class Animal {
+}
+
+final class Dog extends Animal {
+}
+
+final class Cat extends Animal {
+}
+
+void main() {
+    IO.println("permits suy ra: " + Animal.class.getPermittedSubclasses().length);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>permits suy ra: 2</code></pre>
+    </div>
+
+    <div class="note">Ba thái cực: <code class="inline">final class</code> (không ai extends), <code class="inline">sealed</code> (đúng danh sách), không modifier (mở hoàn toàn). Chi tiết <code class="inline">final</code> ở <a href="#final">mục 6</a>.</div>
+
+    <p>Nhưng quên modifier trên subtype thì không qua được compiler:</p>
+
+    <div class="errblock">
+      <pre>SealedModifierErr.java:4: error: sealed, non-sealed or final modifiers expected
+class Dog extends Animal {
+^
+1 error</pre>
+    </div>
+
+    <h3>13.2 Kiểm soát ở compile-time — ngoài danh sách không extends được</h3>
+
+    <p>Khác interface thường (ai cũng implements được) hay abstract class (ai cũng extends được), <code class="inline">sealed</code> biến danh sách con thành một phần hợp đồng được compiler ép. Thử extends từ package khác:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// pkga/Media.java
+package pkga;
+
+public sealed class Media permits Book {
+}
+
+// pkgb/Ebook.java
+package pkgb;
+
+import pkga.Media;
+
+public class Ebook extends Media {
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>pkgb/Ebook.java:5: error: class is not allowed to extend sealed class: Media (as it is not listed in its 'permits' clause)
+public class Ebook extends Media {
+       ^
+1 error</pre>
+    </div>
+
+    <p>Không có đường lách: reflection cũng chỉ <em>xem</em> được danh sách subtype chứ không thêm được. <code class="inline">Class.getPermittedSubclasses()</code> trả về đúng các subtype <strong>theo thứ tự liệt kê trong <code class="inline">permits</code></strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Shape permits Rectangle, Circle {
+}
+
+final class Circle implements Shape {
+}
+
+final class Rectangle implements Shape {
+}
+
+void main() {
+    IO.println(Shape.class.isSealed());
+    for (Class&lt;?&gt; c : Shape.class.getPermittedSubclasses()) {
+        IO.println(c.getSimpleName());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+Rectangle
+Circle</code></pre>
+    </div>
+
+    <p>Chú ý thứ tự output là <code class="inline">Rectangle, Circle</code> — đúng như viết trong <code class="inline">permits</code>, không theo thứ tự khai báo class trong file. Với class không sealed, <code class="inline">getPermittedSubclasses()</code> trả mảng rỗng; <code class="inline">isSealed()</code> cho biết class có đang đóng hay không.</p>
+
+    <h3>13.3 sealed + switch exhaustive — ADT/domain model</h3>
+
+    <p>Lợi ích lớn nhất của sealed: compiler biết chính xác tập subtype, nên <code class="inline">switch</code> theo kiểu kiểm tra đủ nhánh mà <strong>không cần <code class="inline">default</code></strong>. Đây là cách Java mô hình hoá <strong>ADT</strong> (algebraic data type) — kiểu đóng như <code class="inline">Shape</code>, <code class="inline">Expr</code>, <code class="inline">Result</code>. Ví dụ biểu thức số học với record pattern:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Expr permits Num, Add, Mul {
+}
+
+record Num(int value) implements Expr {
+}
+
+record Add(Expr left, Expr right) implements Expr {
+}
+
+record Mul(Expr left, Expr right) implements Expr {
+}
+
+int tinh(Expr e) {
+    return switch (e) {
+        case Num(int v) -&gt; v;
+        case Add(Expr l, Expr r) -&gt; tinh(l) + tinh(r);
+        case Mul(Expr l, Expr r) -&gt; tinh(l) * tinh(r);
+    };
+}
+
+void main() {
+    Expr e = new Add(new Mul(new Num(2), new Num(3)), new Num(4));
+    IO.println(e);
+    IO.println("2 * 3 + 4 = " + tinh(e));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Add[left=Mul[left=Num[value=2], right=Num[value=3]], right=Num[value=4]]
+2 * 3 + 4 = 10</code></pre>
+    </div>
+
+    <p>Thêm subtype mới mà quên xử lý thì lỗi compile nổ ngay tại mọi switch còn thiếu nhánh — không còn "quên" lúc runtime:</p>
+
+    <div class="errblock">
+      <pre>SealedSwitchErr.java:14: error: the switch expression does not cover all possible input values
+    return switch (s) {
+           ^
+1 error</pre>
+    </div>
+
+    <p>Chọn giữa <code class="inline">enum</code>, <code class="inline">sealed</code> và <code class="inline">final</code>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>enum</th><th>sealed</th><th>final</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tập giá trị</td><td>Hữu hạn, liệt kê hằng; mỗi hằng là một instance</td><td>Hữu hạn subtype, mỗi subtype có state/hình dạng riêng</td><td>Đúng một class, không có con</td></tr>
+        <tr><td>Kế thừa</td><td>Ngầm extends <code class="inline">Enum</code>; không extends class khác</td><td>Chỉ subtype trong <code class="inline">permits</code>, cùng package/module</td><td>Chặn hoàn toàn</td></tr>
+        <tr><td>State mỗi biến thể</td><td>Dùng chung bộ field/constructor của enum</td><td>Mỗi subtype tự do field riêng (record/class)</td><td>Field của chính nó</td></tr>
+        <tr><td>switch exhaustive</td><td>Có — thiếu hằng là lỗi compile</td><td>Có — thiếu subtype là lỗi compile</td><td>Không áp dụng</td></tr>
+        <tr><td>Dùng khi</td><td>Tập hằng đơn giản: trạng thái, ngày, mã lỗi</td><td>ADT/domain model có cấu trúc khác nhau: <code class="inline">Shape</code>, <code class="inline">Expr</code>, <code class="inline">Result</code></td><td>Class tiện ích/hằng số, không muốn ai kế thừa</td></tr>
+        <tr><td>Ví dụ</td><td><code class="inline">OrderStatus</code>, <code class="inline">Day</code></td><td><code class="inline">Expr = Num | Add | Mul</code></td><td><code class="inline">String</code>, <code class="inline">Math</code>, <code class="inline">AppConfig</code></td></tr>
+      </tbody>
+    </table>
+
+    <p><code class="inline">sealed</code> đặc biệt hợp với domain model đóng mà bạn muốn compiler nhắc mỗi khi thêm biến thể (bảo hiểm, tính giá, trạng thái đơn hàng có payload khác nhau). Nếu tập kiểu cần mở cho bên thứ ba implement, hãy để interface thường hoặc chừa một nhánh <code class="inline">non-sealed</code>.</p>
+
+    <h3>13.4 Lưu ý thiết kế — sealed là hợp đồng API</h3>
+
+    <p>Danh sách subtype là một phần <strong>hợp đồng công khai</strong>, không phải chi tiết nội bộ. Khi bạn thêm một subtype mới:</p>
+
+    <ul>
+      <li>Mọi <code class="inline">switch</code> exhaustive của client (kể cả code ngoài module nếu họ compile lại) trở thành lỗi compile — đôi khi đó chính là điều bạn muốn: buộc xử lý biến thể mới ở khắp nơi.</li>
+      <li>Nhưng nếu là thư viện public, thêm subtype là <strong>breaking change</strong> với người dùng đã switch đủ nhánh. Hãy coi danh sách subtype như signature của API: đổi là phải tăng version, ghi changelog.</li>
+      <li>Cần chừa điểm mở rộng cho plugin/extension? Đừng sealed nhánh đó — dùng <code class="inline">non-sealed</code> cho một nhánh, hoặc thiết kế interface riêng.</li>
+      <li>Ngược lại, sealed rất hợp cho domain nội bộ ổn định (payment result, expression tree, event type): compiler-driven refactor, không sợ "lọt" nhánh.</li>
+    </ul>
+
+    <div class="note warn">Từ chối kế thừa từ bên ngoài còn có lợi ích bảo mật/ổn định: bạn kiểm soát hoàn toàn tập implementation, tránh subclass lạ chèn hành vi phá invariant. Đổi lại, bạn cam kết duy trì danh sách — thêm subtype phải rà soát toàn bộ switch của hệ thống.</div>
+
+    <h3>Góc Node.js — không có sealed, TypeScript union mô phỏng ADT</h3>
+
+    <p>JavaScript không cấm ai extends: prototype chain mở, bất kỳ object nào cũng gắn được prototype. TypeScript thêm kiểm tra compile-time bằng <strong>discriminated union</strong> + <code class="inline">never</code>, trông rất giống sealed + switch exhaustive — nhưng chỉ tồn tại lúc biên dịch TS; runtime không có gì đảm bảo:</p>
+
+    <div class="codeblock">
+      <pre><code>// TypeScript - chi de so sanh, KHONG phai Java
+type Shape =
+  | { kind: "circle"; r: number }
+  | { kind: "rect"; w: number; h: number };
+
+function area(s: Shape): number {
+  switch (s.kind) {
+    case "circle": return Math.PI * s.r * s.r;
+    case "rect":   return s.w * s.h;
+    default: {
+      const _exhaustive: never = s;   // thieu case -> loi compile TS
+      throw new Error("unknown shape " + _exhaustive);
+    }
+  }
+}</code></pre>
+    </div>
+
+    <p>Khác biệt: JS/TS không hạn chế được ai "kế thừa" union — ai cũng tạo object đúng shape. Java sealed chặn ở cả compile lẫn runtime class hierarchy.</p>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">sealed</code> + <code class="inline">permits</code> = mở kế thừa có kiểm soát → subtype phải <code class="inline">final</code>/<code class="inline">sealed</code>/<code class="inline">non-sealed</code>, cùng package/module, <code class="inline">permits</code> suy ra được khi cùng file → compiler ép ở mọi <code class="inline">extends</code>, xem được qua <code class="inline">getPermittedSubclasses()</code> → kết hợp switch exhaustive cho ADT (<code class="inline">Shape</code>, <code class="inline">Expr</code>, <code class="inline">Result</code>) → thêm subtype là breaking change với client, hãy coi sealed là hợp đồng API.</div>
 
     <h2 id="pitfalls">14. Pitfalls &amp; production notes <span class="badge b-prod">Production</span></h2>
 
@@ -1375,7 +1639,7 @@ a.hashCode() == d.hashCode() = false</code></pre>
 
     <details class="qa">
       <summary>Câu 3. Constructor có được thừa hưởng không? Vì sao?</summary>
-      <div class="answer">Không. Constructor không phải thành viên (member) nên không được thừa hưởng; mỗi class phải tự khai báo constructor của mình. Tên constructor trùng tên class nên về bản chất cũng không thể thừa hưởng sang class tên khác. Constructor con bắt buộc gọi trực tiếp hoặc gián tiếp constructor cha qua <code class="inline">super(...)</code>.</div>
+      <div class="answer">Không. Constructor không phải thành viên (member) nên không được thừa hưởng; mỗi class dùng constructor của chính mình — nếu không khai báo constructor nào, compiler sinh default constructor (constructor này gọi <code class="inline">super()</code>). Tên constructor trùng tên class nên về bản chất cũng không thể thừa hưởng sang class tên khác. Constructor con bắt buộc gọi trực tiếp hoặc gián tiếp constructor cha qua <code class="inline">super(...)</code>.</div>
     </details>
 
     <details class="qa">
@@ -1410,7 +1674,7 @@ a.hashCode() == d.hashCode() = false</code></pre>
 
     <details class="qa">
       <summary>Câu 10. Private method trùng tên ở lớp con — có phải override không?</summary>
-      <div class="answer">Không. Private method không được thừa hưởng nên lớp con khai báo cùng tên chỉ là một method mới, không liên quan gì tới method cha. Method private của cha được bind tĩnh (early binding): nếu code trong class cha gọi nó, luôn chạy bản của cha dù object thật là lớp con.</div>
+      <div class="answer">Không. Private member (cả field lẫn method) không được thừa hưởng, nên lớp con khai báo method cùng tên chỉ là một method mới, không liên quan gì tới method cha. Method private của cha được bind tĩnh (early binding): nếu code trong class cha gọi nó, luôn chạy bản của cha dù object thật là lớp con.</div>
     </details>
 
     <h3>Nâng cao (Junior+)</h3>

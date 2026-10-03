@@ -96,8 +96,8 @@
         <li><a href="#boxing-conv">Chuyển đổi boxing/unboxing</a></li>
         <li><a href="#overload">Method invocation conversion và overload</a></li>
         <li><a href="#reference-cast">Ép kiểu reference và ClassCastException</a></li>
-        <li><a href="#parse">parseXxx / valueOf — dữ liệu từ bên ngoài</a></li>
-        <li><a href="#biginteger">BigInteger — khi long không đủ</a></li>
+        <li><a href="#parse">parseXxx / valueOf chuyên sâu — dữ liệu từ bên ngoài</a></li>
+        <li><a href="#biginteger">BigInteger chuyên sâu — khi long không đủ</a></li>
         <li><a href="#production">Production patterns</a></li>
         <li><a href="#pitfalls">Pitfalls tổng hợp</a></li>
         <li><a href="#qa">Interview Q&amp;A</a></li>
@@ -127,366 +127,1376 @@
 
     <div class="note"><strong>Vì sao cần biết?</strong> Cùng một phép chuyển kiểu có thể hợp lệ ở ngữ cảnh này nhưng bị từ chối ở ngữ cảnh khác. Ví dụ <code class="inline">int → byte</code> tự động trong <code class="inline">b += 1</code> (compound assignment) nhưng phải ép tường minh trong <code class="inline">b = b + 1</code>.</div>
 
-    <h2 id="widening">3. Widening — "an toàn" nhưng không tuyệt đối</h2>
+    <h2 id="widening">3. Widening — "an toàn" nhưng không tuyệt đối <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
-    <p>Widening primitive conversion là chuyển từ kiểu nhỏ sang kiểu lớn hơn theo chuỗi:</p>
+    <p>Widening primitive conversion (JLS 5.1.2) là chuyển từ kiểu nhỏ sang kiểu lớn hơn <strong>không cần ép tường minh</strong>. Chuỗi quen thuộc là <code class="inline">byte → short → int → long → float → double</code>, còn <code class="inline">char</code> nhập cuộc tại <code class="inline">int</code>. Nhìn chung an toàn — nhưng "nhìn chung" là từ khoá quan trọng: <code class="inline">int → float</code> và <code class="inline">long → double</code> vẫn có thể mất chữ số, âm thầm, không cảnh báo.</p>
+
+    <h3>3.1 Sơ đồ widening primitive</h3>
+
+    <p>Java có 19 phép widening primitive, tất cả nằm gọn trong bảng sau — không nhảy cóc, không rẽ nhánh ngoài bảng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Từ</th><th>Có thể widening tới</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">byte</code></td><td><code class="inline">short</code>, <code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">short</code></td><td><code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">char</code></td><td><code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">int</code></td><td><code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">long</code></td><td><code class="inline">float</code>, <code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">float</code></td><td><code class="inline">double</code></td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><code class="inline">boolean</code> <strong>không</strong> có bất kỳ chuyển đổi số nào: không widening, không narrowing, không cast sang số. Đây là kiểu primitive duy nhất tách khỏi hệ số học.</li>
+      <li><code class="inline">char</code> là 16-bit <em>không dấu</em> (0..65535) nên chỉ widening từ <code class="inline">int</code> trở lên — nó không đi về <code class="inline">short</code>/<code class="inline">byte</code> dù cùng 16/8 bit (mục 3.5).</li>
+      <li>Widening primitive không "bắc cầu": bảng định nghĩa từng phép trực tiếp, compiler không tự đi qua trung gian.</li>
+    </ul>
+
+    <h3>3.2 Hai chỗ mất chính xác: int → float và long → double</h3>
+
+    <p><code class="inline">float</code> chỉ giữ <strong>24 bit</strong> phần định trị, <code class="inline">double</code> giữ <strong>53 bit</strong>. Số nguyên vượt ngưỡng tương ứng (2<sup>24</sup>, 2<sup>53</sup>) bị làm tròn về bội số gần nhất — đúng luật IEEE 754, không lỗi, không cảnh báo, và ép ngược lại không khôi phục được:</p>
 
     <div class="codeblock">
-      <pre><code class="java">byte → short → int → long → float → double
-                  ↑
-                char → int</code></pre>
+      <pre><code class="java">int i = 16_777_217;          // 2^24 + 1
+float f = i;                 // int -> float
+IO.println("int 16_777_217 -> float  : " + f);       // 1.6777216E7
+IO.println("ep nguoc lai thanh int   : " + (int) f); // 16777216
+
+long big = 9_007_199_254_740_993L;   // 2^53 + 1
+double d = big;              // long -> double
+IO.println("long ...993 -> double     : " + d);       // 9.007199254740992E15
+IO.println("ep nguoc lai thanh long  : " + (long) d); // 9007199254740992</code></pre>
     </div>
 
-    <p>Chuyển ngầm (không cần ép) và nhìn chung an toàn với số nguyên. Nhưng có hai trường hợp mất chữ số vì <code class="inline">float</code> chỉ giữ 24 bit phần định trị, <code class="inline">double</code> giữ 53 bit:</p>
+    <table>
+      <thead>
+        <tr><th>Phép widening</th><th>Mất chính xác?</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">byte/short/char/int → long</code></td><td>Không</td><td>64 bit chứa trọn 32 bit</td></tr>
+        <tr><td><code class="inline">int → double</code></td><td>Không</td><td>53 bit định trị &gt; 32 bit của int</td></tr>
+        <tr><td><code class="inline">int → float</code></td><td><strong>Có thể</strong></td><td>24 bit định trị &lt; 32 bit của int</td></tr>
+        <tr><td><code class="inline">long → float</code></td><td><strong>Có thể</strong></td><td>24 bit định trị &lt; 64 bit của long</td></tr>
+        <tr><td><code class="inline">long → double</code></td><td><strong>Có thể</strong></td><td>53 bit định trị &lt; 64 bit của long</td></tr>
+        <tr><td><code class="inline">float → double</code></td><td>Không</td><td>double chứa trọn float</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Bẫy production:</strong> <code class="inline">float</code> chính xác đến 2<sup>24</sup>, <code class="inline">double</code> đến 2<sup>53</sup>. ID <code class="inline">long</code> lớn đi qua <code class="inline">double</code> — ví dụ serialize JSON thành number rồi client JS đọc lại — có thể hụt 1 đơn vị: <code class="inline">9_007_199_254_740_993</code> thành <code class="inline">...992</code>. Đây là lý do thật khiến hệ thống production lệch ID, và cũng là lý do ID lớn phải gửi dạng String (<a href="#production">mục 13.2</a>).</div>
+
+    <h3>3.3 Widening xảy ra ở đâu</h3>
+
+    <p>Cùng một luật, ba ngữ cảnh hay gặp — assignment, method invocation và numeric promotion:</p>
 
     <div class="codeblock">
-      <pre><code class="java">public class WideningDemo {
-    public static void main() {
-        char c = 'A';
-        int ci = c;                  // char -> int
-        IO.println("char 'A' -> int          : " + ci);  // 65
+      <pre><code class="java">static void takeLong(long x) {
+    IO.println("takeLong(long) : " + x);
+}
 
-        int i = 16_777_217;          // 2^24 + 1
-        float f = i;                 // int -> float: mat chu so!
-        IO.println("int 16_777_217 -> float  : " + f);   // 1.6777216E7
+int i = 'a';             // char -> int             (assignment)
+long l = i;              // int -> long             (assignment)
+double d = l;            // long -> double          (assignment)
+IO.println("i, l, d        : " + i + " " + l + " " + d);   // 97 97 97.0
 
-        long big = 9_007_199_254_740_993L;  // 2^53 + 1
-        double d = big;              // long -> double: mat chu so!
-        IO.println("long ...993 -> double     : " + d);   // 9.007199254740992E15
-    }
+takeLong('Z');           // char -> int -> long     (method invocation)
+takeLong(7);             // int -> long
+IO.println("i + 1L         : " + (i + 1L));   // 98      (numeric promotion)</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Assignment:</strong> <code class="inline">long l = i;</code> — vế phải widening được tới kiểu vế trái là gán hợp lệ.</li>
+      <li><strong>Method invocation:</strong> tham số <code class="inline">long</code> nhận <code class="inline">char</code>, <code class="inline">int</code>, <code class="inline">short</code>... Không có overload <code class="inline">takeLong(int)</code> nên compiler widening; nếu có cả hai bản, bản khớp chính xác thắng (<a href="#overload">mục 9</a>).</li>
+      <li><strong>Numeric promotion:</strong> <code class="inline">i + 1L</code> — chỉ cần một toán hạng <code class="inline">long</code>, cả biểu thức thành <code class="inline">long</code> (<a href="#promotion">mục 5</a>).</li>
+    </ul>
+
+    <h3>3.4 Widening reference và array covariance</h3>
+
+    <p>Với reference cũng có widening: <code class="inline">String → Object</code>, <code class="inline">Integer → Number → Object</code> luôn ngầm được vì quan hệ kế thừa. Và mảng "covariant": <code class="inline">String[]</code> <em>là một</em> <code class="inline">Object[]</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String s = "java";
+Object o = s;               // String -> Object        (widening reference)
+CharSequence cs = s;        // String -> CharSequence
+IO.println("String -> Object       : " + o);   // java
+IO.println("String -> CharSequence : " + cs);  // java
+
+Object[] objs = new String[2];   // mang covariant: String[] la Object[]
+objs[0] = "ok";
+try {
+    objs[1] = 5;                 // runtime type la String[]
+} catch (ArrayStoreException e) {
+    IO.println("ArrayStoreException    : " + e.getMessage());   // java.lang.Integer
 }</code></pre>
     </div>
 
-    <div class="note warn"><strong>Bẫy phỏng vấn:</strong> widening <em>không</em> đồng nghĩa "không mất gì". <code class="inline">float</code> biểu diễn chính xác đến 2^24, <code class="inline">double</code> đến 2^53. ID <code class="inline">long</code> lớn đi qua <code class="inline">double</code> (ví dụ serialize qua JSON không cẩn thận) có thể hụt 1 đơn vị — đây là lý do thật khiến hệ thống production lệch ID.</div>
+    <ul>
+      <li>Widening reference chỉ đổi <strong>kiểu tĩnh</strong>; object runtime không đổi. Đây là nền của upcast + dynamic dispatch — xem <a href="polymorphism.html#casting">Polymorphism — mục 4</a>.</li>
+      <li>Mảng covariant cho compiler, nhưng <strong>JVM kiểm tra từng lần ghi</strong>: gán <code class="inline">Integer</code> vào <code class="inline">String[]</code> ném <code class="inline">ArrayStoreException</code> lúc chạy. Chi tiết ở <a href="arrays.html#covariance">Arrays — mục 7</a>; đây là lý do <code class="inline">List&lt;String&gt;</code> cố tình <em>không</em> covariant để bắt lỗi ngay lúc compile.</li>
+    </ul>
 
-    <h2 id="narrowing">4. Narrowing — ép tường minh và mất dữ liệu</h2>
+    <h3>3.5 char không widening về byte/short</h3>
 
-    <p>Narrowing (lớn → nhỏ) bắt buộc ép tường minh <code class="inline">(type)</code> vì có thể mất dữ liệu. Java từ chối ngầm chuyển:</p>
+    <p><code class="inline">char</code> chứa 0..65535, không nằm trong khoảng <code class="inline">byte</code> (−128..127) hay <code class="inline">short</code> (−32768..32767), nên đó là narrowing — và Java từ chối ngầm chuyển:</p>
 
     <div class="errblock">
-      <pre>int x = 3.9;
-        ^
-error: incompatible types: possible lossy conversion from double to int
-
-float g = 1.5;
-          ^
-error: incompatible types: possible lossy conversion from double to float</pre>
+      <pre>WideningError.java:4: error: incompatible types: possible lossy conversion from char to byte
+        byte b = c;
+                 ^
+WideningError.java:5: error: incompatible types: possible lossy conversion from char to short
+        short s = c;
+                  ^
+2 errors</pre>
     </div>
 
-    <p>Khi đã ép, Java cắt theo luật xác định trước — không ném lỗi:</p>
+    <p>Muốn đổi phải ép tường minh <code class="inline">(byte) c</code> và tự chịu trách nhiệm với ký tự &gt; 127 — ví dụ <code class="inline">(byte) 'é'</code> ra số âm. Cùng lý do, <code class="inline">short s = 65; char c = s;</code> cũng không compile.</p>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS chỉ có một kiểu số thường — <code class="inline">number</code> = double 64-bit — nên không có "widening": <code class="inline">16_777_217</code> chính xác, nhưng literal <code class="inline">9_007_199_254_740_993</code> đã in ra <code class="inline">9007199254740992</code> ngay từ lúc parse, và <code class="inline">2 ** 53 === 2 ** 53 + 1</code> là <code class="inline">true</code>.</li>
+      <li>Java tách <code class="inline">int</code>/<code class="inline">long</code> chính xác tuyệt đối khỏi <code class="inline">float</code>/<code class="inline">double</code> xấp xỉ; JS gộp hết vào double. TypeScript khai báo <code class="inline">number</code> cũng chỉ là double — không có cách nào "widening" vì không có gì để widen.</li>
+      <li>Cần số nguyên lớn chính xác trong JS phải dùng <code class="inline">BigInt</code> (<code class="inline">9007199254740993n</code>), tương ứng <code class="inline">BigInteger</code> bên Java (<a href="#biginteger">mục 12</a>).</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> widening primitive tự động nhưng <em>không</em> bảo toàn tuyệt đối: <code class="inline">int → float</code> (quá 2<sup>24</sup>) và <code class="inline">long → double</code> (quá 2<sup>53</sup>) làm tròn âm thầm → <code class="inline">char</code> chỉ widening từ <code class="inline">int</code> trở lên, về <code class="inline">byte</code>/<code class="inline">short</code> là lỗi compile → widening reference luôn an toàn, còn array covariance trả giá bằng <code class="inline">ArrayStoreException</code> lúc chạy → cần chính xác số nguyên lớn: giữ <code class="inline">long</code>/<code class="inline">BigInteger</code>, đừng để lọt qua <code class="inline">double</code>.</div>
+
+    <h2 id="narrowing">4. Narrowing — ép tường minh và mất dữ liệu <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Narrowing (lớn → nhỏ) là chiều ngược lại: compiler <strong>luôn từ chối ngầm chuyển</strong> vì biết có thể mất dữ liệu, bạn phải tự ép <code class="inline">(type)</code> để nhận trách nhiệm. Khi đã ép, Java áp luật xác định trước — không ném exception, không cảnh báo, chỉ có kết quả có thể "sai" một cách lặng lẽ.</p>
+
+    <h3>4.1 Luật cắt khi ép số</h3>
 
     <div class="codeblock">
-      <pre><code class="java">IO.println("(byte) 130       : " + (byte) 130);       // -126
-IO.println("(int) 3.99       : " + (int) 3.99);       // 3    - cat ve 0
-IO.println("(int) -3.99      : " + (int) -3.99);      // -3   - cat ve 0, khong lam tron
-IO.println("(char) 65        : " + (char) 65);        // A
-IO.println("(int) Double.NaN : " + (int) Double.NaN); // 0
-IO.println("(int) 1e20       : " + (int) 1e20);       // 2147483647
-IO.println("(long) 1e20      : " + (long) 1e20);      // 9223372036854775807</code></pre>
+      <pre><code class="java">IO.println("(int) 2.9            : " + (int) 2.9);        // 2
+IO.println("(int) -2.9           : " + (int) -2.9);       // -2
+IO.println("(int) Double.NaN     : " + (int) Double.NaN); // 0
+IO.println("(int) +Infinity      : " + (int) Double.POSITIVE_INFINITY);  // 2147483647
+IO.println("(int) -Infinity      : " + (int) Double.NEGATIVE_INFINITY);  // -2147483648
+IO.println("(int) 1e20           : " + (int) 1e20);       // 2147483647
+IO.println("(long) 1e20          : " + (long) 1e20);      // 9223372036854775807
+IO.println("(byte) 130           : " + (byte) 130);       // -126
+IO.println("(short) 65535        : " + (short) 65535);    // -1
+IO.println("(int) (char) -1      : " + (int) (char) -1); // 65535
+IO.println("(int) 0x1_0000_0001L : " + (int) 0x1_0000_0001L);  // 1
+IO.println("(int) 4_294_967_296L : " + (int) 4_294_967_296L);  // 0</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Chuyển</th><th>Luật</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">double/float → int/long</code></td><td>Cắt phần thập phân về phía 0 (không làm tròn)</td><td><code class="inline">(int) 2.9 = 2</code>, <code class="inline">(int) -2.9 = -2</code></td></tr>
+        <tr><td><code class="inline">float/double đặc biệt → int/long</code></td><td>NaN → 0; +∞ → MAX; −∞ → MIN; ngoài khoảng → kẹp về MAX/MIN</td><td><code class="inline">(int) 1e20 = 2147483647</code></td></tr>
+        <tr><td><code class="inline">số nguyên → số nguyên nhỏ hơn</code></td><td>Giữ N bit thấp nhất, quay vòng bù hai</td><td><code class="inline">(byte) 130 = -126</code>, <code class="inline">(int) 4_294_967_296L = 0</code></td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><code class="inline">long → int</code> giữ <strong>32 bit thấp</strong>: <code class="inline">0x1_0000_0001L → 1</code>, còn <code class="inline">4_294_967_296L</code> (2<sup>32</sup>) → <code class="inline">0</code>.</li>
+      <li><code class="inline">char</code> là 16-bit không dấu: <code class="inline">(char) -1 = 65535</code>; in trực tiếp là ký tự không nhìn thấy nên phải ép ngược <code class="inline">(int) (char) -1</code> mới thấy số.</li>
+      <li>Hai luật "quá lớn" khác hẳn nhau: số dấu phẩy động bị <strong>kẹp</strong> về MAX/MIN, còn số nguyên bị <strong>quay vòng</strong>. Đừng đoán theo thói quen của phép này sang phép kia.</li>
+      <li>Ép <code class="inline">double → int</code> rồi ép ngược không khôi phục dữ liệu; muốn làm tròn số học dùng <code class="inline">Math.round</code> (trả <code class="inline">long</code>), muốn kẹp dùng <code class="inline">Math.clamp</code> (Java 21+).</li>
+    </ul>
+
+    <div class="note warn"><strong>Bẫy production:</strong> narrowing là chỗ duy nhất JVM im lặng khi bạn mất dữ liệu. Ép <code class="inline">long</code> ID/thời gian về <code class="inline">int</code>, ép <code class="inline">double</code> tiền về <code class="inline">int</code>... đều chạy trơn tru rồi sai âm thầm. Ở biên dữ liệu, validate trước khi ép (so khoảng) thay vì ép rồi hy vọng.</div>
+
+    <h3>4.2 Constant narrowing — ngoại lệ cho hằng số vừa khoảng</h3>
+
+    <p>Assignment context có ngoại lệ (JLS 5.2): nếu vế phải là <strong>constant expression</strong> kiểu <code class="inline">int</code> — literal hoặc biến <code class="inline">final</code> khởi tạo bằng constant expression — và giá trị nằm <strong>trong khoảng</strong> kiểu đích, Java cho phép ngầm narrowing:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">final int y = 100;
+byte z = y;                 // hang so vua khoang
+char ch = 65;               // 65 -> 'A'
+char next = 'A' + 1;        // bieu thuc hang so
+byte b3 = 50 + 50;          // 100, vua byte
+IO.println(z + " " + ch + " " + next + " " + b3);   // 100 A B 100</code></pre>
+    </div>
+
+    <p>Chỉ cần "quá khoảng" hoặc "không còn là constant expression" là compiler chặn ngay:</p>
+
+    <div class="errblock">
+      <pre>NarrowingError.java:3: error: incompatible types: possible lossy conversion from int to byte
+        byte b = 200;
+                 ^
+NarrowingError.java:4: error: incompatible types: possible lossy conversion from int to char
+        char ch = -1;
+                  ^
+NarrowingError.java:6: error: incompatible types: possible lossy conversion from int to byte
+        byte z = y;
+                 ^
+3 errors</pre>
     </div>
 
     <ul>
-      <li><code class="inline">(byte) 130</code> = <code class="inline">-126</code>: 130 vượt 127 nên quay vòng theo bù hai.</li>
-      <li>Ép <code class="inline">double → int</code> <strong>cắt phần thập phân</strong>, không làm tròn: <code class="inline">3.99</code> thành <code class="inline">3</code>.</li>
-      <li><code class="inline">NaN → 0</code>; số quá lớn bị kẹp về <code class="inline">MAX_VALUE</code> (khác wraparound của số nguyên).</li>
+      <li><code class="inline">byte b = 100;</code> hợp lệ, <code class="inline">byte b = 200;</code> không: 200 vượt 127. <code class="inline">final int y = 1000; byte z = y;</code> cũng không — vẫn là hằng số nhưng <strong>ngoài khoảng</strong>.</li>
+      <li><code class="inline">'A' + 1</code> là constant expression (char + int literal) → gán thẳng vào <code class="inline">char</code> ra <code class="inline">'B'</code>. Nhưng <code class="inline">int code = 1; char c = 'A' + code;</code> thì lỗi vì <code class="inline">code</code> không phải hằng số.</li>
+      <li>Ngoại lệ này chỉ tồn tại ở <strong>assignment context</strong>. Method invocation <em>không</em> có đặc quyền đó: <code class="inline">void m(byte b)</code> rồi gọi <code class="inline">m(100)</code> vẫn lỗi "possible lossy conversion" dù 100 vừa byte — muốn truyền phải ép <code class="inline">m((byte) 100)</code>.</li>
     </ul>
 
-    <p>Ngoại lệ đáng nhớ: <strong>hằng số (constant) trong khoảng đích được phép ngầm chuyển</strong>, nên đoạn sau compile bình thường:</p>
+    <h3>4.3 Narrowing ngầm trong compound assignment</h3>
+
+    <p>Compound assignment là ngữ cảnh duy nhất khác được phép narrowing ngầm (kể cả với giá trị không phải hằng số). <code class="inline">s += 2.5</code> tương đương <code class="inline">s = (short) (s + 2.5)</code>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">final int y = 3;
-byte z = y;        // hang so vua khoang -> duoc
-char ch = 65;      // hang so vua khoang char -> duoc
-IO.println(z + " " + ch);   // 3 A</code></pre>
+      <pre><code class="java">short s = 1;
+s += 2.5;                    // s = (short) (s + 2.5)
+IO.println("short += 2.5 : " + s);   // 3
+
+byte b = 127;
+b += 1;                      // (byte) 128
+IO.println("byte 127 += 1: " + b);   // -128</code></pre>
     </div>
 
-    <p>Nhưng <code class="inline">byte b = 200;</code> hay <code class="inline">char ch = -1;</code> vẫn bị từ chối:</p>
+    <p>Đây chính là cơ chế ở <a href="#compound">mục 6</a> — hữu ích nhưng cũng là nguồn bug âm thầm lớn nhất của Java.</p>
 
-    <div class="errblock">
-      <pre>byte b = 200;
-         ^
-error: incompatible types: possible lossy conversion from int to byte
-
-char ch = -1;
-          ^
-error: incompatible types: possible lossy conversion from int to char</pre>
-    </div>
-
-    <h2 id="promotion">5. Numeric promotion — vì sao <code class="inline">byte + byte</code> ra <code class="inline">int</code></h2>
-
-    <p>Trước khi tính toán, Java "nâng" toán hạng theo luật numeric promotion:</p>
+    <h3>Góc Node.js</h3>
 
     <ul>
-      <li><strong>Unary promotion:</strong> <code class="inline">byte</code>, <code class="inline">short</code>, <code class="inline">char</code> được nâng lên <code class="inline">int</code> trước khi tính (kể cả <code class="inline">-b</code>, <code class="inline">b++</code>).</li>
-      <li><strong>Binary promotion:</strong> nếu một toán hạng là <code class="inline">double</code> → cả hai thành <code class="inline">double</code>; nếu là <code class="inline">float</code> → cả hai thành <code class="inline">float</code>; nếu là <code class="inline">long</code> → cả hai thành <code class="inline">long</code>; còn lại → cả hai thành <code class="inline">int</code>.</li>
+      <li>JS không có cast; phép bitwise <code class="inline">| 0</code> là ToInt32 (ép về int 32-bit có dấu): <code class="inline">2.9 | 0 = 2</code>, <code class="inline">-2.9 | 0 = -2</code>, <code class="inline">NaN | 0 = 0</code>.</li>
+      <li>Khác Java ở chỗ quá lớn: <code class="inline">Infinity | 0 = 0</code> và <code class="inline">1e20 | 0 = 1661992960</code> — JS lấy modulo 2<sup>32</sup>, Java kẹp về <code class="inline">2147483647</code>. <code class="inline">(2147483647 + 1) | 0 = -2147483648</code> thì giống wraparound của Java.</li>
+      <li><code class="inline">Math.trunc(2.9) = 2</code> cắt về 0 giống <code class="inline">(int) 2.9</code>; còn <code class="inline">new Int8Array([130])[0] = -126</code> mô phỏng đúng <code class="inline">(byte) 130</code>.</li>
     </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> narrowing luôn cần <code class="inline">(type)</code> tường minh → <code class="inline">double → int</code> cắt về 0, NaN → 0, ±∞/quá lớn kẹp MAX/MIN → số nguyên giữ N bit thấp (wraparound bù hai) → ngoại lệ duy nhất: constant expression vừa khoảng và compound assignment → production: validate khoảng trước khi ép, không tin vào giá trị sau ép.</div>
+
+    <h2 id="promotion">5. Numeric promotion — vì sao <code class="inline">byte + byte</code> ra <code class="inline">int</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Trước khi tính toán, Java "nâng" toán hạng theo luật numeric promotion (JLS 5.6). Đây không phải widening khi gán — nó là quy tắc riêng của <strong>biểu thức</strong>, và giải thích gần hết các lỗi "possible lossy conversion" mà người mới hay gặp.</p>
+
+    <h3>5.1 Luật promotion</h3>
+
+    <p>Với phép hai ngôi (<code class="inline">+ - * / %</code>, bitwise, shift), xét từ trên xuống và dừng ở dòng đầu tiên đúng; phép một ngôi (<code class="inline">-b</code>, <code class="inline">~b</code>, <code class="inline">b++</code>) cũng nâng <code class="inline">byte</code>/<code class="inline">short</code>/<code class="inline">char</code> lên <code class="inline">int</code> trước:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nếu một toán hạng là</th><th>Cả hai được nâng thành</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">double</code></td><td><code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">float</code></td><td><code class="inline">float</code></td></tr>
+        <tr><td><code class="inline">long</code></td><td><code class="inline">long</code></td></tr>
+        <tr><td>còn lại: <code class="inline">byte</code>, <code class="inline">short</code>, <code class="inline">char</code>, <code class="inline">int</code></td><td><code class="inline">int</code></td></tr>
+      </tbody>
+    </table>
 
     <div class="codeblock">
       <pre><code class="java">byte b1 = 1, b2 = 2;
-IO.println("byte + byte     : " + (b1 + b2));      // 3    - nhung kieu la int
-IO.println("char + int      : " + ('a' + 1));       // 98
-IO.println("'a' + 'b'       : " + ('a' + 'b'));     // 195
-IO.println("long + float    : " + (1L + 1.5f));     // 2.5</code></pre>
+IO.println("byte + byte    : " + (b1 + b2));   // 3
+char c1 = 'a', c2 = 'b';
+IO.println("'a' + 1        : " + ('a' + 1));    // 98
+IO.println("'a' + 'b'      : " + (c1 + c2));    // 195
+IO.println("int + long     : " + (1 + 2L));     // 3
+IO.println("float + double : " + (1.5f + 2.5)); // 4.0
+IO.println("int + float    : " + (16_777_217 + 0.0f));             // 1.6777216E7
+IO.println("long + float   : " + (9_007_199_254_740_993L + 0.0f)); // 9.007199E15</code></pre>
     </div>
 
-    <p>Hệ quả thực tế: <code class="inline">byte b = b1 + b2;</code> không compile vì vế phải là <code class="inline">int</code> — dù giá trị nhỏ. Phải viết <code class="inline">byte b = (byte) (b1 + b2);</code>.</p>
+    <ul>
+      <li><code class="inline">b1 + b2</code> in ra <code class="inline">3</code> nhưng <strong>kiểu kết quả là <code class="inline">int</code></strong>, không phải byte — muốn gán ngược vào byte phải ép: <code class="inline">byte sum = (byte) (b1 + b2);</code>.</li>
+      <li><code class="inline">'a' + 'b'</code> là phép cộng số: 97 + 98 = <code class="inline">195</code>, không phải <code class="inline">"ab"</code>. Muốn nối ký tự phải dính tới String: <code class="inline">"" + 'a' + 'b'</code>.</li>
+      <li><code class="inline">long + float</code> nâng cả hai thành <code class="inline">float</code> — nghĩa là <code class="inline">long</code> lớn có thể mất chữ số ngay trong biểu thức, trước cả khi bạn kịp gán (<a href="#widening">mục 3.2</a>).</li>
+      <li><code class="inline">int + float</code> nâng <code class="inline">int</code> thành <code class="inline">float</code>: <code class="inline">16_777_217</code> thành <code class="inline">1.6777216E7</code>.</li>
+    </ul>
 
-    <h2 id="compound">6. Compound assignment và <code class="inline">++</code>/<code class="inline">--</code></h2>
-
-    <p><code class="inline">+=</code>, <code class="inline">-=</code>, <code class="inline">*=</code>... chứa sẵn một phép ép kiểu ngầm về kiểu của biến bên trái. Đây là lý do <code class="inline">b += 5</code> chạy được còn <code class="inline">b = b + 5</code> thì không:</p>
-
-    <div class="codeblock">
-      <pre><code class="java">byte b3 = 10;
-b3 += 5;                       // tuong duong b3 = (byte) (b3 + 5)
-IO.println("byte += 5       : " + b3);   // 15
-
-int i2 = 5;
-i2 += 3.9;                     // tuong duong i2 = (int) (i2 + 3.9)
-IO.println("int += 3.9      : " + i2);   // 8  - 5 + 3.9 = 8.9 -> cat thanh 8
-
-long l2 = 1;
-l2 += 1.0;                     // long += double -> ngam ep ve long
-IO.println("long += 1.0     : " + l2);   // 2</code></pre>
-    </div>
-
-    <div class="note warn"><strong>Bẫy production:</strong> <code class="inline">i2 += 3.9</code> không báo lỗi, không cảnh báo — chỉ âm thầm cắt phần thập phân. Với tiền bạc, luôn dùng <code class="inline">BigDecimal</code> (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>) thay vì tin vào compound assignment.</div>
-
-    <h3>++ và -- trên byte/short/char</h3>
-
-    <p><code class="inline">b++</code> với <code class="inline">byte b</code> hợp lệ vì phép tăng chứa sẵn ép kiểu ngầm — khác với <code class="inline">b = b + 1</code>:</p>
-
-    <div class="codeblock">
-      <pre><code class="java">byte b = 10;
-b++;                       // ok - khac b = b + 1
-IO.println("b++            : " + b);   // 11</code></pre>
-    </div>
-
-    <p>Dòng <code class="inline">b = b + 1;</code> không qua được compiler:</p>
+    <p>Hệ quả compile hay gặp nhất:</p>
 
     <div class="errblock">
-      <pre>b = b + 1;
-      ^
-error: incompatible types: possible lossy conversion from int to byte</pre>
+      <pre>PromotionError.java:4: error: incompatible types: possible lossy conversion from int to byte
+        byte sum = b1 + b2;
+                      ^
+1 error</pre>
     </div>
 
-    <h2 id="ternary">7. Ternary, nối chuỗi và các ngữ cảnh ngầm</h2>
+    <h3>5.2 Chia số nguyên và tràn trước khi gán</h3>
 
-    <h3>Ternary promotion</h3>
+    <div class="codeblock">
+      <pre><code class="java">IO.println("1 / 2          : " + (1 / 2));    // 0
+IO.println("1.0 / 2        : " + (1.0 / 2));  // 0.5
+IO.println("-7 / 2         : " + (-7 / 2));   // -3
+IO.println("-7 % 2         : " + (-7 % 2));   // -1
 
-    <p>Hai nhánh của toán tử <code class="inline">?:</code> được đưa về cùng một kiểu trước khi trả kết quả:</p>
+long bad = 1 * 1000 * 1000 * 1000 * 5;    // int * int tran truoc
+long good = 1L * 1000 * 1000 * 1000 * 5;  // long ngay tu dau
+IO.println("int * int      : " + bad);     // 705032704
+IO.println("1L * ...       : " + good);    // 5000000000</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">int / int</code> luôn là <strong>chia nguyên</strong>: <code class="inline">1 / 2 = 0</code>. Chỉ cần một toán hạng <code class="inline">double</code> (<code class="inline">1.0 / 2</code>) là ra <code class="inline">0.5</code>. Đây là nguồn bug tính trung bình/tỷ lệ kinh điển; cẩn thận hơn nữa với <code class="inline">0 / 0</code> (int ném <code class="inline">ArithmeticException</code>, double ra <code class="inline">NaN</code>).</li>
+      <li>Chia lấy dư giữ dấu số bị chia: <code class="inline">-7 / 2 = -3</code>, <code class="inline">-7 % 2 = -1</code> — khác Python (làm tròn xuống, dư dương).</li>
+      <li>Tràn xảy ra <strong>theo kiểu của biểu thức</strong>, không theo kiểu biến nhận: <code class="inline">1 * 1000 * 1000 * 1000 * 5</code> tính trong <code class="inline">int</code>, tràn thành <code class="inline">705032704</code> rồi mới widening sang <code class="inline">long</code>. Chỉ cần viết <code class="inline">1L</code> ở đầu là cả biểu thức thành <code class="inline">long</code>. Xem thêm <a href="index.html#tran-so">Biến trong Java — mục 9 (Tràn số)</a>.</li>
+    </ul>
+
+    <h3>5.3 Nối chuỗi vs cộng số</h3>
+
+    <p>Toán tử <code class="inline">+</code> kết hợp trái sang phải và đổi sang nối chuỗi ngay khi một toán hạng (đã tính) là <code class="inline">String</code>. Vì vậy thứ tự toán hạng quyết định kết quả:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println(1 + 2 + "3");     // 33
+IO.println("1" + 2 + 3);     // 123
+IO.println(1 + (2 + "3"));   // 123
+IO.println(1 + 2 + 3 + "x"); // 6x</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">1 + 2 + "3"</code>: cộng số trước (1 + 2 = 3) rồi mới nối → <code class="inline">"33"</code>.</li>
+      <li><code class="inline">"1" + 2 + 3</code>: gặp String ngay từ đầu → <code class="inline">"123"</code>. Muốn cộng trước thì thêm ngoặc: <code class="inline">"1" + (2 + 3)</code> = <code class="inline">"15"</code>.</li>
+      <li>Nối chuỗi trong vòng lặp tạo nhiều object trung gian — dùng <code class="inline">StringBuilder</code> (xem <a href="strings.html">Strings chuyên sâu</a>).</li>
+    </ul>
+
+    <h3>5.4 Ternary và so sánh cũng promotion</h3>
+
+    <p>Hai nhánh ternary và hai vế so sánh cũng được đưa về cùng kiểu theo đúng luật trên:</p>
 
     <div class="codeblock">
       <pre><code class="java">boolean flag = true;
-IO.println(flag ? 1 : 2.0);    // 1.0  - int duoc nang thanh double
-long mixed = flag ? 1 : 2L;    // int duoc nang thanh long
-IO.println("ternary int/long   : " + mixed);   // 1</code></pre>
+IO.println(flag ? 1 : 2.0);   // 1.0
+IO.println(flag ? 1 : 2L);    // 1
+IO.println(1 == 1L);          // true
+IO.println(1 == 1.0f);        // true</code></pre>
     </div>
 
-    <h3>Bẫy unboxing trong ternary</h3>
+    <ul>
+      <li><code class="inline">flag ? 1 : 2.0</code> có kiểu <code class="inline">double</code> nên in <code class="inline">1.0</code>; <code class="inline">flag ? 1 : 2L</code> có kiểu <code class="inline">long</code> nên in <code class="inline">1</code>. Bẫy unboxing khi nhánh là wrapper nằm ở <a href="#ternary">mục 7.2</a>.</li>
+      <li>So sánh <code class="inline">==</code> giữa các kiểu số cũng promotion trước khi so — <code class="inline">1 == 1L</code>, <code class="inline">1 == 1.0f</code> đều <code class="inline">true</code>. Riêng so sánh <em>wrapper</em> với nhau bằng <code class="inline">==</code> chỉ so reference, không promotion (<a href="index.html#wrapper">Biến trong Java — mục 12</a>).</li>
+    </ul>
 
-    <p>Đây là bẫy phỏng vấn rất hay gặp: nếu một nhánh là primitive, nhánh còn lại là wrapper, kiểu của cả biểu thức là primitive — nên <strong>nhánh nào được chọn sẽ bị unbox</strong>. Wrapper <code class="inline">null</code> chỉ nổ khi chính nhánh đó được chọn:</p>
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS chỉ có một kiểu số nên <code class="inline">1 / 2</code> luôn ra <code class="inline">0.5</code>; không có chuyện chia nguyên ngoài ý muốn — nhưng cũng không có <code class="inline">int</code> để tràn. Muốn chia nguyên phải <code class="inline">Math.trunc(1 / 2)</code> hoặc <code class="inline">(1 / 2) | 0</code>.</li>
+      <li>Nối chuỗi giống Java về thứ tự: <code class="inline">"1" + 2 + 3</code> = <code class="inline">"123"</code>, <code class="inline">1 + 2 + "3"</code> = <code class="inline">"33"</code>. Khác ở chỗ JS còn tự ép cho <code class="inline">-</code>: <code class="inline">"5" - 1 = 4</code> (Java không compile).</li>
+      <li><code class="inline">9007199254740993</code> là literal double nên in ra <code class="inline">9007199254740992</code> — đúng kiểu mất chính xác của <code class="inline">long → double</code> bên Java.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> biểu thức luôn được nâng theo thứ tự <code class="inline">double &gt; float &gt; long &gt; int</code>; <code class="inline">byte/short/char</code> tự lên <code class="inline">int</code> → <code class="inline">byte + byte</code> ra <code class="inline">int</code>, gán ngược phải ép → <code class="inline">int / int</code> cắt về 0, tràn tính theo kiểu biểu thức chứ không theo kiểu biến nhận (nhớ hậu tố <code class="inline">L</code>) → <code class="inline">+</code> chạy trái sang phải, gặp String là nối từ đó về sau.</div>
+
+    <h2 id="compound">6. Compound assignment và <code class="inline">++</code>/<code class="inline">--</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>JLS 15.26.2 định nghĩa <code class="inline">E1 op= E2</code> tương đương <code class="inline">E1 = (T) ((E1) op (E2))</code>, trong đó <code class="inline">T</code> là kiểu của <code class="inline">E1</code> và <code class="inline">E1</code> chỉ được đánh giá <strong>một lần</strong>. Chính phép ép <code class="inline">(T)</code> ngầm này khiến <code class="inline">b += 5</code> chạy được còn <code class="inline">b = b + 5</code> thì không.</p>
+
+    <h3>6.1 Cơ chế ép ngầm về kiểu bên trái</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">byte b = 10;
+b += 5;                      // b = (byte) (b + 5)
+IO.println("byte += 5  : " + b);   // 15
+
+int i = 5;
+i += 3.9;                    // i = (int) (i + 3.9)
+IO.println("int += 3.9 : " + i);   // 8
+
+long l = 1;
+l += 1.0;                    // l = (long) (l + 1.0)
+IO.println("long += 1.0: " + l);   // 2</code></pre>
+    </div>
+
+    <p>Bỏ ép ngầm đi là compiler chặn ngay — cùng phép tính, khác ngữ cảnh:</p>
+
+    <div class="errblock">
+      <pre>CompoundAssignError.java:4: error: incompatible types: possible lossy conversion from int to byte
+        b = b + 5;
+              ^
+1 error</pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy production:</strong> <code class="inline">i += 3.9</code> không báo lỗi, không cảnh báo — chỉ âm thầm cắt phần thập phân. Với tiền bạc, luôn dùng <code class="inline">BigDecimal</code> (<a href="index.html#bigdecimal">Biến trong Java — mục 13</a>) thay vì tin vào compound assignment.</div>
+
+    <h3>6.2 Toán hạng trái chỉ được đánh giá MỘT lần</h3>
+
+    <p>Đây là điểm người mới hay hiểu sai khi "khai triển" <code class="inline">+=</code> thành phép gán thường. JLS bảo đảm biểu thức bên trái (reference mảng, chỉ số, field) được tính đúng một lần:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] arr = {10, 20, 30};
+int idx = 0;
+arr[idx++] += 5;             // idx++ chi chay MOT lan
+IO.println("arr : " + Arrays.toString(arr));   // [15, 20, 30]
+IO.println("idx : " + idx);                    // 1</code></pre>
+    </div>
+
+    <ul>
+      <li>Nếu khai triển ngây thơ thành <code class="inline">arr[idx++] = arr[idx++] + 5;</code> thì <code class="inline">idx</code> bị tăng hai lần: lần đầu ở vế trái, lần sau lại được chọn phần tử — kết quả hoàn toàn khác. Compiler sinh code đúng luật, không sinh hai lần tăng.</li>
+      <li>Luật này áp dụng cho mọi vế trái là "variable" theo JLS: phần tử mảng (<code class="inline">a[i] *= 2</code>) và field (<code class="inline">obj.count += 1</code>) — mỗi cái chỉ được định vị một lần. Lưu ý biểu thức như <code class="inline">map.get(k)</code> không phải variable nên <code class="inline">map.get(k) += v</code> không compile.</li>
+    </ul>
+
+    <h3>6.3 Ba bẫy production</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">long x = 0;
+x += 0.1;                    // (long) 0.1 = 0
+IO.println("long += 0.1       : " + x);   // 0
+
+int y = 5;
+y = y++;                     // tra gia tri cu, tang ban sao
+IO.println("y = y++           : " + y);   // 5
+
+Integer box = null;
+try {
+    box += 1;                // box.intValue() -> NPE
+} catch (NullPointerException e) {
+    IO.println("Integer null += 1 : NullPointerException");
+}
+box = 1;
+box += 1;
+IO.println("Integer 1 += 1    : " + box);   // 2</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">x += 0.1</code> với <code class="inline">long</code> mãi bằng 0:</strong> phép cộng ra <code class="inline">0.1</code> (<code class="inline">double</code>), rồi bị ép ngầm về <code class="inline">long</code> — lần nào cũng cắt thành 0. Cộng thêm bao nhiêu lần cũng vô nghĩa; đây là bug im lặng đúng nghĩa.</li>
+      <li><strong><code class="inline">i = i++</code> giữ giá trị cũ:</strong> hậu tố trả về giá trị <em>trước</em> khi tăng, phép gán ghi lại chính giá trị cũ đó rồi giá trị tăng bị bỏ. Dòng này compile, chạy, và ra <code class="inline">5</code> — không ai báo lỗi. Đừng viết <code class="inline">x = x++</code> hay <code class="inline">x = ++x</code>; muốn tăng thì viết <code class="inline">x++</code> hoặc <code class="inline">x += 1</code>.</li>
+      <li><strong><code class="inline">Integer null += 1</code> ném NPE:</strong> compound assignment trên wrapper desugar thành <code class="inline">box = Integer.valueOf((int) (box.intValue() + 1))</code> — unbox ngầm gọi <code class="inline">intValue()</code> trên <code class="inline">null</code>. Wrapper không null (<code class="inline">box = 1; box += 1;</code>) thì chạy bình thường.</li>
+    </ul>
+
+    <h3>6.4 <code class="inline">+=</code> với String, <code class="inline">>>>=</code> và biến thể</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String s = "a";
+s += 1;
+s += 'b';
+IO.println("s += 1; s += 'b' : " + s);   // a1b
+
+int u = -1;
+u >>>= 1;                    // u = (int) (u >>> 1)
+IO.println("-1 >>>= 1        : " + u);   // 2147483647
+
+byte b2 = -1;
+b2 >>>= 1;                   // (byte) (0xFFFFFFFF >>> 1)
+IO.println("byte -1 >>>= 1   : " + b2);  // -1</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">String +=</code> là ngoại lệ duy nhất không cần ép ngầm: phép <code class="inline">+</code> đã là nối chuỗi, kết quả vẫn là <code class="inline">String</code>. <code class="inline">s += 1; s += 'b';</code> ra <code class="inline">"a1b"</code> — char được nối như ký tự, không thành số.</li>
+      <li><code class="inline">>>>=</code> vẫn theo công thức chung: <code class="inline">byte</code> được nâng lên <code class="inline">int</code> khi dịch (<code class="inline">-1 → 0xFFFFFFFF</code>), <code class="inline">>>> 1</code> được <code class="inline">0x7FFFFFFF</code>, rồi ép ngược <code class="inline">(byte)</code> nên kết quả lại là <code class="inline">-1</code>. Dịch luận lý không "cứu" được byte vì phép ép ngược về byte mới là bước quyết định.</li>
+      <li>Các toán tử <code class="inline">+= -= *= /= %= &amp;= |= ^= &lt;&lt;= &gt;&gt;= &gt;&gt;&gt;=</code> đều đúng một công thức chung như trên; riêng <code class="inline">>>>=</code> hay bị quên vì ít gặp trong code nghiệp vụ.</li>
+    </ul>
+
+    <h3>6.5 ++/-- trên byte/short/char</h3>
+
+    <p><code class="inline">b++</code> với <code class="inline">byte b</code> hợp lệ vì phép tăng cũng chứa sẵn ép kiểu ngầm — khác với <code class="inline">b = b + 1</code> (errblock ở mục 6.1):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">byte b = 10;
+b++;                         // ok - khac b = b + 1
+IO.println("b++ : " + b);    // 11
+
+char c = 'A';
+c++;                         // char cung tang duoc
+IO.println("c++ : " + c);    // B</code></pre>
+    </div>
+
+    <p>Lưu ý <code class="inline">byte b = 127; b++;</code> quay vòng thành <code class="inline">-128</code> — luật wraparound vẫn áp dụng, chỉ khác là không cần ép tay.</p>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS không có kiểu biến cố định nên <code class="inline">+=</code> không bao giờ bị compiler từ chối: <code class="inline">let s = "a"; s += 1;</code> ra <code class="inline">"a1"</code>; <code class="inline">let n = 1; n += "2";</code> ra <code class="inline">"12"</code> (đổi kiểu luôn!); nhưng <code class="inline">let m = "5"; m -= 1;</code> ra <code class="inline">4</code> vì <code class="inline">-</code> ép về number.</li>
+      <li>Kiểu "lỏng" đó khiến bug kiểu dữ liệu khó thấy hơn cả compound assignment của Java: Java ít nhất chặn <code class="inline">b = b + 5</code> với byte, JS nuốt hết rồi để lỗi nổ ở tận tầng render.</li>
+      <li><code class="inline">x = x++</code> trong JS cũng giữ giá trị cũ y hệt Java — bẫy này chung cho mọi ngôn ngữ có hậu tố tăng.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">E1 op= E2</code> = <code class="inline">E1 = (T)((E1) op (E2))</code>, vế trái đánh giá đúng một lần → <code class="inline">b += 5</code> chạy còn <code class="inline">b = b + 5</code> lỗi compile → xem chừng ba bẫy: <code class="inline">long += 0.1</code> mãi bằng 0, <code class="inline">i = i++</code> giữ giá trị cũ, wrapper <code class="inline">null += 1</code> NPE → String <code class="inline">+=</code> là ngoại lệ, <code class="inline">>>>=</code> vẫn ép về kiểu trái.</div>
+
+    <h2 id="ternary">7. Ternary, nối chuỗi và các ngữ cảnh ngầm <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Toán tử điều kiện <code class="inline">?:</code> là toán tử ba ngôi duy nhất của Java. Nó tưởng dễ vì giống JavaScript, nhưng có luật kiểu riêng (JLS 15.25) và một bẫy unboxing nổi tiếng.</p>
+
+    <h3>7.1 Cú pháp và kết hợp phải</h3>
+
+    <div class="signature">
+      <span class="sig-var">dieuKien</span><span class="sig-muted"> ? </span><span class="sig-var">giaTriDung</span><span class="sig-muted"> : </span><span class="sig-var">giaTriSai</span>
+    </div>
+
+    <p><code class="inline">?:</code> kết hợp <strong>phải</strong>, nên chuỗi lồng nhau không cần ngoặc theo nghĩa khác đi: <code class="inline">a ? b : c ? d : e</code> chính là <code class="inline">a ? b : (c ? d : e)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static String pick(int n) {
+    return n &lt; 0 ? "am" : n == 0 ? "khong" : "duong";
+}
+
+IO.println(pick(-5) + " " + pick(0) + " " + pick(7));   // am khong duong</code></pre>
+    </div>
+
+    <ul>
+      <li>Chỉ <em>đúng một</em> nhánh được thực thi: <code class="inline">dieuKien ? f() : g()</code> gọi <code class="inline">f()</code> hoặc <code class="inline">g()</code>, không gọi cả hai. Vì vậy ternary là biểu thức (trả giá trị), khác <code class="inline">if</code> (câu lệnh).</li>
+      <li>Lồng nhau quá 2 tầng làm code khó đọc; ưu tiên <code class="inline">if/else</code> hoặc <code class="inline">switch expression</code> (Java 14+) cho logic nhiều nhánh. Ternary chỉ nên dùng cho chọn giá trị đơn giản.</li>
+    </ul>
+
+    <h3>7.2 Kiểu của ternary (JLS 15.25)</h3>
+
+    <p>Hai nhánh không cần cùng kiểu — JLS quy định kiểu chung theo từng nhóm. Nhóm numeric trước:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">boolean flag = true;
+IO.println(flag ? 'a' : 1);      // a  - hang so 1 bieu dien duoc trong char
+IO.println(flag ? 'a' : 70000);  // 97 - hang so ngoai khoang char -> int
+int code = 1;
+IO.println(flag ? 'a' : code);   // 97 - bien int -> ca hai thanh int
+IO.println(flag ? 1 : 2.0);      // 1.0
+IO.println(flag ? 1 : 2L);       // 1</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>numeric conditional:</strong> <code class="inline">1 : 2.0</code> → <code class="inline">double</code> nên in <code class="inline">1.0</code>; <code class="inline">1 : 2L</code> → <code class="inline">long</code> (<a href="#promotion">mục 5.4</a>).</li>
+      <li><strong>Ngoại lệ tinh tế:</strong> nếu một nhánh là <code class="inline">char</code> và nhánh kia là <em>hằng số int biểu diễn được trong char</em>, kiểu kết quả là <code class="inline">char</code> — nên <code class="inline">flag ? 'a' : 1</code> in ra <code class="inline">a</code>, còn đổi thành <code class="inline">70000</code> hoặc một biến <code class="inline">int</code> thì in ra <code class="inline">97</code>.</li>
+    </ul>
+
+    <p>Nhóm wrapper/primitive mới là chỗ gây bug — nếu một nhánh là primitive thì Java buộc cả biểu thức về primitive, và <strong>chỉ nhánh được chọn</strong> mới bị unbox:</p>
 
     <div class="codeblock">
       <pre><code class="java">Integer boxed = null;
 
-boolean flag = true;
 try {
-    int x = flag ? boxed : 0;   // nhanh boxed duoc chon -> unbox null -> NPE
+    int x = true ? boxed : 0;     // nhanh boxed bi unbox
+    IO.println(x);
 } catch (NullPointerException e) {
-    IO.println("flag=true  : NullPointerException");
+    IO.println("true ? boxed : 0   : NullPointerException");
 }
 
-boolean flag2 = false;
-int y = flag2 ? boxed : 0;      // nhanh 0 duoc chon -> khong dung toi boxed
-IO.println("flag=false : " + y);  // 0
+Integer ok = false ? boxed : 0;   // nhanh 0 duoc chon
+IO.println("false ? boxed : 0  : " + ok);   // 0
 
-// Nhanh wrapper co the duoc chon: kiem tra null truoc
-int safe = flag ? (boxed == null ? 0 : boxed) : 0;
-IO.println("ternary an toan : " + safe);   // 0</code></pre>
+Integer a = null, b = 1;
+IO.println("ca hai wrapper     : " + (true ? a : b));   // null
+
+Integer one = true ? 1 : null;    // primitive + null -> Integer
+Integer nil = false ? 1 : null;
+IO.println("true ? 1 : null    : " + one);   // 1
+IO.println("false ? 1 : null   : " + nil);   // null</code></pre>
     </div>
 
-    <p>Còn nếu <strong>cả hai nhánh đều là wrapper</strong> thì Java không unbox — kết quả có thể là <code class="inline">null</code> mà không ném gì:</p>
+    <ul>
+      <li><code class="inline">true ? boxed : 0</code> có kiểu <code class="inline">int</code> (vì nhánh <code class="inline">0</code> là primitive) nên nhánh <code class="inline">boxed</code> bị unbox khi được chọn → NPE. Với <code class="inline">false</code>, nhánh <code class="inline">0</code> được chọn nên <code class="inline">boxed</code> không bị đụng tới — lỗi phụ thuộc dữ liệu, rất khó tái hiện.</li>
+      <li>Nếu <strong>cả hai nhánh đều là wrapper</strong> (<code class="inline">true ? a : b</code>), kiểu kết quả vẫn là wrapper, không unbox — kết quả có thể là <code class="inline">null</code> mà không ném gì.</li>
+      <li>Ngoại lệ "cứu" được null: nhánh kia là <code class="inline">null</code> literal thì kết quả là wrapper (<code class="inline">true ? 1 : null</code> kiểu <code class="inline">Integer</code>), nên <code class="inline">false ? 1 : null</code> trả <code class="inline">null</code> an toàn.</li>
+      <li>Trộn wrapper khác nhóm với primitive, ví dụ <code class="inline">Integer</code> với <code class="inline">2L</code>, cho kết quả primitive <code class="inline">long</code> — nhánh wrapper bị unbox. Cách phòng chung: đừng để nhánh nào có thể <code class="inline">null</code>, hoặc chuẩn hoá bằng <code class="inline">Objects.requireNonNullElse</code> trước khi đưa vào ternary.</li>
+    </ul>
+
+    <h3>7.3 Nối chuỗi — precedence, null và char</h3>
+
+    <p>Một khi một toán hạng là <code class="inline">String</code>, phép <code class="inline">+</code> chuyển thành nối chuỗi và mọi giá trị sau đó được "string hoá". Dấu ngoặc đổi hoàn toàn kết quả:</p>
 
     <div class="codeblock">
-      <pre><code class="java">Integer a = null;
-Integer b = 1;
-Integer c = true ? a : b;
-IO.println("ca hai wrapper : " + c);   // null</code></pre>
+      <pre><code class="java">IO.println("1" + 1 + 2);     // 112
+IO.println(1 + 1 + "2");     // 22
+IO.println(null + "x");      // nullx
+IO.println("" + null);       // null
+IO.println('A' + "1");       // A1
+IO.println("x" + 'A');       // xA</code></pre>
     </div>
 
-    <h3>String concatenation</h3>
+    <ul>
+      <li><code class="inline">null + "x"</code> compile bình thường và in ra <code class="inline">"nullx"</code>: JLS coi null literal như giá trị có thể string hoá. Nhưng cẩn thận — <code class="inline">null</code> với phép <code class="inline">-</code> hay <code class="inline">==</code> là chuyện hoàn toàn khác.</li>
+      <li><code class="inline">'A' + "1"</code> = <code class="inline">"A1"</code> (char nối ký tự), nhưng <code class="inline">'A' + 'B'</code> = <code class="inline">195</code> (cộng số) và <code class="inline">"" + 'A' + 'B'</code> = <code class="inline">"AB"</code> — đặt String ở đâu quyết định tất cả (<a href="#promotion">mục 5.3</a>).</li>
+      <li>Chuỗi nối bằng <code class="inline">+</code> trong vòng lặp tạo object mới mỗi lần; dùng <code class="inline">StringBuilder</code> cho khối lượng lớn (<a href="strings.html">Strings chuyên sâu</a>).</li>
+    </ul>
 
-    <p>Toán tử <code class="inline">+</code> xử lý trái sang phải; khi gặp String, mọi thứ sau đó được chuyển thành chuỗi:</p>
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li><code class="inline">?:</code> cú pháp giống hệt, nhưng JS không có luật kiểu chung: mỗi nhánh giữ nguyên kiểu của nó, nên không bao giờ có NPE unbox. Đổi lại, kiểu kết quả có thể "nhảy" giữa number/string/null tuỳ nhánh — TypeScript mới là bên cảnh báo.</li>
+      <li>JS có thêm hai toán tử trả về <em>toán hạng</em>: <code class="inline">0 || "x"</code> = <code class="inline">"x"</code> (falsy đầu tiên bị bỏ) còn <code class="inline">0 ?? "x"</code> = <code class="inline">0</code> (chỉ bỏ <code class="inline">null</code>/<code class="inline">undefined</code>). Không có tương đương trực tiếp trong Java — gần nhất là ternary với kiểm tra null.</li>
+      <li>Nối chuỗi giống Java: <code class="inline">null + "x"</code> = <code class="inline">"nullx"</code>, <code class="inline">"" + null</code> = <code class="inline">"null"</code>; nhưng <code class="inline">1 + null = 1</code> (JS ép null thành 0) trong khi Java <code class="inline">1 + null</code> không compile.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">?:</code> kết hợp phải, chỉ chạy một nhánh → hai nhánh được đưa về cùng kiểu: numeric chuẩn, char + hằng int vừa khoảng ra char → hễ có nhánh primitive thì nhánh wrapper <em>được chọn</em> bị unbox (NPE nếu null), cả hai wrapper thì giữ được null → <code class="inline">+</code> trái sang phải, gặp String là nối, <code class="inline">null</code> thành <code class="inline">"null"</code>, char thành ký tự.</div>
+
+    <h2 id="boxing-conv">8. Chuyển đổi boxing/unboxing <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Boxing (JLS 5.1.7) là bọc primitive thành wrapper: <code class="inline">int → Integer</code>. Unboxing (JLS 5.1.8) là chiều ngược lại: <code class="inline">Integer → int</code>. Hai chiều này <strong>không đối xứng</strong> khi ghép thêm widening — và gần như mọi câu hỏi phỏng vấn về wrapper đều xoay quanh chỗ đó.</p>
+
+    <h3>8.1 Hai chiều chuyển đổi hợp lệ</h3>
+
+    <p>Assignment/invocation context cho phép ghép hai bước theo đúng thứ tự: <strong>boxing rồi widening reference</strong>, hoặc <strong>unboxing rồi widening primitive</strong>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">IO.println(1 + 2 + "x");    // 3x   - cong so truoc
-IO.println("x" + 1 + 2);    // x12  - noi chuoi truoc
-IO.println('A' + "1");      // A1</code></pre>
+      <pre><code class="java">Object o = 1;                    // boxing int -> Integer, roi widening reference
+Number n = 1;                    // Integer -> Number
+IO.println("Object o = 1     : " + o);   // 1
+IO.println("Number n = 1     : " + n);   // 1
+
+long l = Integer.valueOf(5);     // unbox int -> widening long
+double d = Integer.valueOf(5);   // unbox + widening
+IO.println("long tu Integer  : " + l);   // 5
+IO.println("double tu Integer: " + d);   // 5.0
+
+Long e = (long) Integer.valueOf(1);   // unbox -> int -> long -> boxing Long
+IO.println("Long tu (long)   : " + e);   // 1
+
+Long ok = 10L;
+IO.println("Long ok = 10L    : " + ok);  // 10</code></pre>
     </div>
 
-    <h2 id="boxing-conv">8. Chuyển đổi boxing/unboxing</h2>
+    <ul>
+      <li><code class="inline">Object o = 1;</code> hợp lệ vì đi <code class="inline">int → Integer → Object</code>: boxing trước, widening reference sau. Đây không phải "int thành Object" mà là hai phép chuyển nối tiếp.</li>
+      <li><code class="inline">long l = Integer.valueOf(5);</code> hợp lệ vì <code class="inline">Integer → int → long</code>: unboxing trước, widening primitive sau. Chiều này cực kỳ hay gặp khi API trả <code class="inline">Optional&lt;Integer&gt;</code> hay field nullable.</li>
+      <li><code class="inline">Long e = (long) Integer.valueOf(1);</code> cần ép tường minh để chỉ rõ đích: unbox → widening int→long → boxing Long. Không có ép thì lỗi (mục 8.2).</li>
+    </ul>
 
-    <p>Boxing/unboxing có luật riêng, không đối xứng:</p>
-
-    <div class="codeblock">
-      <pre><code class="java">long b = Integer.valueOf(5);     // OK: unbox Integer -> int, roi widening int -> long
-double d = Integer.valueOf(5);   // OK: unbox + widening
-IO.println("long tu Integer : " + b);   // 5
-IO.println("double tu Integer: " + d);  // 5.0
-
-Long e = (long) Integer.valueOf(1);   // OK: unbox -> int -> long roi boxing Long
-IO.println("Long tu (long)  : " + e);   // 1</code></pre>
-    </div>
-
-    <p>Nhưng <strong>không</strong> có chuyện widening rồi boxing tự động trong assignment. Đây là câu hỏi phỏng vấn kinh điển:</p>
+    <h3>8.2 int → Long không hợp lệ — vì sao <code class="inline">Long a = 10</code> lỗi</h3>
 
     <div class="errblock">
-      <pre>Long a = 10;
-         ^
-error: incompatible types: int cannot be converted to Long
-
-Double c = 1;
-           ^
-error: incompatible types: int cannot be converted to Double</pre>
+      <pre>BoxingError.java:3: error: incompatible types: int cannot be converted to Long
+        Long a = 10;
+                 ^
+BoxingError.java:4: error: incompatible types: int cannot be converted to Double
+        Double c = 1;
+                   ^
+BoxingError.java:6: error: incompatible types: Integer cannot be converted to Long
+        Long f = i;
+                 ^
+3 errors</pre>
     </div>
 
-    <p>Vì sao? <code class="inline">10</code> là <code class="inline">int</code> literal; muốn thành <code class="inline">Long</code> phải qua hai bước (int → long → Long) mà assignment context không cho phép chuỗi đó. Cách viết đúng: <code class="inline">Long a = 10L;</code>.</p>
+    <ul>
+      <li><code class="inline">Long a = 10;</code> đòi chuỗi <code class="inline">int → long → Long</code>: widening primitive <em>rồi mới</em> boxing — tổ hợp này assignment context <strong>không cho phép</strong>. Cách đúng: viết literal đúng kiểu <code class="inline">Long a = 10L;</code> chỉ còn một bước boxing.</li>
+      <li>Đối xứng của nó thì được: <code class="inline">long b = Integer.valueOf(5);</code> (unbox rồi widening). Quy tắc dễ nhớ: <em>boxing đi trước widening reference, unboxing đi trước widening primitive; widening primitive rồi boxing thì không.</em></li>
+      <li>Wrapper khác wrapper cũng không tự chuyển dù primitive tương ứng widening: <code class="inline">Integer i = 10; Long f = i;</code> lỗi — <code class="inline">Integer</code> không phải cha của <code class="inline">Long</code>. Muốn đổi: <code class="inline">Long f = i.longValue();</code>.</li>
+    </ul>
 
-    <p>Tương tự, wrapper <em>không</em> tự chuyển sang wrapper khác dù primitive tương ứng widening:</p>
+    <h3>8.3 Unbox null và autobox trong switch/ternary</h3>
 
-    <div class="errblock">
-      <pre>Integer i = 10;
-Long f = i;
-         ^
-error: incompatible types: Integer cannot be converted to Long</pre>
-    </div>
-
-    <div class="note">Các ví dụ cache wrapper (<code class="inline">127 == 127</code> vs <code class="inline">128 == 128</code>) và NPE unbox đã có ở <a href="index.html#wrapper">Biến trong Java — mục 12</a>; ở đây chỉ bàn luật chuyển đổi.</div>
-
-    <h2 id="overload">9. Method invocation conversion và overload</h2>
-
-    <p>Khi chọn method overload, Java xét theo <strong>3 phase</strong> theo thứ tự, phase trước thắng phase sau:</p>
-
-    <ol>
-      <li>Không boxing/unboxing, không varargs — chỉ widening.</li>
-      <li>Cho phép boxing/unboxing.</li>
-      <li>Cho phép varargs.</li>
-    </ol>
+    <p>Unboxing là nơi NPE ẩn núp nhiều nhất vì cú pháp không hề gợi ý có lời gọi method:</p>
 
     <div class="codeblock">
-      <pre><code class="java">static void pick(int x)     { IO.println("pick(int)     -> " + x); }
-static void pick(long x)    { IO.println("pick(long)    -> " + x); }
-static void pick(Integer x) { IO.println("pick(Integer) -> " + x); }
-static void pick(Object x)  { IO.println("pick(Object)  -> " + x); }
+      <pre><code class="java">Integer x = null;
+try {
+    long l = x;              // x.longValue() ngam
+    IO.println(l);
+} catch (NullPointerException e) {
+    IO.println("long l = x       : NullPointerException");
+}
 
-static void onlyLong(long x)    { IO.println("onlyLong(long)    -> " + x); }
-static void onlyLong(Integer x) { IO.println("onlyLong(Integer) -> " + x); }
-
-public static void main() {
-    byte b = 1;
-    pick(b);                    // pick(int)      - widening thang int
-    pick(1);                    // pick(int)
-    pick(1L);                   // pick(long)
-    pick(Integer.valueOf(1));   // pick(Integer)
-    pick("text");               // pick(Object)
-
-    onlyLong(1);                // onlyLong(long) - phase 1 (widening) thang phase 2 (boxing)
-    onlyLong(Integer.valueOf(1)); // onlyLong(Integer)
-    pick(null);                 // pick(Integer)  - Integer cu the hon Object
+switch (Integer.valueOf(2)) {    // switch tu unbox
+    case 2 -> IO.println("switch Integer 2 : hai");
+    default -> IO.println("khac");
 }</code></pre>
     </div>
 
-    <div class="note warn"><strong>Hệ quả production:</strong> API nhận <code class="inline">long</code> mà bạn truyền <code class="inline">int</code> thì không sao; nhưng nếu class có cả <code class="inline">method(long)</code> lẫn <code class="inline">method(Integer)</code>, giá trị <code class="inline">int</code> sẽ đi vào bản <code class="inline">long</code>. Hai bản này mà xử lý khác nhau (ví dụ <code class="inline">Integer</code> chấp nhận <code class="inline">null</code>) là nguồn bug rất khó thấy.</div>
+    <ul>
+      <li><code class="inline">long l = x</code> tương đương <code class="inline">x.longValue()</code>; <code class="inline">x == 1</code>, <code class="inline">x + 1</code>, <code class="inline">x &gt; 0</code>... đều unbox ngầm. <code class="inline">switch</code> trên wrapper cũng unbox — wrapper <code class="inline">null</code> ném NPE ngay khi vào switch.</li>
+      <li>Ternary với một nhánh primitive cũng unbox — bẫy ở <a href="#ternary">mục 7.2</a>. Đây là lý do các check null tưởng thừa lại quan trọng ở biên dữ liệu.</li>
+      <li>Cache <code class="inline">-128..127</code>, <code class="inline">==</code> giữa wrapper, <code class="inline">equals</code> khác class... không nhắc lại ở đây — bảng đầy đủ ở <a href="index.html#wrapper">Biến trong Java — mục 12</a>. Mục này chỉ bàn luật chuyển đổi.</li>
+    </ul>
 
-    <h2 id="reference-cast">10. Ép kiểu reference và ClassCastException</h2>
+    <h3>Góc Node.js</h3>
 
-    <p>Với object, upcast (lên cha) luôn ngầm được, downcast (xuống con) phải ép tường minh — compiler chỉ tin bạn, còn JVM kiểm tra lúc chạy:</p>
+    <ul>
+      <li>JS không phân biệt primitive và object cho số thường: <code class="inline">typeof 1</code> là <code class="inline">"number"</code>, không có boxing ngầm — cũng không có NPE unbox. Đổi lại JS không có generics, nên vấn đề "collection chỉ chứa reference" mà wrapper sinh ra để giải quyết không tồn tại.</li>
+      <li><code class="inline">new Number(1)</code> là object thật: <code class="inline">new Number(1) === 1</code> là <code class="inline">false</code> nhưng <code class="inline">new Number(1) == 1</code> là <code class="inline">true</code> (nhờ coercion). Đừng bao giờ tạo <code class="inline">new Number</code>/<code class="inline">new String</code>/<code class="inline">new Boolean</code> — giống tinh thần "đừng dùng wrapper làm toán" trong Java.</li>
+      <li><code class="inline">1 + null</code> trong JS ra <code class="inline">1</code> (null → 0) — không lỗi; Java thì không compile. TypeScript với <code class="inline">strictNullChecks</code> mới chặn được kiểu bẫy này ở mức compile.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> boxing <em>rồi</em> widening reference OK (<code class="inline">Object o = 1;</code>) → unboxing <em>rồi</em> widening primitive OK (<code class="inline">long l = Integer.valueOf(5);</code>) → widening primitive rồi boxing <strong>không</strong> OK (<code class="inline">Long a = 10;</code> lỗi; viết <code class="inline">10L</code>) → unbox null ném NPE ở mọi ngữ cảnh (gán, so sánh, switch, ternary) → chi tiết cache/so sánh xem <a href="index.html#wrapper">mục 12</a>.</div>
+
+    <h2 id="overload">9. Method invocation conversion và overload <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Khi bạn gọi <code class="inline">m(1)</code> mà class có nhiều bản <code class="inline">m</code>, compiler phải chọn đúng một bản. JLS 15.12.2 quy định xét theo <strong>3 pha</strong> theo thứ tự, dừng ngay khi pha nào tìm được bản phù hợp nhất — không bao giờ "nhảy" xuống pha sau dù bản ở pha sau có vẻ khớp hơn.</p>
+
+    <h3>9.1 Ba pha chọn overload</h3>
+
+    <ol>
+      <li><strong>Pha 1 — strict invocation:</strong> chỉ widening primitive (không narrowing), widening reference. Không boxing/unboxing, không varargs.</li>
+      <li><strong>Pha 2 — loose invocation:</strong> thêm boxing/unboxing, vẫn không varargs.</li>
+      <li><strong>Pha 3 — variable arity:</strong> mới xét method varargs (<code class="inline">int...</code>), sau khi đã loại các bản cố định.</li>
+    </ol>
+
+    <p>Trong mỗi pha, nếu có nhiều bản cùng "vừa", compiler chọn bản <strong>most specific</strong> — kiểu tham số "hẹp" nhất không cần ép thêm. Nội dung đa hình của overload (static dispatch) nằm ở <a href="polymorphism.html#overloading">Polymorphism — mục 2</a>; ở đây tập trung vào phần chuyển kiểu.</p>
+
+    <h3>9.2 Ví dụ — widening (pha 1) đánh bại boxing (pha 2)</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">static void f(long x)    { IO.println("f(long)"); }
+static void f(Integer x) { IO.println("f(Integer)"); }
+static void f(Object x)  { IO.println("f(Object)"); }
+
+static void g(Object x)  { IO.println("g(Object)"); }
+static void g(Integer x) { IO.println("g(Integer)"); }
+
+f(1);                    // f(long)    - phase 1 widening
+f(Integer.valueOf(1));   // f(Integer) - khop chinh xac
+f("text");               // f(Object)
+g(null);                 // g(Integer) - cu the hon Object</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">f(1)</code> chọn <code class="inline">f(long)</code> vì <code class="inline">int → long</code> là widening ở pha 1, còn <code class="inline">Integer</code>/<code class="inline">Object</code> cần boxing (pha 2). Dù <code class="inline">f(Integer)</code> trông "gần" hơn về mặt khái niệm, nó thua ngay từ pha.</li>
+      <li><code class="inline">f("text")</code> rơi vào <code class="inline">f(Object)</code> bằng widening reference — không có bản nào khác nhận <code class="inline">String</code>.</li>
+      <li><code class="inline">g(null)</code> không lỗi vì có bản most specific: <code class="inline">Integer</code> là con của <code class="inline">Object</code>, nên <code class="inline">g(Integer)</code> thắng.</li>
+      <li>Hệ quả production: class có cả <code class="inline">method(long)</code> lẫn <code class="inline">method(Integer)</code> thì mọi lời gọi bằng số nguyên sẽ vào bản <code class="inline">long</code>. Nếu hai bản xử lý khác nhau (ví dụ bản <code class="inline">Integer</code> chấp nhận <code class="inline">null</code>), bug rất khó thấy — xem thêm <a href="methods.html">Methods</a>.</li>
+    </ul>
+
+    <h3>9.3 Bẫy <code class="inline">null</code> mơ hồ</h3>
+
+    <p>Nếu hai bản nằm ở hai nhánh kế thừa <em>không</em> liên quan nhau, <code class="inline">null</code> không chọn được bản nào "cụ thể hơn" — compile error ngay:</p>
+
+    <div class="errblock">
+      <pre>OverloadAmbiguous.java:6: error: reference to m is ambiguous
+        m(null);
+        ^
+  both method m(String) in OverloadAmbiguous and method m(Integer) in OverloadAmbiguous match
+1 error</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">String</code> và <code class="inline">Integer</code> là hai class lá của hai cây khác nhau, không bản nào specific hơn → ambiguous. Cách sửa: ép tường minh <code class="inline">m((String) null)</code> hoặc <code class="inline">m((Integer) null)</code> để nói rõ ý bạn.</li>
+      <li>Khác biệt tinh tế: <code class="inline">m(Object)</code> và <code class="inline">m(Integer)</code> thì <code class="inline">m(null)</code> chọn <code class="inline">m(Integer)</code> (Integer là con). Chỉ khi hai nhánh <em>không</em> quan hệ cha–con mới ambiguous.</li>
+      <li>Với giá trị <code class="inline">int</code> chứ không phải <code class="inline">null</code>: <code class="inline">m(long)</code> và <code class="inline">m(Integer)</code> → chọn <code class="inline">m(long)</code> (pha 1). Cùng cặp bản đó, truyền <code class="inline">Integer</code> thì chọn <code class="inline">m(Integer)</code> vì khớp chính xác pha 1.</li>
+    </ul>
+
+    <h3>9.4 varargs — luôn xét cuối</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">static void h(int x)     { IO.println("h(int)"); }
+static void h(int... x)  { IO.println("h(int...) - " + x.length + " tham so"); }
+
+h(1);                    // h(int) - phase 1 thang varargs
+h(1, 2);                 // h(int...) - 2 tham so
+h();                     // h(int...) - 0 tham so</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">h(1)</code> chọn bản fixed-arity <code class="inline">h(int)</code>: pha 3 chỉ được xét khi pha 1–2 thất bại. Bản varargs không bao giờ "cướp" lời gọi của bản cố định.</li>
+      <li>Method varargs tạo mảng mỗi lần gọi khi tham số rời rạc (<code class="inline">h(1, 2)</code> → <code class="inline">new int[]{1, 2}</code>) — chi phí nhỏ nhưng có thật; đừng lạm dụng trong vòng lặp nóng. Chi tiết ở <a href="arrays.html#varargs">Arrays — mục 9</a>.</li>
+      <li>Cẩn thận overload giữa <code class="inline">h(int...)</code> và <code class="inline">h(long...)</code>: <code class="inline">h(1)</code> không chọn bản fixed-arity (không có), cả hai đều vào pha 3 và bản <code class="inline">int...</code> thắng vì specific hơn — nhưng code đọc rất dễ nhầm.</li>
+    </ul>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS không có overload theo kiểu: khai báo hai function cùng tên thì bản sau <strong>ghi đè</strong> bản trước, không có "3 phase" nào cả. Muốn hành xử theo kiểu, bạn tự kiểm tra <code class="inline">typeof</code>/<code class="inline">arguments.length</code> bên trong.</li>
+      <li>TypeScript hỗ trợ khai báo overload signature nhưng chỉ là gợi ý compile-time; runtime vẫn chạy đúng một function — tương tự giới hạn của generic erasure bên Java.</li>
+      <li>Vì không có overload, JS cũng không có bẫy widening-vs-boxing; nhưng bù lại bug "truyền <code class="inline">null</code>/<code class="inline">undefined</code> rơi vào nhánh mặc định" lại phổ biến không kém.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> chọn overload theo 3 pha <strong>strict → loose (boxing) → varargs</strong>, dừng ở pha đầu tiên có bản phù hợp và most specific → <code class="inline">f(1)</code> với <code class="inline">f(long)</code>+<code class="inline">f(Integer)</code> chọn <code class="inline">long</code> → <code class="inline">m(null)</code> hai nhánh không liên quan (String/Integer) là lỗi compile, còn Object/Integer chọn Integer → cẩn thận API có cả bản primitive lẫn wrapper.</div>
+
+    <h2 id="reference-cast">10. Ép kiểu reference và ClassCastException <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Với primitive, ép kiểu đổi giá trị. Với reference, ép kiểu <strong>không đổi object</strong> — nó chỉ đổi cách compiler nhìn object đó. Đây là nguồn của cả upcast tự động lẫn <code class="inline">ClassCastException</code> lúc chạy.</p>
+
+    <h3>10.1 Upcast ngầm — downcast tường minh</h3>
 
     <div class="codeblock">
       <pre><code class="java">Object o = "abc";
-String s = (String) o;                    // downcast hop le
-IO.println("downcast ok   : " + s);       // abc
+String s = (String) o;                    // downcast
+IO.println("downcast        : " + s);     // abc
+
+Number n = Integer.valueOf(5);            // upcast ngam
+IO.println("upcast Number   : " + n);     // 5
 
 Object num = Integer.valueOf(5);
 try {
-    String s2 = (String) num;             // sai kieu thuc te
+    String s2 = (String) num;
+    IO.println(s2);
 } catch (ClassCastException e) {
-    IO.println("CCE message   : " + e.getMessage());
+    IO.println("CCE             : " + e.getMessage());
 }
 
-Object o2 = 5;                            // boxing thanh Integer
-IO.println("instanceof    : " + (o2 instanceof Integer));   // true
-
-Number n = 5;                             // upcast ngam
-IO.println("upcast double : " + n.doubleValue());          // 5.0</code></pre>
+Object nil = null;
+String s3 = (String) nil;                 // cast null: OK
+IO.println("cast null       : " + s3);     // null</code></pre>
     </div>
 
-    <p>Message thật của JVM (JDK 25):</p>
+    <p>Message thật của JVM (JDK 25) khi downcast sai:</p>
 
     <div class="errblock">
       <pre>class java.lang.Integer cannot be cast to class java.lang.String (java.lang.Integer and java.lang.String are in module java.base of loader 'bootstrap')</pre>
     </div>
 
-    <p>Trước khi downcast, luôn kiểm tra bằng <code class="inline">instanceof</code> (hoặc pattern matching <code class="inline">instanceof</code>, Java 16+). Nội dung này được đào sâu ở <a href="roadmap.html#phase-2">2.4 Polymorphism</a>.</p>
+    <ul>
+      <li><strong>Upcast</strong> (<code class="inline">Integer → Number → Object</code>) luôn ngầm được vì mọi <code class="inline">Integer</code> đều <em>là</em> <code class="inline">Number</code>. <strong>Downcast</strong> (<code class="inline">Object → String</code>) chỉ là lời hứa với compiler; JVM kiểm tra lại lúc chạy và ném <code class="inline">ClassCastException</code> nếu sai.</li>
+      <li>Cast <code class="inline">null</code> luôn hợp lệ — <code class="inline">(String) null</code> ra <code class="inline">null</code>, không ném gì. Vì vậy CCE thường xuất hiện ở nơi dữ liệu "bỗng nhiên" khác kiểu, còn null thì lặng lẽ đi qua rồi nổ ở chỗ khác.</li>
+      <li>Luôn kiểm tra trước khi downcast: <code class="inline">instanceof</code> cổ điển hoặc pattern matching Java 16+ <code class="inline">if (o instanceof String s) { ... }</code> — vừa kiểm tra vừa gán tên, không cần ép lại. Đào sâu ở <a href="polymorphism.html#casting">Polymorphism — mục 4</a>.</li>
+    </ul>
 
-    <h2 id="parse">11. parseXxx / valueOf — dữ liệu từ bên ngoài</h2>
+    <p>Có những cặp cast compiler từ chối thẳng vì chắc chắn vô nghĩa:</p>
 
-    <p>Mọi dữ liệu từ HTTP request, file, biến môi trường đều là chuỗi. Hai method hay dùng:</p>
+    <div class="errblock">
+      <pre>ReferenceCastError.java:4: error: incompatible types: Integer cannot be converted to String
+        String s = (String) i;
+                            ^
+1 error</pre>
+    </div>
+
+    <ul>
+      <li>Hai class <code class="inline">final</code> không có quan hệ cha–con (như <code class="inline">Integer</code> và <code class="inline">String</code>) thì không object nào vừa là cái này vừa là cái kia → compiler chặn ngay, tốt hơn để nổ runtime.</li>
+      <li>Nhưng cast <strong>qua interface</strong> thường vẫn compile: <code class="inline">Comparable&lt;String&gt; cs = "x"; String s = (String) cs;</code> hợp lệ vì biết đâu object runtime là class implements cả hai. Compiler chỉ cho qua khi còn khả năng đúng.</li>
+    </ul>
+
+    <h3>10.2 Cast chỉ đổi kiểu tĩnh — object không đổi</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">Object o = "abc";
+String s = (String) o;
+IO.println("cung object     : " + (s == o));          // true
+IO.println("runtime class   : " + o.getClass());      // class java.lang.String
+
+Object arr0 = new String[] {"a", "b"};
+String[] arr = (String[]) arr0;            // mang covariant
+IO.println("mang cast duoc  : " + Arrays.toString(arr));   // [a, b]
+
+Object badArr = new Object[] {"a"};
+try {
+    String[] x = (String[]) badArr;
+    IO.println(x);
+} catch (ClassCastException e) {
+    IO.println("Object[] -> String[] : ClassCastException");
+}
+
+Comparable&lt;String&gt; cs = "class.cast";
+String sc = String.class.cast(cs);
+IO.println("Class.cast      : " + sc);      // class.cast</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">(String) o</code> không tạo object mới, không copy gì: <code class="inline">s == o</code> vẫn <code class="inline">true</code>, <code class="inline">getClass()</code> vẫn là <code class="inline">String</code>. Chỉ có <strong>kiểu tĩnh</strong> của biến đổi, mở ra method nào được gọi trên biến đó.</li>
+      <li>Cast mảng phụ thuộc <strong>runtime component type</strong>: <code class="inline">Object arr0 = new String[]{...}</code> cast về <code class="inline">String[]</code> được; nhưng <code class="inline">new Object[]{...}</code> cast về <code class="inline">String[]</code> ném CCE vì mảng thật sự là <code class="inline">Object[]</code>. Cùng cơ chế với <code class="inline">ArrayStoreException</code> ở <a href="#widening">mục 3.4</a>.</li>
+      <li>Cast interface ↔ class cũng theo luật runtime: <code class="inline">String.class.cast(cs)</code> trả về chính object <code class="inline">"class.cast"</code> (không copy), hữu ích khi kiểu chỉ biết qua <code class="inline">Class&lt;T&gt;</code>.</li>
+    </ul>
+
+    <h3>10.3 <code class="inline">Class.cast()</code> và unchecked cast</h3>
+
+    <p><code class="inline">Class.cast</code> hành xử y hệt ép kiểu thường: trả object gốc nếu đúng kiểu, ném <code class="inline">ClassCastException</code> nếu sai — nhưng gọi được khi bạn có đối tượng <code class="inline">Class&lt;T&gt;</code> trong tay (reflection, generic API). Còn ép kiểu sang type variable thì compiler chỉ <em>cảnh báo</em>, vì erasure xoá mất thông tin generic:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static &lt;T&gt; T cast(Object o) {
+    return (T) o;                 // unchecked cast
+}
+
+Object o = "x";
+String s = cast(o);               // T suy ra String nhung khong kiem tra runtime
+IO.println(s);                    // x</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>UncheckedCast.java:3: warning: [unchecked] unchecked cast
+        return (T) o;                 // unchecked cast
+                   ^
+  required: T
+  found:    Object
+  where T is a type-variable:
+    T extends Object declared in method &lt;T&gt;cast(Object)
+1 warning</pre>
+    </div>
+
+    <ul>
+      <li>Mặc định <code class="inline">javac</code> chỉ in dòng <code class="inline">Note: ... uses unchecked or unsafe operations</code>; bật <code class="inline">javac -Xlint:unchecked</code> mới thấy chi tiết như trên.</li>
+      <li>Unchecked cast không sai nếu bạn <em>chứng minh được</em> object đúng kiểu (ví dụ sau khi validate bằng reflection); khi đó bọc <code class="inline">@SuppressWarnings("unchecked")</code>, kèm comment lý do. Nếu không chắc, đó là <strong>heap pollution</strong>: danh sách khai báo <code class="inline">List&lt;String&gt;</code> nhưng chứa <code class="inline">Integer</code>, lỗi chỉ nổ ở nơi khác khi lấy phần tử ra.</li>
+      <li>Trong code nghiệp vụ, ưu tiên thiết kế tránh cast hẳn: dùng polymorphism, generic đúng kiểu, hoặc pattern matching <code class="inline">switch</code> (Java 21). Cast chỉ nên xuất hiện ở biên tích hợp (JSON, reflection, thư viện cũ).</li>
+    </ul>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JavaScript thuần không có cast; TypeScript có <code class="inline">x as number</code> nhưng đó là <strong>ép kiểu tĩnh hoàn toàn compile-time</strong> — không sinh kiểm tra runtime nào. Gán sai kiểu vẫn chạy tới khi gọi method không tồn tại mới nổ (<code class="inline">TypeError</code>), muộn hơn hẳn CCE của Java.</li>
+      <li>Muốn kiểm tra thật trong JS dùng <code class="inline">instanceof</code>, <code class="inline">typeof</code>, <code class="inline">Array.isArray</code> — tương ứng tinh thần <code class="inline">instanceof</code> + pattern matching của Java.</li>
+      <li>Downcast "an toàn" của Java nhờ kiểm tra runtime là lợi thế thật của nền tảng có JVM; đổi lại bạn phải viết thêm <code class="inline">instanceof</code> ở nơi TS chỉ cần <code class="inline">as</code>.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> upcast ngầm, downcast tường minh và JVM kiểm tra runtime (<code class="inline">ClassCastException</code>) → cast null OK, cast hai class không liên quan là lỗi compile, cast interface có thể vẫn compile → cast chỉ đổi kiểu tĩnh, object và <code class="inline">==</code> reference không đổi → mảng cast theo runtime component type → <code class="inline">(T) o</code> sinh cảnh báo unchecked, chỉ <code class="inline">@SuppressWarnings</code> khi đã chứng minh an toàn → ưu tiên <code class="inline">instanceof</code>/pattern matching thay vì cast.</div>
+
+    <h2 id="parse">11. parseXxx / valueOf chuyên sâu — dữ liệu từ bên ngoài <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Mọi dữ liệu từ HTTP request, file, biến môi trường đều là chuỗi. Chuyển chuỗi thành số tưởng đơn giản nhưng là nguồn lỗi production hàng đầu: <code class="inline">parseInt</code> ném <code class="inline">NumberFormatException</code> thay vì trả giá trị mặc định, còn tràn khoảng thì cũng ném. Mục này đi từ API cơ bản tới message lỗi thật của JDK 25, locale, và cách xử lý ở biên hệ thống.</p>
+
+    <h3>11.1 parse vs valueOf vs decode</h3>
 
     <table>
       <thead>
-        <tr><th>Method</th><th>Trả về</th><th>Dùng khi</th></tr>
+        <tr><th>Method</th><th>Trả về</th><th>Đặc điểm</th></tr>
       </thead>
       <tbody>
-        <tr><td><code class="inline">Integer.parseInt("123")</code></td><td><code class="inline">int</code></td><td>Tính toán, không cần null</td></tr>
-        <tr><td><code class="inline">Integer.valueOf("123")</code></td><td><code class="inline">Integer</code></td><td>Cần object/null; hưởng cache -128..127</td></tr>
-        <tr><td><code class="inline">Double.parseDouble("3.14")</code></td><td><code class="inline">double</code></td><td>Số thực</td></tr>
-        <tr><td><code class="inline">Boolean.parseBoolean("TRUE")</code></td><td><code class="inline">boolean</code></td><td>Mọi giá trị khác "true" (không phân biệt hoa thường) đều false</td></tr>
+        <tr><td><code class="inline">Integer.parseInt("255")</code></td><td><code class="inline">int</code></td><td>Primitive; tính toán nhanh; ném NFE khi sai</td></tr>
+        <tr><td><code class="inline">Integer.valueOf("255")</code></td><td><code class="inline">Integer</code></td><td>Object; cache sẵn -128..127; dùng khi cần null/collection</td></tr>
+        <tr><td><code class="inline">Integer.decode("0xFF")</code></td><td><code class="inline">Integer</code></td><td>Tự hiểu tiền tố <code class="inline">0x</code>/<code class="inline">#</code> (hex), <code class="inline">0</code> (bát phân), dấu +/-</td></tr>
       </tbody>
     </table>
 
     <div class="codeblock">
-      <pre><code class="java">IO.println("parseInt FF hex    : " + Integer.parseInt("FF", 16));    // 255
-IO.println("parseInt 1010 bin  : " + Integer.parseInt("1010", 2));    // 10
-IO.println("toBinaryString 10  : " + Integer.toBinaryString(10));     // 1010
-IO.println("toHexString 255    : " + Integer.toHexString(255));       // ff
-IO.println("MAX_VALUE + 1      : " + (Integer.MAX_VALUE + 1));        // -2147483648
-IO.println("unsigned compare   : " + Integer.compareUnsigned(-1, 1)); // 1
+      <pre><code class="java">IO.println(Integer.parseInt("255"));    // 255
+IO.println(Integer.valueOf("255"));     // 255
+IO.println(Integer.decode("0xFF"));     // 255
+IO.println(Integer.decode("#FF"));      // 255
+IO.println(Integer.decode("010"));      // 8   - he bat phan!
+IO.println(Integer.decode("-0x10"));    // -16
+
+Integer a = Integer.valueOf(127), b = Integer.valueOf(127);
+Integer c = Integer.valueOf(128), d = Integer.valueOf(128);
+IO.println(a == b);                     // true  - nam trong cache
+IO.println(c == d);                     // false - ngoai cache, hai object khac nhau</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy "010":</strong> <code class="inline">decode</code> theo luật literal cũ — chuỗi bắt đầu bằng <code class="inline">0</code> là <strong>bát phân</strong>, nên <code class="inline">"010"</code> = 8 chứ không phải 10. Nó tiện cho mã hex có tiền tố, nhưng đừng dùng cho dữ liệu người dùng nếu không chắc định dạng.</div>
+
+    <p>Constructor <code class="inline">new Integer(5)</code> đã bị deprecated từ Java 9; <code class="inline">javac</code> chỉ cảnh báo khi bật <code class="inline">-Xlint:deprecation</code>:</p>
+
+    <div class="errblock">
+      <pre>DeprecatedDemo.java:3: warning: [deprecation] Integer(int) in Integer has been deprecated
+        Integer x = new Integer(5);
+                    ^
+1 warning</pre>
+    </div>
+
+    <h3>11.2 Radix — hệ đếm 2..36</h3>
+
+    <p>Mọi wrapper số đều có bản <code class="inline">parseXxx(String, int radix)</code>. Radix hợp lệ từ <code class="inline">Character.MIN_RADIX</code> (2) tới <code class="inline">Character.MAX_RADIX</code> (36); chữ số dùng <code class="inline">0-9</code> rồi <code class="inline">a-z</code>, không phân biệt hoa thường.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println(Integer.parseInt("FF", 16));     // 255
+IO.println(Integer.parseInt("1010", 2));    // 10
+IO.println(Integer.parseInt("z", 36));      // 35
+IO.println(Character.MIN_RADIX);            // 2
+IO.println(Character.MAX_RADIX);            // 36
+IO.println(Integer.parseInt("+5"));         // 5   - dau + duoc phep
+IO.println(Integer.parseInt("-0"));         // 0
 
 try {
-    Integer.parseInt("12a");
+    Integer.parseInt("0x1F");
 } catch (NumberFormatException e) {
-    IO.println("NFE message        : " + e.getMessage());
-    // For input string: "12a"
+    IO.println(e.getMessage());             // For input string: "0x1F"
 }
 
 try {
-    Integer.parseInt(null);
+    Integer.parseInt("1", 37);
 } catch (NumberFormatException e) {
-    IO.println("NFE null message   : " + e.getMessage());
-    // Cannot parse null string
+    IO.println(e.getMessage());             // radix 37 greater than Character.MAX_RADIX
 }</code></pre>
     </div>
 
-    <div class="note warn"><strong>Ghi nhớ:</strong> <code class="inline">Integer.parseInt(null)</code> ném <code class="inline">NumberFormatException</code> (không phải NPE) — dễ viết catch sai. Và <code class="inline">"999999999999"</code> cũng ném NumberFormatException vì vượt <code class="inline">Integer.MAX_VALUE</code>.</div>
+    <p>Chú ý <code class="inline">parseInt("0x1F")</code> <strong>không</strong> tự hiểu tiền tố hex — radix phải truyền tường minh; muốn tự nhận <code class="inline">0x</code>/<code class="inline">#</code> thì dùng <code class="inline">decode</code> (mục 11.1). Radix ngoài khoảng 2..36 cũng ném NFE với message riêng.</p>
 
-    <h2 id="biginteger">12. BigInteger — khi long không đủ</h2>
+    <p><strong>Unsigned:</strong> JDK có <code class="inline">parseUnsignedInt</code>/<code class="inline">parseUnsignedLong</code> đọc được giá trị vượt <code class="inline">MAX_VALUE</code> nhưng vẫn trong 32/64 bit — kết quả là bit pattern, in ra có thể âm:</p>
 
-    <p><code class="inline">long</code> tràn là quay vòng âm thầm (xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>). Khi cần số nguyên lớn hơn 64-bit chính xác tuyệt đối (mã giao dịch, hash, tính toán khoa học), dùng <code class="inline">BigInteger</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">IO.println(Integer.parseUnsignedInt("4294967295"));          // -1
+IO.println(Integer.toUnsignedString(-1));                    // 4294967295
+IO.println(Long.parseUnsignedLong("18446744073709551615"));  // -1
+IO.println(Long.toUnsignedString(-1L));                      // 18446744073709551615</code></pre>
+    </div>
+
+    <div class="note">Unsigned trong Java chỉ là <em>cách nhìn</em> trên cùng bit pattern, không phải kiểu mới. Hợp cho dữ liệu nhị phân/protocol (IPv4, checksum); tính toán nghiệp vụ thường ngày nên tránh để khỏi nhầm dấu.</div>
+
+    <h3>11.3 Lỗi thật và message của JDK 25</h3>
+
+    <p>Gần như mọi lỗi parse đều là <code class="inline">NumberFormatException</code> (NFE) — kể cả <code class="inline">null</code>. Chạy thật từng trường hợp bằng helper nhỏ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static void show(String label, Runnable r) {
+    try {
+        r.run();
+    } catch (NumberFormatException e) {
+        IO.println(label + " : " + e.getMessage());
+    }
+}
+
+show("null", () -> Integer.parseInt(null));                // null : Cannot parse null string
+show("12a", () -> Integer.parseInt("12a"));                // 12a : For input string: "12a"
+show("12G radix 16", () -> Integer.parseInt("12G", 16));   // 12G radix 16 : For input string: "12G" under radix 16
+show("overflow", () -> Integer.parseInt("999999999999"));  // overflow : For input string: "999999999999"
+show("space", () -> Integer.parseInt(" 5"));               // space : For input string: " 5"
+show("trailing", () -> Integer.parseInt("5 "));            // trailing : For input string: "5 "
+show("underscore", () -> Integer.parseInt("1_000"));       // underscore : For input string: "1_000"
+show("decimal", () -> Integer.parseInt("3.14"));           // decimal : For input string: "3.14"
+show("plus", () -> Integer.parseInt("+"));                 // plus : For input string: "+"</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">parseInt(null)</code> ném <strong>NumberFormatException</strong> <code class="inline">Cannot parse null string</code>, không phải NPE — code bắt NPE sẽ hụt. Ngược lại <code class="inline">Double.parseDouble(null)</code> lại ném NPE — API không đồng nhất, đừng đoán.</li>
+      <li>Message mặc định chỉ có <code class="inline">"For input string: ..."</code>; chỉ khi radix khác 10 mới thêm <code class="inline">"under radix N"</code>. Đừng hardcode message để phân loại lỗi — hãy kiểm tra dữ liệu trước.</li>
+      <li>Tràn khoảng cũng là NFE, không kẹp giá trị: <code class="inline">"999999999999"</code> vượt <code class="inline">Integer.MAX_VALUE</code>. Giá trị lớn hơn chuyển sang <code class="inline">Long.parseLong</code> hoặc <a href="#biginteger">BigInteger (mục 12)</a>.</li>
+      <li><code class="inline">parseXxx</code> <strong>không trim</strong>: khoảng trắng đầu/cuối đều gây lỗi, trong khi <code class="inline">Double.parseDouble</code> lại tự trim (mục 11.4) — càng thêm lý do luôn <code class="inline">trim()</code> dữ liệu người dùng trước khi parse (mục 11.6).</li>
+      <li>Dấu gạch dưới <code class="inline">1_000</code> chỉ hợp lệ trong <em>literal</em> (<code class="inline">int x = 1_000;</code>), còn trong chuỗi parse là NFE. Đừng nhầm hai ngữ cảnh.</li>
+    </ul>
+
+    <h3>11.4 Các kiểu khác: double, boolean, enum</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println(Double.parseDouble("3.14"));       // 3.14
+IO.println(Double.parseDouble("NaN"));        // NaN
+IO.println(Double.parseDouble("Infinity"));   // Infinity
+IO.println(Double.parseDouble("-Infinity"));  // -Infinity
+IO.println(Double.parseDouble("0x1.8p1"));    // 3.0
+IO.println(Double.parseDouble("1e3"));        // 1000.0
+IO.println(Double.parseDouble(" 1.5 "));      // 1.5  - tu trim
+IO.println(Boolean.parseBoolean("TRUE"));     // true
+IO.println(Boolean.parseBoolean("yes"));      // false
+IO.println(Character.digit('F', 16));         // 15
+IO.println(Character.digit('G', 16));         // -1
+IO.println(Character.valueOf('a'));           // a</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">Double.parseDouble</code> hào phóng hơn <code class="inline">parseInt</code>: nhận <code class="inline">"NaN"</code>, <code class="inline">"Infinity"</code> (phân biệt hoa thường — <code class="inline">"nan"</code> ném NFE), ký pháp khoa học <code class="inline">1e3</code>, cả hex float <code class="inline">0x1.8p1</code> = 3.0, và tự trim khoảng trắng. Vì vậy "parseDouble không lỗi" <strong>không</strong> đồng nghĩa "số hợp lệ" — còn phải loại <code class="inline">NaN</code>/<code class="inline">Infinity</code> nữa.</li>
+      <li><code class="inline">Boolean.parseBoolean</code> chỉ trả <code class="inline">true</code> khi chuỗi là <code class="inline">"true"</code> (không phân biệt hoa thường); mọi thứ khác — kể cả <code class="inline">null</code>, <code class="inline">"  true"</code> — trả <code class="inline">false</code> và <strong>không bao giờ ném lỗi</strong>. Lỗi chính tả trong config sẽ âm thầm thành false.</li>
+      <li>Không có <code class="inline">Character.parseCharacter</code>; dùng <code class="inline">Character.digit(c, radix)</code> (trả -1 nếu không hợp lệ) hoặc <code class="inline">charAt(0)</code> kèm validate độ dài chuỗi.</li>
+    </ul>
+
+    <p><code class="inline">enum</code> có <code class="inline">valueOf</code> riêng, nghiêm hơn hẳn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN }
+
+IO.println(Color.valueOf("RED"));   // RED
+
+Color.valueOf("red");
+// IllegalArgumentException: No enum constant Color.red
+
+Color.valueOf(null);
+// NullPointerException: Name is null</code></pre>
+    </div>
+
+    <div class="note warn">Enum <code class="inline">valueOf</code> phân biệt hoa thường: sai tên → <code class="inline">IllegalArgumentException</code>, <code class="inline">null</code> → <code class="inline">NullPointerException</code>. Giá trị đọc từ API/DB vì vậy cần bọc try/catch hoặc map tường minh (thường viết helper <code class="inline">fromString</code> trong enum) — đừng để một chuỗi sai làm nổ 500.</div>
+
+    <h3>11.5 Locale &amp; định dạng số</h3>
+
+    <p><code class="inline">parseXxx</code> của JDK chỉ hiểu dạng "máy" (<code class="inline">1234567.89</code>, dấu chấm thập phân, không grouping). Chuỗi người dùng nhập theo từng nước — <code class="inline">1,234.5</code> (US) hay <code class="inline">1.234,5</code> (Đức/Việt) — phải qua <code class="inline">NumberFormat</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">NumberFormat us = NumberFormat.getInstance(Locale.US);
+NumberFormat de = NumberFormat.getInstance(Locale.GERMANY);
+NumberFormat vi = NumberFormat.getInstance(Locale.of("vi", "VN"));
+
+IO.println(us.format(1234567.89));    // 1,234,567.89
+IO.println(de.format(1234567.89));    // 1.234.567,89
+IO.println(vi.format(1234567.89));    // 1.234.567,89
+IO.println(us.parse("1,234.5"));      // 1234.5
+IO.println(de.parse("1.234,5"));      // 1234.5
+IO.println(us.parse("1,000"));        // 1000
+
+try {
+    us.parse("abc");
+} catch (ParseException e) {
+    IO.println(e.getMessage());       // Unparseable number: "abc"
+}
+
+try {
+    Integer.parseInt("1,000");
+} catch (NumberFormatException e) {
+    IO.println(e.getMessage());       // For input string: "1,000"
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">Locale.of("vi", "VN")</code> (Java 19+) tạo locale tường minh; <strong>đừng</strong> dựa vào <code class="inline">Locale.getDefault()</code> cho dữ liệu client — locale server có thể khác máy người dùng và đổi giữa các môi trường deploy.</li>
+      <li><code class="inline">NumberFormat.parse</code> <strong>lenient</strong>: gặp ký tự lạ thì dừng và trả phần đã đọc, <em>không</em> ném lỗi. Muốn bắt buộc đọc hết chuỗi, dùng <code class="inline">ParsePosition</code> và kiểm tra <code class="inline">getIndex()</code>:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">ParsePosition pos = new ParsePosition(0);
+Number n = us.parse("12abc", pos);
+IO.println(n + " index " + pos.getIndex());   // 12 index 2</code></pre>
+    </div>
+
+    <p><code class="inline">DecimalFormat</code> khi cần pattern tường minh (số chữ số, kiểu tiền tệ) — nhớ chỉ định <code class="inline">DecimalFormatSymbols</code> để không phụ thuộc locale mặc định của máy chạy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">DecimalFormat fmt = new DecimalFormat("#,##0.00",
+        DecimalFormatSymbols.getInstance(Locale.US));
+IO.println(fmt.format(1234.5));   // 1,234.50</code></pre>
+    </div>
+
+    <div class="note"><strong>Nhớ:</strong> <code class="inline">Integer.parseInt("1,000")</code> luôn ném NFE vì parseXxx của JDK không biết grouping. Grouping chỉ là chuyện hiển thị/nhập liệu; trong DB/API vẫn lưu dạng số <code class="inline">1000</code> và format ở tầng biên.</div>
+
+    <h3>11.6 Production pattern: parse ở biên</h3>
+
+    <p>Nguyên tắc: parse <strong>một lần ở biên</strong> (controller, config loader) rồi truyền kiểu đã sạch vào trong; không rải <code class="inline">parseInt</code> trong business logic. Cấu hình sai thì fallback, input người dùng sai thì báo lỗi rõ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static Optional&lt;Integer&gt; parseIntSafe(String raw) {
+    if (raw == null || raw.isBlank()) {
+        return Optional.empty();
+    }
+    try {
+        return Optional.of(Integer.parseInt(raw.trim()));
+    } catch (NumberFormatException e) {
+        return Optional.empty();
+    }
+}
+
+static int port(String raw) {
+    int p = parseIntSafe(raw).orElse(8080);
+    if (p &lt; 1 || p &gt; 65535) {
+        throw new IllegalArgumentException("port khong hop le: " + p);
+    }
+    return p;
+}
+
+IO.println(parseIntSafe("42"));     // Optional[42]
+IO.println(parseIntSafe("abc"));    // Optional.empty
+IO.println(parseIntSafe(null));     // Optional.empty
+IO.println(parseIntSafe("  "));     // Optional.empty
+IO.println(port(" 9090 "));         // 9090
+IO.println(port(""));               // 8080
+port("70000");
+// IllegalArgumentException: port khong hop le: 70000</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Đừng catch rỗng</strong> (<code class="inline">catch (NumberFormatException e) {}</code>) — nuốt lỗi khiến dữ liệu sai chạy tiếp. Trả <code class="inline">Optional</code>/giá trị mặc định có chủ đích, hoặc ném <code class="inline">IllegalArgumentException</code> kèm tên field và giá trị sai.</li>
+      <li><strong>Validate khoảng ngay sau parse:</strong> parse thành công chưa chắc hợp lệ nghiệp vụ (tuổi âm, port &gt; 65535, page size quá lớn).</li>
+      <li>Config từ env: fallback + log cảnh báo; input API: trả 400. Hai ngữ cảnh, hai chiến lược — xem thêm <a href="#production">Production patterns (mục 13.1)</a>.</li>
+      <li>Vượt 32-bit dùng <code class="inline">Long.parseLong</code>; vượt 64-bit hoặc cần chính xác tuyệt đối dùng <a href="#biginteger">BigInteger (mục 12)</a>. Cẩn thận tràn <code class="inline">int</code> khi cộng dồn (<a href="index.html#tran-so">Biến trong Java — mục 9</a>).</li>
+    </ul>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li><code class="inline">Number.parseInt("12px")</code> = 12 (đọc tới ký tự lạ rồi dừng); <code class="inline">Integer.parseInt("12px")</code> ném NFE. JS "dễ tính" nên lỗi hay bị bỏ qua; Java nghiêm nên buộc phải xử lý.</li>
+      <li><code class="inline">Number("")</code> = 0 và <code class="inline">Number(" ")</code> = 0 (!), <code class="inline">Number("12px")</code> = <code class="inline">NaN</code>; Java cả ba đều NFE. JS kiểm tra bằng <code class="inline">Number.isNaN</code>, Java dùng try/catch.</li>
+      <li><code class="inline">Number("0x1F")</code> = 31 (tự nhận hex); Java <code class="inline">parseInt("0x1F")</code> ném NFE — phải dùng <code class="inline">decode</code> hoặc radix 16.</li>
+      <li>Cả hai ngôn ngữ đều cho gạch dưới trong <em>literal</em> (<code class="inline">1_000</code> = 1000) nhưng không trong chuỗi parse: <code class="inline">Number.parseInt("1_000")</code> = 1, Java NFE.</li>
+      <li><code class="inline">BigInt("42")</code> cho số nguyên lớn; <code class="inline">BigInt("12.5")</code> ném <code class="inline">SyntaxError</code>; <code class="inline">BigInt</code> không trộn được với <code class="inline">Number</code> (xem <a href="#biginteger">mục 12</a>).</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> tính toán → <code class="inline">parseInt</code>/<code class="inline">parseLong</code>; cần object/null → <code class="inline">valueOf</code>; chuỗi tự mô tả hệ đếm (<code class="inline">0x</code>, <code class="inline">#</code>, <code class="inline">0</code> bát phân) → <code class="inline">decode</code> → luôn bọc try/catch NFE (kể cả <code class="inline">null</code>) → <code class="inline">trim()</code> trước parse, validate khoảng sau parse → chuỗi có grouping/locale phải qua <code class="inline">NumberFormat</code>, không qua <code class="inline">parseXxx</code>.</div>
+
+    <h2 id="biginteger">12. BigInteger chuyên sâu — khi long không đủ <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">long</code> chỉ chứa đến 2<sup>63</sup> − 1 ≈ 9.22×10<sup>18</sup>, và tràn thì <strong>quay vòng âm thầm</strong> (xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>). Khi số nguyên cần vượt ngưỡng đó, hoặc cần chính xác tuyệt đối cho hash/crypto, dùng <code class="inline">BigInteger</code>. Mục này song song với <a href="index.html#bigdecimal">BigDecimal chuyên sâu (Biến trong Java — mục 13)</a>: cùng bất biến, cùng bẫy "quên gán lại", nhưng khác hẳn chuyện <code class="inline">equals</code>.</p>
+
+    <h3>12.1 Khi nào long không đủ</h3>
+
+    <p>Bốn nhóm tình huống thực tế:</p>
+    <ul>
+      <li><strong>Vượt 2<sup>63</sup> − 1:</strong> giai thừa, tổ hợp, dãy Fibonacci, lũy thừa lớn.</li>
+      <li><strong>Hash/checksum:</strong> MD5 (128-bit), SHA-1 (160-bit), SHA-256 (256-bit) — đều dài hơn 64-bit.</li>
+      <li><strong>Crypto:</strong> RSA, Diffie-Hellman tính trên số vài trăm tới vài nghìn bit; một khóa 2048-bit không lọt vào <code class="inline">long</code>.</li>
+      <li><strong>ID và tính toán dài:</strong> định danh 128-bit, tổng/tích dồn cần đúng từng chữ số.</li>
+    </ul>
 
     <div class="codeblock">
       <pre><code class="java">long maxL = Long.MAX_VALUE;
-IO.println("long max     : " + maxL);                     // 9223372036854775807
-IO.println("long max + 1 : " + (maxL + 1));                // -9223372036854775808
+IO.println(maxL);            // 9223372036854775807
+IO.println(maxL + 1);        // -9223372036854775808  - tran quay vong
 
-BigInteger big = BigInteger.valueOf(maxL).add(BigInteger.ONE);
-IO.println("BigInteger   : " + big);                     // 9223372036854775808
+IO.println(BigInteger.TWO.pow(63).subtract(BigInteger.ONE));   // 9223372036854775807
+IO.println(BigInteger.TWO.pow(100));   // 1267650600228229401496703205376
 
-BigInteger n = new BigInteger("123456789012345678901234567890");
-IO.println("multiply 2   : " + n.multiply(new BigInteger("2")));
+BigInteger f = BigInteger.ONE;
+for (int i = 2; i &lt;= 50; i++) {
+    f = f.multiply(BigInteger.valueOf(i));
+}
+IO.println(f);
+// 30414093201713378043612608166064768844377641568960512000000000000
+
+BigInteger f100 = BigInteger.ONE;
+for (int i = 2; i &lt;= 100; i++) {
+    f100 = f100.multiply(BigInteger.valueOf(i));
+}
+IO.println(f100.toString().length());   // 158 - 100! co 158 chu so
+
+BigInteger c50 = BigInteger.ONE;
+for (int i = 1; i &lt;= 25; i++) {
+    c50 = c50.multiply(BigInteger.valueOf(50 - i + 1)).divide(BigInteger.valueOf(i));
+}
+IO.println(c50);             // 126410606437752 - C(50,25)</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đừng "phòng thủ" quá sớm:</strong> BigInteger chậm hơn <code class="inline">long</code> hàng chục lần và tạo nhiều object. Chỉ dùng khi thật sự vượt 64-bit hoặc cần chính xác tuyệt đối; phần lớn nghiệp vụ tiền tệ VN chỉ cần <code class="inline">long</code> theo đơn vị đồng.</div>
+
+    <h3>12.2 Tạo và chuyển đổi</h3>
+
+    <p>Ba cách tạo, cùng các chuyển đổi hai chiều giữa BigInteger với <code class="inline">long</code>/<code class="inline">byte[]</code>/<code class="inline">String</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BigInteger a = BigInteger.valueOf(100);         // tu long: nhanh nhat
+BigInteger b = new BigInteger("123456789012345678901234567890");
+BigInteger c = new BigInteger("ff", 16);        // 255
+BigInteger d = new BigInteger("1010", 2);       // 10
+BigInteger e = new BigInteger("zz", 36);        // 1295
+IO.println(c + " " + d + " " + e);              // 255 10 1295
+IO.println(b.multiply(BigInteger.TWO));
 // 246913578024691357802469135780
-IO.println("2^100        : " + BigInteger.TWO.pow(100));
-// 1267650600228229401496703205376</code></pre>
+
+byte[] raw = BigInteger.valueOf(255).toByteArray();
+IO.println(Arrays.toString(raw));    // [0, -1] - them byte 0 de giu dau
+IO.println(new BigInteger(raw));     // 255
+IO.println(new BigInteger(new byte[] { (byte) 0xFF }));   // -1 - doc co dau!
+
+BigInteger tooBig = new BigInteger("9223372036854775808");   // 2^63
+IO.println(tooBig.longValue());      // -9223372036854775808 - tran am tham
+try {
+    tooBig.longValueExact();
+} catch (ArithmeticException ex) {
+    IO.println(ex.getMessage());     // BigInteger out of long range
+}
+try {
+    tooBig.intValueExact();
+} catch (ArithmeticException ex) {
+    IO.println(ex.getMessage());     // BigInteger out of int range
+}
+IO.println(BigInteger.valueOf(42).intValueExact());   // 42
+
+IO.println(BigInteger.valueOf(255).toString(16));     // ff
+IO.println(BigInteger.valueOf(255).toString(2));      // 11111111
+IO.println(BigInteger.valueOf(255).toString(36));     // 73
+IO.println(BigInteger.valueOf(-255).toString(16));    // -ff</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">toByteArray()</code> dùng bù hai (two's complement)</strong> và có thể thêm một byte <code class="inline">0x00</code> ở đầu để giữ dấu — nên <code class="inline">255</code> thành <code class="inline">[0, -1]</code>, không phải <code class="inline">[-1]</code>. Khi đọc lại, nếu chắc chắn là số không âm (hash), dùng <code class="inline">new BigInteger(1, bytes)</code> — byte dấu bị bỏ và luôn ra số dương.</li>
+      <li><code class="inline">intValue()</code>/<code class="inline">longValue()</code> cắt bit thấp và <strong>không báo tràn</strong>; ở biên API/DB hãy dùng <code class="inline">intValueExact()</code>/<code class="inline">longValueExact()</code> để ném <code class="inline">ArithmeticException</code> thay vì nhận giá trị sai.</li>
+      <li><code class="inline">BigInteger.valueOf(long)</code> nhanh hơn parse chuỗi; constructor nhận <code class="inline">String</code> + radix theo đúng luật ở mục 11.2 (không nhận tiền tố <code class="inline">0x</code>, chuỗi rỗng/sai ném NFE).</li>
+      <li><code class="inline">toString(radix)</code> in hệ đếm 2..36, số âm có dấu trừ đứng trước (<code class="inline">-ff</code>).</li>
+    </ul>
+
+    <div class="note warn"><strong>Parse lỗi khác <code class="inline">Integer</code>:</strong> <code class="inline">new BigInteger("12a")</code> ném NFE <code class="inline">For input string: "12a"</code>; chuỗi rỗng ném NFE <code class="inline">Zero length BigInteger</code>; <code class="inline">new BigInteger(null)</code> ném <strong>NullPointerException</strong> (không phải NFE); radix ngoài 2..36 ném NFE <code class="inline">Radix out of range</code>.</div>
+
+    <h3>12.3 Số học — method, không toán tử</h3>
+
+    <p>Không có <code class="inline">+</code>, <code class="inline">*</code> cho object; mọi phép tính là method và trả object mới (<strong>bất biến</strong>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BigInteger a = BigInteger.valueOf(100);
+BigInteger b = BigInteger.valueOf(7);
+IO.println(a.add(b));        // 107
+IO.println(a.subtract(b));   // 93
+IO.println(a.multiply(b));   // 700
+IO.println(a.divide(b));     // 14
+IO.println(a.remainder(b));  // 2
+
+BigInteger[] qr = a.divideAndRemainder(b);
+IO.println(qr[0] + " du " + qr[1]);   // 14 du 2
+
+IO.println(BigInteger.TWO.pow(100));  // 1267650600228229401496703205376
+IO.println(BigInteger.valueOf(3).modPow(BigInteger.valueOf(100), BigInteger.valueOf(7)));   // 4
+IO.println(BigInteger.valueOf(3).modInverse(BigInteger.valueOf(7)));   // 5
+IO.println(BigInteger.valueOf(48).gcd(BigInteger.valueOf(36)));        // 12
+IO.println(BigInteger.valueOf(1000000).sqrt());   // 1000 - Java 9+
+IO.println(BigInteger.valueOf(2).sqrt());         // 1
+
+IO.println(BigInteger.valueOf(-7).divide(BigInteger.valueOf(2)));      // -3
+IO.println(BigInteger.valueOf(-7).remainder(BigInteger.valueOf(2)));   // -1
+IO.println(BigInteger.valueOf(-5).abs());        // 5
+IO.println(BigInteger.valueOf(5).negate());      // -5
+
+BigInteger total = BigInteger.TEN;
+total.add(BigInteger.ONE);                       // quen gan
+IO.println(total);                               // 10
+total = total.add(BigInteger.ONE);               // gan lai
+IO.println(total);                               // 11</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Chia cắt về 0</strong> giống <code class="inline">int</code>/<code class="inline">long</code>: <code class="inline">-7 / 2 = -3</code>, <code class="inline">-7 % 2 = -1</code> — khác Python (làm tròn xuống, dư dương).</li>
+      <li><code class="inline">divideAndRemainder</code> trả <code class="inline">[thương, dư]</code> trong một lần tính, hiệu quả hơn gọi <code class="inline">divide</code> rồi <code class="inline">remainder</code>.</li>
+      <li><code class="inline">modPow</code> tính lũy thừa modular <em>không</em> tạo số trung gian khổng lồ — trái tim crypto ở mục 12.6. <code class="inline">modInverse</code> ném <code class="inline">ArithmeticException: BigInteger not invertible.</code> khi không tồn tại nghịch đảo (ví dụ 4 và 10).</li>
+      <li><code class="inline">sqrt</code> (Java 9+) là căn nguyên, làm tròn xuống: <code class="inline">sqrt(2) = 1</code>. Còn <code class="inline">abs</code>/<code class="inline">negate</code> trả object mới như mọi method khác.</li>
+      <li>Quên gán lại là bug im lặng y hệt <a href="index.html#bigdecimal">BigDecimal</a> — <code class="inline">total.add(...)</code> không làm gì với <code class="inline">total</code>.</li>
+    </ul>
+
+    <h3>12.4 Thao tác bit</h3>
+
+    <p>BigInteger xử lý bit như số nguyên dài vô hạn theo bù hai — tiện cho bitmask, cờ trạng thái, subnet:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BigInteger n = BigInteger.valueOf(180);   // 1011 0100
+IO.println(n.bitLength());   // 8   - so bit toi thieu (khong tinh dau)
+IO.println(n.bitCount());    // 4   - so bit 1
+IO.println(n.testBit(2));    // true
+IO.println(n.testBit(3));    // false
+IO.println(n.setBit(0));     // 181
+IO.println(n.clearBit(2));   // 176
+IO.println(n.flipBit(2));    // 176
+IO.println(n.shiftLeft(2));  // 720
+IO.println(n.shiftRight(2)); // 45
+
+BigInteger p = BigInteger.valueOf(12);   // 1100
+BigInteger q = BigInteger.valueOf(10);   // 1010
+IO.println(p.and(q));   // 8
+IO.println(p.or(q));    // 14
+IO.println(p.xor(q));   // 6
+IO.println(p.not());    // -13 - bu hai tren vo han bit
+
+IO.println(BigInteger.valueOf(40).getLowestSetBit());   // 3
+IO.println(BigInteger.ZERO.getLowestSetBit());          // -1
+
+BigInteger low4 = n.and(BigInteger.ONE.shiftLeft(4).subtract(BigInteger.ONE));
+IO.println(low4);            // 4 - lay 4 bit thap nhat
+IO.println(n.testBit(0));    // false - n chan</code></pre>
+    </div>
+
+    <ul>
+      <li>Bit đánh số từ 0 (thấp nhất). <code class="inline">not</code> cho số âm vì bù hai vô hạn — đừng so với đảo bit kiểu cố định 32/64 bit.</li>
+      <li><code class="inline">getLowestSetBit()</code> trả số bit 0 đứng trước bit 1 đầu tiên (số mũ của 2 chia hết <code class="inline">n</code>), <code class="inline">-1</code> nếu <code class="inline">n = 0</code>. Kiểm tra chẵn/lẻ bằng <code class="inline">testBit(0)</code> nhanh hơn <code class="inline">remainder(TWO)</code>.</li>
+      <li>Mask <code class="inline">k</code> bit thấp: <code class="inline">x.and(BigInteger.ONE.shiftLeft(k).subtract(BigInteger.ONE))</code>. Bitmask, cờ quyền, subnet... đều gói trong vài dòng.</li>
+    </ul>
+
+    <h3>12.5 So sánh — equals theo giá trị (khác BigDecimal!)</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">BigInteger a = new BigInteger("1000");
+BigInteger b = new BigInteger("1000");
+IO.println(a.equals(b));     // true  - so theo gia tri
+IO.println(a == b);          // false - hai object khac nhau
+IO.println(a.compareTo(b));  // 0
+IO.println(a.compareTo(new BigInteger("999")));   // 1
+
+IO.println(BigInteger.valueOf(-7).signum());   // -1
+IO.println(BigInteger.ZERO.signum());          // 0
+IO.println(BigInteger.valueOf(7).signum());    // 1
+
+Map&lt;BigInteger, String&gt; map = new HashMap&lt;&gt;();
+map.put(a, "a");
+map.put(b, "b");
+IO.println(map.size());      // 1 - equals consistent voi compareTo
+
+Map&lt;BigInteger, String&gt; tree = new TreeMap&lt;&gt;();
+tree.put(a, "a");
+tree.put(b, "b");
+IO.println(tree.size());     // 1 - compareTo = 0 nen gop lam mot</code></pre>
+    </div>
+
+    <p>Đây là điểm BigInteger <strong>dễ thở hơn BigDecimal</strong>: <code class="inline">equals</code> so theo giá trị (không có scale) và consistent với <code class="inline">compareTo</code>, nên dùng làm key <code class="inline">HashMap</code> hay <code class="inline">TreeMap</code> đều cho cùng kết quả — khác bẫy <code class="inline">1.0 vs 1.00</code> của <a href="index.html#bigdecimal">BigDecimal (mục 13.6)</a>. Quy tắc vẫn là: <code class="inline">==</code> luôn sai, so bằng dùng <code class="inline">.equals()</code>, cần thứ tự dùng <code class="inline">compareTo</code>. Lưu ý nhỏ: <code class="inline">BigInteger.valueOf(5) == BigInteger.valueOf(5)</code> là <code class="inline">true</code> nhờ cache −16..16 của JDK, nhưng đừng bao giờ dựa vào đó.</p>
+
+    <h3>12.6 Số nguyên tố &amp; crypto</h3>
+
+    <p>BigInteger mang sẵn các phép nguyên tố và modular dùng cho mật mã:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BigInteger p = BigInteger.valueOf(97);
+IO.println(p.isProbablePrime(100));                       // true
+IO.println(BigInteger.valueOf(91).isProbablePrime(100));  // false
+IO.println(p.nextProbablePrime());                        // 101
+
+Random rnd = new Random(42);
+BigInteger r = BigInteger.probablePrime(64, rnd);
+IO.println(r.isProbablePrime(100) + " " + r.bitLength()); // true 64
+
+// Demo RSA nho: n = 61 * 53, e = 17, d = 2753
+BigInteger m = BigInteger.valueOf(65);     // ky tu 'A'
+BigInteger c = m.modPow(BigInteger.valueOf(17), BigInteger.valueOf(3233));
+IO.println(c);                             // 2790
+IO.println(c.modPow(BigInteger.valueOf(2753), BigInteger.valueOf(3233)));   // 65</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">isProbablePrime(certainty)</code>: xác suất "thực ra là hợp số" &lt; 2<sup>-certainty</sup>. Dùng làm ước lượng nhanh; số nguyên tố cho khóa phải sinh bằng <code class="inline">probablePrime</code> với <code class="inline">SecureRandom</code>, không tự chế.</li>
+      <li><code class="inline">nextProbablePrime()</code> trả số nguyên tố kế tiếp lớn hơn <code class="inline">n</code> — tiện chọn kích thước hash table.</li>
+      <li><code class="inline">modPow(base, exp, mod)</code> là phép tính trung tâm của RSA/Diffie-Hellman: demo chỉ minh hoạ công thức <code class="inline">c = m<sup>e</sup> mod n</code>, <strong>không phải code mã hoá thật</strong>. Production dùng JCA/BouncyCastle, đừng tự viết crypto.</li>
+    </ul>
+
+    <h3>12.7 Performance &amp; bẫy</h3>
+
+    <ul>
+      <li><strong>Chỉ dùng khi cần:</strong> BigInteger chậm hơn primitive hàng chục lần và tạo nhiều rác. Cộng dồn triệu phần tử bằng BigInteger là anti-pattern; nếu giá trị chắc chắn trong 64-bit, dùng <code class="inline">long</code> (kèm <code class="inline">Math.addExact</code> để phát hiện tràn — xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>).</li>
+      <li><strong>Bất biến:</strong> luôn gán lại kết quả; method không sửa object hiện tại (giống BigDecimal).</li>
+      <li><strong>Parse:</strong> lỗi định dạng/độ dài/radix đều là NFE; <code class="inline">null</code> lại là NPE — message thật ở mục 12.2, cách xử lý an toàn ở <a href="#parse">mục 11.6</a>.</li>
+      <li><strong>So sánh:</strong> <code class="inline">==</code> so reference, luôn dùng <code class="inline">equals</code>/<code class="inline">compareTo</code> (mục 12.5). Ngoài ra <code class="inline">longValue()</code> không báo tràn — dùng <code class="inline">longValueExact()</code> ở biên.</li>
+    </ul>
+
+    <p>Compiler cũng chặn việc gán thẳng vào primitive (không có chuyện "tự unwrap" như <code class="inline">Integer</code>):</p>
+
+    <div class="errblock">
+      <pre>BigIntAssign.java:5: error: incompatible types: BigInteger cannot be converted to int
+        int x = BigInteger.TEN;
+                          ^
+1 error</pre>
     </div>
 
     <table>
@@ -495,10 +1505,23 @@ IO.println("2^100        : " + BigInteger.TWO.pow(100));
       </thead>
       <tbody>
         <tr><td>Kiểu số</td><td>Số nguyên, chính xác tuyệt đối</td><td>Số thập phân, chính xác theo scale</td></tr>
-        <tr><td>Dùng cho</td><td>ID cực lớn, hash, mã hóa</td><td>Tiền tệ, tỉ lệ phần trăm</td></tr>
+        <tr><td>Dùng cho</td><td>ID cực lớn, hash, mã hóa, tổ hợp</td><td>Tiền tệ, tỉ lệ phần trăm</td></tr>
+        <tr><td>equals</td><td>Theo giá trị, consistent với compareTo</td><td>Theo giá trị <em>và scale</em> — dễ sai</td></tr>
         <tr><td>Lưu ý</td><td>Bất biến; cộng trừ nhân chia bằng method</td><td>Không bao giờ truyền <code class="inline">double</code> vào constructor</td></tr>
       </tbody>
     </table>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS có <code class="inline">BigInt</code> từ ES2020: <code class="inline">2n ** 100n</code>, không giới hạn bit, nhưng chỉ cho số nguyên. Java tương ứng <code class="inline">BigInteger</code>, tạo bằng <code class="inline">new BigInteger("...")</code> hoặc <code class="inline">valueOf</code>.</li>
+      <li><code class="inline">7n / 2n = 3n</code> (cắt về 0, giống Java); <code class="inline">-7n % 2n = -1n</code> — dư giữ dấu số bị chia, khớp <code class="inline">remainder</code> của Java.</li>
+      <li><strong>Không trộn</strong> BigInt với Number: <code class="inline">1n + 1</code> ném <code class="inline">TypeError: Cannot mix BigInt and other types, use explicit conversions</code>. Java cũng không thể <code class="inline">bigInteger + 1</code> — phải <code class="inline">.add(BigInteger.ONE)</code>, nhưng là lỗi compile rõ ràng thay vì runtime.</li>
+      <li><code class="inline">JSON.stringify(1n)</code> ném <code class="inline">TypeError: Do not know how to serialize a BigInt</code> — API JSON muốn trả số lớn phải <code class="inline">.toString()</code>, cùng kết luận "serialize ID lớn thành string" ở <a href="#production">mục 13.2</a>.</li>
+      <li><code class="inline">BigInt(1.5)</code> ném <code class="inline">RangeError</code>, <code class="inline">BigInt("12.5")</code> ném <code class="inline">SyntaxError</code>. Node không có sẵn <code class="inline">modPow</code>/<code class="inline">gcd</code>/<code class="inline">isProbablePrime</code>; JDK có đủ trong <code class="inline">java.math</code>.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> vượt 2<sup>63</sup> − 1 hoặc cần chính xác tuyệt đối (hash, crypto, tổ hợp) → <code class="inline">BigInteger</code> → tạo từ <code class="inline">String</code>/<code class="inline">valueOf</code>, tính bằng method và <strong>nhớ gán lại</strong> (bất biến) → <code class="inline">equals</code> theo giá trị (khác BigDecimal), <code class="inline">==</code> luôn sai → ra khỏi vùng Big: <code class="inline">longValueExact()</code> để phát hiện tràn → crypto dùng <code class="inline">modPow</code>/<code class="inline">probablePrime</code>, nhưng production dùng thư viện chuẩn, không tự viết.</div>
 
     <h2 id="production">13. Production patterns</h2>
 

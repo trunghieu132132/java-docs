@@ -100,7 +100,7 @@
       <li><strong>Không gắn được hành vi</strong> — không thể viết <code class="inline">status.label()</code>; phải tạo <code class="inline">switch</code> hoặc <code class="inline">Map</code> tra cứu ở ngoài.</li>
     </ul>
 
-    <p>Enum giải quyết cả ba. Điểm cần khắc sâu ngay từ đầu: <strong>mỗi hằng enum là một object singleton duy nhất</strong> của enum class, được JVM tạo đúng một lần khi class được nạp. Vì vậy so sánh enum bằng <code class="inline">==</code> vừa đúng vừa nhanh (không cần gọi <code class="inline">equals</code>), và <code class="inline">switch</code> trên enum rất hiệu quả.</p>
+    <p>Enum giải quyết cả ba. Điểm cần khắc sâu ngay từ đầu: <strong>mỗi hằng enum là một object singleton duy nhất</strong> của enum class, được JVM tạo đúng một lần khi enum class được khởi tạo (class initialization — lần đầu được dùng, first active use). Vì vậy so sánh enum bằng <code class="inline">==</code> vừa đúng vừa nhanh (không cần gọi <code class="inline">equals</code>), và <code class="inline">switch</code> trên enum rất hiệu quả.</p>
 
     <p>Mức độ bắt buộc của chủ đề 2.7 (phỏng vấn: cao · production: bắt buộc):</p>
     <ul>
@@ -177,13 +177,15 @@ Di tiep</code></pre>
       </thead>
       <tbody>
         <tr><td><code class="inline">values()</code></td><td>Mảng tất cả hằng theo <strong>thứ tự khai báo</strong></td><td>Tạo mảng mới mỗi lần gọi — không gọi trong vòng lặp nóng; đừng sửa mảng đó rồi mong enum đổi theo</td></tr>
-        <tr><td><code class="inline">valueOf(String)</code></td><td>Trả hằng đúng theo tên</td><td>Không tìm thấy → <code class="inline">IllegalArgumentException</code>; khớp chính xác chữ hoa/thường</td></tr>
+        <tr><td><code class="inline">valueOf(String)</code></td><td>Trả hằng đúng theo tên</td><td>Không tìm thấy → <code class="inline">IllegalArgumentException</code>; truyền <code class="inline">null</code> → <code class="inline">NullPointerException</code>; khớp chính xác chữ hoa/thường</td></tr>
         <tr><td><code class="inline">name()</code></td><td>Tên hằng đúng như khai báo</td><td><code class="inline">final</code> — không override được; dùng để lưu DB/API</td></tr>
         <tr><td><code class="inline">ordinal()</code></td><td>Vị trí 0-based theo thứ tự khai báo</td><td><code class="inline">final</code>; <strong>không</strong> dùng để lưu trữ (xem <a href="#enum-pitfalls">mục 6</a>)</td></tr>
         <tr><td><code class="inline">compareTo(...)</code></td><td>So theo <code class="inline">ordinal()</code></td><td>Enum implements sẵn <code class="inline">Comparable</code></td></tr>
         <tr><td><code class="inline">toString()</code></td><td>Mặc định in ra <code class="inline">name()</code></td><td>Override được để in nhãn tiếng Việt</td></tr>
       </tbody>
     </table>
+
+    <div class="note">Qua reflection: <code class="inline">Color.class.isEnum()</code> kiểm tra có phải enum, <code class="inline">Color.class.getEnumConstants()</code> trả mảng hằng (hoặc <code class="inline">null</code> nếu không phải enum) — hữu ích khi kiểu enum chỉ biết lúc runtime.</div>
 
     <h3>switch trên enum</h3>
 
@@ -279,7 +281,7 @@ loi: code khong hop le: 99</code></pre>
 1 error</pre>
     </div>
 
-    <p>Constructor chạy <strong>đúng một lần cho mỗi hằng</strong>, theo thứ tự khai báo, vào lúc enum class được nạp lần đầu — không phải mỗi lần bạn truy cập hằng. Điều này giải thích vì sao enum là singleton tự nhiên. Bài tập 2 ở <a href="#bai-tap">cuối trang</a> sẽ kiểm tra bạn có đoán đúng thứ tự này không.</p>
+    <p>Constructor chạy <strong>đúng một lần cho mỗi hằng</strong>, theo thứ tự khai báo, vào lúc enum class được khởi tạo lần đầu (first active use) — không phải mỗi lần bạn truy cập hằng. Điều này giải thích vì sao enum là singleton tự nhiên. Bài tập 2 ở <a href="#bai-tap">cuối trang</a> sẽ kiểm tra bạn có đoán đúng thứ tự này không.</p>
 
     <div class="note"><strong>Đã gặp ở đâu?</strong> Doc <a href="index.html#production">Biến trong Java — mục 15.4</a> mới giới thiệu enum kèm field ở mức làm quen; phần trên đi sâu hơn: static factory <code class="inline">fromCode</code>, ràng buộc constructor, và quan hệ với dữ liệu lưu trữ (dùng <code class="inline">code</code> riêng thay vì <code class="inline">ordinal()</code>).</div>
 
@@ -329,6 +331,24 @@ lop that cua SATURDAY: DayDemo$Day$2</code></pre>
     </div>
 
     <p>Dòng cuối tiết lộ cơ chế: hằng <strong>có thân riêng trở thành một anonymous subclass</strong> của enum (<code class="inline">Day$2</code> là class vô danh thứ hai). Hằng không có thân riêng dùng chung class enum. Đây là lý do <code class="inline">getClass()</code> của hai hằng có thể khác nhau — đừng bao giờ viết <code class="inline">day.getClass() == Day.class</code>.</p>
+
+    <div class="note warn"><strong>Luật bắt buộc:</strong> khi enum khai báo abstract method, <em>mọi</em> hằng phải có thân override riêng. Hằng không có thân sẽ là instance của enum class — vốn abstract — nên bị lỗi compile. (Câu "hằng không có thân dùng chung class enum" ở trên chỉ đúng khi enum <em>không</em> có abstract method.)</div>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Day {
+    MONDAY,                                              // khong co than override
+    SUNDAY { boolean isWeekend() { return true; } };
+
+    abstract boolean isWeekend();
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>AbstractEnumErr.java:2: error: Day is abstract; cannot be instantiated
+    MONDAY,
+    ^
+1 error</pre>
+    </div>
 
     <h3>Enum implements interface</h3>
 
@@ -471,43 +491,314 @@ tat ca: [MON, TUE, WED, THU, FRI, SAT, SUN]</code></pre>
 
     <h2 id="enum-pitfalls">6. Pitfalls của enum <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
-    <table>
-      <thead>
-        <tr><th>Bẫy</th><th>Hậu quả</th><th>Cách tránh</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Lưu <code class="inline">ordinal()</code> vào DB hoặc gửi qua API</td><td>Chen/xoá/sắp xếp lại hằng làm ordinal dịch chuyển; dữ liệu cũ trỏ sai trạng thái</td><td>Lưu <code class="inline">name()</code>, hoặc tốt hơn là một code riêng ổn định + <code class="inline">fromCode()</code></td></tr>
-        <tr><td>So sánh enum bằng <code class="inline">equals</code> vì sợ <code class="inline">==</code> "sai"</td><td>Đúng kết quả nhưng thừa; enum singleton nên <code class="inline">==</code> an toàn và nhanh hơn</td><td>Dùng <code class="inline">==</code>; <code class="inline">equals</code> của enum cũng chỉ là so identity</td></tr>
-        <tr><td>Cho enum <code class="inline">extends</code> class khác</td><td>Lỗi compile — enum đã extends <code class="inline">java.lang.Enum</code> ngầm (đơn kế thừa)</td><td>Chỉ implements interface; cần state/hành vi chung thì viết method trong enum</td></tr>
-        <tr><td>Khai báo constructor <code class="inline">public</code>/<code class="inline">protected</code></td><td>Lỗi compile "modifier public not allowed here"</td><td>Để trống (ngầm private) hoặc viết <code class="inline">private</code></td></tr>
-        <tr><td>Gọi <code class="inline">values()</code> trong vòng lặp nóng</td><td>Mỗi lần gọi tạo một mảng mới — cấp phát vô ích</td><td>Gọi một lần rồi cache lại nếu dùng nhiều</td></tr>
-        <tr><td>Switch expression thiếu nhánh hằng</td><td>Lỗi compile "the switch expression does not cover all possible input values" — dễ sửa, nhưng phải biết</td><td>Thêm nhánh hoặc <code class="inline">default</code>; đây là <em>feature</em> giúp bạn không quên khi thêm hằng</td></tr>
-        <tr><td>Sửa mảng trả về từ <code class="inline">values()</code> rồi tưởng enum đổi</td><td>Lần gọi sau vẫn trả dữ liệu gốc vì <code class="inline">values()</code> clone mảng mỗi lần</td><td>Muốn dữ liệu động thì giữ collection riêng; enum constants là bất biến</td></tr>
-        <tr><td>Quên <code class="inline">null</code> khi switch</td><td><code class="inline">NullPointerException</code> lúc chạy</td><td>Kiểm tra null trước, dùng <code class="inline">case null</code> (Java 21), hoặc <code class="inline">Optional</code></td></tr>
-      </tbody>
-    </table>
+    <p>Enum an toàn hơn hằng <code class="inline">int</code>/<code class="inline">String</code>, nhưng vẫn có những cái bẫy khiến dữ liệu sai âm thầm hoặc chương trình nổ lúc chạy. Sáu nhóm dưới đây đều đã chạy thật bằng JDK 25 — biết trước để không mất cả buổi debug.</p>
 
-    <p>Ví dụ kinh điển của bẫy ordinal — cùng tên hằng, vị trí đổi khi thêm giá trị mới vào giữa:</p>
+    <h3>6.1 values() tạo mảng mới mỗi lần gọi</h3>
+
+    <p><code class="inline">values()</code> không trả về mảng nội bộ mà <strong>tạo một mảng copy mới</strong> ở mỗi lần gọi. Điều này bảo vệ hằng enum khỏi bị sửa qua mảng, nhưng lại là bẫy cấp phát trong vòng lặp nóng:</p>
 
     <div class="codeblock">
-      <pre><code class="java">// Ban dau: PAID.ordinal() = 1, da luu 1 vao DB
-enum OrderStatus { PENDING, PAID, SHIPPED; }
+      <pre><code class="java">enum Day {
+    MON, TUE, WED;
 
-// Sau nay can them REFUNDED vao giua danh sach
-enum OrderStatus { PENDING, REFUNDED, PAID, SHIPPED; }
-// PAID.ordinal() bay gio = 2 -&gt; moi ban ghi cu (1) bi doc thanh REFUNDED</code></pre>
+    private static final Day[] VALUES = values();   // cache mot lan
+
+    static int dem() {
+        return VALUES.length;                       // khong cap phat them
+    }
+}
+
+void main() {
+    Day[] a = Day.values();
+    Day[] b = Day.values();
+    IO.println(a == b);          // false - hai mang khac nhau
+
+    a[0] = Day.WED;              // sua ban copy
+    IO.println(Day.MON);         // MON - hang so khong doi
+    IO.println(Day.values()[0]); // MON - lan goi sau van dung
+    IO.println(Day.dem());       // 3 - lay tu cache
+}</code></pre>
     </div>
 
-    <p>Switch expression trên enum cũng exhaustive như sealed — thiếu một hằng là lỗi compile, chạy thật với JDK 25:</p>
+    <div class="codeblock error">
+      <pre><code>false
+MON
+MON
+3</code></pre>
+    </div>
+
+    <ul>
+      <li>Đừng gọi <code class="inline">values()</code> lặp đi lặp lại trong hot path — kể cả <code class="inline">values().length</code>, mỗi lần vẫn cấp phát một mảng chỉ để lấy độ dài.</li>
+      <li>Cache một lần: <code class="inline">private static final Day[] VALUES = values();</code> rồi tra cứu trên mảng đó. Nếu buộc phải trả mảng ra ngoài, trả <code class="inline">clone()</code> (hoặc <code class="inline">List.copyOf</code>) để người nhận không sửa được bản gốc.</li>
+    </ul>
+
+    <div class="note">Trong enhanced for <code class="inline">for (Day d : Day.values())</code>, mảng chỉ được tạo <strong>một lần cho cả vòng lặp</strong> — cách viết thông thường này hoàn toàn ổn. Vấn đề chỉ nằm ở việc gọi <code class="inline">values()</code> bên trong vòng lặp hoặc trong hàm được gọi dày đặc.</div>
+
+    <h3>6.2 ordinal() mong manh — đừng lưu DB/JSON theo ordinal</h3>
+
+    <p>Thứ tự khai báo quyết định <code class="inline">ordinal()</code> (0, 1, 2...). Đổi thứ tự hoặc chèn hằng mới vào giữa làm mọi giá trị dịch chuyển, dữ liệu cũ trỏ sai trạng thái:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum OrderStatusV1 { PENDING, PAID, SHIPPED }
+
+enum OrderStatusV2 { PENDING, REFUNDED, PAID, SHIPPED }
+
+void main() {
+    int luuDb = OrderStatusV1.PAID.ordinal();          // 1
+    OrderStatusV2 docLai = OrderStatusV2.values()[luuDb];
+    IO.println("luu DB: " + luuDb);                    // 1
+    IO.println("doc lai thanh: " + docLai);            // REFUNDED - sai!
+    IO.println("dung name: " + OrderStatusV2.valueOf("PAID"));   // PAID - dung
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>luu DB: 1
+doc lai thanh: REFUNDED
+dung name: PAID</code></pre>
+    </div>
+
+    <div class="note warn">Bản ghi cũ lưu <code class="inline">1</code> được đọc lại thành <code class="inline">REFUNDED</code> thay vì <code class="inline">PAID</code>. Quy tắc production: <strong>lưu <code class="inline">name()</code></strong> (chuỗi tên hằng) hoặc tốt hơn là một <code class="inline">code</code> riêng ổn định kèm <code class="inline">fromCode()</code> — vì đổi <em>tên</em> hằng cũng làm <code class="inline">name()</code> vỡ. JSON/Jackson mặc định serialize enum theo <code class="inline">name()</code>, đừng bật <code class="inline">WRITE_ENUMS_USING_INDEX</code>. <code class="inline">EnumMap</code>/<code class="inline">EnumSet</code> dùng ordinal bên trong, nhưng đó là chi tiết cài đặt với kiểu enum cố định trong binary — không phải hợp đồng dữ liệu của bạn.</div>
+
+    <h3>6.3 valueOf: null và sai tên; switch với null</h3>
+
+    <p>Hai API tra cứu có ba cái bẫy null/không tìm thấy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN }
+
+void main() {
+    try {
+        Color.valueOf(null);
+    } catch (NullPointerException e) {
+        IO.println("valueOf(null) -> NullPointerException");
+    }
+
+    try {
+        Color.valueOf("BLUE");
+    } catch (IllegalArgumentException e) {
+        IO.println("valueOf(\"BLUE\") -> IllegalArgumentException: " + e.getMessage());
+    }
+
+    Color c = null;
+    try {
+        switch (c) {
+            case RED -> IO.println("red");
+            case GREEN -> IO.println("green");
+        }
+    } catch (NullPointerException e) {
+        IO.println("switch(null) -> NullPointerException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>valueOf(null) -> NullPointerException
+valueOf("BLUE") -> IllegalArgumentException: No enum constant ValueOfNullDemo.Color.BLUE
+switch(null) -> NullPointerException</code></pre>
+    </div>
+
+    <div class="note">Message có tiền tố <code class="inline">ValueOfNullDemo.</code> vì file là compact source file: enum trở thành member của implicit class cùng tên file (cơ chế đã gặp ở <a href="#sealed">mục 10</a>). Trong file thường, message là <code class="inline">No enum constant Color.BLUE</code>.</div>
+
+    <ul>
+      <li><code class="inline">valueOf(null)</code> ném <code class="inline">NullPointerException</code>, không trả <code class="inline">null</code>.</li>
+      <li><code class="inline">valueOf("sai tên")</code> ném <code class="inline">IllegalArgumentException</code> — đừng bọc <code class="inline">catch (Exception)</code> rồi bỏ qua, hãy validate chuỗi đầu vào trước khi parse.</li>
+      <li>Switch trên biến enum <code class="inline">null</code> ném NPE. Từ Java 21, thêm <code class="inline">case null</code> để xử lý tường minh thay vì kiểm tra trước:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN }
+
+void main() {
+    Color c = null;
+    switch (c) {
+        case RED -> IO.println("do");
+        case GREEN -> IO.println("xanh");
+        case null -> IO.println("null an toan (Java 21+)");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>null an toan (Java 21+)</code></pre>
+    </div>
+
+    <p>Còn với <em>switch expression</em> trên enum, thiếu nhánh hằng là lỗi compile (exhaustive) — lưới an toàn buộc bạn xử lý khi thêm hằng mới:</p>
 
     <div class="errblock">
-      <pre>EnumSwitchExpr.java:5: error: the switch expression does not cover all possible input values
-        return switch (c) {
-               ^
+      <pre>EnumSwitchExpr.java:4: error: the switch expression does not cover all possible input values
+    return switch (c) {
+           ^
 1 error</pre>
     </div>
 
-    <p>Ngược lại, <code class="inline">switch</code> dạng <em>statement</em> truyền thống không bắt buộc đủ nhánh và không yêu cầu <code class="inline">default</code> — nên khi nào nhánh thiếu nhánh quan trọng, hãy ưu tiên switch expression. Chi tiết switch expression ở <a href="control-flow.html#switch-expression">Control Flow — mục 4</a>.</p>
+    <p>Ngược lại, <code class="inline">switch</code> dạng <em>statement</em> truyền thống không bắt buộc đủ nhánh và không yêu cầu <code class="inline">default</code>. Chi tiết switch expression ở <a href="control-flow.html#switch-expression">Control Flow — mục 4</a>.</p>
+
+    <h3>6.4 Thứ tự khởi tạo — hằng enum tạo trước static field</h3>
+
+    <p>Các hằng enum được khởi tạo <strong>trước</strong> mọi static field khác của enum, nên constructor (chạy trong lúc tạo hằng) chưa thấy static field. Đọc trực tiếp static field trong constructor còn bị compiler chặn:</p>
+
+    <div class="errblock">
+      <pre>EnumInitErr.java:7: error: illegal reference to static field from initializer
+        IO.println(LIMIT);
+                   ^
+1 error</pre>
+    </div>
+
+    <p>Lách qua method static thì compiler cho qua, nhưng giá trị đọc được lúc đó vẫn là mặc định — <code class="inline">null</code>/<code class="inline">0</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Init {
+    A;
+
+    private static final String PREFIX = "pre".toUpperCase();
+    private static final int LIMIT = Integer.parseInt("10");
+
+    Init() {
+        IO.println("constructor: PREFIX = " + layPrefix() + ", LIMIT = " + layLimit());
+    }
+
+    private static String layPrefix() {
+        return PREFIX;
+    }
+
+    private static int layLimit() {
+        return LIMIT;
+    }
+
+    static String sauKhoiTao() {
+        return "PREFIX = " + PREFIX + ", LIMIT = " + LIMIT;
+    }
+}
+
+void main() {
+    IO.println("main cham Init: " + Init.A);
+    IO.println("sau khoi tao: " + Init.sauKhoiTao());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>constructor: PREFIX = null, LIMIT = 0
+main cham Init: A
+sau khoi tao: PREFIX = PRE, LIMIT = 10</code></pre>
+    </div>
+
+    <div class="note">Constructor của hằng <code class="inline">A</code> chạy trước khi <code class="inline">PREFIX</code>/<code class="inline">LIMIT</code> được gán, nên thấy <code class="inline">null</code>/<code class="inline">0</code>; sau khi class initialization xong mới có giá trị thật. Vì vậy đừng để constructor enum phụ thuộc static state của chính enum — cần hằng dùng ngay trong constructor thì khai báo là hằng số nguyên thuỷ/<code class="inline">String</code> literal (constant variable) hoặc truyền qua tham số.</div>
+
+    <h3>6.5 Enum khoá final equals/hashCode/compareTo</h3>
+
+    <p><code class="inline">java.lang.Enum</code> đã định nghĩa <code class="inline">final</code> các method nền tảng, nên enum không override được — thử là lỗi compile:</p>
+
+    <div class="errblock">
+      <pre>EnumFinalErr.java:4: error: equals(Object) in BadDay cannot override equals(Object) in Enum
+    public boolean equals(Object o) {
+                   ^
+  overridden method is final
+EnumFinalErr.java:8: error: hashCode() in BadDay cannot override hashCode() in Enum
+    public int hashCode() {
+               ^
+  overridden method is final
+EnumFinalErr.java:12: error: compareTo(BadDay) in BadDay cannot override compareTo(E) in Enum
+    public int compareTo(BadDay other) {
+               ^
+  overridden method is final
+  where E is a type-variable:
+    E extends Enum&lt;E&gt; declared in class Enum
+3 errors</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">equals</code>/<code class="inline">hashCode</code> của enum là identity; mỗi hằng là singleton nên <code class="inline">==</code> vừa đúng vừa nhanh — không cần <code class="inline">equals</code>.</li>
+      <li><code class="inline">compareTo</code> so theo <code class="inline">ordinal()</code> — đúng như cảnh báo ở mục 6.2: đổi thứ tự khai báo là đổi thứ tự sắp xếp.</li>
+      <li>Enum tự động <code class="inline">Serializable</code>; JVM xử lý riêng để deserialize vẫn trả đúng singleton (không tạo bản sao).</li>
+      <li><code class="inline">toString()</code> <strong>không</strong> final — đây là method bạn nên override để có nhãn hiển thị cho người dùng.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.Serializable;
+
+enum Day { MON, TUE, WED }
+
+void main() {
+    IO.println(Day.MON instanceof Serializable);          // true
+    IO.println(Day.valueOf("MON") == Day.MON);            // true - singleton
+    IO.println(Day.MON.equals(Day.valueOf("MON")));       // true - equals = identity
+    IO.println(Day.MON.compareTo(Day.WED));               // -2 - theo ordinal
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+true
+true
+-2</code></pre>
+    </div>
+
+    <h3>6.6 EnumMap &amp; EnumSet — đúng công cụ cho enum</h3>
+
+    <p>Đã giới thiệu ở <a href="#enum-collections">mục 5</a>; ở góc pitfalls, hãy nhớ: khi key là enum trong hot path, <code class="inline">EnumMap</code>/<code class="inline">EnumSet</code> nhanh hơn <code class="inline">HashMap</code>/<code class="inline">HashSet</code>, giữ thứ tự khai báo — nhưng <strong>không cho <code class="inline">null</code></strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.EnumMap;
+import java.util.EnumSet;
+
+enum Day { MON, TUE, WED }
+
+void main() {
+    EnumMap&lt;Day, String&gt; lich = new EnumMap&lt;&gt;(Day.class);
+    lich.put(Day.WED, "hop");
+    lich.put(Day.MON, "gym");
+    IO.println(lich);                          // theo thu tu khai bao
+
+    EnumSet&lt;Day&gt; giuaTuan = EnumSet.range(Day.MON, Day.TUE);
+    IO.println(giuaTuan);
+    IO.println(EnumSet.allOf(Day.class));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>{MON=gym, WED=hop}
+[MON, TUE]
+[MON, TUE, WED]</code></pre>
+    </div>
+
+    <div class="note">Chèn <code class="inline">null</code> key vào <code class="inline">EnumMap</code> cũng ném <code class="inline">NullPointerException</code> — thêm một lý do phải validate dữ liệu đầu vào thay vì tin tưởng map "xử lý được null".</div>
+
+    <h3>Góc Node.js — Object.freeze không phải enum</h3>
+
+    <p>JS không có enum thật; kiểu "enum giả" quen thuộc là object + <code class="inline">Object.freeze</code>. Nó chỉ ngăn thêm/xoá thuộc tính ở mức nông, không tạo singleton và không ràng buộc gì lúc runtime:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+"use strict";
+
+const Day = Object.freeze({ MON: { code: 1 }, TUE: { code: 2 } });
+
+// freeze chi nong: object ben trong van sua duoc
+Day.MON.code = 999;
+console.log("sau khi sua: " + Day.MON.code);
+
+// khong co singleton bao dam: ban sao dan den object khac
+const copy = { ...Day };
+copy.TUE = { code: 3 };
+console.log(copy.TUE === Day.TUE);
+
+try {
+  Day.WED = { code: 4 };
+} catch (e) {
+  console.log(e.constructor.name + ": " + e.message);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau khi sua: 999
+false
+TypeError: Cannot add property WED, object is not extensible</code></pre>
+    </div>
+
+    <p>TypeScript thêm chiều compile-time bằng union type + <code class="inline">as const</code>, nhưng mọi ràng buộc biến mất sau khi biên dịch; không có gì đảm bảo một object lấy từ JSON mang đúng "hằng" như Java enum — muốn so sánh an toàn vẫn phải validate thủ công.</p>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">values()</code> copy mảng mỗi lần gọi — cache nếu dùng nóng → không lưu <code class="inline">ordinal()</code> vào DB/JSON, dùng <code class="inline">name()</code>/code riêng → <code class="inline">valueOf(null)</code> NPE, sai tên <code class="inline">IllegalArgumentException</code>, switch null NPE (dùng <code class="inline">case null</code> Java 21+) → constructor enum chạy trước static field nên thấy <code class="inline">null</code>/<code class="inline">0</code> → <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">compareTo</code> bị khoá final, <code class="inline">==</code> an toàn → key enum dùng <code class="inline">EnumMap</code>/<code class="inline">EnumSet</code>.</div>
 
     <h2 id="nested-tong-quan">7. Nested classes — bốn loại <span class="badge b-junior">Junior+</span></h2>
 
@@ -832,7 +1123,7 @@ Square[canh=4.0] -&gt; 16.0</code></pre>
       <li><strong>record và enum mặc định final</strong>, nên chỉ cần <code class="inline">implements Shape</code> là hợp lệ (như ví dụ trên).</li>
       <li>Sealed class/interface phải có ít nhất một subtype.</li>
       <li>Subtype phải nằm cùng <strong>module</strong> (named module) hoặc cùng <strong>package</strong> (unnamed module) với class cha.</li>
-      <li>Nếu tất cả subtype nằm chung một file, có thể <strong>bỏ qua <code class="inline">permits</code></strong> — compiler tự suy ra. Ví dụ trên đã bỏ <code class="inline">permits</code> vì mọi record cùng file.</li>
+      <li>Nếu tất cả subtype nằm chung một compilation unit (một file), có thể <strong>bỏ qua <code class="inline">permits</code></strong> — compiler tự suy ra từ các subtype cùng file. Các ví dụ trong trang này vẫn ghi <code class="inline">permits</code> tường minh cho rõ nghĩa.</li>
       <li><code class="inline">sealed</code> không có nghĩa là abstract: sealed class không abstract vẫn <code class="inline">new</code> được, chỉ là hạn chế kế thừa.</li>
     </ul>
 
@@ -876,9 +1167,11 @@ void main() {
       <pre>NonSealedErr.java:1: error: non-sealed modifier not allowed here
 non-sealed class BadNonSealed {
            ^
-  (class BadNonSealed does not have any sealed supertypes)
+  (class NonSealedErr.BadNonSealed does not have any sealed supertypes)
 1 error</pre>
     </div>
+
+    <div class="note">Tên class trong thông báo có tiền tố <code class="inline">NonSealedErr.</code> vì file là compact source file: class top-level khai báo thêm trở thành member của implicit class cùng tên file — đúng cơ chế đã thấy với <code class="inline">DayDemo$Day$2</code> ở mục 4.</div>
 
     <p>So sánh ba thái cực: <code class="inline">final</code> (không ai extends), <code class="inline">sealed</code> (chỉ danh sách cho phép), mở hoàn toàn (mặc định). Sealed class đã được nhắc ở <a href="inheritance.html#sealed">Inheritance — mục 13</a> và sealed interface ở <a href="abstract-interface.html#marker-sealed">Abstract vs Interface — mục 12</a>; phần dưới đây khai thác lợi ích lớn nhất của nó.</p>
 
@@ -959,6 +1252,42 @@ xanh la</code></pre>
 
     <div class="note">Enum cũng là "sealed" theo nghĩa tập hằng cố định, nên switch expression trên enum cũng exhaustive và không cần <code class="inline">default</code> khi liệt kê đủ hằng (xem <a href="#enum-pitfalls">mục 6</a>). Pattern matching switch còn áp dụng cho bất kỳ reference type nào — xem thêm <a href="polymorphism.html#casting">Polymorphism — mục 4</a>.</div>
 
+    <p>Hai cú pháp nâng cao nên biết: record pattern <strong>lồng nhau</strong> bóc tách luôn component con, và nhãn ghép <code class="inline">case null, default</code> gom null chung với phần còn lại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Point(int x, int y) {}
+record Circle(Point tam, double banKinh) {}
+
+String moTa(Circle c) {
+    return switch (c) {
+        case Circle(Point(int x, int y), double r) -&gt; "tam (" + x + ", " + y + "), r=" + r;
+    };
+}
+
+enum Color { RED, GREEN, BLUE }
+
+String ten(Color c) {
+    return switch (c) {
+        case RED -&gt; "do";
+        case GREEN -&gt; "xanh la";
+        case BLUE -&gt; "xanh duong";
+        case null, default -&gt; "khac";
+    };
+}
+
+void main() {
+    IO.println(moTa(new Circle(new Point(1, 2), 3.0)));
+    IO.println(ten(Color.GREEN));
+    IO.println(ten(null));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tam (1, 2), r=3.0
+xanh la
+khac</code></pre>
+    </div>
+
     <h2 id="pitfalls-nested">12. Pitfalls nested &amp; sealed <span class="badge b-prod">Production</span></h2>
 
     <table>
@@ -988,7 +1317,7 @@ xanh la</code></pre>
         <tr><td>Enum</td><td>JS không có. TS có <code class="inline">enum</code> nhưng chỉ là object sau biên dịch; phổ biến hơn là const object <code class="inline">as const</code></td><td>Class thật với field/constructor/method; compiler ép kiểu</td></tr>
         <tr><td>Tập giá trị đóng</td><td>Union type của TS chỉ tồn tại lúc compile, runtime không kiểm tra</td><td>Kiểm tra ngay trong ngôn ngữ: biến chỉ nhận hằng hợp lệ</td></tr>
         <tr><td>Gắn dữ liệu/hành vi</td><td>Object map: <code class="inline">{ PAID: { label: '...' } }</code>, tự tay đồng bộ</td><td>Constructor enum gắn thẳng vào từng hằng</td></tr>
-        <tr><td>Bắt lỗi thiếu nhánh</td><td>TS có exhaustiveness check với union + <code class="inline">never</code>, nhưng dễ lách qua <code class="inline">any</code>/default</td><td>Sealed + switch expression do compiler thực thi, không lách được</td></tr>
+        <tr><td>Bắt lỗi thiếu nhánh</td><td>TS có exhaustiveness check với union + <code class="inline">never</code>, nhưng dễ lách qua <code class="inline">any</code>/default</td><td>Sealed + switch expression do compiler thực thi; tuy nhiên thêm <code class="inline">default</code> sẽ phá tính bảo vệ (xem cảnh báo ở mục 12)</td></tr>
         <tr><td>Giữ scope</td><td>Closure giữ biến trong lexical scope; vòng đời do GC của engine quản lý</td><td>Inner/anonymous class giữ ngầm reference tới outer instance — cùng kiểu "giữ scope" nhưng nặng hơn</td></tr>
         <tr><td>Hàm vô danh</td><td>Arrow function thay hầu hết callback</td><td>Lambda (Java 8+) cho functional interface; anonymous class cho phần còn lại</td></tr>
       </tbody>
@@ -1053,7 +1382,7 @@ console.log(boDem.giaTri());       // 2</code></pre>
 
     <details class="qa">
       <summary>Câu 5. <code class="inline">values()</code>, <code class="inline">valueOf()</code>, <code class="inline">name()</code>, <code class="inline">ordinal()</code> khác nhau thế nào?</summary>
-      <div class="answer"><code class="inline">values()</code> trả mảng tất cả hằng theo thứ tự khai báo — và <strong>tạo mảng mới mỗi lần gọi</strong>. <code class="inline">valueOf(String)</code> trả hằng theo tên (khớp chính xác), không có thì ném <code class="inline">IllegalArgumentException</code>. <code class="inline">name()</code> là tên hằng đúng như khai báo, <code class="inline">final</code>. <code class="inline">ordinal()</code> là vị trí 0-based, cũng <code class="inline">final</code>. <code class="inline">compareTo</code> so theo ordinal; <code class="inline">getDeclaringClass()</code> trả enum class thật (khác <code class="inline">getClass()</code> với hằng có thân riêng).</div>
+      <div class="answer"><code class="inline">values()</code> trả mảng tất cả hằng theo thứ tự khai báo — và <strong>tạo mảng mới mỗi lần gọi</strong>. <code class="inline">valueOf(String)</code> trả hằng theo tên (khớp chính xác), không có thì ném <code class="inline">IllegalArgumentException</code>, còn <code class="inline">valueOf(null)</code> ném <code class="inline">NullPointerException</code>. <code class="inline">name()</code> là tên hằng đúng như khai báo, <code class="inline">final</code>. <code class="inline">ordinal()</code> là vị trí 0-based, cũng <code class="inline">final</code>. <code class="inline">compareTo</code> so theo ordinal; <code class="inline">getDeclaringClass()</code> trả enum class thật (khác <code class="inline">getClass()</code> với hằng có thân riêng).</div>
     </details>
 
     <details class="qa">
@@ -1184,7 +1513,7 @@ void main() {
     IO.println(Day.TUESDAY);
 }</code></pre>
       </div>
-      <div class="answer">In ra <code class="inline">tao MONDAY</code>, <code class="inline">tao TUESDAY</code>, <code class="inline">static init</code>, <code class="inline">TUESDAY</code>. Khi class <code class="inline">Day</code> được nạp, JVM tạo lần lượt từng hằng theo thứ tự khai báo (constructor chạy hết), rồi mới chạy các khối static còn lại; cuối cùng <code class="inline">main</code> in hằng ra.</div>
+      <div class="answer">In ra <code class="inline">tao MONDAY</code>, <code class="inline">tao TUESDAY</code>, <code class="inline">static init</code>, <code class="inline">TUESDAY</code>. Khi class <code class="inline">Day</code> được khởi tạo lần đầu, JVM tạo lần lượt từng hằng theo thứ tự khai báo (constructor chạy hết), rồi mới chạy các khối static còn lại; cuối cùng <code class="inline">main</code> in hằng ra.</div>
     </details>
 
     <details class="qa exercise">

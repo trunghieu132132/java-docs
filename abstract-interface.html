@@ -159,9 +159,9 @@ checkout(new CardPayment(), 100);
         <tr><th>Chủ đề</th><th>JavaScript / TypeScript</th><th>Java</th></tr>
       </thead>
       <tbody>
-        <tr><td>Interface</td><td>JS không có; TS có nhưng chỉ tồn tại lúc compile (type erasure)</td><td>Tồn tại thật trong bytecode; kiểm tra được bằng <code class="inline">instanceof</code></td></tr>
+        <tr><td>Interface</td><td>JS không có; TS có nhưng types bị xoá khi biên dịch — runtime không biết interface</td><td>Tồn tại thật trong bytecode; kiểm tra được bằng <code class="inline">instanceof</code></td></tr>
         <tr><td>Cách khớp kiểu</td><td>TS: structural — shape khớp là xong, không cần <code class="inline">implements</code></td><td>Nominal — buộc phải ghi đúng <code class="inline">implements Payment</code></td></tr>
-        <tr><td>Abstract class</td><td>JS không có; TS có <code class="inline">abstract class</code> nhưng chỉ là kiểm tra lúc compile, runtime vẫn <code class="inline">new</code> được nếu cố tình</td><td>JVM chặn thật: <code class="inline">new</code> abstract class là lỗi compile</td></tr>
+        <tr><td>Abstract class</td><td>JS không có; TS có <code class="inline">abstract class</code> nhưng chỉ là kiểm tra lúc compile, runtime vẫn <code class="inline">new</code> được nếu cố tình</td><td>Compiler chặn thật: <code class="inline">new</code> abstract class là lỗi compile</td></tr>
         <tr><td>Code trong hợp đồng</td><td>TS interface không được chứa code</td><td>Java 8+ có <code class="inline">default</code>/<code class="inline">static</code> method chạy thật</td></tr>
         <tr><td>Đa kế thừa</td><td>1 <code class="inline">extends</code>, nhiều <code class="inline">implements</code> — giống Java</td><td>1 <code class="inline">extends</code>, nhiều <code class="inline">implements</code></td></tr>
       </tbody>
@@ -247,11 +247,20 @@ lan 2: csv</code></pre>
 
     <p><strong>Template method</strong> là pattern mạnh nhất của abstract class: class cha định nghĩa <em>khung</em> thuật toán và chốt nó bằng <code class="inline">final</code>, còn từng bước chi tiết là abstract method cho class con điền. Người gọi chỉ thấy một method <code class="inline">xuLy(...)</code>; không thể vô tình phá thứ tự các bước.</p>
 
+    <h3>3.1 Pattern Template Method — khung xương nằm ở lớp cha</h3>
+
+    <p>Template method chia thuật toán thành hai phần: <strong>skeleton</strong> (khung cố định do class cha giữ) và các <strong>step</strong> (bước thay đổi được, class con điền). Khung được đặt <code class="inline">final</code> để không ai override; các bước khai báo <code class="inline">abstract</code> (bắt buộc con điền) hoặc là method có thân làm mặc định. Quyền điều khiển bị đảo ngược: class con không gọi cha, mà cha gọi class con — <strong>Hollywood principle</strong>: "Don't call us, we'll call you".</p>
+
+    <p>Mở rộng <code class="inline">DataProcessor</code> quen thuộc bằng log từng bước để thấy rõ thứ tự do khung quyết định:</p>
+
     <div class="codeblock">
       <pre><code class="java">abstract class DataProcessor {
     final String xuLy(String duLieu) {
+        IO.println("[1] lam sach");
         String sach = lamSach(duLieu);
+        IO.println("[2] bien doi");
         String ketQua = bienDoi(sach);
+        IO.println("[3] ghi nhan");
         return ghiNhan(ketQua);
     }
 
@@ -292,11 +301,227 @@ void main() {
     </div>
 
     <div class="codeblock error">
-      <pre><code>CSV> DON HANG 42
+      <pre><code>[1] lam sach
+[2] bien doi
+[3] ghi nhan
+CSV> DON HANG 42
+[1] lam sach
+[2] bien doi
+[3] ghi nhan
 TXT> avaj</code></pre>
     </div>
 
-    <p>Để ý cách chia vai: <code class="inline">lamSach</code> là <code class="inline">private</code> (chi tiết nội bộ, con không được chạm), <code class="inline">xuLy</code> là <code class="inline">final</code> (khung không cho đổi), còn <code class="inline">bienDoi</code>/<code class="inline">ghiNhan</code> là <code class="inline">protected abstract</code> (điểm mở rộng dành cho con). Đây chính là "Open for extension, closed for modification" trong thực tế.</p>
+    <p>Hai class con — một class thật, một anonymous class — chỉ cung cấp đúng hai bước, cả hai chạy trên cùng bộ khung <code class="inline">lam sach → bien doi → ghi nhan</code>. Để ý cách chia vai: <code class="inline">lamSach</code> là <code class="inline">private</code> (chi tiết nội bộ, con không được chạm), <code class="inline">xuLy</code> là <code class="inline">final</code> (khung không cho đổi), còn <code class="inline">bienDoi</code>/<code class="inline">ghiNhan</code> là <code class="inline">protected abstract</code> (điểm mở rộng dành cho con). Đây chính là "Open for extension, closed for modification" trong thực tế.</p>
+
+    <h3>3.2 Hook và abstract step — kiểm soát thứ tự, vì sao skeleton phải final</h3>
+
+    <p>Có hai loại điểm mở rộng. <strong>Abstract step</strong> không có thân — compiler buộc mọi class con điền. <strong>Hook</strong> có thân mặc định (thường no-op hoặc xử lý hợp lý sẵn) — con <em>có thể</em> override nếu cần. Quy tắc thực dụng: bước nào bắt buộc thì để abstract, hành vi tùy chọn (log, audit, validate) thì làm hook.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class ReportTemplate {
+    final void xuat() {          // skeleton - thu tu do lop cha chot
+        header();
+        noiDung();
+        footer();
+    }
+
+    void header() {              // hook - co san, con co the doi
+        IO.println("=== BAO CAO ===");
+    }
+
+    abstract void noiDung();     // abstract step - bat buoc con dien
+
+    void footer() {              // hook
+        IO.println("--- het ---");
+    }
+}
+
+class DoanhThu extends ReportTemplate {
+    void noiDung() {
+        IO.println("Doanh thu: 100 trieu");
+    }
+}
+
+class KiemTon extends ReportTemplate {
+    void noiDung() {
+        IO.println("Ton kho: 42 san pham");
+    }
+
+    @Override
+    void footer() {              // doi hook, khong doi thu tu
+        IO.println("--- kiem ton xong ---");
+    }
+}
+
+void main() {
+    new DoanhThu().xuat();
+    new KiemTon().xuat();
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>=== BAO CAO ===
+Doanh thu: 100 trieu
+--- het ---
+=== BAO CAO ===
+Ton kho: 42 san pham
+--- kiem ton xong ---</code></pre>
+    </div>
+
+    <p><code class="inline">DoanhThu</code> dùng nguyên hook mặc định; <code class="inline">KiemTon</code> chỉ đổi <code class="inline">footer()</code>. Cả hai không thể chèn thêm bước hay bỏ <code class="inline">header()</code> — thứ tự nằm ở <code class="inline">xuat()</code> của lớp cha.</p>
+
+    <p>Nếu class con quên điền abstract step, javac chặn ngay từ lúc biên dịch:</p>
+
+    <div class="errblock">
+      <pre>TemplateAbsErr.java:11: error: TemplateAbsErr.QuenBuoc is not abstract and does not override abstract method ghiNhan(String) in TemplateAbsErr.DataProcessor
+class QuenBuoc extends DataProcessor {
+^
+1 error</pre>
+    </div>
+
+    <p>Nhưng còn một lỗ hổng khác: nếu skeleton không <code class="inline">final</code>, class con "quên" bước bằng cách override thẳng <code class="inline">xuLy</code>. Bước cũ vẫn nằm đó nên compiler không báo gì, chỉ hành vi sai lúc chạy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">abstract class BadTemplate {
+    String xuLy(String s) {              // KHONG final - ai cung override duoc
+        return ghiNhan(bienDoi(s.trim()));
+    }
+
+    protected abstract String bienDoi(String s);
+
+    protected abstract String ghiNhan(String s);
+}
+
+class QuenBuoc extends BadTemplate {
+    protected String bienDoi(String s) {
+        return s.toUpperCase();
+    }
+
+    protected String ghiNhan(String s) {
+        return "OK> " + s;
+    }
+
+    @Override
+    String xuLy(String s) {              // vo tinh bo qua trim + bienDoi + ghiNhan
+        return "RAW> " + s;
+    }
+}
+
+void main() {
+    IO.println(new QuenBuoc().xuLy("don hang 42"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>RAW> don hang 42</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Template method phải là <code class="inline">final</code></strong> — đó là hợp đồng "khung này không được thay đổi". Bỏ <code class="inline">final</code> là mở đường cho lớp con phá vỡ thứ tự/các bước mà compiler không thể giúp gì. Tương tự, method nội bộ của khung nên <code class="inline">private</code> hoặc <code class="inline">final</code> để con không "vô tình" hook vào giữa thuật toán.</div>
+
+    <h3>3.3 Template Method vs Strategy</h3>
+
+    <p>Cả hai đều tách khung khỏi chi tiết, nhưng cơ chế đối lập nhau. Template method dùng <strong>kế thừa</strong> (biến thể chọn lúc compile); Strategy dùng <strong>composition</strong> — giữ một interface và thay implementation lúc runtime. Strategy đã học kỹ ở <a href="polymorphism.html#production">Polymorphism — mục 8</a> và <a href="solid-patterns.html#strategy-observer">SOLID &amp; Patterns — mục 10</a>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Template Method</th><th>Strategy</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cơ chế</td><td>Kế thừa abstract class</td><td>Composition: giữ interface + object</td></tr>
+        <tr><td>Chọn biến thể</td><td>Compile-time (quyết định khi viết class con)</td><td>Runtime (truyền/đổi object bất cứ lúc nào)</td></tr>
+        <tr><td>Quan hệ</td><td>is-a</td><td>has-a</td></tr>
+        <tr><td>Ai giữ khung</td><td>Method <code class="inline">final</code> trong class cha</td><td>Class điều phối gọi strategy tại từng thời điểm</td></tr>
+        <tr><td>Chia sẻ code</td><td>Tốt: các con dùng chung field/helper của cha</td><td>Mỗi strategy độc lập, không chia sẻ state</td></tr>
+        <tr><td>Điểm yếu</td><td>Fragile base class; đổi khung cha ảnh hưởng mọi con</td><td>Nhiều class/object nhỏ; người gọi phải chọn đúng strategy</td></tr>
+        <tr><td>Ví dụ JDK/Spring</td><td><code class="inline">InputStream.read</code>, <code class="inline">HttpServlet.service</code>, <code class="inline">JdbcTemplate</code></td><td><code class="inline">Comparator</code>, <code class="inline">PaymentStrategy</code>, <code class="inline">PasswordEncoder</code></td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><strong>Chọn Template Method</strong> khi khung các bước là cố định và nhiều biến thể chia sẻ state/code chung: pipeline xử lý dữ liệu, vòng đời servlet, đọc dữ liệu theo template.</li>
+      <li><strong>Chọn Strategy</strong> khi muốn đổi thuật toán lúc chạy, tránh cây kế thừa sâu, hoặc thuật toán không cần state chung — đặc biệt khi interface chỉ một method thì lambda là đủ.</li>
+      <li>Hai pattern <strong>kết hợp được</strong>: khung template method nhận một Strategy cho bước biến đổi. <code class="inline">JdbcTemplate</code> là ví dụ: khung quản lý connection/exception, còn <code class="inline">RowMapper</code> là callback thay đổi theo từng query.</li>
+    </ul>
+
+    <h3>3.4 Template Method trong JDK và framework</h3>
+
+    <ul>
+      <li><code class="inline">java.io.InputStream</code>: step <code class="inline">abstract int read()</code> đọc một byte; skeleton <code class="inline">read(byte[], int, int)</code> lặp gọi <code class="inline">read()</code>, còn <code class="inline">skip</code>/<code class="inline">available</code> là hook có default. Lớp con chỉ cần cài <code class="inline">read()</code> là có ngay hàng loạt method dùng được (có thể override skeleton để tối ưu, ví dụ <code class="inline">ByteArrayInputStream</code>).</li>
+      <li><code class="inline">java.util.AbstractList</code>: step <code class="inline">get(int)</code> và <code class="inline">size()</code> là abstract; <code class="inline">indexOf</code>, <code class="inline">lastIndexOf</code>, <code class="inline">iterator</code>, <code class="inline">subList</code>, <code class="inline">equals</code>, <code class="inline">hashCode</code> đều là template method xây trên hai step đó. Chỉ cần cài <code class="inline">get</code>/<code class="inline">size</code> là có cả danh sách đọc được:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.AbstractList;
+
+class BangSo extends AbstractList&lt;Integer&gt; {
+    private final int[] data = {10, 20, 30};
+
+    public Integer get(int i) {     // step 1
+        return data[i];
+    }
+
+    public int size() {             // step 2
+        return data.length;
+    }
+}
+
+void main() {
+    BangSo b = new BangSo();
+    IO.println(b);                  // AbstractCollection.toString
+    IO.println(b.indexOf(20));      // AbstractList.indexOf
+    IO.println(b.contains(30));     // AbstractCollection.contains
+    IO.println(b.subList(1, 3));    // AbstractList.subList
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[10, 20, 30]
+1
+true
+[20, 30]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">jakarta.servlet.http.HttpServlet</code>: <code class="inline">service(req, resp)</code> là skeleton phân loại HTTP method rồi gọi <code class="inline">doGet</code>/<code class="inline">doPost</code>/<code class="inline">doPut</code>... — các hook mặc định trả lỗi 405. Bạn chỉ override đúng method mình hỗ trợ. Lưu ý chuyển dịch <code class="inline">javax.servlet</code> → <code class="inline">jakarta.servlet</code> (Jakarta EE 9+): Tomcat 10+ và Spring Boot 3 dùng <code class="inline">jakarta.*</code>, code cũ dùng <code class="inline">javax.*</code> sẽ không chạy.</li>
+      <li>Spring <code class="inline">JdbcTemplate</code>: <code class="inline">execute</code>/<code class="inline">query</code>/<code class="inline">update</code> giữ khung lấy connection, tạo statement, bắt <code class="inline">SQLException</code>, đóng tài nguyên; client truyền <code class="inline">RowMapper</code>/<code class="inline">PreparedStatementSetter</code> như các bước cắm vào. Đây là template method "lai" callback — vẫn là ví dụ được trích dẫn nhiều nhất khi nói về pattern này trong Java hiện đại.</li>
+    </ul>
+
+    <h3>Góc Node.js — middleware pipeline thay cho template</h3>
+
+    <p>Node.js không có template method theo nghĩa kế thừa. Thứ tương đương là <strong>middleware pipeline</strong> (Express/Koa/NestJS) và <strong>function composition</strong>: khung là thứ tự các hàm, mỗi bước là một hàm nhận <code class="inline">(req, next)</code> và gọi <code class="inline">next()</code> để sang bước sau. Skeleton không nằm trong class cha mà nằm trong mảng pipeline:</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+const middleware = [];
+function use(fn) { middleware.push(fn); }
+
+use((req, next) =&gt; { req.sach = req.raw.trim();            console.log("1. lam sach"); next(); });
+use((req, next) =&gt; { req.ketQua = req.sach.toUpperCase();  console.log("2. bien doi"); next(); });
+use((req, next) =&gt; { console.log("3. ghi nhan: CSV> " + req.ketQua); next(); });
+
+function chay(i, req) {
+  if (i &lt; middleware.length) middleware[i](req, () =&gt; chay(i + 1, req));
+}
+chay(0, { raw: "  don hang 42  " });
+
+// function composition - skeleton chi con mot bieu thuc ghep ham
+const lamSach = (s) =&gt; s.trim();
+const bienDoi = (s) =&gt; s.toUpperCase();
+const ghiNhan = (s) =&gt; "CSV> " + s;
+const xuLy = (s) =&gt; ghiNhan(bienDoi(lamSach(s)));
+console.log(xuLy("  don hang 42  "));</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>1. lam sach
+2. bien doi
+3. ghi nhan: CSV> DON HANG 42
+CSV> DON HANG 42</code></pre>
+    </div>
+
+    <p>Khác biệt cốt lõi: template method ép thứ tự và bắt buộc điền bước lúc <strong>compile-time</strong>; middleware chỉ là quy ước <strong>runtime</strong> — quên gọi <code class="inline">next()</code> hoặc đăng ký sai thứ tự thì chương trình vẫn chạy, chỉ sai kết quả. Bù lại, composition linh hoạt hơn: lắp/tháo/gắn điều kiện cho từng bước rất dễ.</p>
+
+    <div class="note"><strong>Chốt gọn:</strong> template method = skeleton <code class="inline">final</code> ở cha gọi các bước của con (Hollywood principle) → abstract step để compiler ép điền, hook để tùy chọn đổi → skeleton <strong>phải <code class="inline">final</code></strong>, nếu không con override và bỏ bước → so với Strategy: kế thừa compile-time vs composition runtime → JDK dùng đầy: <code class="inline">InputStream.read</code>, <code class="inline">AbstractList.get/size</code>, <code class="inline">HttpServlet.service</code>, <code class="inline">JdbcTemplate</code>.</div>
 
     <h2 id="interface">4. Interface — hợp đồng thuần khiết <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -319,6 +544,7 @@ TXT> avaj</code></pre>
         <tr><td><code class="inline">static Payment cash() { ... }</code></td><td><code class="inline">public static</code>, gọi qua tên interface</td><td>Không được kế thừa — xem mục 8</td></tr>
         <tr><td><code class="inline">private String helper() { ... }</code></td><td><code class="inline">private</code> (Java 9+)</td><td>Chỉ code bên trong interface gọi được</td></tr>
         <tr><td><code class="inline">class</code> / <code class="inline">interface</code> / <code class="inline">enum</code> / <code class="inline">record</code> lồng</td><td><code class="inline">public static</code></td><td>Không có inner class gắn với instance (vì interface không có instance)</td></tr>
+        <tr><td><code class="inline">final</code> / <code class="inline">protected</code> / <code class="inline">synchronized</code> / <code class="inline">native</code> method</td><td>Không hợp lệ</td><td>Method interface chỉ <code class="inline">public</code> hoặc <code class="inline">private</code> (private phải có thân, Java 9+); <code class="inline">abstract</code> không đi với <code class="inline">private</code>/<code class="inline">static</code>/<code class="inline">final</code></td></tr>
         <tr><td>constructor, field trống, khối <code class="inline">static { }</code></td><td>Không hợp lệ</td><td>Interface không có state để khởi tạo</td></tr>
       </tbody>
     </table>
@@ -705,9 +931,10 @@ pay 200</code></pre>
       <li>Default, static, private method <strong>không tính</strong> vào số abstract method — interface vẫn functional dù có bao nhiêu default.</li>
       <li>Method trùng với public method của <code class="inline">Object</code> như <code class="inline">equals(Object)</code>, <code class="inline">hashCode()</code> cũng không tính. Vì thế <code class="inline">Comparator&lt;T&gt;</code> (có <code class="inline">compare</code> + <code class="inline">equals</code>) vẫn là functional interface.</li>
       <li>Annotation không bắt buộc: interface một abstract method vẫn dùng được lambda dù không ghi <code class="inline">@FunctionalInterface</code>. Ghi vào là để tự kiểm tra và tài liệu hoá ý định.</li>
+      <li>Interface con của một functional interface mà <strong>không thêm abstract method mới</strong> vẫn là functional interface (SAM được kế thừa) và vẫn gắn được <code class="inline">@FunctionalInterface</code>.</li>
     </ul>
 
-    <p>JDK có sẵn cả bộ trong <code class="inline">java.util.function</code> mà bạn nên nhớ mặt:</p>
+    <p>JDK có sẵn nhiều functional interface quan trọng — bộ chính nằm ở <code class="inline">java.util.function</code>, ngoài ra <code class="inline">Runnable</code> (<code class="inline">java.lang</code>), <code class="inline">Callable</code> (<code class="inline">java.util.concurrent</code>), <code class="inline">Comparator</code> (<code class="inline">java.util</code>) cũng rất hay gặp:</p>
 
     <table>
       <thead>

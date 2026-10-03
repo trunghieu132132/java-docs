@@ -254,53 +254,279 @@ IO.println(Arrays.toString(a));   // [99, 2, 3] - van nhu truoc</code></pre>
       <li><strong>for-each</strong> — khi chỉ cần đọc từng giá trị; ngắn gọn, ít lỗi off-by-one.</li>
     </ul>
 
+    <h3>4.1 for index vs for-each — chọn đúng công cụ</h3>
+
+    <p>Cần <strong>index</strong> (vị trí), cần <strong>ghi</strong> vào phần tử, duyệt ngược/bước nhảy → for index. Chỉ <strong>đọc</strong> giá trị → for-each. Bẫy lớn nhất: for-each không gán được vào phần tử vì biến vòng lặp chỉ là <em>bản sao giá trị</em> — nhưng nó <em>sửa được state của object</em> mà phần tử trỏ tới, vì bản sao đó là bản sao reference. Hai ví dụ đối lập chạy thật:</p>
+
     <div class="codeblock">
-      <pre><code class="java">int[] nums = {10, 20, 30};
+      <pre><code class="java">import java.util.Arrays;
 
-for (int i = 0; i &lt; nums.length; i++) {   // theo index
-    IO.print(nums[i] + " ");
-}
-// 10 20 30
+class HoaDon {
+    int tong;
 
-int sum = 0;
-for (int n : nums) {                      // for-each
-    sum += n;
-}
-IO.println(sum);                          // 60
+    HoaDon(int tong) {
+        this.tong = tong;
+    }
 
-for (int n : nums) {
-    n = n * 2;                            // chi sua bien copy!
-}
-IO.println(Arrays.toString(nums));        // [10, 20, 30]
+    void cong(int x) {
+        this.tong += x;
+    }
 
-for (int i = 0; i &lt; nums.length; i++) {
-    nums[i] *= 2;                         // sua that su phan tu
-}
-IO.println(Arrays.toString(nums));        // [20, 40, 60]
-
-int[][] grid = {{1, 2}, {3, 4, 5}};
-for (int[] row : grid) {                  // duyet 2 chieu
-    for (int v : row) {
-        IO.print(v + " ");
+    public String toString() {
+        return "HD(" + tong + ")";
     }
 }
-// 1 2 3 4 5
 
-for (int i = nums.length - 1; i &gt;= 0; i--) {   // duyet nguoc
-    IO.print(nums[i] + " ");
-}
-// 60 40 20</code></pre>
+void main() {
+    int[] nums = {10, 20, 30};
+
+    for (int n : nums) {
+        n = n * 2;                 // chi sua bien copy -> mang KHONG doi
+    }
+    IO.println("primitive copy : " + Arrays.toString(nums));
+    // primitive copy : [10, 20, 30]
+
+    for (int i = 0; i &lt; nums.length; i++) {
+        nums[i] *= 2;              // ghi that su vao phan tu
+    }
+    IO.println("sua qua index  : " + Arrays.toString(nums));
+    // sua qua index  : [20, 40, 60]
+
+    HoaDon[] ds = { new HoaDon(100), new HoaDon(200) };
+    for (HoaDon h : ds) {
+        h.cong(10);                // sua STATE cua object -> ben ngoai thay
+    }
+    IO.println("sua state      : " + Arrays.toString(ds));
+    // sua state      : [HD(110), HD(210)]
+
+    for (HoaDon h : ds) {
+        h = new HoaDon(0);         // chi doi ban sao reference -> vo nghia
+    }
+    IO.println("doi reference  : " + Arrays.toString(ds));
+    // doi reference  : [HD(110), HD(210)]
+}</code></pre>
     </div>
 
-    <div class="note warn"><strong>Vì sao for-each không sửa được phần tử?</strong> Mỗi vòng lặp, biến <code class="inline">n</code> chỉ nhận một <em>bản sao giá trị</em> của <code class="inline">nums[i]</code>. Gán <code class="inline">n = ...</code> là đổi bản sao, không ghi ngược vào mảng. Muốn sửa phải dùng for index: <code class="inline">nums[i] = ...</code>.</div>
+    <div class="codeblock error">
+      <pre><code>primitive copy : [10, 20, 30]
+sua qua index  : [20, 40, 60]
+sua state      : [HD(110), HD(210)]
+doi reference  : [HD(110), HD(210)]</code></pre>
+    </div>
 
-    <p>Mảng <strong>không implements <code class="inline">Iterable</code></strong> — for-each trên mảng là đặc quyền do compiler "dịch" thành vòng lặp index. Vì vậy đoạn sau không compile:</p>
+    <div class="note warn"><strong>Quy tắc nhớ:</strong> for-each <em>không gán được phần tử</em> (<code class="inline">n = ...</code> chỉ đổi bản sao), nhưng <em>gọi method để đổi state</em> của object thì được (<code class="inline">h.cong(10)</code>). Mảng primitive: for-each vô dụng nếu muốn sửa. Mảng object: for-each sửa được state, nhưng không thay được phần tử bằng object khác.</div>
+
+    <p>Một bẫy nữa: for-each trên mảng <code class="inline">null</code> ném <code class="inline">NullPointerException</code> ngay vòng đầu — compiler dịch thành truy cập <code class="inline">a.length</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] a = null;
+try {
+    for (int x : a) {             // NPE tai day
+        IO.println(x);
+    }
+} catch (NullPointerException e) {
+    IO.println("NPE: " + e.getClass().getSimpleName());
+}
+// NPE: NullPointerException</code></pre>
+    </div>
+
+    <h3>4.2 Duyệt ngược, bước nhảy, 2 chiều và label</h3>
+
+    <p>for index linh hoạt hơn hẳn: chạy ngược, nhảy bước, lồng nhiều chiều. <code class="inline">break</code>/<code class="inline">continue</code> bình thường chỉ tác dụng ở vòng trong cùng; muốn thoát/next cả vòng ngoài thì gắn <strong>label</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    int[] a = {1, 2, 3, 4, 5, 6};
+
+    StringBuilder nguoc = new StringBuilder();
+    for (int i = a.length - 1; i &gt;= 0; i--) {
+        nguoc.append(a[i]).append(' ');
+    }
+    IO.println(nguoc.toString().trim());     // 6 5 4 3 2 1
+
+    StringBuilder buoc = new StringBuilder();
+    for (int i = 0; i &lt; a.length; i += 2) {
+        buoc.append(a[i]).append(' ');
+    }
+    IO.println(buoc.toString().trim());      // 1 3 5
+
+    int[][] grid = {{1, 2, 3}, {4, 5, 6}};
+    StringBuilder haiChieu = new StringBuilder();
+    for (int[] row : grid) {                 // grid la mang cua cac mang
+        for (int v : row) {
+            haiChieu.append(v).append(' ');
+        }
+    }
+    IO.println(haiChieu.toString().trim());  // 1 2 3 4 5 6
+
+    StringBuilder nhay = new StringBuilder();
+    outer:                                   // label cho vong lap ngoai
+    for (int i = 1; i &lt;= 3; i++) {
+        for (int j = 1; j &lt;= 3; j++) {
+            if (j == 2) continue outer;      // next thang vong i
+            if (i == 3) break outer;         // thoat han ca hai vong
+            nhay.append(i).append(j).append(' ');
+        }
+    }
+    IO.println(nhay.toString().trim());      // 11 21
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>6 5 4 3 2 1
+1 3 5
+1 2 3 4 5 6
+11 21</code></pre>
+    </div>
+
+    <p>Trace label: i=1 in "11" rồi j=2 <code class="inline">continue outer</code>; i=2 in "21" rồi cũng <code class="inline">continue outer</code>; i=3, j=1 thì <code class="inline">break outer</code> — dừng cả hai vòng. Label viết tên trước vòng lặp kèm dấu <code class="inline">:</code> (<code class="inline">outer:</code>); dùng tên có nghĩa, đừng lạm dụng vì làm luồng chạy khó theo dõi.</p>
+
+    <h3>4.3 IntStream, Arrays.stream, Arrays.asList và Iterable</h3>
+
+    <p><code class="inline">Arrays.asList</code> bọc mảng thành <code class="inline">List</code> (đủ để for-each), <code class="inline">IntStream.range</code> cho vòng index không cần khai báo <code class="inline">i</code>, còn <code class="inline">Arrays.stream</code> mở đường sang thế giới Stream (học sâu ở <a href="roadmap.html#phase-3">3.8</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.IntStream;
+
+class BinhPhuong implements Iterable&lt;Integer&gt; {
+    final int n;
+
+    BinhPhuong(int n) {
+        this.n = n;
+    }
+
+    public java.util.Iterator&lt;Integer&gt; iterator() {
+        return new java.util.Iterator&lt;Integer&gt;() {
+            int i = 1;
+
+            public boolean hasNext() {
+                return i &lt;= n;
+            }
+
+            public Integer next() {
+                return i * i++;
+            }
+        };
+    }
+}
+
+void main() {
+    int[] a = {10, 20, 30};
+
+    StringBuilder theoRange = new StringBuilder();
+    IntStream.range(0, a.length).forEach(i -&gt; theoRange.append(a[i]).append(' '));
+    IO.println(theoRange.toString().trim());        // 10 20 30
+
+    StringBuilder rangeClosed = new StringBuilder();
+    IntStream.rangeClosed(1, 3).forEach(i -&gt; rangeClosed.append(i).append(' '));
+    IO.println(rangeClosed.toString().trim());       // 1 2 3
+
+    IO.println(Arrays.stream(a).sum());              // 60
+
+    StringBuilder asList = new StringBuilder();
+    for (int n : Arrays.asList(10, 20, 30)) {
+        asList.append(n).append(' ');
+    }
+    IO.println(asList.toString().trim());            // 10 20 30
+
+    StringBuilder iterable = new StringBuilder();
+    for (int x : new BinhPhuong(4)) {                // for-each tren Iterable
+        iterable.append(x).append(' ');
+    }
+    IO.println(iterable.toString().trim());          // 1 4 9 16
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>10 20 30
+1 2 3
+60
+10 20 30
+1 4 9 16</code></pre>
+    </div>
+
+    <div class="note"><strong>Phân biệt:</strong> <code class="inline">Arrays.asList</code> trả về <strong>List kích thước cố định</strong> gắn với mảng gốc — <code class="inline">set()</code> được (ghi vào mảng), <code class="inline">add()/remove()</code> ném <code class="inline">UnsupportedOperationException</code>. Còn <code class="inline">IntStream.range(0, n)</code> là nửa mở (không gồm <code class="inline">n</code>), <code class="inline">rangeClosed(1, n)</code> là đóng cả hai đầu — câu hỏi phỏng vấn hay gặp.</div>
+
+    <p>Mảng <strong>không implements <code class="inline">Iterable</code></strong> — for-each trên mảng là đặc quyền do compiler "dịch" thành vòng lặp index, còn for-each trên <code class="inline">List</code>/<code class="inline">Set</code> mới gọi <code class="inline">iterator()</code> thật. Vì vậy đoạn sau không compile:</p>
 
     <div class="errblock">
       <pre>Iterable&lt;Integer&gt; it = a;
                       ^
 error: incompatible types: int[] cannot be converted to Iterable&lt;Integer&gt;</pre>
     </div>
+
+    <h3>4.4 Bẫy concurrent: sửa mảng ngay trong lúc duyệt</h3>
+
+    <p>Collection fail-fast (duyệt bằng iterator mà <code class="inline">add</code>/<code class="inline">remove</code> thì ném <code class="inline">ConcurrentModificationException</code>). Mảng <strong>không có cơ chế đó</strong> — sửa thoải mái, không exception, nhưng hậu quả logic mới đáng sợ vì nó <em>im lặng</em>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.List;
+
+void main() {
+    int[] a = {1, 2, 3, 4, 5};
+    int sum = 0;
+    for (int x : a) {
+        sum += x;
+        a[0] = 100;                  // sua mang giua chung - KHONG nem exception
+    }
+    IO.println("sum = " + sum + ", a[0] = " + a[0]);
+
+    // "xoa" phan tu so 2 bang dich trai ngay trong vong lap
+    int[] b = {1, 2, 3, 4, 5};
+    int n = b.length;
+    for (int i = 0; i &lt; n; i++) {
+        if (b[i] == 2) {
+            System.arraycopy(b, i + 1, b, i, n - i - 1);
+            b[--n] = 0;
+        }
+    }
+    IO.println(Arrays.toString(b));
+
+    List&lt;Integer&gt; list = new ArrayList&lt;&gt;(List.of(1, 2, 3, 4));
+    try {
+        for (int x : list) {
+            if (x == 2) {
+                list.remove(Integer.valueOf(2));   // collection: no ngay
+            }
+        }
+        IO.println("khong loi");
+    } catch (ConcurrentModificationException e) {
+        IO.println("Collection: ConcurrentModificationException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sum = 15, a[0] = 100
+[1, 3, 4, 5, 0]
+Collection: ConcurrentModificationException</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">sum = 15</code> — for-each chỉ đọc <code class="inline">a[i]</code> tại thời điểm bước tới, nên sửa <code class="inline">a[0]</code> giữa chừng không làm sai tổng (phần tử 1 đã cộng xong), nhưng nếu <em>dịch/xoá</em> phần tử thì kết quả phụ thuộc hoàn toàn vào thứ tự duyệt.</li>
+      <li>Dịch trái để "xoá" phần tử 2: khi <code class="inline">i = 1</code> xoá xong, phần tử 3 dồn về index 1 nhưng vòng lặp đã tăng <code class="inline">i</code> lên 2 — <strong>số 3 bị bỏ qua</strong>. Mảng cho ra <code class="inline">[1, 3, 4, 5, 0]</code> (0 là ô padding, không phải dữ liệu thật). Muốn xoá an toàn: không tăng <code class="inline">i</code> cho vòng đó, hoặc duyệt ngược từ cuối.</li>
+      <li>Đa luồng còn tệ hơn: mảng không có bất kỳ kiểm tra nào, nên thread khác sửa cùng lúc sẽ cho kết quả rác không báo lỗi (học ở <a href="roadmap.html#phase-4">4.2 Concurrency</a>).</li>
+    </ul>
+
+    <div class="note warn"><strong>Nguyên tắc:</strong> với mảng, bạn tự chịu trách nhiệm về tính đúng đắn khi sửa trong lúc duyệt. Với collection, exception của iterator là "bạn tốt" giúp phát hiện sai — đừng lách bằng for index nếu cấu trúc thay đổi trong vòng lặp.</div>
+
+    <h3>Góc Node.js</h3>
+
+    <table>
+      <thead>
+        <tr><th>JS</th><th>Hành vi</th><th>Java tương ứng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">for (let i = 0; ...)</code></td><td>Index, sửa được <code class="inline">arr[i]</code></td><td><code class="inline">for (int i = 0; ...)</code></td></tr>
+        <tr><td><code class="inline">for (const x of arr)</code></td><td>Giá trị từng phần tử, tương đương for-each Java</td><td><code class="inline">for (int x : arr)</code></td></tr>
+        <tr><td><code class="inline">for (const i in arr)</code></td><td>Duyệt <strong>key</strong> — với mảng là index dạng <strong>string</strong>: <code class="inline">"0" + 1 === "01"</code> (bẫy kinh điển)</td><td>Không có tương đương; muốn index dùng for thường</td></tr>
+        <tr><td><code class="inline">arr.forEach(x =&gt; ...)</code></td><td>Đẹp nhưng <strong>không break/continue được</strong> (chỉ <code class="inline">return</code> khỏi callback); muốn thoát sớm dùng <code class="inline">for...of</code>, <code class="inline">some</code>, <code class="inline">every</code> hoặc <code class="inline">find</code></td><td>for-each Java cho <code class="inline">break</code>/<code class="inline">continue</code> bình thường</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Chốt gọn:</strong> cần index/sửa phần tử → <strong>for index</strong>; chỉ đọc → <strong>for-each</strong> (nhớ: sửa state object được, gán phần tử thì không). Ngược/bước nhảy/nhiều chiều → for index; thoát vòng ngoài → <strong>label</strong>. Có sẵn List/Iterable → for-each; cần index kiểu hàm → <code class="inline">IntStream.range</code>; cần Stream → <code class="inline">Arrays.stream</code>; bọc nhanh mảng → <code class="inline">Arrays.asList</code> (nhớ: kích thước cố định). Và luôn cẩn thận khi sửa mảng/collection ngay trong lúc duyệt.</div>
 
     <h2 id="copy">5. Copy mảng: nông, sâu và bẫy alias</h2>
 

@@ -302,37 +302,259 @@ IO.println("formatted              : " + "%s-%04d".formatted("ORD", 7));  // ORD
       <li><code class="inline">"template".formatted(args)</code> là cách viết tương đương <code class="inline">String.format("template", args)</code> nhưng xuôi chiều hơn.</li>
     </ul>
 
-    <h2 id="so-sanh">3. So sánh chuỗi: equals, compareTo, matches</h2>
+    <h2 id="so-sanh">3. So sánh chuỗi: equals, compareTo, matches <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>So sánh chuỗi tưởng đơn giản nhưng là nguồn bug thật trong production: <code class="inline">==</code> vs <code class="inline">equals</code>, thứ tự sắp xếp "kỳ lạ", dấu tiếng Việt, NFC/NFD. Phần String pool và <code class="inline">==</code> đã học ở <a href="index.html#string">Biến trong Java — mục 14</a>; dưới đây là phần thực chiến.</p>
+
+    <h3>3.1 equals vs == &amp; so sánh null-safe</h3>
 
     <div class="codeblock">
-      <pre><code class="java">String a = "apple";
-String b = "banana";
+      <pre><code class="java">import java.util.Objects;
 
-IO.println("equals(\"Apple\")             : " + a.equals("Apple"));             // false
-IO.println("equalsIgnoreCase(\"Apple\")   : " + a.equalsIgnoreCase("Apple"));   // true
-IO.println("compareTo(\"banana\")         : " + a.compareTo(b));                // -1
-IO.println("compareTo(\"app\")            : " + a.compareTo("app"));            // 2
-IO.println("banana.compareTo(apple)     : " + b.compareTo(a));                // 1
-IO.println("compareToIgnoreCase(\"APPLE\"): " + a.compareToIgnoreCase("APPLE")); // 0
-IO.println("contentEquals(StringBuilder): " + a.contentEquals(new StringBuilder("apple"))); // true
-IO.println("\"123\".matches(\"\\\\d+\")      : " + "123".matches("\\d+"));          // true
-IO.println("\"12a\".matches(\"\\\\d+\")      : " + "12a".matches("\\d+"));          // false
-IO.println("equals(null)                : " + a.equals(null));                // false
+String a = "apple";
+String b = new String("apple");
+
+IO.println("a == b                    : " + (a == b));                    // false - khac object
+IO.println("a.equals(b)               : " + a.equals(b));                 // true
+IO.println("Objects.equals(a, b)      : " + Objects.equals(a, b));        // true
+IO.println("Objects.equals(null, a)   : " + Objects.equals(null, a));     // false
+IO.println("Objects.equals(null, null): " + Objects.equals(null, null));  // true
+IO.println("a.equalsIgnoreCase(APPLE) : " + a.equalsIgnoreCase("APPLE")); // true
+
+String x = null;
+IO.println("Objects.equals(x, apple)  : " + Objects.equals(x, "apple"));  // false - khong NPE
+IO.println("\"apple\".equals(x)         : " + "apple".equals(x));          // false - literal khong bao gio null
 try {
-    String s = null;
-    s.equals("apple");
+    x.equals("apple");
 } catch (NullPointerException e) {
-    IO.println("null.equals(\"apple\")        : NullPointerException");
+    IO.println("x.equals(apple)           : NullPointerException");
 }</code></pre>
     </div>
 
     <ul>
-      <li><code class="inline">equals</code> so nội dung, <code class="inline">==</code> so địa chỉ object — quy tắc và String pool đã học ở <a href="index.html#string">Biến trong Java — mục 14</a>.</li>
-      <li><code class="inline">compareTo</code> trả hiệu của ký tự khác nhau đầu tiên (<code class="inline">'a' - 'b' = -1</code>); nếu một chuỗi là tiền tố của chuỗi kia thì trả hiệu độ dài (<code class="inline">"apple".compareTo("app") = 2</code>). Dùng để <strong>sắp xếp</strong> (<code class="inline">sort</code>, <code class="inline">TreeMap</code>), không dùng để kiểm tra bằng nhau (<code class="inline">equals</code> nhanh hơn).</li>
-      <li><code class="inline">contentEquals(CharSequence)</code> so với mọi loại chuỗi (StringBuilder, StringBuffer) mà không cần <code class="inline">toString()</code>.</li>
-      <li>Gọi <code class="inline">equals</code> trên biến null ném NPE; <code class="inline">a.equals(null)</code> trả false an toàn.</li>
-      <li><code class="inline">matches(regex)</code> chỉ trả true khi khớp <strong>toàn bộ</strong> chuỗi — chi tiết ở <a href="#regex">mục 6</a>.</li>
+      <li><code class="inline">==</code> so địa chỉ object, <code class="inline">equals</code> so nội dung. Hai literal cùng nội dung có thể <code class="inline">==</code> true nhờ String pool, nhưng <code class="inline">new String(...)</code> luôn tạo object mới nên <code class="inline">==</code> false (xem <a href="index.html#string">Biến trong Java — mục 14</a>).</li>
+      <li><strong>Null-safe:</strong> gọi <code class="inline">x.equals(...)</code> khi <code class="inline">x</code> null sẽ ném NPE. Hai cách tránh: viết literal trước (<code class="inline">"apple".equals(x)</code>) hoặc dùng <code class="inline">Objects.equals(x, y)</code> (Java 7+) — <code class="inline">null</code> so <code class="inline">null</code> trả true, một bên null trả false.</li>
+      <li><code class="inline">equalsIgnoreCase</code> so không phân biệt hoa thường, nhưng vẫn so <em>từng ký tự</em> theo ánh xạ Unicode đơn giản, không theo locale — bẫy ở mục 3.5.</li>
     </ul>
+
+    <h3>3.2 compareTo / compareToIgnoreCase trả gì</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("apple vs app     : " + "apple".compareTo("app"));      // 2
+IO.println("apple vs banana  : " + "apple".compareTo("banana"));   // -1
+IO.println("banana vs apple  : " + "banana".compareTo("apple"));   // 1
+IO.println("(int) 'A'        : " + (int) 'A');                    // 65
+IO.println("(int) 'a'        : " + (int) 'a');                    // 97
+IO.println("A vs a           : " + "A".compareTo("a"));            // -32
+IO.println("Z vs a           : " + "Z".compareTo("a"));            // -7
+IO.println("apples vs Apple  : " + "apples".compareTo("Apple"));   // 32
+IO.println("ignoreCase APPLE : " + "apple".compareToIgnoreCase("APPLE"));  // 0</code></pre>
+    </div>
+
+    <ul>
+      <li>Cơ chế: quét từng <strong>UTF-16 code unit</strong>; khác nhau ở vị trí đầu tiên thì trả hiệu hai code unit (<code class="inline">'a' - 'b' = -1</code>). Nếu một chuỗi là tiền tố của chuỗi kia thì trả hiệu <strong>độ dài</strong>: <code class="inline">"apple".compareTo("app")</code> = 5 - 3 = 2. Bằng nhau trả 0.</li>
+      <li>Thứ tự <strong>không</strong> theo alphabet người: theo code unit, chữ số (48–57) &lt; chữ hoa A–Z (65–90) &lt; chữ thường a–z (97–122). Nên <code class="inline">"Z".compareTo("a")</code> = -7 và <code class="inline">"apples".compareTo("Apple")</code> dương. Kết quả chỉ đảm bảo dấu (&lt;0, 0, &gt;0), đừng hardcode -1/1.</li>
+      <li><code class="inline">compareTo</code> (từ <code class="inline">Comparable</code>) sinh ra để <strong>sắp xếp</strong>; muốn kiểm tra bằng nhau hãy dùng <code class="inline">equals</code>. Với String hai cái <strong>nhất quán</strong> (<code class="inline">compareTo == 0</code> ⟺ <code class="inline">equals</code> true), nhưng không phải class nào cũng vậy — ví dụ kinh điển là <code class="inline">BigDecimal("1.0")</code> vs <code class="inline">"1.00"</code> (<a href="index.html#bigdecimal">Biến trong Java — mục 13.6</a>).</li>
+      <li><code class="inline">compareToIgnoreCase</code> hạ/hoa từng ký tự bằng <code class="inline">Character</code> (không theo locale) rồi mới so code unit — cùng họ bẫy với <code class="inline">equalsIgnoreCase</code> ở mục 3.5.</li>
+    </ul>
+
+    <h3>3.3 Bẫy tiếng Việt: compareTo xếp sai alphabet</h3>
+
+    <p>Chữ cái tiếng Việt có dấu nằm ở code point cao (U+00C1, U+00C2, U+0102, U+0110…), tức là <strong>sau "Z"</strong> theo thứ tự code unit — không nằm cạnh chữ gốc như người Việt mong đợi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+IO.println("(int) 'Z' : " + (int) 'Z');   // 90
+IO.println("(int) 'Á' : " + (int) 'Á');   // 193
+IO.println("(int) 'Â' : " + (int) 'Â');   // 194
+IO.println("(int) 'Ă' : " + (int) 'Ă');   // 258
+IO.println("(int) 'Đ' : " + (int) 'Đ');   // 272
+IO.println("Á vs Z    : " + "Á".compareTo("Z"));   // 103
+
+List&lt;String&gt; ten = new ArrayList&lt;&gt;(List.of("An", "Ánh", "Bình", "Dũng", "Đào"));
+Collections.sort(ten);
+IO.println("sort tu nhien : " + ten);
+// [An, Bình, Dũng, Ánh, Đào]</code></pre>
+    </div>
+
+    <p>Thứ tự đúng của người Việt là <strong>An, Ánh, Bình, Dũng, Đào</strong> (A &lt; Á &lt; B &lt; D &lt; Đ); <code class="inline">Collections.sort</code> mặc định đẩy "Ánh" xuống sau "Dũng" và "Đào" xuống cuối. Với dữ liệu chỉ có ASCII không dấu thì có thể "may mắn đúng", nên bug chỉ lộ khi dữ liệu thật có dấu.</p>
+
+    <h3>3.4 Sắp xếp đúng theo ngôn ngữ: java.text.Collator</h3>
+
+    <p><code class="inline">Collator</code> là comparator hiểu quy tắc collation của từng ngôn ngữ. Lấy instance theo locale rồi truyền thẳng vào <code class="inline">sort</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+Locale vi = Locale.forLanguageTag("vi");
+Locale vi2 = Locale.of("vi");               // Java 19+, ngan hon
+IO.println("vi             : " + vi);              // vi
+IO.println("vi.equals(vi2) : " + vi.equals(vi2));   // true
+
+Collator col = Collator.getInstance(vi);
+List&lt;String&gt; ten = new ArrayList&lt;&gt;(List.of("An", "Ánh", "Bình", "Dũng", "Đào"));
+
+Collections.sort(ten);
+IO.println("natural        : " + ten);   // [An, Bình, Dũng, Ánh, Đào]
+
+Collections.sort(ten, col);
+IO.println("collator vi    : " + ten);   // [An, Ánh, Bình, Dũng, Đào]</code></pre>
+    </div>
+
+    <p>Collator phân tầng (strength) khi so: strength càng mạnh thì phân biệt càng nhiều. Mặc định là <code class="inline">TERTIARY</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.text.Collator;
+import java.util.Locale;
+import java.util.TreeMap;
+
+Collator col = Collator.getInstance(Locale.of("vi"));
+
+IO.println("A vs Á         : " + col.compare("A", "Á"));   // -1
+IO.println("a vs A         : " + col.compare("a", "A"));   // -1 - chu thuong truoc chu hoa
+
+Collator p = (Collator) col.clone();
+p.setStrength(Collator.PRIMARY);
+IO.println("PRIMARY A = Á  : " + (p.compare("A", "Á") == 0));   // true  - bo dau
+IO.println("PRIMARY a = A  : " + (p.compare("a", "A") == 0));   // true  - bo hoa thuong
+
+Collator s = (Collator) col.clone();
+s.setStrength(Collator.SECONDARY);
+IO.println("SECONDARY A = Á: " + (s.compare("A", "Á") == 0));   // false - phan biet dau
+IO.println("SECONDARY a = A: " + (s.compare("a", "A") == 0));   // true  - van bo hoa thuong
+
+Collator t = (Collator) col.clone();
+t.setStrength(Collator.TERTIARY);
+IO.println("TERTIARY a = A : " + (t.compare("a", "A") == 0));   // false - phan biet ca hoa thuong
+
+TreeMap&lt;String, Integer&gt; map = new TreeMap&lt;&gt;(col);
+map.put("Đào", 1);
+map.put("An", 2);
+map.put("Bình", 3);
+IO.println("TreeMap keys   : " + map.keySet());   // [An, Bình, Đào]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">Collator.getInstance(locale)</code> lấy quy tắc collation mà JDK có sẵn cho locale đó. <code class="inline">Locale.forLanguageTag("vi")</code> và <code class="inline">Locale.of("vi")</code> (Java 19+) tương đương — dùng cái ngắn hơn; code cũ hơn thì <code class="inline">new Locale("vi")</code> (deprecated từ Java 19).</li>
+      <li><strong>Strength:</strong> <code class="inline">PRIMARY</code> bỏ hết dấu và hoa thường (Á = A = a); <code class="inline">SECONDARY</code> phân biệt dấu nhưng bỏ hoa thường (A = a, A ≠ Á); <code class="inline">TERTIARY</code> (mặc định) phân biệt cả hai. Kết quả <code class="inline">compare</code> của Collator chỉ cần dấu, đừng hardcode -1/1.</li>
+      <li>Collator là <code class="inline">Comparator&lt;Object&gt;</code> nên dùng được với <code class="inline">List.sort</code>, <code class="inline">Collections.sort</code>, <code class="inline">TreeMap</code>, <code class="inline">TreeSet</code>. Javadoc lưu ý implementation mặc định (<code class="inline">RuleBasedCollator</code>) có thể tranh chấp khi dùng đồng thời — nên mỗi thread một instance; tuyệt đối không đổi <code class="inline">strength</code> trên instance đang chia sẻ.</li>
+      <li><strong>Collation của Java ≠ collation của DB.</strong> MySQL/Postgres có bảng collation riêng (MySQL <code class="inline">utf8mb4_vi_0900_ai_ci</code>, Postgres ICU <code class="inline">vi-x-icu</code>…); Java sort theo dữ liệu collation của JDK còn DB sort theo cài đặt của nó — hai kết quả có thể lệch ở các trường hợp biên. Hãy thống nhất sort ở <strong>một tầng</strong> (hoặc đảm bảo DB collation khớp ngôn ngữ) thay vì trộn.</li>
+    </ul>
+
+    <h3>3.5 Bẫy locale: equalsIgnoreCase không theo locale</h3>
+
+    <p><code class="inline">equalsIgnoreCase</code> so từng <code class="inline">char</code> bằng <code class="inline">Character.toLowerCase/toUpperCase</code> — ánh xạ Unicode đơn giản, <strong>không</strong> theo locale. Kiểm chứng thật trên JDK 25:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Locale;
+
+IO.println("ß vs SS equalsIgnoreCase : " + "ß".equalsIgnoreCase("SS"));      // false
+IO.println("ß.toUpperCase()          : " + "ß".toUpperCase());               // SS
+IO.println("ß.toUpperCase() bang SS  : " + "ß".toUpperCase().equals("SS"));  // true
+
+IO.println("İ vs i equalsIgnoreCase  : " + "İ".equalsIgnoreCase("i"));       // true
+IO.println("I vs ı equalsIgnoreCase  : " + "I".equalsIgnoreCase("ı"));       // true
+IO.println("I vs i equalsIgnoreCase  : " + "I".equalsIgnoreCase("i"));       // true
+
+IO.println("I.toLowerCase()          : " + "I".toLowerCase());               // i
+IO.println("I.toLowerCase(tr)        : " + "I".toLowerCase(Locale.of("tr"))); // ı
+IO.println("i.toUpperCase(tr)        : " + "i".toUpperCase(Locale.of("tr"))); // İ</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">"ß".equalsIgnoreCase("SS")</code> = false vì ß là <strong>1</strong> ký tự còn SS là <strong>2</strong>, dù <code class="inline">"ß".toUpperCase()</code> = "SS". Ánh xạ 1-nhiều (ß→SS, ﬁ→FI) chỉ xảy ra ở <code class="inline">toUpperCase()</code>, không xảy ra khi so từng ký tự.</li>
+      <li>Chiều ngược: <code class="inline">equalsIgnoreCase</code> theo ánh xạ chuẩn Unicode chứ không theo locale — <code class="inline">"İ".equalsIgnoreCase("i")</code> và <code class="inline">"I".equalsIgnoreCase("ı")</code> trả true (đúng cặp Unicode), nhưng nó cũng trả true cho <code class="inline">"I".equalsIgnoreCase("i")</code>, cặp mà tiếng Thổ Nhĩ Kỳ coi là <strong>hai chữ khác nhau</strong> (<code class="inline">"I".toLowerCase(Locale.of("tr"))</code> = "ı", <code class="inline">"i".toUpperCase(Locale.of("tr"))</code> = "İ"). Vì vậy đừng dùng nó cho dữ liệu đa ngôn ngữ khi cần đúng ngữ nghĩa.</li>
+      <li>Muốn không phân biệt hoa thường <em>đúng ngôn ngữ</em>: dùng <code class="inline">Collator</code> với <code class="inline">PRIMARY</code>/<code class="inline">SECONDARY</code> (mục 3.4), hoặc chuẩn hoá dữ liệu về một dạng (NFC + <code class="inline">toLowerCase(Locale)</code>) ngay khi nhập rồi so <code class="inline">equals</code>.</li>
+      <li><code class="inline">toLowerCase</code>/<code class="inline">toUpperCase</code> <strong>mới</strong> theo locale nếu truyền <code class="inline">Locale</code>: <code class="inline">"I".toLowerCase(Locale.of("tr"))</code> = "ı".</li>
+    </ul>
+
+    <h3>3.6 Các method so sánh khác</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.regex.Pattern;
+
+String s = "Hello, Java!";
+
+IO.println("regionMatches          : " + s.regionMatches(7, "Java", 0, 4));        // true
+IO.println("regionMatches ignore   : " + s.regionMatches(true, 7, "JAVA", 0, 4));  // true
+IO.println("startsWith             : " + s.startsWith("Hello"));                   // true
+IO.println("endsWith               : " + s.endsWith("!"));                        // true
+
+IO.println("contentEquals SB       : " + s.contentEquals(new StringBuilder("Hello, Java!")));  // true
+IO.println("contentEquals String   : " + s.contentEquals(new StringBuffer("Hello, Java!")));   // true
+IO.println("equals(StringBuilder)  : " + s.equals(new StringBuilder("Hello, Java!")));          // false
+
+IO.println("compareTo 0 -> equals  : " + (s.compareTo("Hello, Java!") == 0));       // true
+
+IO.println("matches toan bo        : " + "abc123".matches("\\d+"));                // false
+IO.println("find mot phan          : " + Pattern.compile("\\d+").matcher("abc123").find());  // true
+IO.println("quote literal          : " + "a.b".matches(Pattern.quote("a.b")));    // true
+IO.println("khong quote axb        : " + "axb".matches("a.b"));                   // true
+IO.println("quote axb              : " + "axb".matches(Pattern.quote("a.b")));    // false</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">regionMatches(ignoreCase, toffset, other, ooffset, len)</code> so từng vùng; dùng khi cần so một đoạn giữa chuỗi (kể cả bỏ qua hoa thường) mà không muốn cắt chuỗi tạo object mới.</li>
+      <li><code class="inline">startsWith</code>/<code class="inline">endsWith</code> đọc rõ ý hơn <code class="inline">indexOf(...) == 0</code>.</li>
+      <li><code class="inline">contentEquals(CharSequence)</code> so với mọi <code class="inline">CharSequence</code> (String, StringBuilder, StringBuffer) không cần <code class="inline">toString()</code>. Ngược lại <code class="inline">String.equals</code> chỉ nhận String: <code class="inline">s.equals(new StringBuilder(...))</code> luôn false dù nội dung giống hệt.</li>
+      <li>Với String, <code class="inline">compareTo</code> <strong>nhất quán</strong> với <code class="inline">equals</code>: <code class="inline">compareTo == 0</code> ⟺ <code class="inline">equals</code> true. Đây là điều kiện nên có khi tự implement <code class="inline">Comparable</code> (xem <a href="object-contract.html">equals / hashCode / toString</a>).</li>
+      <li><code class="inline">String.matches(regex)</code> đòi khớp <strong>toàn bộ</strong> chuỗi; <code class="inline">Pattern.find()</code> chỉ cần một đoạn khớp. Khi chuỗi cần so là literal có ký tự đặc biệt (<code class="inline">. [ ] ( ) * + ?</code>…), bọc bằng <code class="inline">Pattern.quote</code> — chi tiết ở <a href="#regex">mục 6</a>.</li>
+    </ul>
+
+    <h3>3.7 Production: sort &amp; tìm tên người Việt</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.text.Collator;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+Collator col = Collator.getInstance(Locale.of("vi"));
+
+List&lt;String&gt; ten = new ArrayList&lt;&gt;(List.of("An", "Ánh", "Bình", "Dũng", "Đào"));
+Collections.sort(ten, col);
+IO.println("sorted             : " + ten);   // [An, Ánh, Bình, Dũng, Đào]
+
+IO.println("binarySearch Đào   : " + Collections.binarySearch(ten, "Đào", col));   // 4
+
+Collator p = (Collator) col.clone();
+p.setStrength(Collator.PRIMARY);
+IO.println("PRIMARY Anh vs Ánh : " + (p.compare("Anh", "Ánh") == 0));   // true
+IO.println("PRIMARY Dat vs Đạt : " + (p.compare("Dat", "Đạt") == 0));   // false
+
+String nfc = "Nguyễn";
+String nfd = Normalizer.normalize(nfc, Normalizer.Form.NFD);
+IO.println("equals NFC vs NFD  : " + nfc.equals(nfd));   // false
+IO.println("sau normalize NFC  : " + nfc.equals(Normalizer.normalize(nfd, Normalizer.Form.NFC)));   // true
+IO.println("collator NFC = NFD : " + (col.compare(nfc, nfd) == 0));   // true</code></pre>
+    </div>
+
+    <ul>
+      <li>Sort tên để hiển thị/tìm kiếm cho người Việt: luôn dùng <code class="inline">Collator</code> locale vi (hoặc collation DB tương ứng), không dùng thứ tự tự nhiên. <code class="inline">binarySearch</code> bắt buộc dùng <strong>cùng comparator</strong> với lúc sort, nếu không kết quả vô nghĩa.</li>
+      <li>Chuẩn hoá <strong>NFC</strong> ngay khi nhận dữ liệu rồi mới lưu/so — <code class="inline">equals</code> không tự bỏ qua khác biệt NFC/NFD. Collator thì <code class="inline">compare</code> được cả hai dạng, nhưng vẫn phải normalize để dữ liệu sạch và unique index trong DB hoạt động đúng. Chi tiết ở <a href="#unicode">mục 7 — Unicode &amp; tiếng Việt</a>.</li>
+      <li>Tìm kiếm "không dấu" bằng <code class="inline">PRIMARY</code> chỉ gộp dấu phụ (A = Á, a = á) nhưng <strong>không</strong> gộp Đ = D — vì "đ" là chữ cái riêng chứ không phải "d" cộng dấu. Muốn tìm "dat" ra "Đạt" phải strip dấu bằng tay (Đ→D, bỏ dấu thanh…) hoặc dùng tìm kiếm full-text của DB; đừng tưởng <code class="inline">PRIMARY</code> là "bỏ hết dấu".</li>
+      <li>Dữ liệu từ DB: cột collation <code class="inline">..._ai_ci</code> (accent-insensitive, case-insensitive) làm <code class="inline">WHERE name = ?</code> có thể khớp khác Java; nếu app cũng tự lọc/sort thì cần biết chính xác collation hai bên để tránh lệch kết quả giữa UI và DB.</li>
+    </ul>
+
+    <h3>Góc Node.js</h3>
+
+    <ul>
+      <li>JS không có bẫy <code class="inline">==</code> kiểu Java: <code class="inline">"a" === "a"</code> so theo <strong>giá trị</strong>. Chỉ khi bọc <code class="inline">new String("a")</code> mới thành object và <code class="inline">new String("a") === "a"</code> là false — trường hợp hiếm; quy tắc JS là luôn dùng <code class="inline">===</code>, còn Java là luôn dùng <code class="inline">equals</code>.</li>
+      <li><code class="inline">"Ánh".localeCompare("Bình", "vi")</code> trả thứ tự đúng ngôn ngữ; nhưng gọi trong comparator của <code class="inline">sort</code> sẽ tạo collator mỗi lần so — tốn kém.</li>
+      <li>Cách chuẩn: tạo một lần <code class="inline">new Intl.Collator("vi", { sensitivity: "base" })</code> rồi dùng <code class="inline">.compare</code> như Comparator. <code class="inline">sensitivity</code>: <code class="inline">"base"</code> ≈ PRIMARY (bỏ dấu + hoa thường), <code class="inline">"accent"</code> ≈ SECONDARY, <code class="inline">"variant"</code> ≈ TERTIARY.</li>
+      <li>JS cũng dùng UTF-16, <code class="inline">length</code> và <code class="inline">normalize("NFC")</code> hành xử giống Java — và <code class="inline">localeCompare</code> cũng <strong>không</strong> tự normalize, nên vẫn phải normalize trước khi so.</li>
+    </ul>
+
+    <div class="note"><strong>Chốt gọn:</strong> bằng nhau → <code class="inline">equals</code> (null-safe: <code class="inline">Objects.equals</code> hoặc literal-first), không bao giờ <code class="inline">==</code>; thứ tự kỹ thuật → <code class="inline">compareTo</code>; thứ tự cho người đọc (tên, địa danh) → <code class="inline">Collator</code> theo locale + strength phù hợp; dữ liệu nhập từ nhiều nguồn → normalize NFC trước và thống nhất collation với DB.</div>
 
     <h2 id="format">4. String.format / printf</h2>
 

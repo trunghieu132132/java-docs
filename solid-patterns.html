@@ -139,7 +139,7 @@
       <tbody>
         <tr><td>Express/Koa middleware, <code class="inline">next()</code> chuyền qua từng handler</td><td>Chain of Responsibility</td><td>Mỗi handler xử lý rồi chuyển request cho handler kế; Servlet Filter/HandlerInterceptor của Java cũng vậy</td></tr>
         <tr><td><code class="inline">require()</code>/<code class="inline">import</code> chỉ chạy module một lần, lần sau trả về object cache</td><td>Singleton</td><td>Module cache chính là singleton "miễn phí" của Node — mọi nơi import cùng nhận một object</td></tr>
-        <tr><td>NestJS DI: <code class="inline">@Injectable()</code>, constructor injection, provider scope</td><td>Dependency Inversion + DI</td><td>Ý tưởng giống Spring: đối tượng không tự <code class="inline">new</code> dependency; range provider mặc định là singleton trong module, Spring là singleton trong application context</td></tr>
+        <tr><td>NestJS DI: <code class="inline">@Injectable()</code>, constructor injection, provider scope</td><td>Dependency Inversion + DI</td><td>Ý tưởng giống Spring: đối tượng không tự <code class="inline">new</code> dependency; provider scope mặc định là singleton trong module, Spring là singleton trong application context</td></tr>
         <tr><td><code class="inline">EventEmitter</code>, <code class="inline">addEventListener</code>, pub/sub</td><td>Observer</td><td>Cùng mô hình 1-n: subject phát sự kiện, nhiều listener nhận</td></tr>
         <tr><td>Callback/HOF: <code class="inline">arr.sort(compareFn)</code>, truyền hàm xử lý</td><td>Strategy</td><td>Java cũng làm được điều này từ Java 8 với functional interface + lambda</td></tr>
         <tr><td>Object literal trong constructor options</td><td>Builder / Named arguments</td><td>JS có object literal thay builder; Java không có nên cần builder khi nhiều tham số tùy chọn</td></tr>
@@ -611,17 +611,18 @@ void main() {
 
     <h3>Cách 4 — enum (ngắn và an toàn nhất)</h3>
 
-    <p>JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần, thread-safe; enum còn chống được cả reflection lẫn serialization phá vỡ singleton. Đây là cách được Effective Java khuyến nghị:</p>
+    <p>JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần, thread-safe; enum còn chống được cả reflection lẫn serialization phá vỡ singleton. Đây là cách được Effective Java khuyến nghị. Lưu ý: "thread-safe" ở đây chỉ nói về <em>việc tạo instance</em> — state mutable bên trong vẫn phải tự đồng bộ, nên ví dụ dưới dùng <code class="inline">AtomicInteger</code>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">public enum AppConfig {
+      <pre><code class="java">import java.util.concurrent.atomic.AtomicInteger;
+
+public enum AppConfig {
     INSTANCE;
 
-    private int soLanDoc = 0;
+    private final AtomicInteger soLanDoc = new AtomicInteger();
 
     String get(String key) {
-        soLanDoc++;
-        return key + " = gia tri (lan doc " + soLanDoc + ")";
+        return key + " = gia tri (lan doc " + soLanDoc.incrementAndGet() + ")";
     }
 
     public static void main() {
@@ -631,7 +632,7 @@ void main() {
 }</code></pre>
     </div>
 
-    <p>Hai dòng output cho thấy state dùng chung: lần gọi thứ hai thấy <code class="inline">soLanDoc</code> đã tăng — đúng như một singleton.</p>
+    <p>Hai dòng output cho thấy state dùng chung: lần gọi thứ hai thấy <code class="inline">soLanDoc</code> đã tăng — đúng như một singleton; <code class="inline">AtomicInteger</code> giữ phép tăng an toàn khi nhiều thread cùng gọi.</p>
 
     <table>
       <thead>
@@ -642,9 +643,11 @@ void main() {
         <tr><td>Lazy + <code class="inline">synchronized</code> method</td><td>Có</td><td>Có</td><td>Mọi lần gọi đều phải khoá — chậm</td></tr>
         <tr><td>Lazy holder</td><td>Có</td><td>Có</td><td>Gọn, không cần khoá; khuyến nghị cho class thường</td></tr>
         <tr><td>Double-checked locking + <code class="inline">volatile</code></td><td>Có</td><td>Có</td><td>Nhanh sau lần đầu; dễ viết sai nếu thiếu <code class="inline">volatile</code></td></tr>
-        <tr><td>Enum <code class="inline">INSTANCE</code></td><td>Gần như không (theo JVM)</td><td>Có</td><td>Ngắn nhất; chống reflection + serialization; khuyến nghị chung</td></tr>
+        <tr><td>Enum <code class="inline">INSTANCE</code></td><td>Có — tạo ở first active use, nhưng không điều khiển được chính xác thời điểm như holder</td><td>Có (việc tạo instance)</td><td>Ngắn nhất; chống reflection + serialization; khuyến nghị chung</td></tr>
       </tbody>
     </table>
+
+    <div class="note"><strong>Singleton class thường bị phá thế nào?</strong> Serialization có thể tạo instance thứ hai lúc deserialize — khắc phục bằng method <code class="inline">readResolve()</code> trả về instance gốc; còn reflection có thể gọi private constructor qua <code class="inline">setAccessible(true)</code> để tạo thêm instance. Enum tránh cả hai vấn đề ngay từ thiết kế — lý do Effective Java khuyến nghị enum cho singleton.</div>
 
     <h3>Vì sao singleton bị coi là anti-pattern?</h3>
 
@@ -694,8 +697,8 @@ public class NotificationFactory {
 
     <p>Phân biệt ba mức độ:</p>
     <ul>
-      <li><strong>Simple factory</strong> (ví dụ trên) — một method tĩnh trả về sản phẩm theo tham số. Không phải pattern GoF chính thức nhưng dùng nhiều nhất trong thực tế.</li>
-      <li><strong>Factory method</strong> — creator khai báo method trừu tượng <code class="inline">create()</code>, các subclass quyết định sản phẩm cụ thể. JDK: <code class="inline">Collection.iterator()</code>, <code class="inline">NumberFormat.getInstance()</code>, <code class="inline">Executors.newFixedThreadPool()</code>.</li>
+      <li><strong>Simple factory</strong> (ví dụ trên) — một method tĩnh trả về sản phẩm theo tham số. Không phải pattern GoF chính thức nhưng dùng nhiều nhất trong thực tế. Các static factory của JDK cũng thuộc nhóm này: <code class="inline">NumberFormat.getInstance()</code>, <code class="inline">Executors.newFixedThreadPool()</code>.</li>
+      <li><strong>Factory method</strong> — creator khai báo method trừu tượng <code class="inline">create()</code>, các subclass quyết định sản phẩm cụ thể. JDK: <code class="inline">Collection.iterator()</code> (mỗi collection override để trả về iterator riêng).</li>
       <li><strong>Abstract factory</strong> — "nhà máy của các nhà máy", tạo cả một họ sản phẩm liên quan (ví dụ UI theme sáng/tối tạo Button + Checkbox đồng bộ). Chỉ cần nhận biết tên; code Java thường ít tự viết.</li>
     </ul>
 
@@ -746,6 +749,9 @@ class OrderBuilder {
     }
 
     Order build() {
+        if (items.isEmpty()) {
+            throw new IllegalStateException("Don hang phai co it nhat mot san pham");
+        }
         return new Order(customer, List.copyOf(items), coupon, express);
     }
 }
@@ -760,8 +766,12 @@ void main() {
     IO.println(don);
     // Order[customer=Nguyen Van An, items=[Ao thun, Quan jean], coupon=null, express=true]
 
-    IO.println(new OrderBuilder().build());
-    // Order[customer=khach le, items=[], coupon=null, express=false]
+    try {
+        new OrderBuilder().build();
+    } catch (IllegalStateException e) {
+        IO.println("Loi: " + e.getMessage());
+        // Loi: Don hang phai co it nhat mot san pham
+    }
 }</code></pre>
     </div>
 
@@ -769,7 +779,7 @@ void main() {
 
     <p>Điểm cần chú ý: <code class="inline">List.copyOf(items)</code> tạo bản sao bất biến, nên builder sửa tiếp cũng không ảnh hưởng object đã build. Đây là chi tiết nhiều người quên khiến đơn hàng "tự nhiên" thay đổi sau khi build.</p>
 
-    <p>JDK cũng đầy builder: <code class="inline">StringBuilder</code>, <code class="inline">Stream.builder()</code>, <code class="inline">HttpRequest.newBuilder()</code>, <code class="inline">LocalDate</code> thì không cần vì bất biến với method tên rõ nghĩa. Lombok <code class="inline">@Builder</code> sinh ra code tương tự thế này — chỉ cần biết tên, không cần viết tay.</p>
+    <p>JDK cũng đầy fluent API/builder-style: <code class="inline">StringBuilder</code> (mutable nên không phải GoF Builder điển hình), <code class="inline">Stream.builder()</code>, <code class="inline">HttpRequest.newBuilder()</code>; <code class="inline">LocalDate</code> thì không cần vì bất biến với method tên rõ nghĩa. Lombok <code class="inline">@Builder</code> sinh ra code tương tự thế này — chỉ cần biết tên, không cần viết tay.</p>
 
     <div class="note warn"><strong>Đừng dùng builder cho mọi thứ.</strong> Hai tham số thì <code class="inline">new Order(donGia, soLuong)</code> gọn hơn hẳn builder 30 dòng. Chỉ chuyển sang builder khi có khoảng 4+ tham số, phần lớn tùy chọn, hoặc khi cần validate trước khi tạo object.</div>
 
@@ -846,10 +856,14 @@ class Order {
         observers.add(observer);
     }
 
+    void removeObserver(PriceObserver observer) {
+        observers.remove(observer);
+    }
+
     void capNhatTong(BigDecimal moi) {
         BigDecimal cu = tongTien;
         tongTien = moi;
-        for (PriceObserver observer : observers) {
+        for (PriceObserver observer : List.copyOf(observers)) {
             observer.onPriceChanged(cu, moi);
         }
     }
@@ -857,12 +871,19 @@ class Order {
 
 void main() {
     Order don = new Order(new BigDecimal("250000"));
-    don.addObserver((cu, moi) -&gt; IO.println("Email: tong tien doi tu " + cu + " thanh " + moi));
-    don.addObserver((cu, moi) -&gt; IO.println("LOG: " + cu + " -&gt; " + moi));
+    PriceObserver email = (cu, moi) -&gt;
+            IO.println("Email: tong tien doi tu " + cu + " thanh " + moi);
+    PriceObserver log = (cu, moi) -&gt; IO.println("LOG: " + cu + " -&gt; " + moi);
+    don.addObserver(email);
+    don.addObserver(log);
 
     don.capNhatTong(new BigDecimal("270000"));
     // Email: tong tien doi tu 250000 thanh 270000
     // LOG: 250000 -&gt; 270000
+
+    don.removeObserver(email);
+    don.capNhatTong(new BigDecimal("300000"));
+    // LOG: 270000 -&gt; 300000
 }</code></pre>
     </div>
 
@@ -875,11 +896,54 @@ void main() {
         <tr><td>Mục đích</td><td>Chọn một thuật toán trong nhiều thuật toán</td><td>Một sự kiện, nhiều nơi cùng biết</td></tr>
         <tr><td>Quan hệ</td><td>1-1: context giữ một strategy</td><td>1-n: subject giữ nhiều observer</td></tr>
         <tr><td>Dấu hiệu cần dùng</td><td><code class="inline">if/else</code> dài theo loại xử lý, muốn đổi lúc chạy</td><td>Cần "khi X xảy ra thì làm A, B, C" mà không muốn subject biết A, B, C</td></tr>
-        <tr><td>Ví dụ JDK</td><td><code class="inline">Comparator</code> truyền vào <code class="inline">sort</code></td><td><code class="inline">addEventListener</code>, Spring <code class="inline">@EventListener</code></td></tr>
+        <tr><td>Ví dụ JDK</td><td><code class="inline">Comparator</code> truyền vào <code class="inline">sort</code></td><td><code class="inline">java.beans.PropertyChangeListener</code>, Spring <code class="inline">@EventListener</code></td></tr>
       </tbody>
     </table>
 
-    <div class="note warn">Observer dễ gây <strong>memory leak</strong> nếu đăng ký mà không bao giờ remove (subject giữ reference tới observer mãi mãi), và một observer ném exception có thể chặn các observer còn lại nếu vòng lặp không bọc <code class="inline">try/catch</code>. Trong production, luôn có cơ chế hủy đăng ký hoặc dùng listener lifecycle của framework.</div>
+    <div class="note warn">Observer dễ gây <strong>memory leak</strong> nếu đăng ký mà không bao giờ remove (subject giữ reference tới observer mãi mãi), và một observer ném exception có thể chặn các observer còn lại nếu vòng lặp không bọc <code class="inline">try/catch</code>. Nên notify trên bản sao (<code class="inline">List.copyOf(observers)</code>) để observer add/remove an toàn ngay trong lúc được gọi, tránh <code class="inline">ConcurrentModificationException</code>. Trong production, luôn có cơ chế hủy đăng ký hoặc dùng listener lifecycle của framework.</div>
+
+    <h3>Decorator — bọc thêm hành vi mà không sửa class gốc</h3>
+
+    <p><strong>Decorator</strong> giữ cùng interface với object gốc, giữ một reference tới object đó và thêm hành vi trước/sau khi gọi. Khác kế thừa ở chỗ ghép được nhiều lớp lúc runtime, không cần class con cho từng tổ hợp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">interface Printer {
+    void print(String document);
+}
+
+class TaiLieu implements Printer {
+    public void print(String document) {
+        IO.println("In: " + document);
+    }
+}
+
+class GhiLog implements Printer {
+    private final Printer goc;
+
+    GhiLog(Printer goc) {
+        this.goc = goc;
+    }
+
+    public void print(String document) {
+        IO.println("[LOG] bat dau in");
+        goc.print(document);
+        IO.println("[LOG] in xong");
+    }
+}
+
+void main() {
+    Printer may = new GhiLog(new TaiLieu());
+    may.print("hoa don");
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[LOG] bat dau in
+In: hoa don
+[LOG] in xong</code></pre>
+    </div>
+
+    <p>Đây là ý tưởng đằng sau <code class="inline">InputStream</code> của JDK (<code class="inline">new BufferedInputStream(new FileInputStream(...))</code>) và gần với cách Spring AOP bọc proxy quanh bean — chỉ khác AOP dùng proxy động thay vì class decorator viết tay.</p>
 
     <h2 id="spring">11. Nhận diện pattern trong Spring/framework <span class="badge b-junior">Junior+</span></h2>
 
@@ -989,7 +1053,7 @@ void main() {
 
     <details class="qa">
       <summary>Câu 11. Singleton là gì? Kể các cách cài đặt.</summary>
-      <div class="answer">Đảm bảo một class chỉ có một instance và có điểm truy cập toàn cục. Các cách: (1) eager <code class="inline">static final INSTANCE</code>; (2) lazy + <code class="inline">synchronized</code>; (3) lazy holder (static nested class) — lazy + thread-safe không cần khoá; (4) double-checked locking + <code class="inline">volatile</code>; (5) enum <code class="inline">INSTANCE</code> — ngắn và an toàn nhất. Khác static class: singleton là object thật, có thể implements interface, thay thế/mock được, kiểm soát được thời điểm khởi tạo.</div>
+      <div class="answer">Đảm bảo một class chỉ có một instance và có điểm truy cập toàn cục. Các cách: (1) eager <code class="inline">static final INSTANCE</code>; (2) lazy + <code class="inline">synchronized</code>; (3) lazy holder (static nested class) — lazy + thread-safe không cần khoá; (4) double-checked locking + <code class="inline">volatile</code>; (5) enum <code class="inline">INSTANCE</code> — ngắn và an toàn nhất. Khác static class: singleton là object thật, có thể implements interface và mock/thay thế được <em>nếu</em> code gọi qua interface/DI, còn static class thì không.</div>
     </details>
 
     <details class="qa">
@@ -999,7 +1063,7 @@ void main() {
 
     <details class="qa">
       <summary>Câu 13. Enum singleton có gì hay?</summary>
-      <div class="answer">JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần nên thread-safe sẵn; enum chống reflection (constructor enum bị chặn) và serialization luôn trả cùng instance — hai lỗ hổng kinh điển của singleton class. Code ngắn nhất, không cần <code class="inline">synchronized</code>. Nhược điểm: không lazy theo nghĩa tuyệt đối (khởi tạo khi class được dùng) và không thể kế thừa class khác.</div>
+      <div class="answer">JVM đảm bảo mỗi enum constant chỉ được khởi tạo một lần nên thread-safe sẵn; enum chống reflection (constructor enum bị chặn) và serialization luôn trả cùng instance — hai lỗ hổng kinh điển của singleton class. Code ngắn nhất, không cần <code class="inline">synchronized</code>. Nhược điểm: tạo ở first active use nên không điều khiển chính xác thời điểm như holder, và không thể kế thừa class khác.</div>
     </details>
 
     <details class="qa">
@@ -1483,7 +1547,7 @@ B: 120000 -&gt; 150000</code></pre>
         <tr><td>Class nghiệp vụ dính chặt vào implementation</td><td>DIP + DI — constructor injection</td><td>Không test được nếu thiếu database/service thật</td><td>OrderRepository, <code class="inline">@Service</code> + constructor</td></tr>
         <tr><td>Cần đúng một instance toàn cục</td><td>Singleton (enum/holder), hoặc DI bean</td><td>Global state, config, pool, cache</td><td><code class="inline">AppConfig.INSTANCE</code>, Spring bean</td></tr>
         <tr><td><code class="inline">new</code> rải rác, chọn impl theo input</td><td>Factory (simple/factory method)</td><td>Switch tạo object lặp ở nhiều nơi</td><td><code class="inline">NotificationFactory</code>, <code class="inline">List.of</code>, <code class="inline">@Bean</code></td></tr>
-        <tr><td>Constructor quá dài, nhiều tham số tùy chọn</td><td>Builder</td><td>4+ tham số, nhiều boolean/null, khó đọc call site</td><td><code class="inline">OrderBuilder</code>, <code class="inline">StringBuilder</code>, <code class="inline">HttpRequest.newBuilder()</code></td></tr>
+        <tr><td>Constructor quá dài, nhiều tham số tùy chọn</td><td>Builder</td><td>4+ tham số, nhiều boolean/null, khó đọc call site</td><td><code class="inline">OrderBuilder</code>, <code class="inline">Stream.builder()</code>, <code class="inline">HttpRequest.newBuilder()</code></td></tr>
         <tr><td>Nhiều thuật toán, muốn đổi lúc chạy</td><td>Strategy</td><td>Switch theo loại xử lý, logic mỗi nhánh phình to</td><td><code class="inline">Comparator</code>, <code class="inline">PaymentStrategy</code>, lambda</td></tr>
         <tr><td>Một sự kiện, nhiều nơi cần biết</td><td>Observer</td><td>"Khi X xảy ra thì làm A, B, C" mà subject không nên biết A, B, C</td><td><code class="inline">PriceObserver</code>, <code class="inline">@EventListener</code></td></tr>
         <tr><td>Khung thuật toán cố định, chỉ khác bước con</td><td>Template Method</td><td>Class cha gọi các abstract method theo trình tự</td><td><code class="inline">JdbcTemplate</code>, <code class="inline">RestTemplate</code></td></tr>

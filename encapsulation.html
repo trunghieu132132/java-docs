@@ -355,7 +355,9 @@ public class VariablesDemo {
     <p>Ghép đủ 5 bước vào một value object thật: <code class="inline">Money</code> với <code class="inline">amount</code> + <code class="inline">currency</code>. Mọi thao tác trả object mới, không bao giờ sửa object cũ:</p>
 
     <div class="codeblock">
-      <pre><code class="java">public class ProductionDemo {
+      <pre><code class="java">import java.util.Objects;
+
+public class ProductionDemo {
     static final class Money {
         private final long amount;
         private final String currency;
@@ -400,6 +402,22 @@ public class VariablesDemo {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Money other)) {
+                return false;
+            }
+            return amount == other.amount && currency.equals(other.currency);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(amount, currency);
+        }
+
+        @Override
         public String toString() {
             return amount + " " + currency;
         }
@@ -415,6 +433,8 @@ public class VariablesDemo {
         IO.println("giam gia : " + tong.minus(new Money(50_000, "VND"))); // 230000 VND
         IO.println("amount 0 : " + tong.withAmount(0));                // 0 VND
         IO.println("gia sau tat ca phep tinh: " + gia);                 // 250000 VND
+        IO.println("equals cung gia tri: " + gia.equals(new Money(250_000, "VND")));                     // true
+        IO.println("hashCode cung gia tri: " + (gia.hashCode() == new Money(250_000, "VND").hashCode())); // true
 
         try {
             new Money(-1, "VND");
@@ -439,6 +459,8 @@ tong     : 280000 VND
 giam gia : 230000 VND
 amount 0 : 0 VND
 gia sau tat ca phep tinh: 250000 VND
+equals cung gia tri: true
+hashCode cung gia tri: true
 loi: amount khong hop le: -1
 loi: khac currency: VND vs USD</code></pre>
     </div>
@@ -448,9 +470,10 @@ loi: khac currency: VND vs USD</code></pre>
       <li><strong>Validate ngay trong constructor</strong> — không tồn tại <code class="inline">Money</code> âm hay sai currency. Vì vậy mọi method khác không cần kiểm tra lại.</li>
       <li><strong>Tên method không có tiền tố <code class="inline">get</code></strong> — <code class="inline">amount()</code>, <code class="inline">currency()</code> theo phong cách value object/record (giống <code class="inline">BigDecimal.scale()</code>, <code class="inline">LocalDate.getYear()</code> thì cũ vẫn dùng get).</li>
       <li><strong>Phép tính khác loại tiền bị chặn</strong> — đây là invariant nghiệp vụ được mã hóa vào class, client không thể cộng VND với USD.</li>
+      <li><strong><code class="inline">equals</code>/<code class="inline">hashCode</code> theo giá trị</strong> — hai <code class="inline">Money</code> cùng amount + currency bằng nhau và cùng hashCode, nên dùng được làm key <code class="inline">HashMap</code> đúng nghĩa value object.</li>
     </ul>
 
-    <div class="note">Tiền tệ production thường dùng <code class="inline">BigDecimal</code> thay <code class="inline">long</code> khi cần phần thập phân; nguyên tắc bất biến và validate giữ nguyên. Xem <a href="data-types.html#biginteger">Data Types — mục 12</a> và <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>.</div>
+    <div class="note"><strong>Biên số học:</strong> <code class="inline">minus</code> ném <code class="inline">IllegalArgumentException</code> khi kết quả âm (constructor chặn amount âm), còn <code class="inline">plus</code> có thể overflow <code class="inline">long</code> âm thầm — production nên dùng <code class="inline">Math.addExact</code>/<code class="inline">Math.subtractExact</code> để fail fast, hoặc <code class="inline">BigDecimal</code>. Tiền tệ production thường dùng <code class="inline">BigDecimal</code> thay <code class="inline">long</code> khi cần phần thập phân; nguyên tắc bất biến và validate giữ nguyên. Xem <a href="data-types.html#biginteger">Data Types — mục 12</a> và <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>.</div>
 
     <h2 id="defensive-copy">6. Copy phòng thủ (defensive copy) <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -546,6 +569,8 @@ items cua don van     : [ao thun]</code></pre>
       <li>Mọi thao tác sửa trên list trả về ném <code class="inline">UnsupportedOperationException</code> (đã kiểm chứng thật ở trên).</li>
       <li>Ném <code class="inline">NullPointerException</code> nếu collection hoặc bất kỳ phần tử nào là <code class="inline">null</code> — vừa là điểm cần biết, vừa là lá chắn dữ liệu bẩn (bài tập 12).</li>
       <li>Muốn bản mutable để tự do sửa: <code class="inline">new ArrayList&lt;&gt;(items)</code> — nhưng khi đó bạn tự chịu trách nhiệm copy đúng chỗ.</li>
+      <li><code class="inline">Map.copyOf</code> / <code class="inline">Set.copyOf</code> cùng cơ chế cho <code class="inline">Map</code>/<code class="inline">Set</code>: snapshot bất biến, ném <code class="inline">NullPointerException</code> với <code class="inline">null</code>.</li>
+      <li>Với mảng: <code class="inline">arr.clone()</code> hoặc <code class="inline">Arrays.copyOf(arr, arr.length)</code> ở cả constructor lẫn getter — mảng không có bản bất biến.</li>
     </ul>
 
     <p>Về bản chất, đây cũng là câu chuyện reference đã học ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>: gán <code class="inline">this.items = items</code> chỉ copy địa chỉ, hai bên cùng trỏ một list. Copy phòng thủ tạo một object mới thật sự.</p>
@@ -637,13 +662,13 @@ hai record cung du lieu equals nhau: true</code></pre>
       <tbody>
         <tr><td>Mục đích</td><td>Chở dữ liệu + validate + vài method phái sinh</td><td>Object có vòng đời, state thay đổi theo nghiệp vụ</td></tr>
         <tr><td>State</td><td>Cố định sau khi tạo</td><td>Thay đổi qua method (deposit/withdraw/cancel...)</td></tr>
-        <tr><td>Kế thừa</td><td>Không extends được (đã là final, không kế thừa class khác)</td><td>Kế thừa/abstract được</td></tr>
+        <tr><td>Kế thừa</td><td>Không extends class được (record là final) nhưng vẫn <code class="inline">implements</code> interface được</td><td>Kế thừa/abstract được</td></tr>
         <tr><td>Độ vừa</td><td>1-5 field, ít hành vi</td><td>Nhiều field + logic phức tạp, builder</td></tr>
         <tr><td>Ví dụ</td><td><code class="inline">Money</code>, DTO, kết quả trả về nhiều giá trị</td><td><code class="inline">User</code>/<code class="inline">Order</code> có thao tác làm thay đổi state</td></tr>
       </tbody>
     </table>
 
-    <div class="note">Record có thể dùng luôn cho cả immutable class "nặng" như mục 5 nếu bạn chấp nhận accessor cùng tên component. Chỉ chuyển sang class thường khi cần class mutable, cần kế thừa, hoặc muốn nhiều constructor/factory tùy biến.</div>
+    <div class="note">Record có thể dùng luôn cho cả immutable class "nặng" như mục 5 nếu bạn chấp nhận accessor cùng tên component. Record <strong>vẫn có</strong> constructor phụ (phải delegate <code class="inline">this(...)</code>) và static factory method. Chuyển sang class thường khi cần class mutable, cần kế thừa class, hoặc cần <strong>thêm instance field</strong> ngoài component — record chỉ cho phép thêm field <code class="inline">static</code>.</div>
 
     <h2 id="loi-ich">8. Lợi ích của immutable <span class="badge b-prod">Production</span></h2>
 
@@ -655,6 +680,8 @@ hai record cung du lieu equals nhau: true</code></pre>
       <li><strong>Cache/chia sẻ thoải mái</strong> — một hằng như <code class="inline">BigDecimal.ZERO</code>, <code class="inline">List.of()</code> có thể chia sẻ cho mọi nơi vì không ai phá được.</li>
       <li><strong>Dễ suy luận và test</strong> — nhìn constructor là biết toàn bộ state tồn tại mãi; không cần dựng lại ngữ cảnh chuỗi gọi method.</li>
     </ol>
+
+    <div class="note"><strong>JMM — publish an toàn:</strong> immutable thread-safe, nhưng reference vẫn cần được <em>publish an toàn</em> (qua field <code class="inline">final</code>, static initializer, hoặc biến đã đồng bộ) để thread khác thấy đúng object thay vì trạng thái nửa vời. Field <code class="inline">final</code> có <em>freeze semantics</em>: state được đảm bảo thấy đầy đủ sau khi constructor kết thúc. Chi tiết ở <a href="roadmap.html#phase-4">4.2 Threads &amp; concurrency</a>.</div>
 
     <h3>Vì sao key <code class="inline">HashMap</code> phải immutable?</h3>
 
@@ -837,7 +864,7 @@ sau khi doi   : null</code></pre>
         <tr><td>Giấu field</td><td><code class="inline">#private</code> (ES2022) — chặn ở tầng cú pháp, không truy cập được từ ngoài class</td><td><code class="inline">private</code> — chặn khi compile, nhưng reflection có thể phá (không nên)</td></tr>
         <tr><td>"Khóa" object</td><td><code class="inline">Object.freeze</code> chỉ khóa <strong>một lớp</strong> thuộc tính của object</td><td><code class="inline">final</code> khóa reference; immutable class khóa cả nội dung</td></tr>
         <tr><td>Copy nông</td><td><code class="inline">{ ...obj }</code> copy property, object con vẫn chung reference</td><td><code class="inline">List.copyOf</code> tạo snapshot bất biến một lớp</td></tr>
-        <tr><td>Quote code convention</td><td>Field public là mặc định, phổ biến trong JS</td><td>Field private là mặc định nên theo, API mở dần</td></tr>
+        <tr><td>Quy ước code</td><td>Field public là mặc định, phổ biến trong JS</td><td>Field private là mặc định nên theo, API mở dần</td></tr>
       </tbody>
     </table>
 
@@ -883,7 +910,7 @@ console.log(order.items);      // [ 'ao thun', 'quan jean' ]
 </code></pre>
     </div>
 
-    <p>Spread copy cũng nông y hệt <code class="inline">List.copyOf</code> cho một lớp, nhưng spread còn <strong>không</strong> ngăn được sửa bản copy. Muốn bất biến thật trong JS phải copy sâu (structuredClone) hoặc dùng object lồng immutable:</p>
+    <p>Spread copy cũng nông y hệt <code class="inline">List.copyOf</code> cho một lớp, nhưng spread còn <strong>không</strong> ngăn được sửa bản copy. Lưu ý: <code class="inline">structuredClone</code> chỉ là deep copy — bản clone <strong>vẫn mutable</strong>; muốn bất biến thật trong JS phải freeze sâu, dùng persistent data structure/thư viện (Immutable.js...) hoặc kỷ luật không sửa:</p>
 
     <div class="codeblock">
       <pre><code>const goc = { code: "DH-01", items: ["ao thun"] };
@@ -934,7 +961,7 @@ console.log(goc.items); // [ 'ao thun', 'quan jean' ]
 
     <details class="qa">
       <summary>Câu 6. Defensive copy là gì? Khi nào cần?</summary>
-      <div class="answer">Là sao chép dữ liệu mutable ở biên của object — trong constructor khi nhận vào và trong getter khi trả ra — để bên ngoài không giữ được reference tới state nội bộ. Cần khi field là mutable: <code class="inline">List</code>, <code class="inline">Map</code>, mảng, object mutable. Với field immutable (String, record...), copy là dư thừa.</div>
+      <div class="answer">Là sao chép dữ liệu mutable ở biên của object — trong constructor khi nhận vào và trong getter khi trả ra — để bên ngoài không giữ được reference tới state nội bộ. Cần khi field là mutable: <code class="inline">List</code>, <code class="inline">Map</code>, mảng, object mutable. Với field thật sự immutable (<code class="inline">String</code>, wrapper, <code class="inline">LocalDate</code>...), copy là dư thừa; còn record chỉ bất biến nông — component là List/Map/mảng vẫn phải copy như thường.</div>
     </details>
 
     <details class="qa">
@@ -1036,7 +1063,7 @@ public class Order {
 x = 2;
 IO.println(x);</code></pre>
       </div>
-      <div class="answer"><strong>Không chạy được.</strong> Lỗi compile: <code class="inline">VariablesDemo.java:4: error: cannot assign a value to final variable x</code>. <code class="inline">final</code> chỉ cho gán một lần, dù là biến local hay field.</div>
+      <div class="answer"><strong>Không chạy được.</strong> Lỗi compile: <code class="inline">VariablesDemo.java:2: error: cannot assign a value to final variable x</code>. <code class="inline">final</code> chỉ cho gán một lần, dù là biến local hay field.</div>
     </details>
 
     <details class="qa exercise">

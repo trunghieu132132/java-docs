@@ -255,11 +255,11 @@ IO.println(b.owner);   // Binh</code></pre>
 }</code></pre>
     </div>
 
-    <p><code class="inline">new BankAccount()</code> chạy constructor 0 tham số → nó gọi <code class="inline">this("Chua ro")</code> → constructor 1 tham số lại gọi <code class="inline">this("Chua ro", 0)</code> → constructor đầy đủ gán field. Chuỗi <code class="inline">this(...)</code> luôn kết thúc ở constructor "đầy đủ nhất".</p>
+    <p><code class="inline">new BankAccount()</code> chạy constructor 0 tham số → nó gọi <code class="inline">this("Chua ro")</code> → constructor 1 tham số lại gọi <code class="inline">this("Chua ro", 0)</code> → constructor đích gán field. Chuỗi <code class="inline">this(...)</code> kết thúc ở constructor không gọi <code class="inline">this(...)</code> nào khác — không nhất thiết là constructor nhiều tham số nhất.</p>
 
     <h3>JDK 25 — JEP 513: <code class="inline">this(...)</code> không còn buộc phải đứng đầu</h3>
 
-    <p>Quy tắc cổ điển (mọi tài liệu và đề phỏng vấn trước đây): <code class="inline">this(...)</code>/<code class="inline">super(...)</code> <strong>phải là câu lệnh đầu tiên</strong>. Từ JDK 25, JEP 513 (Flexible Constructor Bodies) cho phép đặt một số câu lệnh trước, miễn là chúng <strong>không đọc</strong> object đang được tạo (được phép gán field của chính class đó, tính toán, validate). Đọc field hoặc gọi instance method trước <code class="inline">this(...)</code> vẫn là lỗi compile:</p>
+    <p>Quy tắc cổ điển (mọi tài liệu và đề phỏng vấn trước đây): <code class="inline">this(...)</code>/<code class="inline">super(...)</code> <strong>phải là câu lệnh đầu tiên</strong>. Từ JDK 25, JEP 513 (Flexible Constructor Bodies) cho phép đặt một số câu lệnh trước, miễn là chúng <strong>không dùng</strong> object đang được tạo: không đọc field, không gọi instance method. Ngoại lệ duy nhất: được phép <strong>gán</strong> (simple assignment) vào field khai báo trong chính class đó nhưng <strong>chưa có initializer</strong> — phục vụ validate/chuẩn hóa trước khi gọi <code class="inline">super(...)</code>. Đọc field hoặc gọi instance method trước <code class="inline">this(...)</code> vẫn là lỗi compile:</p>
 
     <div class="codeblock">
       <pre><code class="java">BankAccount() {
@@ -275,7 +275,25 @@ IO.println(b.owner);   // Binh</code></pre>
 1 error</pre>
     </div>
 
-    <div class="note">Khi phỏng vấn, hãy trả lời theo cách cổ điển ("phải là câu lệnh đầu tiên") rồi bổ sung: từ JDK 25 (JEP 513) quy tắc được nới lỏng cho các câu lệnh không chạm vào object đang tạo. Khi viết code, cứ đặt <code class="inline">this(...)</code> đầu tiên cho dễ đọc — đó vẫn là style phổ biến.</div>
+    <p>Gán field <strong>đã có initializer</strong> trước <code class="inline">this(...)</code> cũng bị chặn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String owner = "Chua ro";   // field da co initializer
+
+BankAccount() {
+    this.owner = "An";      // loi compile: field da co initializer
+    this("An", 0);
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>BankAccount.java:9: error: cannot assign initialized field 'owner' before supertype constructor has been called
+        this.owner = "An";
+            ^
+1 error</pre>
+    </div>
+
+    <div class="note">Khi phỏng vấn, hãy trả lời theo cách cổ điển ("phải là câu lệnh đầu tiên") rồi bổ sung: từ JDK 25 (JEP 513) quy tắc được nới lỏng cho các câu lệnh không chạm vào object đang tạo, và chỉ được gán field <em>chưa có initializer</em>. Khi viết code, cứ đặt <code class="inline">this(...)</code> đầu tiên cho dễ đọc — đó vẫn là style phổ biến.</div>
 
     <h3>Constructor private</h3>
 
@@ -324,13 +342,14 @@ public class SavingsAccount {
         this.balance = balance;                // owner/balance ben phai la tham so
     }
 
-    void withdraw(long amount) {
+    boolean withdraw(long amount) {
         if (amount &gt; balance) {
             IO.println("Khong du tien");       // in khi rut qua so du
-            return;
+            return false;
         }
         balance -= amount;
         this.log("rut " + amount);             // goi method qua this
+        return true;
     }
 
     void log(String giaoDich) {
@@ -338,7 +357,9 @@ public class SavingsAccount {
     }
 
     void transfer(BankAccount other, long amount) {
-        this.withdraw(amount);
+        if (!withdraw(amount)) {               // chi chuyen khi rut thanh cong
+            return;                            // thieu tien: khong cong cho other
+        }
         other.receive(this, amount);           // truyen chinh object nay
     }
 
@@ -360,6 +381,10 @@ public class SavingsAccount {
         an.deposit(50_000).deposit(30_000);     // fluent API
         IO.println("An: " + an.balance);        // An: 380000
         IO.println("Binh: " + binh.balance);    // Binh: 300000
+
+        BankAccount cuong = new BankAccount("Cuong", 10_000);
+        an.transfer(cuong, 10_000_000);         // rut that bai: in "Khong du tien"
+        IO.println("Cuong: " + cuong.balance);  // Cuong: 10000 - khong bi cong tien
     }
 }</code></pre>
     </div>
@@ -445,6 +470,33 @@ public class SavingsAccount {
     </div>
 
     <p>Hai object được tạo nhưng dòng trong static block chỉ in <strong>một lần</strong>. <code class="inline">static final</code> là hằng số: quy ước đặt tên <code class="inline">UPPER_SNAKE_CASE</code>.</p>
+
+    <div class="note"><strong>Bẫy tinh tế — compile-time constant không kích hoạt class initialization:</strong> hằng <code class="inline">static final</code> kiểu nguyên thủy hoặc <code class="inline">String</code> khởi tạo bằng biểu thức hằng (ví dụ <code class="inline">static final int MAX = 100;</code>) được compiler <em>inlined</em> vào nơi dùng, nên đọc nó <strong>không</strong> chạy static block của class khai báo. Ngược lại <code class="inline">static final long START = Long.parseLong("20");</code> không phải constant expression nên có kích hoạt. Hệ quả production: đổi giá trị hằng xong phải <strong>recompile cả phía client</strong>, nếu không client vẫn giữ giá trị cũ đã inline.</div>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ConstantDemo {
+    public static void main() {
+        IO.println("MAX = " + Constants.MAX);      // khong trigger class init
+        IO.println("START = " + Constants.START);  // trigger class init
+    }
+}
+
+class Constants {
+    static final int MAX = 100;                     // compile-time constant
+    static final long START = Long.parseLong("20"); // khong phai constant expression
+    static {
+        IO.println("Constants duoc khoi tao");
+    }
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật — static block chỉ chạy khi đọc <code class="inline">START</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>MAX = 100
+Constants duoc khoi tao
+START = 20</code></pre>
+    </div>
 
     <h3>5.4 Static import</h3>
 
@@ -722,7 +774,7 @@ public class SavingsAccount {
 }</code></pre>
     </div>
 
-    <p>Vì sao phải đúng quy ước? Vì framework dùng <strong>reflection</strong> (học ở <a href="annotations-reflection.html">2.9 Annotations &amp; Reflection</a>) để đọc/ghi property theo tên method: Jackson cần no-arg constructor + getter/setter để chuyển object sang JSON và ngược lại; JPA/Hibernate cần no-arg constructor + field không <code class="inline">final</code> để tạo entity từ DB. Quy ước getter boolean là <code class="inline">isActive()</code> chứ không phải <code class="inline">getActive()</code>.</p>
+    <p>Vì sao phải đúng quy ước? Vì framework dùng <strong>reflection</strong> (học ở <a href="annotations-reflection.html">2.9 Annotations &amp; Reflection</a>) để đọc/ghi property theo tên method: Jackson serialize object sang JSON chỉ cần getter (hoặc field), không cần no-arg constructor; chiều ngược lại (JSON → object) cần no-arg constructor hoặc một creator như <code class="inline">@JsonCreator</code>, và từ Jackson 2.12+ record được hỗ trợ nên DTO bất biến không cần getter/setter. JPA/Hibernate cần no-arg constructor + field không <code class="inline">final</code> để tạo entity từ DB. Quy ước getter boolean là <code class="inline">isActive()</code> chứ không phải <code class="inline">getActive()</code>.</p>
 
     <div class="note">Với DTO <strong>bất biến</strong>, record gọn và an toàn hơn JavaBean: chỉ một dòng <code class="inline">record BankAccount(String owner, long balance) {}</code> là có constructor, accessor, <code class="inline">equals</code>/<code class="inline">hashCode</code>/<code class="inline">toString</code>. Khi nào dùng record thay JavaBean — xem <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>. JPA entity thì <em>không</em> dùng record được vì cần no-arg constructor.</div>
 
@@ -867,7 +919,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
         <tr><td>Constructor</td><td>Chỉ một constructor, dùng default parameter cho linh hoạt</td><td>Overload nhiều constructor; <code class="inline">this(...)</code> chaining</td></tr>
         <tr><td>Thành viên static</td><td><code class="inline">static</code> trong class</td><td>static field/method/block + <code class="inline">static final</code></td></tr>
         <tr><td>Đóng gói</td><td><code class="inline">#private</code>; còn lại public</td><td>4 mức: private / default / protected / public</td></tr>
-        <tr><td>So sánh object</td><td><code class="inline">===</code> so reference; <code class="inline">Object.is</code></td><td><code class="inline">==</code> so reference; <code class="inline">equals()</code> so nội dung (<a href="object-contract.html">2.6</a>)</td></tr>
+        <tr><td>So sánh object</td><td><code class="inline">===</code> so reference; <strong>không có</strong> equals nội dung dựng sẵn (<code class="inline">Object.is</code> chỉ khác <code class="inline">===</code> ở <code class="inline">NaN</code>/<code class="inline">-0</code>; muốn so nội dung phải tự viết deep-equal)</td><td><code class="inline">==</code> so reference; <code class="inline">equals()</code> so nội dung (<a href="object-contract.html">2.6</a>)</td></tr>
         <tr><td>In object</td><td><code class="inline">console.log(obj)</code> in nội dung</td><td><code class="inline">IO.println(obj)</code> gọi <code class="inline">toString()</code> → mặc định <code class="inline">ClassName@hash</code></td></tr>
       </tbody>
     </table>
@@ -904,7 +956,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 5. <code class="inline">this(...)</code> và <code class="inline">super(...)</code> khác nhau thế nào? <code class="inline">this()</code> có bắt buộc là câu lệnh đầu tiên không?</summary>
-      <div class="answer"><code class="inline">this(...)</code> gọi constructor khác <em>trong cùng class</em>; <code class="inline">super(...)</code> gọi constructor <em>class cha</em>. Nếu không viết cả hai, compiler chèn <code class="inline">super()</code> ngầm. Trả lời phỏng vấn chuẩn: "trước JDK 25 bắt buộc là câu lệnh đầu tiên; từ JDK 25 (JEP 513) được phép có câu lệnh trước miễn không đọc instance đang tạo". Tốt nhất cho điểm: nói quy tắc cổ điển trước, rồi bổ sung JEP 513.</div>
+      <div class="answer"><code class="inline">this(...)</code> gọi constructor khác <em>trong cùng class</em>; <code class="inline">super(...)</code> gọi constructor <em>class cha</em>. Nếu không viết cả hai, compiler chèn <code class="inline">super()</code> ngầm. Trả lời phỏng vấn chuẩn: "trước JDK 25 bắt buộc là câu lệnh đầu tiên; từ JDK 25 (JEP 513) được phép có câu lệnh trước miễn không đọc instance đang tạo — chỉ được gán field chưa có initializer; field đã có initializer hoặc đọc field/gọi instance method vẫn lỗi compile". Tốt nhất cho điểm: nói quy tắc cổ điển trước, rồi bổ sung JEP 513.</div>
     </details>
 
     <details class="qa">
@@ -914,7 +966,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 7. Vì sao <code class="inline">main</code> phải là <code class="inline">static</code>?</summary>
-      <div class="answer">JVM gọi <code class="inline">main</code> làm entry point khi chưa tạo object nào. Instance method cần object để gọi, nên không dùng được. <code class="inline">public</code> để JVM ngoài package gọi được; <code class="inline">void</code> vì JVM không nhận giá trị trả về. Từ JDK 25, file compact có thể dùng instance <code class="inline">void main()</code> — JVM tự tạo object (JEP 512).</div>
+      <div class="answer">JVM gọi <code class="inline">main</code> làm entry point khi chưa tạo object nào. Instance method cần object để gọi, nên không dùng được. <code class="inline">public</code> để JVM ngoài package gọi được; <code class="inline">void</code> vì JVM không nhận giá trị trả về. Từ JDK 25, <code class="inline">main</code> có thể không <code class="inline">static</code> — launcher tạo instance qua constructor no-arg không <code class="inline">private</code> rồi gọi <code class="inline">main</code> (JEP 512); cách này dùng được cả cho class thường, không chỉ file compact.</div>
     </details>
 
     <details class="qa">
@@ -929,7 +981,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 10. Top-level class được khai báo với những modifier nào?</summary>
-      <div class="answer">Chỉ <code class="inline">public</code> hoặc không viết gì (package-private). Không được <code class="inline">private</code>/<code class="inline">protected</code>; cũng không được <code class="inline">static</code>/<code class="inline">final</code> ở top-level (final chỉ dùng cho class lồng). Mỗi file chỉ một class public và tên file phải trùng tên class đó.</div>
+      <div class="answer">Về access modifier: chỉ <code class="inline">public</code> hoặc không viết gì (package-private). Không được <code class="inline">private</code>/<code class="inline">protected</code>, cũng không được <code class="inline">static</code> ở top-level; nhưng <code class="inline">final</code>, <code class="inline">abstract</code>, <code class="inline">sealed</code>/<code class="inline">non-sealed</code> hoàn toàn hợp lệ (<code class="inline">String</code>, <code class="inline">Integer</code> đều là top-level <code class="inline">final</code> class). Mỗi file chỉ một class public và tên file phải trùng tên class đó.</div>
     </details>
 
     <details class="qa">
@@ -941,7 +993,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 12. Static block chạy khi nào và bao nhiêu lần?</summary>
-      <div class="answer">Chạy khi class được khởi tạo (class initialization) — lần đầu class được dùng thật: tạo object đầu tiên, gọi static method/field, hoặc tạo subclass. Thường lười, không phải lúc chương trình bắt đầu. Mỗi class loader chạy đúng một lần, theo thứ tự khai báo cùng static field initializer. Dùng để khởi tạo <code class="inline">static final</code> phức tạp.</div>
+      <div class="answer">Chạy khi class được khởi tạo (class initialization) — lần đầu class được dùng thật: tạo object đầu tiên, gọi static method/field, hoặc tạo subclass. Thường lười, không phải lúc chương trình bắt đầu. Mỗi class loader chạy đúng một lần, theo thứ tự khai báo cùng static field initializer. Lưu ý: đọc compile-time constant (<code class="inline">static final</code> nguyên thủy/<code class="inline">String</code> khởi tạo bằng biểu thức hằng) <strong>không</strong> kích hoạt initialization — xem mục <a href="#static">5.3</a>. Dùng để khởi tạo <code class="inline">static final</code> phức tạp.</div>
     </details>
 
     <details class="qa">
@@ -966,7 +1018,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 17. JavaBean là gì? POJO khác gì? Khi nào dùng record thay?</summary>
-      <div class="answer">POJO là class Java thuần, không phụ thuộc framework. JavaBean là POJO theo quy ước: no-arg constructor + private field + getter/setter (+ Serializable). Framework như Jackson/JPA/Hibernate dựa vào quy ước này để hoạt động qua reflection. Record thay thế JavaBean khi cần DTO bất biến — gọn hơn và tự sinh accessor/equals/hashCode/toString; nhưng JPA entity không dùng record được vì cần no-arg constructor và field mutable.</div>
+      <div class="answer">POJO là class Java thuần, không phụ thuộc framework. JavaBean là POJO theo quy ước: no-arg constructor + private field + getter/setter (+ Serializable). JPA/Hibernate cần no-arg constructor + field không <code class="inline">final</code> để tạo entity từ DB. Jackson thì tách hai chiều: serialize object sang JSON chỉ cần getter/field (không cần no-arg constructor); chiều ngược lại cần no-arg constructor hoặc một creator như <code class="inline">@JsonCreator</code> — và từ Jackson 2.12+ record được hỗ trợ nên DTO bất biến không cần setter. Record thay thế JavaBean khi cần DTO bất biến — gọn hơn và tự sinh accessor/equals/hashCode/toString; nhưng JPA entity không dùng record được vì cần no-arg constructor và field mutable.</div>
     </details>
 
     <details class="qa">
@@ -981,7 +1033,7 @@ console.log(new BankAccount().deposit(100_000).deposit(50_000).balance);  // 150
 
     <details class="qa">
       <summary>Câu 20. Vì sao không nên so sánh hai object bằng <code class="inline">==</code>?</summary>
-      <div class="answer"><code class="inline">==</code> so địa chỉ (có phải cùng một object không), không so nội dung. Hai object cùng dữ liệu vẫn <code class="inline">==</code> cho <code class="inline">false</code>. Dùng <code class="inline">equals()</code> cho nội dung — nhưng chỉ đúng nếu class override đúng cặp <code class="inline">equals</code>/<code class="inline">hashCode</code> (2.6). Ngoại lệ: enum và record so <code class="inline">==</code> được.</div>
+      <div class="answer"><code class="inline">==</code> so địa chỉ (có phải cùng một object không), không so nội dung. Hai object cùng dữ liệu vẫn <code class="inline">==</code> cho <code class="inline">false</code>. Dùng <code class="inline">equals()</code> cho nội dung — nhưng chỉ đúng nếu class override đúng cặp <code class="inline">equals</code>/<code class="inline">hashCode</code> (2.6). Ngoại lệ: enum so <code class="inline">==</code> được vì mỗi hằng enum là một instance duy nhất; record vẫn phải dùng <code class="inline">equals()</code> — hai record cùng giá trị nhưng khác object vẫn <code class="inline">==</code> cho <code class="inline">false</code>.</div>
     </details>
 
     <details class="qa">
@@ -1334,7 +1386,7 @@ method trung ten class</code></pre></div>
         <tr><td>Tạo object</td><td><code class="inline">TenClass obj = new TenClass(...);</code> — biến reference trên stack, object trên heap</td></tr>
         <tr><td>Constructor</td><td>Tên trùng class, không return type; chạy khi <code class="inline">new</code></td></tr>
         <tr><td>Default constructor</td><td>Chỉ sinh khi không khai báo constructor nào; cùng access với class</td></tr>
-        <tr><td>Constructor chaining</td><td><code class="inline">this(...)</code> gọi constructor khác; từ JDK 25 không bắt buộc đứng đầu (JEP 513)</td></tr>
+        <tr><td>Constructor chaining</td><td><code class="inline">this(...)</code> gọi constructor khác; từ JDK 25 không bắt buộc đứng đầu (JEP 513 — trước đó chỉ được gán field chưa có initializer)</td></tr>
         <tr><td>Private constructor</td><td>Chặn tạo object ngoài class: Singleton, static factory, utility class</td></tr>
         <tr><td>Phân biệt field/tham số</td><td><code class="inline">this.owner = owner;</code></td></tr>
         <tr><td>Fluent API</td><td>Instance method trả về <code class="inline">this</code> để chain</td></tr>

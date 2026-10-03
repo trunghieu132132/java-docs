@@ -183,15 +183,159 @@ try {
 
     <h2 id="so-sanh">3. Toán tử so sánh <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
-    <p>Nhóm so sánh gồm <code class="inline">==</code>, <code class="inline">!=</code>, <code class="inline">&lt;</code>, <code class="inline">&gt;</code>, <code class="inline">&lt;=</code>, <code class="inline">&gt;=</code> — tất cả trả về <code class="inline">boolean</code>.</p>
+    <p>Nhóm so sánh gồm <code class="inline">==</code>, <code class="inline">!=</code>, <code class="inline">&lt;</code>, <code class="inline">&gt;</code>, <code class="inline">&lt;=</code>, <code class="inline">&gt;=</code> — tất cả trả về <code class="inline">boolean</code>. Trước khi đi chi tiết, hãy tách đôi thế giới: <strong>primitive</strong> và <strong>reference</strong> — gần như mọi bẫy nằm ở chỗ này.</p>
+
+    <h3>3.1 == trên primitive vs reference</h3>
 
     <ul>
-      <li>Với <strong>primitive</strong>, <code class="inline">==</code> so <strong>giá trị</strong>: <code class="inline">5 == 5</code> là true.</li>
-      <li>Với <strong>reference</strong>, <code class="inline">==</code> so <strong>địa chỉ</strong> (có phải cùng một object không). Muốn so nội dung phải dùng <code class="inline">.equals()</code> — chi tiết và cache wrapper đã có ở <a href="index.html#wrapper">Biến trong Java — mục 12</a> và <a href="index.html#string">mục 14</a>.</li>
+      <li>Với <strong>primitive</strong>, <code class="inline">==</code> so <strong>giá trị</strong>: <code class="inline">5 == 5</code> là true; <code class="inline">'a' == 97</code> cũng true vì <code class="inline">char</code> được nâng lên <code class="inline">int</code>.</li>
+      <li>Với <strong>reference</strong>, <code class="inline">==</code> so <strong>địa chỉ</strong> (có phải cùng một object không). Muốn so nội dung phải dùng <code class="inline">.equals()</code>.</li>
       <li>Java <strong>không có <code class="inline">===</code></strong>. <code class="inline">==</code> của Java đã là so sánh chặt, không ép kiểu như <code class="inline">==</code> của JS.</li>
+      <li>So primitive với wrapper (<code class="inline">int</code> với <code class="inline">Integer</code>) thì wrapper bị <strong>unbox</strong> — wrapper <code class="inline">null</code> đem so với primitive sẽ ném <code class="inline">NullPointerException</code>.</li>
     </ul>
 
-    <h3>Không so sánh float/double bằng <code class="inline">==</code></h3>
+    <h3>3.2 Bẫy cache của wrapper — <code class="inline">==</code> không đáng tin</h3>
+
+    <p>Boxed wrapper là reference, nhưng JVM <strong>cache sẵn</strong> một số giá trị nhỏ (Integer từ −128 đến 127) nên kết quả <code class="inline">==</code> thay đổi theo giá trị — bug chập chờn cực khó tìm. Bảng cache đầy đủ và lý do nằm ở <a href="index.html#wrapper">Biến trong Java — mục 12</a> (không lặp lại ở đây); điều cần khắc cốt: <strong>đừng bao giờ so wrapper bằng <code class="inline">==</code></strong>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum Color { RED, GREEN }
+
+void main() {
+    Integer a = 127;
+    Integer b = 127;
+    Integer c = 1000;
+    Integer d = 1000;
+    IO.println("127  == 127  : " + (a == b));      // true  - trong cache
+    IO.println("1000 == 1000 : " + (c == d));      // false - ngoai cache
+    IO.println("c.equals(d)  : " + c.equals(d));   // true
+
+    Color c1 = Color.RED;
+    Color c2 = Color.RED;
+    IO.println("enum == enum : " + (c1 == c2));    // true  - moi hang chi 1 object
+
+    String s1 = "java";
+    String s2 = new String("java");
+    IO.println("String ==    : " + (s1 == s2));    // false - khac object
+    IO.println("s1.equals(s2): " + s1.equals(s2)); // true
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>127  == 127  : true
+1000 == 1000 : false
+c.equals(d)  : true
+enum == enum : true
+String ==    : false
+s1.equals(s2): true</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Enum</strong> là ngoại lệ an toàn: mỗi hằng enum chỉ có <em>một</em> object duy nhất do JVM tạo lúc nạp class, nên <code class="inline">==</code> luôn đúng và được khuyến khích dùng (nhanh hơn <code class="inline">equals</code>, không bao giờ NPE).</li>
+      <li><strong>String</strong> cũng là reference — chi tiết pool, interning và các bẫy nằm ở <a href="strings.html#so-sanh">Strings chuyên sâu — mục 3</a>.</li>
+    </ul>
+
+    <h3>3.3 Objects.equals và các hàm compare chuyên dụng</h3>
+
+    <p><code class="inline">Objects.equals(a, b)</code> là "equals an toàn null": trả <code class="inline">true</code> khi cả hai null, <code class="inline">false</code> khi một null, còn lại gọi <code class="inline">a.equals(b)</code>. Với số, các wrapper có <code class="inline">compare</code> trả về −1/0/1 — dùng cho sort thay vì trừ (tránh tràn số):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Objects;
+
+void main() {
+    Object x = null;
+    Object y = "a";
+    IO.println(Objects.equals(x, y));          // false - khong NPE
+    IO.println(Objects.equals(null, null));    // true
+
+    Integer i1 = 1000;
+    Integer i2 = 1000;
+    IO.println(Objects.equals(i1, i2));        // true  - so noi dung
+    IO.println(Integer.compare(i1, i2));       // 0
+
+    IO.println(Long.compare(1L, 2L));          // -1
+    IO.println(Boolean.compare(false, true));  // -1
+
+    IO.println(i1.equals(1000L));              // false - Integer khac Long
+    IO.println(Objects.equals(i1, 1000L));     // false
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>false
+true
+true
+0
+-1
+-1
+false
+false</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">equals</code> của wrapper <strong>kiểm tra đúng class</strong>: <code class="inline">Integer(1000).equals(Long(1000))</code> là <code class="inline">false</code> dù cùng "giá trị số". Ép về cùng kiểu trước khi so, hoặc unbox rồi so bằng <code class="inline">==</code> trên primitive.</li>
+      <li><code class="inline">Integer.compare(a, b)</code> không tràn: viết <code class="inline">a - b</code> để so có thể tràn với <code class="inline">MIN_VALUE</code>/<code class="inline">MAX_VALUE</code>. Đây là lý do comparator production dùng <code class="inline">Integer.compare</code>.</li>
+      <li><code class="inline">Boolean.compare</code> xếp <code class="inline">false</code> trước <code class="inline">true</code>. Với chuỗi dùng <code class="inline">compareTo</code>/<code class="inline">Collator</code> (xem <a href="strings.html#so-sanh">Strings — mục 3</a>).</li>
+    </ul>
+
+    <h3>3.4 <code class="inline">&lt;</code> <code class="inline">&gt;</code> chỉ dành cho số và char</h3>
+
+    <p>Toán tử quan hệ chỉ nhận <strong>kiểu số</strong> (<code class="inline">byte</code>…<code class="inline">double</code>), <code class="inline">char</code>, và wrapper số (tự unbox). <code class="inline">boolean</code> hay reference như <code class="inline">String</code> đem ra so là <strong>lỗi compile</strong>:</p>
+
+    <div class="errblock">
+      <pre>IO.println(a &lt; b);
+             ^
+error: bad operand types for binary operator '&lt;'
+  first type:  boolean
+  second type: boolean</pre>
+    </div>
+
+    <div class="errblock">
+      <pre>IO.println(a &lt; b);
+             ^
+error: bad operand types for binary operator '&lt;'
+  first type:  String
+  second type: String</pre>
+    </div>
+
+    <p>Vì sao Java cấm? Vì <code class="inline">boolean</code> không có thứ tự tự nhiên, còn reference phải so nội dung bằng <code class="inline">equals</code>/<code class="inline">compareTo</code> chứ không phải bằng "địa chỉ ai nhỏ hơn". Muốn so thứ tự object, dùng <code class="inline">Comparable.compareTo</code> hoặc <code class="inline">Comparator</code> (ví dụ sort chuỗi ở <a href="arrays.html#sort-object">Arrays — mục 10</a>).</p>
+
+    <h3>3.5 char so sánh theo code unit (unsigned)</h3>
+
+    <p><code class="inline">char</code> là số nguyên không dấu 16-bit (code unit UTF-16), nên so <code class="inline">&lt;</code>/<code class="inline">&gt;</code> là so mã ký tự. Chữ hoa đứng trước chữ thường vì mã nhỏ hơn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    char a = 'a';
+    char b = 'b';
+    IO.println(a &lt; b);                    // true
+    IO.println((int) a);                  // 97
+    IO.println('A' &lt; 'a');                // true
+    IO.println(Character.compare(a, b));  // -1
+
+    char lon = '\uffff';                  // 65535
+    char nho = '\u8000';                  // 32768
+    IO.println(lon &gt; nho);                // true
+    IO.println(lon &gt; 0);                  // true
+    IO.println((short) lon &gt; 0);          // false - ep sang short la thanh am
+    IO.println((short) lon);              // -1
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+97
+true
+-1
+true
+true
+false
+-1</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy unsigned:</strong> <code class="inline">char</code> trị giá tới 65535 nên <code class="inline">lon &gt; 0</code> là true. Nhưng ép về <code class="inline">short</code> (có dấu) thì <code class="inline">'\uffff'</code> thành <code class="inline">-1</code> — mọi so sánh sau đó đảo chiều. Đừng ép char sang kiểu có dấu khi so sánh; cần số thì ép sang <code class="inline">int</code>.</div>
+
+    <h3>3.6 Không so sánh float/double bằng <code class="inline">==</code></h3>
 
     <p>Số thực IEEE 754 có sai số biểu diễn, nên so bằng <code class="inline">==</code> gần như luôn sai. Ví dụ chạy thật:</p>
 
@@ -223,6 +367,72 @@ IO.println("compareTo 0.3      = " + new BigDecimal("0.1").add(new BigDecimal("0
       <li><strong>NaN</strong> — mọi phép <code class="inline">==</code> với NaN đều false, kể cả <code class="inline">NaN == NaN</code>; <code class="inline">Double.compare(NaN, NaN) == 0</code>.</li>
       <li><strong>Tiền tệ</strong> — đừng dùng float/double từ đầu; dùng <code class="inline">BigDecimal</code> (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>).</li>
     </ul>
+
+    <h3>3.7 instanceof — so sánh kiểu</h3>
+
+    <p><code class="inline">instanceof</code> trả <code class="inline">boolean</code>: object có phải là instance của kiểu (hoặc lớp con của kiểu) không. Từ Java 16 có <strong>pattern matching</strong> — khai báo biến ngay trong điều kiện, hết ép kiểu thủ công:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Object o = "java";
+    IO.println(o instanceof String);       // true
+    IO.println(o instanceof Integer);      // false
+    o = null;
+    IO.println(o instanceof String);       // false - null luon false
+
+    Object p = "hello";
+    if (p instanceof String s) {           // pattern matching
+        IO.println(s.length());            // 5
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+false
+false
+5</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">null instanceof X</code> luôn <code class="inline">false</code> — không bao giờ NPE, tiện khi vừa check null vừa check kiểu.</li>
+      <li>Kiểu hai vế phải "có thể chuyển được" — so <code class="inline">String</code> với <code class="inline">Integer</code> bị chặn ngay lúc compile:</li>
+    </ul>
+
+    <div class="errblock">
+      <pre>IO.println(s instanceof Integer);
+             ^
+error: incompatible types: String cannot be converted to Integer</pre>
+    </div>
+
+    <p>Với primitive, JDK 25 vẫn chưa cho dùng chính thức — đây là tính năng <em>preview</em> phải bật cờ, nên mặc định là lỗi:</p>
+
+    <div class="errblock">
+      <pre>IO.println(x instanceof Integer);
+            ^
+error: primitive patterns are a preview feature and are disabled by default.
+  (use --enable-preview to enable primitive patterns)</pre>
+    </div>
+
+    <div class="note"><strong>Thực chiến:</strong> ưu tiên pattern matching <code class="inline">if (o instanceof String s &amp;&amp; s.length() &gt; 3)</code> thay cho ép kiểu cũ. Kết hợp với <code class="inline">switch</code> pattern (Java 21+) còn mạnh hơn nữa — dùng khi cần rẽ nhánh theo nhiều kiểu.</div>
+
+    <h3>Góc Node.js</h3>
+
+    <table>
+      <thead>
+        <tr><th>JS</th><th>Kết quả</th><th>Java tương ứng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">1 == "1"</code></td><td><code class="inline">true</code> — ép kiểu ngầm</td><td>Không compile; Java không ép kiểu trong so sánh</td></tr>
+        <tr><td><code class="inline">1 === "1"</code></td><td><code class="inline">false</code> — so chặt</td><td><code class="inline">==</code> của Java (đã chặt sẵn)</td></tr>
+        <tr><td><code class="inline">NaN === NaN</code></td><td><code class="inline">false</code></td><td><code class="inline">Double.compare(NaN, NaN) == 0</code> (mục 3.6)</td></tr>
+        <tr><td><code class="inline">Object.is(NaN, NaN)</code></td><td><code class="inline">true</code></td><td>Tương đương <code class="inline">Double.compare</code></td></tr>
+        <tr><td><code class="inline">0 === -0</code> / <code class="inline">Object.is(0, -0)</code></td><td><code class="inline">true</code> / <code class="inline">false</code></td><td><code class="inline">0.0 == -0.0</code> true; <code class="inline">Double.compare(0.0, -0.0) != 0</code></td></tr>
+        <tr><td><code class="inline">null == undefined</code></td><td><code class="inline">true</code> (loose); <code class="inline">null === undefined</code> false</td><td>Chỉ có <code class="inline">null</code>; <code class="inline">Objects.equals</code> xử lý an toàn</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Chốt gọn:</strong> primitive so bằng <code class="inline">==</code>; object/chuỗi/wrapper so bằng <code class="inline">equals</code> hoặc <code class="inline">Objects.equals</code>; số thực so bằng epsilon hoặc <code class="inline">Double.compare</code>; thứ tự dùng <code class="inline">Integer.compare</code>/<code class="inline">compareTo</code>; <code class="inline">&lt;</code>/<code class="inline">&gt;</code> chỉ cho số và char; kiểm tra kiểu bằng <code class="inline">instanceof</code> (pattern matching). Enum thì <code class="inline">==</code> là chuẩn.</div>
 
     <h2 id="tang-giam">4. Tăng/giảm <code class="inline">++</code> và <code class="inline">--</code></h2>
 
@@ -465,7 +675,7 @@ IO.println("2 + 3 &gt; 4 ? 10 : 20         = " + (2 + 3 &gt; 4 ? 10 : 20));  // 
     <div class="errblock">
       <pre>ErrBitwise.java:3: error: bad operand types for binary operator '&amp;'
         int result = 1 &amp; 3 == 3;
-                       ^
+                   ^
   first type:  int
   second type: boolean
 1 error</pre>
