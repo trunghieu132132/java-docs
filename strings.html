@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strings chuyên sâu — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item active" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="strings">Strings chuyên sâu</h1>
+
+    <p class="lead">Doc <a href="index.html#string">Biến trong Java — mục 14</a> đã dạy bạn String bất biến, String pool, <code class="inline">intern()</code> và <code class="inline">==</code> vs <code class="inline">equals</code>. Trang này đào sâu phần còn lại: bộ method thực chiến, format, text block, regex, Unicode/tiếng Việt, StringBuilder và những bẫy chỉ lộ ra khi làm production.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của doc này:</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — dùng thành thạo các method hay gặp (<code class="inline">substring</code>, <code class="inline">split</code>, <code class="inline">join</code>, <code class="inline">strip</code>, <code class="inline">format</code>, text block), viết validate regex đơn giản, làm hết bài tập đoán output.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">split</code> cắt phần tử rỗng cuối, <code class="inline">trim</code> khác <code class="inline">strip</code>, <code class="inline">length()</code> đếm code unit, <code class="inline">compareTo</code> trả gì, khi nào cần StringBuilder.</li>
+      <li><strong>Nhận biết</strong> — normalize NFC/NFD cho tiếng Việt, catastrophic backtracking trong regex, compiler dùng <code class="inline">invokedynamic</code>/StringConcatFactory, dùng <code class="inline">char[]</code> cho dữ liệu nhạy cảm.</li>
+    </ul>
+
+    <div class="note"><strong>Không lặp lại:</strong> immutability, String pool, <code class="inline">intern()</code>, <code class="inline">==</code> vs <code class="inline">equals</code> và nối chuỗi trong vòng lặp đã học ở <a href="index.html#string">Biến trong Java — mục 14</a>. Trang này chỉ bổ sung phần nâng cao và link chéo khi cần.</div>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#methods">Method quan trọng của String</a></li>
+        <li><a href="#so-sanh">So sánh chuỗi: equals, compareTo, matches</a></li>
+        <li><a href="#format">String.format / printf</a></li>
+        <li><a href="#text-blocks">Text blocks (Java 15+)</a></li>
+        <li><a href="#regex">Regex cơ bản với Pattern/Matcher</a></li>
+        <li><a href="#unicode">Unicode &amp; tiếng Việt</a></li>
+        <li><a href="#stringbuilder">StringBuilder vs StringBuffer vs +</a></li>
+        <li><a href="#production">Production patterns</a></li>
+        <li><a href="#nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="methods">2. Method quan trọng của String</h2>
+
+    <p>String có hơn 80 method; dưới đây là nhóm dùng hằng ngày. Ghi nhớ: String bất biến, <strong>mọi method trả về chuỗi mới</strong>, không sửa object gốc (xem <a href="index.html#string">Biến trong Java — mục 14</a>).</p>
+
+    <h3>2.1 Đo, truy cập, tìm kiếm</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String s = "Hello, Java!";
+
+IO.println("length()               : " + s.length());          // 12
+IO.println("charAt(0)              : " + s.charAt(0));         // H
+IO.println("charAt(11)             : " + s.charAt(11));        // !
+IO.println("indexOf('a')           : " + s.indexOf('a'));      // 8
+IO.println("lastIndexOf('a')       : " + s.lastIndexOf('a'));  // 10
+IO.println("indexOf(\"Java\")        : " + s.indexOf("Java"));   // 7
+IO.println("indexOf(\"xyz\")         : " + s.indexOf("xyz"));    // -1
+IO.println("contains(\"Java\")       : " + s.contains("Java"));  // true
+IO.println("startsWith(\"Hell\")     : " + s.startsWith("Hell")); // true
+IO.println("endsWith(\"!\")          : " + s.endsWith("!"));     // true</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">length()</code> trả số <strong>UTF-16 code unit</strong>, không phải số ký tự người dùng nhìn thấy — emoji sẽ chiếm 2 (xem <a href="#unicode">mục 7</a>).</li>
+      <li><code class="inline">indexOf</code> / <code class="inline">lastIndexOf</code> trả <code class="inline">-1</code> khi không tìm thấy — đừng so với 0.</li>
+      <li><code class="inline">charAt(i)</code> trả <code class="inline">char</code>; muốn lấy code point dùng <code class="inline">codePointAt(i)</code>.</li>
+    </ul>
+
+    <h3>2.2 substring — bẫy chỉ số</h3>
+
+    <p><code class="inline">substring(begin, end)</code> lấy từ <code class="inline">begin</code> đến <strong>trước</strong> <code class="inline">end</code> (end độc quyền). Vượt biên là ném exception ngay lúc chạy, không trả về null:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("substring(7)           : " + s.substring(7));      // Java!
+IO.println("substring(7, 11)       : " + s.substring(7, 11));  // Java
+IO.println("substring(12)          : [" + s.substring(12) + "]"); // []  - chuoi rong, hop le
+
+try {
+    "abc".charAt(3);
+} catch (StringIndexOutOfBoundsException e) {
+    IO.println("charAt(3)      : " + e.getMessage());
+    // Index 3 out of bounds for length 3
+}
+try {
+    "abc".substring(1, 9);
+} catch (StringIndexOutOfBoundsException e) {
+    IO.println("substring(1,9) : " + e.getMessage());
+    // Range [1, 9) out of bounds for length 3
+}
+try {
+    "abc".substring(-1);
+} catch (StringIndexOutOfBoundsException e) {
+    IO.println("substring(-1)  : " + e.getMessage());
+    // Range [-1, 3) out of bounds for length 3
+}
+try {
+    "abc".repeat(-1);
+} catch (IllegalArgumentException e) {
+    IO.println("repeat(-1)     : " + e.getMessage());
+    // count is negative: -1
+}</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy:</strong> <code class="inline">substring(len)</code> trả chuỗi rỗng (hợp lệ), nhưng <code class="inline">charAt(len)</code> ném exception. Và nhớ <code class="inline">end</code> là độc quyền: <code class="inline">substring(0, 3)</code> lấy 3 ký tự 0, 1, 2.</div>
+
+    <h3>2.3 replace vs replaceAll</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("replace(\".\", \"-\")        : " + "a.b".replace(".", "-"));      // a-b
+IO.println("replaceAll(\"\\\\.\", \"-\")   : " + "a.b".replaceAll("\\.", "-")); // a-b
+IO.println("replaceAll(\".\", \"-\")    : " + "a.b".replaceAll(".", "-"));   // ---
+IO.println("replace(\"a\", \"b\")       : " + "aaa".replace("a", "b"));     // bbb
+IO.println("replaceAll(\"a\", \"b\")    : " + "aaa".replaceAll("a", "b"));  // bbb</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">replace(char, char)</code> và <code class="inline">replace(CharSequence, CharSequence)</code> xử lý <strong>literal</strong>, thay <strong>tất cả</strong> lần xuất hiện (khác JavaScript <code class="inline">replace</code> chỉ thay lần đầu).</li>
+      <li><code class="inline">replaceAll(regex, replacement)</code> nhận <strong>regex</strong>. Dấu <code class="inline">.</code> là "mọi ký tự" nên <code class="inline">"a.b".replaceAll(".", "-")</code> thành <code class="inline">"---"</code>. Muốn thay dấu chấm thật phải escape: <code class="inline">"\\."</code>.</li>
+      <li><code class="inline">replaceFirst(regex, replacement)</code> chỉ thay lần khớp đầu tiên.</li>
+    </ul>
+
+    <h3>2.4 split — bẫy phần tử rỗng cuối</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String[] p1 = "a,b,,c".split(",");
+IO.println("a,b,,c split(\",\")      : len=" + p1.length + " -> [" + String.join("|", p1) + "]");
+// len=4 -> [a|b||c]
+
+String[] p2 = "a,b,,".split(",");
+IO.println("a,b,, split(\",\")       : len=" + p2.length + " -> [" + String.join("|", p2) + "]");
+// len=2 -> [a|b]      <- 2 phan tu rong cuoi bi cat bo
+
+String[] p3 = "a,b,,".split(",", -1);
+IO.println("a,b,, split(\",\", -1)   : len=" + p3.length + " -> [" + String.join("|", p3) + "]");
+// len=4 -> [a|b||]
+
+String[] p4 = "a,b,,".split(",", 2);
+IO.println("a,b,, split(\",\", 2)    : len=" + p4.length + " -> [" + String.join("|", p4) + "]");
+// len=2 -> [a|b,,]    <- phan con lai nam trong phan tu cuoi
+
+String[] p5 = "one two  three".split("\\s+");
+IO.println("split(\"\\\\s+\")          : len=" + p5.length + " -> [" + String.join("|", p5) + "]");
+// len=3 -> [one|two|three]
+
+String[] p6 = ",a,b".split(",");
+IO.println(",a,b split(\",\")        : len=" + p6.length + " -> [" + String.join("|", p6) + "]");
+// len=3 -> [|a|b]     <- rong dau chuoi thi duoc giu
+
+String[] p7 = "".split(",");
+IO.println("empty split(\",\")       : len=" + p7.length + " -> [" + String.join("|", p7) + "]");
+// len=1 -> []
+
+IO.println("split(\"\\\\s*\") on '  '  : len=" + "  ".split("\\s*").length);
+// len=0</code></pre>
+    </div>
+
+    <ul>
+      <li>Mặc định Java <strong>cắt bỏ các phần tử rỗng ở cuối</strong> (<code class="inline">limit = 0</code>) — khác JavaScript giữ lại hết.</li>
+      <li><code class="inline">limit = -1</code>: giữ tất cả, kể cả rỗng cuối (hay dùng khi parse CSV).</li>
+      <li><code class="inline">limit &gt; 0</code>: tách tối đa <code class="inline">limit - 1</code> lần, phần còn lại dồn vào phần tử cuối.</li>
+      <li>Phần tử rỗng ở <strong>đầu hoặc giữa</strong> luôn được giữ.</li>
+    </ul>
+
+    <div class="note warn"><strong>Production:</strong> parse CSV thủ công bằng <code class="inline">split(",")</code> chỉ đúng với dữ liệu đơn giản (không có dấu phẩy trong ngoặc kép). Dữ liệu thật nên dùng thư viện CSV chuyên dụng.</div>
+
+    <h3>2.5 Chuẩn hóa hoa/thường — chuyện locale</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Locale;
+
+IO.println("ROOT : " + "istanbul".toUpperCase(Locale.ROOT));   // ISTANBUL
+IO.println("TR   : " + "istanbul".toUpperCase(Locale.forLanguageTag("tr"))
+        .replace("\u0130", "[U+0130]"));                       // [U+0130]STANBUL
+IO.println("TR lower: " + "I".toLowerCase(Locale.forLanguageTag("tr"))
+        .replace("\u0131", "[U+0131]"));                       // [U+0131]
+IO.println("default locale: " + Locale.getDefault().toLanguageTag()); // tuy may - vi du: en-VN</code></pre>
+    </div>
+
+    <p>Tiếng Thổ Nhĩ Kỳ có hai chữ i: <code class="inline">i</code> hoa thành <code class="inline">İ</code> (U+0130), còn <code class="inline">I</code> thường thành <code class="inline">ı</code> (U+0131, i không chấm). Nếu server chạy với locale <code class="inline">tr</code>, code so sánh chuỗi case-insensitive sẽ sai âm thầm.</p>
+
+    <div class="note warn"><strong>Convention production:</strong> với dữ liệu không phải ngôn ngữ tự nhiên (mã trạng thái, email, enum name) luôn dùng <code class="inline">toUpperCase(Locale.ROOT)</code> / <code class="inline">toLowerCase(Locale.ROOT)</code> (API này có từ Java 1.1). Gọi <code class="inline">toLowerCase()</code> không truyền locale nghĩa là dùng locale mặc định của JVM — thứ thay đổi theo máy chủ và biến môi trường.</div>
+
+    <h3>2.6 isEmpty vs isBlank, trim vs strip</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    String em = "\u2003abc\u2003";
+
+    IO.println("trim()        : [" + show(em.trim()) + "] len=" + em.trim().length());
+    // [[EM]abc[EM]] len=5   - EM SPACE khong bi cat
+    IO.println("strip()       : [" + show(em.strip()) + "] len=" + em.strip().length());
+    // [abc] len=3
+
+    String nbsp = "\u00A0x\u00A0";
+    IO.println("nbsp trim()   : [" + show(nbsp.trim()) + "] len=" + nbsp.trim().length());
+    // [[NBSP]x[NBSP]] len=3
+    IO.println("nbsp strip()  : [" + show(nbsp.strip()) + "] len=" + nbsp.strip().length());
+    // [[NBSP]x[NBSP]] len=3  - NBSP khong phai whitespace
+
+    IO.println("isBlank(\"\")            : " + "".isBlank());          // true
+    IO.println("isBlank(\"   \")         : " + "   ".isBlank());       // true
+    IO.println("isBlank(\"\\u2003\")      : " + "\u2003".isBlank());    // true
+    IO.println("isBlank(\"\\u00A0\")      : " + "\u00A0".isBlank());    // false
+    IO.println("isEmpty(\"   \")         : " + "   ".isEmpty());       // false
+    IO.println("isEmpty(\"\")            : " + "".isEmpty());          // true
+}
+
+String show(String v) {
+    return v.replace(" ", ".")
+            .replace("\u2003", "[EM]")
+            .replace("\u00A0", "[NBSP]");
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">trim()</code> cắt mọi ký tự <code class="inline">&lt;= U+0020</code> (từ thời ASCII); <code class="inline">strip()</code> (Java 11+) cắt theo <code class="inline">Character.isWhitespace</code> (Unicode). EM SPACE (U+2003) bị <code class="inline">strip</code> cắt, <code class="inline">trim</code> giữ nguyên.</li>
+      <li>NBSP (non-breaking space, U+00A0) <strong>không phải</strong> whitespace theo Java: cả <code class="inline">trim</code>, <code class="inline">strip</code> lẫn <code class="inline">isBlank</code> đều giữ nó — dữ liệu copy từ web rất hay dính loại này.</li>
+      <li><code class="inline">isEmpty()</code> tương đương <code class="inline">length() == 0</code>; <code class="inline">isBlank()</code> đúng cả khi chỉ toàn khoảng trắng. Validate input dùng <code class="inline">isBlank()</code>.</li>
+    </ul>
+
+    <h3>2.7 repeat, join, toCharArray, valueOf, formatted</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("repeat(2).length()     : " + s.repeat(2).length());    // 24
+IO.println("join                   : " + String.join(" | ", "A", "B", "C")); // A | B | C
+IO.println("toCharArray().length   : " + "abc".toCharArray().length);       // 3
+IO.println("toCharArray()[1]       : " + "abc".toCharArray()[1]);          // b
+IO.println("valueOf(123)           : " + String.valueOf(123));            // 123
+IO.println("valueOf((Object) null) : " + String.valueOf((Object) null));  // null
+IO.println("valueOf(true)          : " + String.valueOf(true));           // true
+IO.println("formatted              : " + "%s-%04d".formatted("ORD", 7));  // ORD-0007</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">String.join(delimiter, elements)</code> gọn hơn tự nối bằng vòng lặp và không để lại dấu phân cách thừa ở cuối.</li>
+      <li><code class="inline">String.valueOf(x)</code> an toàn với null (trả <code class="inline">"null"</code>), khác <code class="inline">x.toString()</code> có thể ném NPE. Lưu ý <code class="inline">valueOf((char[]) null)</code> vẫn ném NPE.</li>
+      <li><code class="inline">"template".formatted(args)</code> là cách viết tương đương <code class="inline">String.format("template", args)</code> nhưng xuôi chiều hơn.</li>
+    </ul>
+
+    <h2 id="so-sanh">3. So sánh chuỗi: equals, compareTo, matches</h2>
+
+    <div class="codeblock">
+      <pre><code class="java">String a = "apple";
+String b = "banana";
+
+IO.println("equals(\"Apple\")             : " + a.equals("Apple"));             // false
+IO.println("equalsIgnoreCase(\"Apple\")   : " + a.equalsIgnoreCase("Apple"));   // true
+IO.println("compareTo(\"banana\")         : " + a.compareTo(b));                // -1
+IO.println("compareTo(\"app\")            : " + a.compareTo("app"));            // 2
+IO.println("banana.compareTo(apple)     : " + b.compareTo(a));                // 1
+IO.println("compareToIgnoreCase(\"APPLE\"): " + a.compareToIgnoreCase("APPLE")); // 0
+IO.println("contentEquals(StringBuilder): " + a.contentEquals(new StringBuilder("apple"))); // true
+IO.println("\"123\".matches(\"\\\\d+\")      : " + "123".matches("\\d+"));          // true
+IO.println("\"12a\".matches(\"\\\\d+\")      : " + "12a".matches("\\d+"));          // false
+IO.println("equals(null)                : " + a.equals(null));                // false
+try {
+    String s = null;
+    s.equals("apple");
+} catch (NullPointerException e) {
+    IO.println("null.equals(\"apple\")        : NullPointerException");
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">equals</code> so nội dung, <code class="inline">==</code> so địa chỉ object — quy tắc và String pool đã học ở <a href="index.html#string">Biến trong Java — mục 14</a>.</li>
+      <li><code class="inline">compareTo</code> trả hiệu của ký tự khác nhau đầu tiên (<code class="inline">'a' - 'b' = -1</code>); nếu một chuỗi là tiền tố của chuỗi kia thì trả hiệu độ dài (<code class="inline">"apple".compareTo("app") = 2</code>). Dùng để <strong>sắp xếp</strong> (<code class="inline">sort</code>, <code class="inline">TreeMap</code>), không dùng để kiểm tra bằng nhau (<code class="inline">equals</code> nhanh hơn).</li>
+      <li><code class="inline">contentEquals(CharSequence)</code> so với mọi loại chuỗi (StringBuilder, StringBuffer) mà không cần <code class="inline">toString()</code>.</li>
+      <li>Gọi <code class="inline">equals</code> trên biến null ném NPE; <code class="inline">a.equals(null)</code> trả false an toàn.</li>
+      <li><code class="inline">matches(regex)</code> chỉ trả true khi khớp <strong>toàn bộ</strong> chuỗi — chi tiết ở <a href="#regex">mục 6</a>.</li>
+    </ul>
+
+    <h2 id="format">4. String.format / printf</h2>
+
+    <p>Ghép chuỗi bằng <code class="inline">+</code> nhanh nhưng khó căn chỉnh và khó đọc khi nhiều biến. <code class="inline">String.format</code> dùng <em>format specifier</em> bắt đầu bằng <code class="inline">%</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println(String.format("%s có %d sản phẩm", "Đơn hàng", 3));  // Đơn hàng có 3 sản phẩm
+IO.println(String.format("%02d:%02d", 9, 5));                    // 09:05
+IO.println(String.format("%.2f", 2.5));                          // 2.50
+IO.println(String.format("%.0f", 2.5));                          // 3
+IO.println(String.format("%.2f", 2.345));                        // 2.35
+IO.println(String.format("%.2f", 1.005));                        // 1.01
+IO.println(String.format("%,d", 1234567));                       // 1,234,567
+IO.println(String.format("%,d", -1234567));                      // -1,234,567
+IO.println(String.format("%x", 255));                            // ff
+IO.println(String.format("%X", 255));                            // FF
+IO.println(String.format("%04x", 255));                          // 00ff
+IO.println(String.format("%b", true));                           // true
+IO.println(String.format("%b", "chuoi bat ky"));                 // true
+IO.println(String.format("%b", (Object) null));                  // false
+IO.println("[" + "%-10s|".formatted("abc") + "]");               // [abc       |]</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Specifier</th><th>Ý nghĩa</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">%s</code></td><td>Chuỗi; nhận mọi object (gọi <code class="inline">toString</code>)</td><td><code class="inline">%s</code> → <code class="inline">Đơn hàng</code></td></tr>
+        <tr><td><code class="inline">%d</code></td><td>Số nguyên</td><td><code class="inline">%d</code> với <code class="inline">42</code> → <code class="inline">42</code></td></tr>
+        <tr><td><code class="inline">%02d</code></td><td>Số nguyên, pad 0 cho đủ 2 chữ số</td><td><code class="inline">%02d</code> với <code class="inline">9</code> → <code class="inline">09</code></td></tr>
+        <tr><td><code class="inline">%.2f</code></td><td>Số thực, 2 chữ số sau dấu chấm</td><td><code class="inline">2.345</code> → <code class="inline">2.35</code></td></tr>
+        <tr><td><code class="inline">%,d</code></td><td>Dấu phân cách nghìn theo locale</td><td><code class="inline">1234567</code> → <code class="inline">1,234,567</code></td></tr>
+        <tr><td><code class="inline">%n</code></td><td>Xuống dòng nền tảng (<code class="inline">\n</code> trên macOS/Linux, <code class="inline">\r\n</code> trên Windows)</td><td><code class="inline">a%nb</code> → 2 dòng</td></tr>
+        <tr><td><code class="inline">%b</code></td><td>Boolean; object khác null là true, null là false</td><td><code class="inline">null</code> → <code class="inline">false</code></td></tr>
+        <tr><td><code class="inline">%x</code> / <code class="inline">%X</code></td><td>Thập lục phân chữ thường / hoa</td><td><code class="inline">255</code> → <code class="inline">ff</code> / <code class="inline">FF</code></td></tr>
+        <tr><td><code class="inline">%-10s</code></td><td>Căn trái trong 10 ký tự (mặc định căn phải: <code class="inline">%10s</code>)</td><td><code class="inline">abc</code> → <code class="inline">abc       </code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Làm tròn HALF_UP — và vì sao vẫn phải cẩn thận</h3>
+
+    <p><code class="inline">%.2f</code> làm tròn <strong>HALF_UP trên biểu diễn thập phân</strong> của số: <code class="inline">2.345</code> in ra <code class="inline">2.35</code>, <code class="inline">1.005</code> in ra <code class="inline">1.01</code> (không gặp bẫy nhị phân như <code class="inline">1.005 * 100</code>). Nhưng đây vẫn không phải số học chính xác: với tiền tệ, hãy tính bằng <code class="inline">BigDecimal</code> rồi mới format (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>).</p>
+
+    <h3>Locale quyết định dấu phân cách</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("ROOT locale    : " + String.format(Locale.ROOT, "%,d", 1234567)); // 1,234,567
+IO.println("US locale      : " + String.format(Locale.US, "%,d", 1234567));   // 1,234,567
+IO.println("vi-VN locale   : " + String.format(Locale.forLanguageTag("vi-VN"), "%,d", 1234567)); // 1.234.567</code></pre>
+    </div>
+
+    <p>Cùng một số, locale <code class="inline">vi-VN</code> in dấu chấm, <code class="inline">en-US</code> in dấu phẩy. Với dữ liệu máy đọc (log, API, CSV) luôn format bằng <code class="inline">Locale.ROOT</code>/<code class="inline">Locale.US</code> để kết quả không phụ thuộc máy chủ.</p>
+
+    <h3>Sai kiểu tham số và printf</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">try {
+    String.format("%d", "khong phai so");
+} catch (IllegalFormatConversionException e) {
+    IO.println("IFC message    : " + e.getMessage());   // d != java.lang.String
+}</code></pre>
+    </div>
+
+    <p><code class="inline">System.out.printf(format, args)</code> là in luôn, không trả chuỗi. Trong JDK 25, <code class="inline">IO</code> (JEP 512) có <code class="inline">print</code>/<code class="inline">println</code>/<code class="inline">readln</code> nhưng <strong>không có printf</strong> — tương đương gần nhất:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">System.out.printf("printf         : %s = %d%n", "x", 42);                 // x = 42
+IO.println(String.format("format + println: %s = %d", "x", 42));           // x = 42</code></pre>
+    </div>
+
+    <h2 id="text-blocks">5. Text blocks (Java 15+)</h2>
+
+    <p>Thay vì nối chuỗi JSON/SQL bằng <code class="inline">\n</code>, Java 15 thêm text block: chuỗi nhiều dòng bắt đầu và kết thúc bằng ba dấu nháy kép <code class="inline">"""</code>. So với template literal của JavaScript thì tương tự, nhưng text block không nội suy biến — muốn chèn giá trị dùng <code class="inline">.formatted()</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String json = """
+        {
+          "id": 1,
+          "status": "ACTIVE"
+        }
+        """;
+IO.println("json newlines : " + json.replace("\n", "\\n"));
+// {\n  "id": 1,\n  "status": "ACTIVE"\n}\n
+IO.println("json length   : " + json.length());   // 36</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Hay bị nhầm:</strong> khi dấu <code class="inline">"""</code> đóng nằm trên dòng riêng, chuỗi kết quả <strong>có</strong> ký tự xuống dòng cuối cùng (thấy rõ trong output: <code class="inline">}\n</code>, length 36). Nếu muốn không có newline cuối, đặt <code class="inline">"""</code> ngay sau nội dung trên cùng dòng.</div>
+
+    <h3>Thụt lề và incidental whitespace</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String indented = """
+        line1
+          line2
+        """;
+IO.println("indent        : [" + indented.replace(" ", ".").replace("\n", "\\n") + "]");
+// [line1\n..line2\n]  - bo 8 space thut le chung, giu 2 space thua
+
+String oneLine = """
+        abc""";
+IO.println("same-line end : [" + oneLine.replace("\n", "\\n") + "] len=" + oneLine.length());
+// [abc] len=3  - dong """ cung dong thi khong co newline cuoi</code></pre>
+    </div>
+
+    <p>Java tính <strong>khoảng thụt lề nhỏ nhất</strong> của tất cả dòng (kể cả dòng chứa <code class="inline">"""</code> đóng) rồi bỏ đi; phần thụt lề thừa giữ nguyên. Vì vậy dấu đóng nằm càng lùi vào trong thì chuỗi càng giữ nhiều space.</p>
+
+    <h3>Escaping: <code class="inline">\s</code> và nối dòng bằng <code class="inline">\</code></h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String spaces = """
+        a\s\s
+        b""";
+IO.println("\\s spaces     : [" + spaces.replace(" ", ".").replace("\n", "\\n") + "]");
+// [a..\nb]  - \s la 1 space that, khong bi strip nhu space thuong
+IO.println("space count   : " + spaces.length());   // 5
+
+String joined = """
+        one \
+        two""";
+IO.println("\\ join       : [" + joined.replace("\n", "\\n") + "]");
+// [one two]  - dau \ cuoi dong noi lien, bo newline va thut le dong sau</code></pre>
+    </div>
+
+    <h3>Ứng dụng: JSON, SQL và <code class="inline">formatted()</code></h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String query = """
+        SELECT id, status
+        FROM orders
+        WHERE status = '%s'
+        ORDER BY id
+        """.formatted("ACTIVE");
+IO.println("SQL           : " + query.replace("\n", " &lt;- NL "));
+// SELECT id, status &lt;- NL FROM orders &lt;- NL WHERE status = 'ACTIVE' &lt;- NL ORDER BY id &lt;- NL</code></pre>
+    </div>
+
+    <p>Ví dụ HTML — chú ý phải escape ký tự <code class="inline">%</code> nếu nội dung có phần trăm, vì <code class="inline">formatted()</code> hiểu đó là specifier:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String html = """
+        &lt;ul&gt;
+          &lt;li&gt;%s&lt;/li&gt;
+        &lt;/ul&gt;
+        """.formatted("Java");
+IO.println("html  : " + html.replace("\n", " "));
+// html  : &lt;ul&gt;   &lt;li&gt;Java&lt;/li&gt; &lt;/ul&gt;</code></pre>
+    </div>
+
+    <p>Dấu <code class="inline">"""</code> mở <strong>bắt buộc</strong> phải xuống dòng ngay sau đó, nếu viết nội dung cùng dòng sẽ lỗi compile:</p>
+
+    <div class="errblock">
+      <pre>TextBlockError.java:2: error: illegal text block open delimiter sequence, missing line terminator
+    String s = """abc""";
+                  ^
+TextBlockError.java:2: error: illegal text block open delimiter sequence, missing line terminator
+    String s = """abc""";
+                        ^
+TextBlockError.java:2: error: ';' expected
+    String s = """abc""";
+                     ^
+3 errors</pre>
+    </div>
+
+    <p>Text block cũng có thể dùng với cộng chuỗi thông thường; chúng là hằng chuỗi như mọi literal khác và được intern trong pool (xem <a href="index.html#string">Biến trong Java — mục 14</a>).</p>
+
+    <h2 id="regex">6. Regex cơ bản với Pattern/Matcher</h2>
+
+    <p>Regex (regular expression) là ngôn ngữ mô tả mẫu chuỗi. Java dùng qua <code class="inline">Pattern</code> (mẫu đã biên dịch) và <code class="inline">Matcher</code> (bộ khớp). Bảng cú pháp tối thiểu:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cú pháp</th><th>Nghĩa</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">.</code></td><td>Một ký tự bất kỳ</td><td><code class="inline">a.c</code> khớp <code class="inline">abc</code></td></tr>
+        <tr><td><code class="inline">\d</code> / <code class="inline">\w</code> / <code class="inline">\s</code></td><td>Chữ số / chữ và số / khoảng trắng</td><td><code class="inline">\d{4}</code> khớp <code class="inline">2026</code></td></tr>
+        <tr><td><code class="inline">+</code> <code class="inline">*</code> <code class="inline">?</code></td><td>1+, 0+, 0 hoặc 1 lần</td><td><code class="inline">0\d{9}</code> số điện thoại</td></tr>
+        <tr><td><code class="inline">{2,4}</code></td><td>Lặp từ 2 đến 4 lần</td><td><code class="inline">\d{2,4}</code></td></tr>
+        <tr><td><code class="inline">^</code> <code class="inline">$</code></td><td>Đầu / cuối chuỗi</td><td><code class="inline">^\d+$</code> chỉ toàn số</td></tr>
+        <tr><td><code class="inline">[abc]</code> <code class="inline">[^abc]</code></td><td>Nhóm ký tự / phủ định</td><td><code class="inline">[A-Z]</code> chữ hoa</td></tr>
+        <tr><td><code class="inline">(...)</code> <code class="inline">(?&lt;name&gt;...)</code></td><td>Nhóm bắt / nhóm có tên</td><td><code class="inline">(\d{4})-(\d{2})</code></td></tr>
+        <tr><td><code class="inline">a|b</code></td><td>Hoặc</td><td><code class="inline">true|false</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+Pattern email = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[\\w.]+$");
+IO.println("email hop le   : " + email.matcher("an.nguyen@example.com").matches()); // true
+IO.println("email sai      : " + email.matcher("an@@example").matches());          // false
+
+Pattern phone = Pattern.compile("^0\\d{9}$");
+IO.println("phone hop le   : " + phone.matcher("0912345678").matches());  // true
+IO.println("phone sai      : " + phone.matcher("091234567").matches());   // false
+
+Matcher date = Pattern.compile("(\\d{4})-(\\d{2})-(\\d{2})").matcher("2026-09-18");
+if (date.find()) {
+    IO.println("group()        : " + date.group());      // 2026-09-18
+    IO.println("group(1)       : " + date.group(1));     // 2026
+    IO.println("group(2)       : " + date.group(2));     // 09
+    IO.println("group(3)       : " + date.group(3));     // 18
+}
+
+Matcher kv = Pattern.compile("(\\w+)=(\\w+)").matcher("a=1, b=2, c=3");
+while (kv.find()) {
+    IO.println("key=" + kv.group(1) + " value=" + kv.group(2));
+}
+// key=a value=1
+// key=b value=2
+// key=c value=3
+
+Matcher named = Pattern.compile("(?&lt;year&gt;\\d{4})-(?&lt;month&gt;\\d{2})").matcher("2026-09");
+if (named.matches()) {
+    IO.println("named year     : " + named.group("year"));    // 2026
+    IO.println("named month    : " + named.group("month"));   // 09
+}
+
+IO.println("greedy         : " + "&lt;b&gt;bold&lt;/b&gt;".replaceAll("&lt;.*&gt;", "X"));   // X
+IO.println("reluctant      : " + "&lt;b&gt;bold&lt;/b&gt;".replaceAll("&lt;.*?&gt;", "X"));  // XboldX
+
+String[] tokens = "a1  b22   c333".split("\\s+");
+IO.println("split \\\\s+      : len=" + tokens.length + " -&gt; [" + String.join("|", tokens) + "]");
+// len=3 -&gt; [a1|b22|c333]
+
+int count = 0;
+Matcher m = Pattern.compile("\\d+").matcher("abc 12 def 345");
+while (m.find()) {
+    count++;
+}
+IO.println("so lan find    : " + count);   // 2
+
+try {
+    Pattern.compile("[a-");
+} catch (PatternSyntaxException e) {
+    IO.println("PSE description: " + e.getDescription());   // Illegal character range
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">matches()</code> đòi khớp <strong>toàn bộ</strong> chuỗi; <code class="inline">find()</code> tìm lần khớp kế tiếp trong chuỗi. Dùng <code class="inline">String.matches(regex)</code> cho câu ngắn, dùng <code class="inline">Pattern</code>/<code class="inline">Matcher</code> khi cần lặp, group hoặc tái sử dụng pattern.</li>
+      <li><code class="inline">matches()</code> một lần cũng ngầm thêm <code class="inline">^...$</code>; ngược lại <code class="inline">find()</code> chỉ cần khớp một đoạn.</li>
+      <li><strong>Greedy vs reluctant:</strong> <code class="inline">.*</code> tham lam — khớp dài nhất có thể nên <code class="inline">&lt;.*&gt;</code> nuốt cả chuỗi HTML; <code class="inline">.*?</code> nhường — khớp ngắn nhất, cho kết quả từng thẻ.</li>
+      <li>Email/số điện thoại thật rất phức tạp; regex đơn giản như trên chỉ để chặn dữ liệu rõ ràng sai (mức "nhận biết": nên xác thực email triệt để bằng gửi mail xác nhận).</li>
+    </ul>
+
+    <div class="note warn"><strong>Catastrophic backtracking (nhận biết):</strong> các mẫu lồng lượng từ như <code class="inline">(a+)+$</code> có thể khiến engine thử hàng triệu tổ hợp với input dài không khớp — treo CPU, dễ thành lỗ hổng DoS. Phòng: tránh nhóm lồng nhau, giới hạn độ dài input, tách bớt validate ra ngoài regex.</div>
+
+    <p>Pattern là bất biến và thread-safe, còn Matcher thì không — muốn dùng ở nhiều thread phải tạo Matcher mới từ cùng Pattern. <code class="inline">Pattern.compile</code> khá tốn kém nên trong production khai báo một lần:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">private static final Pattern EMAIL = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[\\w.]+$");</code></pre>
+    </div>
+
+    <h2 id="unicode">7. Unicode &amp; tiếng Việt <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><code class="inline">char</code> là một <strong>UTF-16 code unit</strong> (16 bit), không phải một ký tự Unicode. Ký tự ngoài BMP (basic multilingual plane) như emoji cần 2 <code class="inline">char</code> (surrogate pair), nên <code class="inline">length()</code> đếm code unit chứ không đếm ký tự:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String emoji = "a\uD83D\uDE00b";   // a + U+1F600 + b
+
+IO.println("length()           : " + emoji.length());                       // 4
+IO.println("codePointCount     : " + emoji.codePointCount(0, emoji.length())); // 3
+IO.println("codePoints().count : " + emoji.codePoints().count());           // 3
+IO.println("chars().count      : " + emoji.chars().count());                 // 4
+IO.println("charAt(1) hex      : " + Integer.toHexString(emoji.charAt(1)));  // d83d
+IO.println("charAt(2) hex      : " + Integer.toHexString(emoji.charAt(2)));  // de00
+IO.println("codePointAt(1) hex : " + Integer.toHexString(emoji.codePointAt(1))); // 1f600
+IO.println("codePoints hex     : " + emoji.codePoints()
+        .mapToObj(cp -&gt; "U+" + Integer.toHexString(cp).toUpperCase())
+        .toList());
+// [U+61, U+1F600, U+62]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">charAt(1)</code> trả nửa đầu surrogate (0xD83D) — cắt chuỗi theo <code class="inline">char</code> có thể làm vỡ emoji.</li>
+      <li><code class="inline">codePointCount</code>, <code class="inline">codePointAt</code>, <code class="inline">codePoints()</code> làm việc theo code point — đúng với ký tự người dùng thấy. Phân biệt với <code class="inline">chars()</code>: method này trả về <code class="inline">IntStream</code> các <strong>code unit</strong> (4 cho <code class="inline">"a\uD83D\uDE00b"</code>), còn <code class="inline">codePoints()</code> trả các code point (3).</li>
+      <li>Cả Java lẫn JavaScript đều dùng UTF-16 cho String, nên <code class="inline">"a\uD83D\uDE00b".length</code> trong JS cũng bằng 4.</li>
+    </ul>
+
+    <h3>Normalize NFC/NFD — cạm bẫy tiếng Việt</h3>
+
+    <p>Một ký tự tiếng Việt như "ế" có hai cách biểu diễn Unicode: <strong>NFC</strong> (một code point U+1EBF) hoặc <strong>NFD</strong> (e + dấu mũ + dấu sắc = 3 code point). Nhìn giống nhau nhưng <code class="inline">equals</code> trả false:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.text.Normalizer;
+
+String nfc = "\u1EBF";        // ế - precomposed
+String nfd = "e\u0302\u0301"; // e + U+0302 + U+0301
+
+IO.println("NFC length         : " + nfc.length());          // 1
+IO.println("NFD length         : " + nfd.length());          // 3
+IO.println("NFC.equals(NFD)    : " + nfc.equals(nfd));      // false
+IO.println("NFC.compareTo(NFD) : " + nfc.compareTo(nfd));   // 7770
+
+String nfdNormalized = Normalizer.normalize(nfd, Normalizer.Form.NFC);
+IO.println("normalize(NFD,NFC) : " + nfc.equals(nfdNormalized));   // true
+IO.println("NFD len sau normalize: " + Normalizer.normalize(nfc, Normalizer.Form.NFD).length()); // 3
+
+String composed = "\u00E9";   // é
+String decomposed = "e\u0301"; // e + dấu sắc
+IO.println("\\u00E9 equals e+\\u0301 : " + composed.equals(decomposed));   // false
+IO.println("sau NFC            : " + Normalizer.normalize(decomposed, Normalizer.Form.NFC).equals(composed)); // true</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Production:</strong> macOS lưu tên file ở dạng NFD; dữ liệu người dùng nhập từ nhiều nguồn có thể lẫn NFC/NFD. Hệ quả: so sánh <code class="inline">equals</code> thất bại, unique index trong DB không chặn được bản ghi trùng, tìm kiếm không khớp. Cách phòng: chuẩn hóa về NFC ngay tại biên nhận dữ liệu (<code class="inline">Normalizer.normalize(s, Form.NFC)</code>) rồi mới lưu/so sánh.</div>
+
+    <h2 id="stringbuilder">8. StringBuilder vs StringBuffer vs <code class="inline">+</code> <span class="badge b-prod">Production</span></h2>
+
+    <p>Phần cơ bản (vì sao nối chuỗi trong vòng lặp tạo rác) đã có ở <a href="index.html#string">Biến trong Java — mục 14</a>. Ở đây tập trung vào API và lựa chọn công cụ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">StringBuilder sb = new StringBuilder("Hello");
+sb.append(", ").append("Java").append('!');
+IO.println("append    : " + sb);          // Hello, Java!
+
+sb.insert(0, "&gt;&gt; ");
+IO.println("insert    : " + sb);          // &gt;&gt; Hello, Java!
+
+sb.reverse();
+IO.println("reverse   : " + sb);          // !avaJ ,olleH &gt;&gt;
+
+sb.reverse();
+sb.setLength(5);
+IO.println("setLength : " + sb);          // &gt;&gt; He
+
+StringBuilder built = new StringBuilder();
+built.append("id=").append(42).append(", status=").append(true);
+IO.println("mixed     : " + built);       // id=42, status=true
+
+IO.println("capacity  : " + (new StringBuilder(100).capacity()));   // 100
+
+StringBuffer safe = new StringBuffer();
+safe.append("thread").append("-safe");
+IO.println("StringBuffer: " + safe);      // thread-safe</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">String</code></th><th><code class="inline">StringBuilder</code></th><th><code class="inline">StringBuffer</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bất biến</td><td>Có</td><td>Không</td><td>Không</td></tr>
+        <tr><td>Thread-safe</td><td>Có (nhờ bất biến)</td><td>Không</td><td>Có (<code class="inline">synchronized</code>)</td></tr>
+        <tr><td>Hiệu năng</td><td>Tệ khi nối nhiều lần</td><td>Nhanh nhất</td><td>Chậm hơn do khóa</td></tr>
+        <tr><td>Dùng khi</td><td>Chuỗi cố định, ít thay đổi</td><td>Mặc định khi cần build chuỗi</td><td>Chỉ khi chia sẻ giữa nhiều thread (hiếm)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Convention: mặc định dùng <code class="inline">StringBuilder</code>. Trong code application hiện đại gần như không cần <code class="inline">StringBuffer</code> — nếu cần thread-safe thật, thường dùng cơ chế khác (immutable string, local builder trong từng thread).</p>
+
+    <h3>Compiler tối ưu <code class="inline">+</code> thế nào (mức nhận biết)</h3>
+
+    <p>Từ Java 9 (JEP 280), phép cộng chuỗi trong <strong>một biểu thức</strong> được biên dịch thành lệnh <code class="inline">invokedynamic</code> gọi <code class="inline">StringConcatFactory</code> thay vì <code class="inline">new StringBuilder()</code> thủ công. Kiểm chứng bằng <code class="inline">javap -c</code>:</p>
+
+    <div class="codeblock">
+      <pre>String s = "Ngon ngu " + name + " phien ban " + version;
+
+   6: aload_1
+   7: iload_2
+   8: invokedynamic #9,  0   // InvokeDynamic #0:makeConcatWithConstants:(Ljava/lang/String;I)Ljava/lang/String;</pre>
+    </div>
+
+    <p>Điều này <strong>không</strong> cứu được vòng lặp: mỗi lần lặp vẫn tạo một chuỗi mới. Quy tắc thực dụng: một biểu thức <code class="inline">+</code> thì thoải mái; nối trong <code class="inline">for</code>/<code class="inline">while</code> hoặc build động thì dùng <code class="inline">StringBuilder</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String concat = "";
+for (int i = 1; i &lt;= 5; i++) {
+    concat = concat + i;          // tao 5 chuoi trung gian
+}
+
+StringBuilder builder = new StringBuilder();
+for (int i = 1; i &lt;= 5; i++) {
+    builder.append(i);            // mot vung nho duy nhat
+}
+IO.println("concat    : " + concat);              // 12345
+IO.println("builder   : " + builder);             // 12345
+IO.println("bang nhau : " + concat.equals(builder.toString()));   // true</code></pre>
+    </div>
+
+    <h2 id="production">9. Production patterns</h2>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Locale;
+
+void main() {
+    String rawStatus = "  active \u2003";
+    String status = rawStatus.strip().toUpperCase(Locale.ROOT);
+    IO.println("raw       : [" + rawStatus.replace("\u2003", "[EM]") + "]");
+    // [  active [EM]]
+    IO.println("chuan hoa : [" + status + "]");
+    // [ACTIVE]
+    if ("ACTIVE".equals(status)) {
+        IO.println("so sanh   : status hop le");
+    }
+
+    String[] tags = {"java", "backend", "jdk25"};
+    IO.println("join      : " + String.join(", ", tags));   // java, backend, jdk25
+
+    char[] password = {'s', 'e', 'c', 'r', 'e', 't'};
+    IO.println("password len: " + password.length);   // 6
+    java.util.Arrays.fill(password, '*');
+    IO.println("sau khi xoa : " + new String(password));   // ******
+
+    String userInput = "   ";
+    if (userInput.isBlank()) {
+        IO.println("validate  : input rong -&gt; reject");
+    }
+
+    String dbStatus = "ACTIVE";
+    IO.println("hang so equals: " + "ACTIVE".equals(dbStatus));   // true
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Chuẩn hóa input ngay tại biên:</strong> <code class="inline">strip()</code> (không phải <code class="inline">trim()</code>) rồi mới validate/so sánh; dùng <code class="inline">toUpperCase(Locale.ROOT)</code> cho mã trạng thái.</li>
+      <li><strong>Validate bằng <code class="inline">isBlank()</code></strong> thay vì <code class="inline">isEmpty()</code> — chuỗi toàn space lọt qua <code class="inline">isEmpty</code> là bug kinh điển.</li>
+      <li><strong>Hằng số đặt trước:</strong> viết <code class="inline">"ACTIVE".equals(status)</code> thay vì <code class="inline">status.equals("ACTIVE")</code> để không bao giờ NPE khi status null.</li>
+      <li><strong>Không so chuỗi bằng <code class="inline">==</code>:</strong> chuỗi từ DB/JSON không được intern, <code class="inline">==</code> sai ngẫu nhiên tùy dữ liệu (xem <a href="index.html#string">mục 14</a>).</li>
+      <li><strong>Dùng <code class="inline">String.join</code></strong> thay nối tay có dấu phân cách; dùng enum + <code class="inline">valueOf</code>/<code class="inline">switch</code> thay so sánh magic string khi có thể.</li>
+      <li><strong>Không log mật khẩu/token.</strong> String bất biến không xóa được khỏi heap; nếu cần xử lý dữ liệu nhạy cảm, dùng <code class="inline">char[]</code> rồi <code class="inline">Arrays.fill(arr, '\0')</code> khi xong. Đây là mức nhận biết — thực tế còn phụ thuộc thư viện bên dưới.</li>
+      <li><strong>Cảnh giác NBSP (U+00A0)</strong> trong dữ liệu copy từ web: <code class="inline">isBlank</code>/<code class="inline">strip</code> của Java không cắt, phải thay thủ công.</li>
+    </ul>
+
+    <h2 id="nodejs">10. Góc Node.js</h2>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ghép giá trị vào chuỗi</td><td>Template literal: <code class="inline">`id=${id}`</code></td><td><code class="inline">"id=%d".formatted(id)</code> (không nội suy biến)</td></tr>
+        <tr><td>Đếm ký tự</td><td><code class="inline">"a\uD83D\uDE00b".length</code> = 4 (UTF-16)</td><td><code class="inline">"a\uD83D\uDE00b".length()</code> = 4</td></tr>
+        <tr><td>Tách chuỗi</td><td><code class="inline">"a,b,,".split(",")</code> = <code class="inline">["a","b","",""]</code></td><td><code class="inline">split(",")</code> bỏ phần rỗng cuối, cần <code class="inline">split(",", -1)</code></td></tr>
+        <tr><td>Thay chuỗi con</td><td><code class="inline">replace</code> chỉ lần đầu; <code class="inline">replaceAll</code> thay hết (chuỗi, không regex)</td><td><code class="inline">replace</code> thay hết (literal); <code class="inline">replaceAll</code> nhận regex</td></tr>
+        <tr><td>Cắt khoảng trắng</td><td><code class="inline">trim()</code> cắt whitespace Unicode, <strong>kể cả NBSP</strong></td><td><code class="inline">strip()</code> cắt whitespace Unicode <strong>trừ NBSP</strong>; <code class="inline">trim()</code> chỉ ASCII</td></tr>
+        <tr><td>Hoa/thường</td><td><code class="inline">toUpperCase()</code> không phụ thuộc locale; muốn theo locale dùng <code class="inline">toLocaleUpperCase()</code></td><td><code class="inline">toUpperCase()</code> theo locale mặc định; dùng <code class="inline">Locale.ROOT</code> để cố định</td></tr>
+        <tr><td>So sánh</td><td><code class="inline">===</code> so giá trị chuỗi trực tiếp</td><td><code class="inline">equals</code>; <code class="inline">==</code> so tham chiếu</td></tr>
+        <tr><td>Normalize Unicode</td><td><code class="inline">s.normalize("NFC")</code></td><td><code class="inline">Normalizer.normalize(s, Form.NFC)</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Hai điểm dễ sai nhất khi chuyển từ Node sang Java:</p>
+    <ul>
+      <li><code class="inline">"a,b,,".split(",")</code> trong JS giữ 4 phần tử, Java chỉ giữ 2 — parse CSV là thấy khác ngay.</li>
+      <li><code class="inline">replace</code> trong JS thay lần đầu, trong Java thay tất cả. Đừng bê nguyên code JS sang.</li>
+      <li>Kiểu chuỗi khác bản chất: trong JS <code class="inline">string</code> là <strong>primitive</strong> (<code class="inline">typeof "a" === "string"</code>), chỉ được tạm bọc thành object <code class="inline">String</code> khi gọi method; còn <code class="inline">String</code> của Java là <strong>reference type</strong> — object thật, bất biến, nằm trên heap (Java chỉ có <code class="inline">char</code> là primitive, không có primitive string).</li>
+    </ul>
+
+    <div class="note">JS <code class="inline">trim()</code> xóa cả NBSP (U+00A0) còn Java <code class="inline">strip()</code> thì không — muốn hành vi giống JS phải xử lý thêm, ví dụ thay <code class="inline">\u00A0</code> thành space trước khi strip.</div>
+
+    <h2 id="qa">11. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. String bất biến nghĩa là gì? Hệ quả thực tế?</summary>
+      <div class="answer">Không thể đổi nội dung sau khi tạo; mọi method như <code class="inline">substring</code>, <code class="inline">trim</code>, <code class="inline">toUpperCase</code> trả object mới. Hệ quả: nối chuỗi trong vòng lặp tạo nhiều object rác (dùng StringBuilder), String có thể chia sẻ an toàn giữa các thread, và String pool/intern hoạt động được. Chi tiết pool và <code class="inline">==</code> xem <a href="index.html#string">Biến trong Java — mục 14</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. <code class="inline">length()</code> đếm gì? <code class="inline">charAt</code> trả gì?</summary>
+      <div class="answer"><code class="inline">length()</code> đếm số UTF-16 code unit (kiểu <code class="inline">char</code>), không phải số ký tự Unicode. <code class="inline">charAt(i)</code> trả một <code class="inline">char</code> (16 bit). Ký tự ngoài BMP chiếm 2 code unit nên <code class="inline">"\uD83D\uDE00".length() == 2</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. <code class="inline">substring(1, 3)</code> lấy ký tự nào? Vì sao?</summary>
+      <div class="answer">Lấy ký tự ở chỉ số 1 và 2 — tham số thứ hai là <strong>độc quyền</strong> (không lấy ký tự ở chỉ số 3). <code class="inline">"hello".substring(1, 3)</code> = <code class="inline">"el"</code>; <code class="inline">substring(3)</code> = <code class="inline">"lo"</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Vì sao <code class="inline">"a,b,,".split(",").length</code> bằng 2?</summary>
+      <div class="answer">Mặc định <code class="inline">split</code> (limit = 0) cắt bỏ mọi phần tử rỗng ở <strong>cuối</strong>. Muốn giữ hết dùng <code class="inline">split(",", -1)</code> → length 4. Phần tử rỗng ở đầu/giữa vẫn luôn được giữ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Tham số limit của <code class="inline">split</code> có mấy kiểu giá trị ảnh hưởng?</summary>
+      <div class="answer">Ba nhóm: <code class="inline">limit &gt; 0</code> — tách tối đa <code class="inline">limit - 1</code> lần, phần còn lại dồn vào phần tử cuối; <code class="inline">limit = 0</code> — cắt rỗng cuối (mặc định); <code class="inline">limit &lt; 0</code> — giữ tất cả, kể cả rỗng cuối.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">replace</code> và <code class="inline">replaceAll</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">replace</code> xử lý literal và thay tất cả lần xuất hiện; <code class="inline">replaceAll</code> nhận regex. Bẫy: <code class="inline">"a.b".replaceAll(".", "-")</code> ra <code class="inline">"---"</code> vì dấu chấm là regex "mọi ký tự" — phải viết <code class="inline">"\\."</code>. Lưu ý Java <code class="inline">replace</code> thay tất cả, khác JS <code class="inline">replace</code> chỉ thay lần đầu.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">isEmpty</code> khác <code class="inline">isBlank</code> thế nào?</summary>
+      <div class="answer"><code class="inline">isEmpty()</code> tương đương <code class="inline">length() == 0</code>; <code class="inline">isBlank()</code> còn đúng khi chuỗi chỉ gồm ký tự whitespace theo <code class="inline">Character.isWhitespace</code>. Validate input nên dùng <code class="inline">isBlank()</code>. Cảnh báo: NBSP (U+00A0) không tính là whitespace với Java.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">trim()</code> khác <code class="inline">strip()</code> thế nào?</summary>
+      <div class="answer"><code class="inline">trim()</code> cắt ký tự <code class="inline">&lt;= U+0020</code> (chỉ ASCII); <code class="inline">strip()</code> (Java 11+) cắt theo whitespace Unicode nên xử lý được EM SPACE U+2003, các khoảng trắng tiếng Nhật... Dữ liệu người dùng nên dùng <code class="inline">strip()</code>. Cả hai đều không cắt NBSP.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. So sánh nội dung chuỗi bằng gì? Vì sao không dùng <code class="inline">==</code>?</summary>
+      <div class="answer">Dùng <code class="inline">equals()</code> (hoặc <code class="inline">equalsIgnoreCase</code>). <code class="inline">==</code> so tham chiếu object; chuỗi tạo từ <code class="inline">new</code>, cắt ghép, đọc từ DB/JSON không nằm cùng ô nhớ với literal nên <code class="inline">==</code> trả false dù nội dung giống. Chi tiết pool/intern ở <a href="index.html#string">Biến trong Java — mục 14</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">compareTo</code> trả về gì?</summary>
+      <div class="answer">Hiệu của hai ký tự khác nhau đầu tiên (theo UTF-16), hoặc hiệu độ dài nếu một chuỗi là tiền tố của chuỗi kia; 0 nghĩa là bằng nhau. Ví dụ <code class="inline">"apple".compareTo("banana")</code> = -1, <code class="inline">"apple".compareTo("app")</code> = 2. Dùng để sắp xếp, dùng <code class="inline">equals</code> để kiểm tra bằng nhau.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. <code class="inline">%02d</code> và <code class="inline">%.2f</code> làm gì?</summary>
+      <div class="answer"><code class="inline">%02d</code> in số nguyên với tối thiểu 2 chữ số, thiếu thì thêm 0 (<code class="inline">9</code> → <code class="inline">"09"</code>). <code class="inline">%.2f</code> in số thực với 2 chữ số sau dấu chấm, làm tròn HALF_UP (<code class="inline">2.345</code> → <code class="inline">"2.35"</code>). Dạng khác: <code class="inline">%,d</code> phân cách nghìn theo locale, <code class="inline">%-10s</code> căn trái.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Text block là gì, khai báo ra sao?</summary>
+      <div class="answer">Chuỗi nhiều dòng (Java 15+) mở/đóng bằng <code class="inline">"""</code>. Dấu mở phải xuống dòng ngay sau đó (nếu không là lỗi compile "missing line terminator"). Java tự bỏ phần thụt lề chung nhỏ nhất; nếu dấu đóng nằm dòng riêng thì chuỗi kết quả có newline cuối. Dùng cho JSON/SQL/HTML; không nội suy biến nên thường ghép <code class="inline">.formatted()</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 13. Vì sao <code class="inline">"\uD83D\uDE00".length()</code> bằng 2?</summary>
+      <div class="answer">U+1F600 nằm ngoài BMP nên cần 2 UTF-16 code unit (surrogate pair). <code class="inline">length()</code> đếm code unit, không đếm ký tự. Muốn đếm đúng ký tự dùng <code class="inline">codePointCount(0, s.length())</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Khi nào dùng <code class="inline">codePoints()</code> thay vì lặp <code class="inline">charAt</code>?</summary>
+      <div class="answer">Khi xử lý văn bản có ký tự ngoài BMP (emoji, chữ tượng hình mở rộng): đảo chuỗi, kiểm tra độ dài theo người dùng, cắt/gộp theo ký tự. Lặp <code class="inline">charAt</code> có thể tách đôi surrogate pair gây lỗi hiển thị.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. NFC/NFD là gì? Vì sao quan trọng với tiếng Việt?</summary>
+      <div class="answer">Hai dạng chuẩn hóa Unicode: NFC gộp dấu thành một code point ("ế" = U+1EBF, length 1), NFD tách thành chữ cơ sở + dấu tổ hợp ("ế" = e + U+0302 + U+0301, length 3). Hai chuỗi nhìn giống hệt nhưng <code class="inline">equals</code> trả false. Dữ liệu từ macOS (APFS lưu tên file NFD), từ web, từ các hệ thống khác có thể lẫn dạng. Cách xử lý: chuẩn hóa về NFC ngay khi nhận dữ liệu.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Khi nào dùng StringBuilder thay String?</summary>
+      <div class="answer">Khi nối/biến đổi chuỗi nhiều lần: vòng lặp, build SQL/JSON/HTML động, xử lý file lớn. String bất biến nên mỗi phép <code class="inline">+</code> tạo object mới. Một biểu thức <code class="inline">+</code> đơn lẻ thì compiler đã tối ưu qua <code class="inline">invokedynamic</code>, không cần StringBuilder.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. StringBuilder và StringBuffer khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">StringBuffer</code> có các method <code class="inline">synchronized</code> nên thread-safe nhưng chậm hơn; <code class="inline">StringBuilder</code> nhanh hơn, không thread-safe. Mặc định dùng <code class="inline">StringBuilder</code>; StringBuffer gần như chỉ còn trong code cũ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Vì sao nên viết <code class="inline">"ACTIVE".equals(status)</code> thay vì <code class="inline">status.equals("ACTIVE")</code>?</summary>
+      <div class="answer">Nếu <code class="inline">status</code> là null, cách đầu trả false an toàn, cách sau ném NullPointerException. Trong production, dữ liệu từ DB/API rất hay null nên convention là đặt hằng số/literal bên trái.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Greedy và reluctant trong regex khác nhau thế nào?</summary>
+      <div class="answer">Lượng từ greedy (<code class="inline">.*</code>, <code class="inline">.+</code>) khớp dài nhất có thể; thêm <code class="inline">?</code> thành reluctant khớp ngắn nhất. Ví dụ <code class="inline">"&lt;b&gt;a&lt;/b&gt;".replaceAll("&lt;.*&gt;", "X")</code> ra <code class="inline">"X"</code> (nuốt cả chuỗi), còn <code class="inline">"&lt;.*?&gt;"</code> ra <code class="inline">"XaX"</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Vì sao nên <code class="inline">Pattern.compile</code> một lần rồi tái sử dụng? Catastrophic backtracking là gì?</summary>
+      <div class="answer"><code class="inline">Pattern.compile</code> tốn kém và Pattern là bất biến/thread-safe nên compile một lần vào <code class="inline">static final</code>. Catastrophic backtracking là hiện tượng regex có nhóm lồng lượng từ (ví dụ <code class="inline">(a+)+$</code>) thử số tổ hợp tăng theo cấp số nhân với input không khớp, gây treo CPU/DoS. Phòng bằng cách tránh nhóm lồng nhau và giới hạn độ dài input.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. <code class="inline">%.2f</code> làm tròn theo quy tắc nào? Có nên dùng cho tiền không?</summary>
+      <div class="answer">HALF_UP trên biểu diễn thập phân: <code class="inline">2.345</code> → <code class="inline">"2.35"</code>, <code class="inline">1.005</code> → <code class="inline">"1.01"</code>. Nhưng nó vẫn dựa trên số thực nhị phân, không phù hợp để <em>tính</em> tiền. Hãy tính bằng <code class="inline">BigDecimal</code> với <code class="inline">RoundingMode</code> rồi mới format (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Vì sao không nên dùng String cho mật khẩu?</summary>
+      <div class="answer">String bất biến nên không thể xóa nội dung khỏi bộ nhớ; mật khẩu có thể tồn tại lâu trong heap, lọt vào heap dump hoặc String pool (nếu từng là literal). <code class="inline">char[]</code> có thể ghi đè bằng <code class="inline">Arrays.fill</code> ngay sau khi dùng. Đây là mức nhận biết; thực tế còn tùy thư viện và API bên dưới.</div>
+    </details>
+
+    <h2 id="bai-tap">12. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("Java".length());
+IO.println("Java".charAt(3));
+IO.println("Java".charAt(4));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">4</code>, <code class="inline">a</code>, rồi ném <strong>StringIndexOutOfBoundsException</strong> với message <code class="inline">Index 4 out of bounds for length 4</code>. Dòng 4 không in gì. Chỉ số hợp lệ của <code class="inline">"Java"</code> là 0..3.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">String s = "hello";
+IO.println(s.substring(1, 3));
+IO.println("[" + s.substring(3) + "]");
+IO.println("[" + s.substring(5) + "]");</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">el</code>, <code class="inline">[lo]</code>, <code class="inline">[]</code>. Tham số end độc quyền; <code class="inline">substring(5)</code> bằng độ dài chuỗi nên trả chuỗi rỗng — hợp lệ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("a,b,,".split(",").length);
+IO.println("a,b,,".split(",", -1).length);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2</code> rồi <code class="inline">4</code>. Mặc định cắt phần tử rỗng cuối còn <code class="inline">limit = -1</code> giữ hết.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("\u2003abc\u2003".strip().length());
+IO.println("\u2003abc\u2003".trim().length());
+IO.println("\u00A0".isBlank());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">3</code>, <code class="inline">5</code>, <code class="inline">false</code>. EM SPACE bị <code class="inline">strip</code> cắt nhưng không bị <code class="inline">trim</code>; NBSP không phải whitespace với Java nên <code class="inline">isBlank</code> trả false.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("apple".compareTo("banana"));
+IO.println("app".compareTo("apple"));
+IO.println("apple".compareToIgnoreCase("APPLE"));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-1</code>, <code class="inline">-2</code>, <code class="inline">0</code>. <code class="inline">'a' - 'b' = -1</code>; <code class="inline">"app"</code> là tiền tố nên trả hiệu độ dài <code class="inline">3 - 5 = -2</code>; bỏ qua hoa/thường thì bằng nhau.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(String.format("%02d:%02d", 7, 5));
+IO.println("%.1f".formatted(1.25));
+IO.println(String.format("%,d", 1234567));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">07:05</code>, <code class="inline">1.3</code>, <code class="inline">1,234,567</code>. <code class="inline">%.1f</code> làm tròn HALF_UP: 1.25 → 1.3 (in ra "1.3" chứ không phải "1.2").</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">String e = "a\uD83D\uDE00b";
+IO.println(e.length());
+IO.println(e.codePointCount(0, e.length()));
+IO.println(e.codePoints().count());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">4</code>, <code class="inline">3</code>, <code class="inline">3</code>. Emoji là surrogate pair (2 code unit) nên tổng code unit là 4, nhưng số code point/ký tự thật là 3.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">String t = """
+        x\s\s
+        y""";
+IO.println("[" + t.replace(" ", ".").replace("\n", "\\n") + "]");</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[x..\ny]</code>. Hai <code class="inline">\s</code> là 2 space thật (được giữ vì đã escape), newline giữa 2 dòng, dấu đóng cùng dòng với <code class="inline">y</code> nên không có newline cuối. Chú ý chuỗi in ra có ký hiệu <code class="inline">\n</code> vì đã replace để nhìn thấy.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">StringBuilder sb = new StringBuilder("abc");
+IO.println(sb.reverse().append("!").insert(0, "["));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[cba!</code>. <code class="inline">reverse()</code> thành <code class="inline">"cba"</code>, <code class="inline">append("!")</code> thành <code class="inline">"cba!"</code>, <code class="inline">insert(0, "[")</code> chèn vào đầu. Các method của StringBuilder trả về chính nó nên nối chuỗi method được.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">String status = null;
+IO.println("ACTIVE".equals(status));
+IO.println(status.equals("ACTIVE"));</code></pre>
+      </div>
+      <div class="answer">Dòng 1 in <code class="inline">false</code> (không NPE vì hằng số đứng trước). Dòng 2 ném <strong>NullPointerException</strong> — đây chính là lý do convention <code class="inline">"ACTIVE".equals(status)</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("&lt;b&gt;a&lt;/b&gt;".replaceAll("&lt;.*&gt;", "X"));
+IO.println("&lt;b&gt;a&lt;/b&gt;".replaceAll("&lt;.*?&gt;", "X"));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">X</code> rồi <code class="inline">XaX</code>. <code class="inline">.*</code> greedy nuốt cả chuỗi từ <code class="inline">&lt;</code> đầu đến <code class="inline">&gt;</code> cuối; <code class="inline">.*?</code> reluctant chỉ khớp từng cặp thẻ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("|" + "%-6s|".formatted("ab"));
+IO.println("|" + "%6s|".formatted("ab"));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">|ab    |</code> rồi <code class="inline">|    ab|</code>. Dấu <code class="inline">-</code> nghĩa là căn trái, mặc định (không có <code class="inline">-</code>) căn phải; số 6 là độ rộng tối thiểu.</div>
+    </details>
+
+    <h2 id="cheat-sheet">13. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đo / truy cập</td><td><code class="inline">length()</code> · <code class="inline">charAt(i)</code> · <code class="inline">toCharArray()</code> · <code class="inline">codePointAt(i)</code></td></tr>
+        <tr><td>Tìm kiếm</td><td><code class="inline">indexOf</code>/<code class="inline">lastIndexOf</code> (-1 nếu không thấy) · <code class="inline">contains</code> · <code class="inline">startsWith</code>/<code class="inline">endsWith</code></td></tr>
+        <tr><td>Cắt chuỗi</td><td><code class="inline">substring(begin, end)</code> với end độc quyền; <code class="inline">substring(begin)</code> tới hết</td></tr>
+        <tr><td>Thay thế</td><td><code class="inline">replace</code> literal (thay hết) · <code class="inline">replaceAll</code>/<code class="inline">replaceFirst</code> regex</td></tr>
+        <tr><td>Tách chuỗi</td><td><code class="inline">split(regex)</code> bỏ rỗng cuối · <code class="inline">split(regex, -1)</code> giữ hết · <code class="inline">split(regex, n)</code> giới hạn</td></tr>
+        <tr><td>Ghép chuỗi</td><td><code class="inline">String.join(delim, parts)</code> · <code class="inline">StringBuilder.append</code></td></tr>
+        <tr><td>Chuẩn hóa</td><td><code class="inline">strip()</code> Unicode · <code class="inline">trim()</code> ASCII · <code class="inline">toUpperCase(Locale.ROOT)</code></td></tr>
+        <tr><td>Validate rỗng</td><td><code class="inline">isBlank()</code> (không dùng <code class="inline">isEmpty</code> cho input người dùng)</td></tr>
+        <tr><td>So sánh</td><td><code class="inline">equals</code>/<code class="inline">equalsIgnoreCase</code> · <code class="inline">compareTo</code> để sort · <code class="inline">matches</code> cho regex toàn chuỗi</td></tr>
+        <tr><td>Format</td><td><code class="inline">"%02d".formatted(n)</code> · <code class="inline">%.2f</code> HALF_UP · <code class="inline">%,d</code> theo locale · <code class="inline">%n</code> xuống dòng</td></tr>
+        <tr><td>Chuỗi nhiều dòng</td><td>Text block <code class="inline">"""</code> + <code class="inline">.formatted(args)</code>; <code class="inline">\s</code> giữ space, <code class="inline">\</code> nối dòng</td></tr>
+        <tr><td>Regex</td><td><code class="inline">Pattern.compile</code> một lần · <code class="inline">matcher.matches/find/group</code> · <code class="inline">.*?</code> reluctant</td></tr>
+        <tr><td>Unicode</td><td><code class="inline">codePointCount</code> đếm ký tự thật · <code class="inline">Normalizer.normalize(s, Form.NFC)</code> trước khi so/lưu</td></tr>
+        <tr><td>Build chuỗi lớn</td><td><code class="inline">StringBuilder</code> (không StringBuffer trừ khi thật cần thread-safe)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được <code class="inline">length()</code> theo code unit và vì sao emoji chiếm 2.</li>
+      <li>Nhớ <code class="inline">substring(begin, end)</code> có end độc quyền và exception khi vượt biên.</li>
+      <li>Giải thích bẫy <code class="inline">"a,b,,".split(",")</code> và cách dùng <code class="inline">limit = -1</code>.</li>
+      <li>Phân biệt <code class="inline">replace</code> vs <code class="inline">replaceAll</code>, và Java khác JS ở điểm nào.</li>
+      <li>Phân biệt <code class="inline">trim</code>/<code class="inline">strip</code>, <code class="inline">isEmpty</code>/<code class="inline">isBlank</code>, kể cả trường hợp NBSP.</li>
+      <li>Viết được chuỗi format <code class="inline">%02d</code>, <code class="inline">%.2f</code>, <code class="inline">%,d</code> và biết locale ảnh hưởng thế nào.</li>
+      <li>Viết được text block JSON/SQL và giải thích newline cuối, thụt lề, <code class="inline">\s</code>.</li>
+      <li>Viết được regex validate email/số điện thoại đơn giản và giải thích greedy vs reluctant.</li>
+      <li>Giải thích NFC/NFD và vì sao phải normalize trước khi so sánh tiếng Việt.</li>
+      <li>Biết khi nào dùng StringBuilder và vì sao <code class="inline">+</code> trong vòng lặp tạo rác.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" target="_blank" rel="noreferrer">Javadoc — java.lang.String (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-3.html#jls-3.10.5" target="_blank" rel="noreferrer">JLS §3.10.5 — String Literals</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-3.html#jls-3.10.6" target="_blank" rel="noreferrer">JLS §3.10.6 — Text Blocks</a></li>
+      <li><a href="https://openjdk.org/jeps/378" target="_blank" rel="noreferrer">JEP 378 — Text Blocks</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Pattern.html" target="_blank" rel="noreferrer">Javadoc — java.util.regex.Pattern</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Formatter.html" target="_blank" rel="noreferrer">Javadoc — java.util.Formatter</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/text/Normalizer.html" target="_blank" rel="noreferrer">Javadoc — java.text.Normalizer</a></li>
+      <li><a href="https://unicode.org/reports/tr15/" target="_blank" rel="noreferrer">Unicode Standard Annex #15 — Normalization Forms</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Strings chuyên sâu · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

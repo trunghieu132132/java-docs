@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrays — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item active" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="arrays">Arrays chuyên sâu</h1>
+
+    <p class="lead">Mảng (array) là cấu trúc dữ liệu đầu tiên bạn cần thành thạo trước khi học Collections (<a href="roadmap.html#phase-3">3.3</a>). Khác JavaScript, mảng Java có <strong>kích thước cố định ngay lúc tạo</strong>, là object thật trên heap, và mang theo một loạt luật ngầm — copy nông, array covariance, varargs — rất hay xuất hiện khi phỏng vấn và trong code production.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của doc này:</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo và khởi tạo mảng 1D/2D/ragged; duyệt bằng for index và for-each; copy bằng <code class="inline">System.arraycopy</code>/<code class="inline">Arrays.copyOf</code>; sort, tìm kiếm, so sánh, in mảng; viết và gọi method varargs; chuyển đổi mảng ↔ List; tự giải bài tập đoán output.</li>
+      <li><strong>Phải hiểu</strong> — biến mảng là reference trỏ lên heap; pass-by-value của reference; <code class="inline">==</code> là so identity; shallow vs deep copy; vì sao <code class="inline">binarySearch</code> trả số âm; array covariance và <code class="inline">ArrayStoreException</code>; for-each không sửa được phần tử.</li>
+      <li><strong>Nhận biết</strong> — <code class="inline">Comparable</code>/<code class="inline">Comparator</code> (đào sâu ở <a href="roadmap.html#phase-3">3.3 Collections</a>); mảng và thread-safety (đào sâu ở <a href="roadmap.html#phase-4">4.2 Concurrency</a>); ảnh hưởng bộ nhớ/hiệu năng.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#khai-bao">Khai báo, khởi tạo &amp; giá trị mặc định</a></li>
+        <li><a href="#bo-nho">Mảng trong bộ nhớ: reference, object &amp; so sánh</a></li>
+        <li><a href="#duyet">Duyệt mảng</a></li>
+        <li><a href="#copy">Copy mảng: nông, sâu và bẫy alias</a></li>
+        <li><a href="#arrays-class">Lớp Arrays — bộ công cụ chuẩn</a></li>
+        <li><a href="#covariance">Array covariance &amp; ArrayStoreException</a></li>
+        <li><a href="#loi-thuong-gap">Lỗi thường gặp với mảng</a></li>
+        <li><a href="#varargs">Varargs — tham số biến đổi</a></li>
+        <li><a href="#sort-object">Sort object với Comparable &amp; Comparator</a></li>
+        <li><a href="#mang-vs-list">Mảng vs List — chọn cái nào?</a></li>
+        <li><a href="#production">Production patterns</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js — mảng JS vs mảng Java</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="khai-bao">2. Khai báo, khởi tạo &amp; giá trị mặc định</h2>
+
+    <p>Mảng là một dãy phần tử <strong>cùng kiểu</strong>, có <strong>kích thước chốt ngay khi tạo</strong> và không đổi được về sau. Ba cách khai báo thường gặp:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cách viết</th><th>Ý nghĩa</th><th>Dùng khi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">int[] a = new int[3];</code></td><td>Tạo mảng 3 phần tử, gán giá trị mặc định cho từng phần tử</td><td>Biết trước số lượng nhưng chưa biết giá trị</td></tr>
+        <tr><td><code class="inline">int[] b = {1, 2, 3};</code></td><td>Khởi tạo nhanh bằng literal</td><td>Chỉ dùng ngay tại dòng khai báo</td></tr>
+        <tr><td><code class="inline">int[] c = new int[]{1, 2, 3};</code></td><td>Cú pháp đầy đủ, là biểu thức</td><td>Truyền tham số, return, gán lại biến đã khai báo</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Convention của Java là đặt ngoặc vuông sau kiểu: <code class="inline">int[] a</code>. Cách viết <code class="inline">int a[]</code> (kiểu C) vẫn hợp lệ nhưng gây nhầm khi khai báo nhiều biến trên một dòng — tránh dùng trong code production.</div>
+
+    <p>Mảng hai chiều thực chất là <strong>mảng của các mảng</strong>. Khi tạo <code class="inline">new int[2][3]</code>, JVM tạo một mảng cha chứa 2 reference trỏ tới 2 mảng con, mỗi mảng con dài 3. Vì vậy bạn có thể tạo mảng cha trước, rồi gán từng hàng — gọi là <strong>ragged array</strong> (mảng răng cưa, các hàng dài ngắn khác nhau):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] a = new int[3];               // [0, 0, 0]
+double[] d = new double[2];         // [0.0, 0.0]
+boolean[] flags = new boolean[2];   // [false, false]
+String[] names = new String[2];     // [null, null]
+
+int[] b = {1, 2, 3};                // [1, 2, 3]
+int[] c = new int[]{4, 5, 6};       // [4, 5, 6] - tuong duong b, nhung la bieu thuc
+
+int[][] grid = new int[2][3];       // 2 hang, moi hang 3 cot
+// Arrays.deepToString(grid) -> [[0, 0, 0], [0, 0, 0]]
+
+int[][] ragged = new int[2][];      // 2 hang nhung CHUA tao mang con
+ragged[0] = new int[]{1, 2};
+ragged[1] = new int[]{3, 4, 5};
+// Arrays.deepToString(ragged) -> [[1, 2], [3, 4, 5]]</code></pre>
+    </div>
+
+    <h3>Giá trị mặc định</h3>
+
+    <p>Mọi phần tử được JVM zero-fill ngay khi mảng ra đời, nên mảng không bao giờ chứa "rác" như C/C++:</p>
+
+    <table>
+      <thead>
+        <tr><th>Kiểu phần tử</th><th>Giá trị mặc định</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">byte</code>, <code class="inline">short</code>, <code class="inline">int</code>, <code class="inline">long</code></td><td><code class="inline">0</code></td></tr>
+        <tr><td><code class="inline">float</code>, <code class="inline">double</code></td><td><code class="inline">0.0</code></td></tr>
+        <tr><td><code class="inline">char</code></td><td><code class="inline">'\u0000'</code> (ký tự null)</td></tr>
+        <tr><td><code class="inline">boolean</code></td><td><code class="inline">false</code></td></tr>
+        <tr><td>Mọi kiểu reference (<code class="inline">String</code>, <code class="inline">BigDecimal</code>, record, mảng con...)</td><td><code class="inline">null</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Bảng size/range đầy đủ của 8 kiểu nguyên thủy nằm ở <a href="index.html#kieu-nguyen-thuy">Biến trong Java — mục 3</a>. Bẫy hay gặp: <code class="inline">String[] names = new String[3];</code> rồi gọi <code class="inline">names[0].length()</code> là <strong>NullPointerException</strong> — phần tử đang là null, không phải chuỗi rỗng.</div>
+
+    <h3>length là field, không phải method</h3>
+
+    <p>Mảng có field <code class="inline">length</code> (không ngoặc, không phải method như <code class="inline">String.length()</code>). Đây là câu bẫy phỏng vấn kinh điển:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] b = {1, 2, 3};
+IO.println(b.length);      // 3   - field cua object mang
+
+String s = "java";
+IO.println(s.length());    // 4   - method cua String</code></pre>
+    </div>
+
+    <p>Viết <code class="inline">b.length()</code> không compile:</p>
+
+    <div class="errblock">
+      <pre>IO.println(b.length());
+            ^
+error: cannot find symbol
+  symbol:   method length()
+  location: variable b of type int[]</pre>
+    </div>
+
+    <p>Và <code class="inline">length</code> là <code class="inline">final</code> — kích thước mảng không sửa được sau khi tạo:</p>
+
+    <div class="errblock">
+      <pre>a.length = 5;
+ ^
+error: cannot assign a value to final variable length</pre>
+    </div>
+
+    <h2 id="bo-nho">3. Mảng trong bộ nhớ: reference, object &amp; so sánh <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Mảng là <strong>object</strong>, không phải primitive. Biến mảng nằm trên stack và giữ địa chỉ của object mảng trên heap (đúng mô hình đã học ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// STACK                     HEAP
+// [ a = #1A2 ]  -------->  { [1, 2, 3] }
+// [ b = #1A2 ]  -------->  (cung object - alias)
+// [ c = #3F4 ]  -------->  { [1, 2, 3] }  (object khac)</code></pre>
+    </div>
+
+    <p>Ba hệ quả thực tế, chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] a = {1, 2, 3};
+int[] b = a;                       // b va a cung tro MOT object
+IO.println(a == b);                // true
+b[0] = 100;
+IO.println(Arrays.toString(a));    // [100, 2, 3] - sua qua b, a thay doi
+
+int[] c = {100, 2, 3};
+IO.println(a == c);                // false - khac identity
+IO.println(a.equals(c));           // false - mang khong override equals
+IO.println(Arrays.equals(a, c));   // true  - so noi dung tung phan tu
+
+// mang ke thua truc tiep Object
+IO.println(a.getClass().getName());                 // [I
+IO.println(a.getClass().getSuperclass().getName()); // java.lang.Object</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao <code class="inline">a.equals(c)</code> vẫn false?</strong> Mảng không override <code class="inline">equals</code> (không phải class do bạn viết), nên nó dùng <code class="inline">Object.equals</code> — tức so identity y như <code class="inline">==</code>. Muốn so nội dung phải gọi <code class="inline">Arrays.equals</code> (1 chiều) hoặc <code class="inline">Arrays.deepEquals</code> (nhiều chiều).</div>
+
+    <h3>Pass-by-value với reference</h3>
+
+    <p>Java luôn pass-by-value. Với mảng, giá trị được truyền là <strong>bản sao của địa chỉ</strong>, nên method sửa được nội dung mảng nhưng gán lại reference thì không ảnh hưởng bên ngoài:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static void tryChange(int[] nums) {
+    nums[0] = 99;                 // sua noi dung object -> ben ngoai thay
+}
+
+static void tryReassign(int[] nums) {
+    nums = new int[]{7, 7, 7};    // chi doi ban sao reference -> ben ngoai khong doi
+}
+
+int[] a = {1, 2, 3};
+tryChange(a);
+IO.println(Arrays.toString(a));   // [99, 2, 3]
+tryReassign(a);
+IO.println(Arrays.toString(a));   // [99, 2, 3] - van nhu truoc</code></pre>
+    </div>
+
+    <div class="note">Cùng luật này giải thích vì sao <code class="inline">Arrays.sort(nums)</code> trong method sort được mảng gốc (sửa nội dung), còn <code class="inline">Arrays.copyOf</code> trả mảng mới thì phải <code class="inline">return</code> ra ngoài.</div>
+
+    <h2 id="duyet">4. Duyệt mảng</h2>
+
+    <p>Hai cách duyệt, chọn theo nhu cầu:</p>
+
+    <ul>
+      <li><strong>for theo index</strong> — khi cần chỉ số, cần sửa phần tử, hoặc duyệt ngược/xuôi có bước nhảy.</li>
+      <li><strong>for-each</strong> — khi chỉ cần đọc từng giá trị; ngắn gọn, ít lỗi off-by-one.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] nums = {10, 20, 30};
+
+for (int i = 0; i &lt; nums.length; i++) {   // theo index
+    IO.print(nums[i] + " ");
+}
+// 10 20 30
+
+int sum = 0;
+for (int n : nums) {                      // for-each
+    sum += n;
+}
+IO.println(sum);                          // 60
+
+for (int n : nums) {
+    n = n * 2;                            // chi sua bien copy!
+}
+IO.println(Arrays.toString(nums));        // [10, 20, 30]
+
+for (int i = 0; i &lt; nums.length; i++) {
+    nums[i] *= 2;                         // sua that su phan tu
+}
+IO.println(Arrays.toString(nums));        // [20, 40, 60]
+
+int[][] grid = {{1, 2}, {3, 4, 5}};
+for (int[] row : grid) {                  // duyet 2 chieu
+    for (int v : row) {
+        IO.print(v + " ");
+    }
+}
+// 1 2 3 4 5
+
+for (int i = nums.length - 1; i &gt;= 0; i--) {   // duyet nguoc
+    IO.print(nums[i] + " ");
+}
+// 60 40 20</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao for-each không sửa được phần tử?</strong> Mỗi vòng lặp, biến <code class="inline">n</code> chỉ nhận một <em>bản sao giá trị</em> của <code class="inline">nums[i]</code>. Gán <code class="inline">n = ...</code> là đổi bản sao, không ghi ngược vào mảng. Muốn sửa phải dùng for index: <code class="inline">nums[i] = ...</code>.</div>
+
+    <p>Mảng <strong>không implements <code class="inline">Iterable</code></strong> — for-each trên mảng là đặc quyền do compiler "dịch" thành vòng lặp index. Vì vậy đoạn sau không compile:</p>
+
+    <div class="errblock">
+      <pre>Iterable&lt;Integer&gt; it = a;
+                      ^
+error: incompatible types: int[] cannot be converted to Iterable&lt;Integer&gt;</pre>
+    </div>
+
+    <h2 id="copy">5. Copy mảng: nông, sâu và bẫy alias</h2>
+
+    <p>Ba cách copy thường dùng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cách</th><th>Đặc điểm</th><th>Dùng khi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">System.arraycopy(src, srcPos, dst, dstPos, len)</code></td><td>Không tạo mảng; copy offset; xử lý được vùng chồng lấn; ném <code class="inline">IndexOutOfBoundsException</code> nếu vượt biên</td><td>Copy một đoạn vào mảng có sẵn, dịch phần tử trong cùng mảng</td></tr>
+        <tr><td><code class="inline">Arrays.copyOf(src, newLength)</code></td><td>Tạo mảng mới, độ dài bất kỳ; ngắn hơn thì cắt, dài hơn thì pad giá trị mặc định</td><td>Resize mảng (thêm/bớt chỗ) — pattern "tự làm ArrayList"</td></tr>
+        <tr><td><code class="inline">arr.clone()</code></td><td>Tạo bản copy nông của cả mảng</td><td>Copy nhanh toàn bộ mảng</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] src = {1, 2, 3, 4, 5};
+
+int[] back = new int[5];
+System.arraycopy(src, 0, back, 0, src.length);   // [1, 2, 3, 4, 5]
+
+int[] slice = new int[3];
+System.arraycopy(src, 2, slice, 0, 3);           // [3, 4, 5] - lay tu index 2
+
+int[] copy = Arrays.copyOf(src, 3);              // [1, 2, 3] - cat bot
+int[] grow = Arrays.copyOf(src, 8);              // [1, 2, 3, 4, 5, 0, 0, 0] - noi them
+
+int[] shift = {1, 2, 3, 4, 5};
+System.arraycopy(shift, 0, shift, 1, 4);         // [1, 1, 2, 3, 4] - overlap OK
+
+int[] cloned = src.clone();
+cloned[0] = 9;
+IO.println(Arrays.toString(src));                // [1, 2, 3, 4, 5] - doc lap</code></pre>
+    </div>
+
+    <h3>Shallow copy — bẫy kinh điển với mảng 2 chiều</h3>
+
+    <p>Mọi cách trên đều <strong>shallow</strong>: với mảng 2 chiều, phần tử là các reference, nên bản copy vẫn trỏ chung các mảng con:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[][] a = {{1, 2}, {3, 4}};
+int[][] shallow = Arrays.copyOf(a, a.length);
+shallow[0][0] = 99;
+IO.println(Arrays.deepToString(a));          // [[99, 2], [3, 4]] - mang goc cung doi!
+
+// deep copy phai tu viet: copy tung hang
+int[][] deep = new int[a.length][];
+for (int i = 0; i &lt; a.length; i++) {
+    deep[i] = Arrays.copyOf(a[i], a[i].length);
+}
+deep[0][0] = 7;
+IO.println(Arrays.deepToString(a));          // [[99, 2], [3, 4]] - khong doi
+IO.println(Arrays.deepToString(deep));       // [[7, 2], [3, 4]]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy alias:</strong> <code class="inline">int[] y = x;</code> <em>không phải</em> copy — chỉ là biến thứ hai trỏ cùng mảng. Sửa qua <code class="inline">y</code> là sửa luôn <code class="inline">x</code>:</div>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] x = {1, 2, 3};
+int[] y = x;
+y[1] = 200;
+IO.println(Arrays.toString(x));    // [1, 200, 3]</code></pre>
+    </div>
+
+    <h2 id="arrays-class">6. Lớp Arrays — bộ công cụ chuẩn</h2>
+
+    <p><code class="inline">java.util.Arrays</code> là lớp tiện ích static (không khởi tạo, giống <code class="inline">Math</code>) gom hầu hết thao tác mảng. Nhớ nó để không tự viết vòng lặp thủ công.</p>
+
+    <h3>sort và binarySearch</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] unsorted = {5, 2, 9, 1, 5, 6};
+Arrays.sort(unsorted);
+IO.println(Arrays.toString(unsorted));           // [1, 2, 5, 5, 6, 9]
+
+String[] words = {"banana", "Apple", "cherry", "apple"};
+Arrays.sort(words);
+IO.println(Arrays.toString(words));              // [Apple, apple, banana, cherry]
+
+IO.println(Arrays.binarySearch(unsorted, 6));    // 4  - tim thay, tra index
+IO.println(Arrays.binarySearch(unsorted, 4));    // -3 - khong thay, xem giai thich</code></pre>
+    </div>
+
+    <div class="note"><strong>Primitive vs object:</strong> <code class="inline">Arrays.sort</code> trên mảng primitive dùng dual-pivot quicksort (nhanh, <em>không stable</em>), trên mảng object dùng TimSort (<em>stable</em> — phần tử bằng nhau giữ nguyên thứ tự gốc). Vì sao cần stable và cách sort theo Comparator: xem <a href="#sort-object">mục 10</a>.</div>
+
+    <p>Vì sao <code class="inline">binarySearch</code> trả <code class="inline">-3</code>? Mảng <code class="inline">[1, 2, 5, 5, 6, 9]</code> đang "thiếu" số 4; nếu chèn 4 vào để giữ thứ tự thì nó đứng ở index 2. Java mã hóa "không thấy tại điểm chèn <code class="inline">p</code>" thành <strong><code class="inline">-p - 1</code></strong> (để phân biệt với tìm thấy ở index 0): <code class="inline">-(2) - 1 = -3</code>. Lấy lại điểm chèn: <code class="inline">int p = -result - 1;</code> (hoặc <code class="inline">~result</code>).</p>
+
+    <div class="note warn"><strong>Điều kiện bắt buộc:</strong> <code class="inline">binarySearch</code> chỉ đúng khi mảng <strong>đã được sort</strong> theo cùng thứ tự. Chạy trên mảng chưa sort sẽ trả kết quả vô nghĩa — không báo lỗi. Ví dụ <code class="inline">{9, 1, 5}</code> tìm 5 trả 2 dù đúng ra phải là 1.</div>
+
+    <h3>toString, deepToString, equals, deepEquals</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int[][] grid = {{1, 2}, {3, 4}};
+IO.println(grid);                        // [[I@5ffead27 (hash thay doi moi lan chay)
+IO.println(Arrays.deepToString(grid));   // [[1, 2], [3, 4]]
+
+int[] p = {1, 2};
+int[] q = {1, 2};
+IO.println(Arrays.equals(p, q));         // true - so noi dung 1 chieu
+
+int[][] p2 = {{1, 2}};
+int[][] q2 = {{1, 2}};
+IO.println(Arrays.equals(p2, q2));       // false - chi so reference cac hang
+IO.println(Arrays.deepEquals(p2, q2));   // true  - so noi dung nhieu chieu</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Quên <code class="inline">deep</code> là bug production hay gặp:</strong> <code class="inline">Arrays.equals</code> trên mảng 2 chiều chỉ so địa chỉ các hàng nên gần như luôn false với dữ liệu giống nhau. Mảng 2 chiều luôn đi với <code class="inline">deepToString</code>/<code class="inline">deepEquals</code>/<code class="inline">deepHashCode</code>.</div>
+
+    <h3>fill, asList, stream</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] filled = new int[5];
+Arrays.fill(filled, 7);                       // [7, 7, 7, 7, 7]
+Arrays.fill(filled, 1, 3, 0);                 // [7, 0, 0, 7, 7] - tu index 1 den 2
+
+List&lt;String&gt; list = Arrays.asList("a", "b", "c");
+list.set(0, "z");                             // OK: [z, b, c]
+list.add("d");                                // UnsupportedOperationException
+
+long count = Arrays.stream(filled).filter(n -&gt; n &gt; 3).count();
+IO.println(count);                            // 3</code></pre>
+    </div>
+
+    <p>Ba điểm cần nhớ:</p>
+    <ul>
+      <li><code class="inline">Arrays.fill(arr, from, to, value)</code> điền nửa mở <code class="inline">[from, to)</code> — index <code class="inline">to</code> không bị chạm.</li>
+      <li><code class="inline">Arrays.asList</code> trả về <strong>view kích thước cố định</strong> bọc mảng gốc (<code class="inline">java.util.Arrays$ArrayList</code>): <code class="inline">set</code> ghi xuyên qua mảng gốc, còn <code class="inline">add</code>/<code class="inline">remove</code> ném <code class="inline">UnsupportedOperationException</code>. Chi tiết ở <a href="#mang-vs-list">mục 11</a>.</li>
+      <li><code class="inline">Arrays.stream(...)</code> là cửa ngõ vào Stream API — <code class="inline">map</code>, <code class="inline">filter</code>, <code class="inline">sum</code>, <code class="inline">collect</code>... sẽ học ở <a href="roadmap.html#phase-3">3.8 Stream API</a>.</li>
+    </ul>
+
+    <h2 id="covariance">7. Array covariance &amp; ArrayStoreException <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Mảng trong Java <strong>covariant</strong>: nếu <code class="inline">String</code> là con của <code class="inline">Object</code> thì <code class="inline">String[]</code> được coi là con của <code class="inline">Object[]</code>. Điều này cho phép gán ngầm — và tạo ra lỗ hổng type-safety nổi tiếng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String[] strings = {"a", "b"};
+Object[] objects = strings;                  // covariance: compile OK
+IO.println(Arrays.toString(objects));        // [a, b]
+
+objects[0] = "c";                            // OK - phan tu la String
+IO.println(Arrays.toString(strings));        // [c, b]
+
+objects[0] = 42;                             // Integer -> JVM nem luc CHAY
+// ArrayStoreException: java.lang.Integer</code></pre>
+    </div>
+
+    <p>Compiler chỉ kiểm tra theo kiểu khai báo <code class="inline">objects</code> (<code class="inline">Object[]</code> nhận mọi object), còn JVM kiểm tra <strong>kiểu thật</strong> của mảng (<code class="inline">String[]</code>) ở mỗi lần ghi — gọi là store check. Message thật của JDK 25 lấy từ <code class="inline">e.getMessage()</code>:</p>
+
+    <div class="errblock">
+      <pre>ArrayStoreException : java.lang.Integer</pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao Generics không covariant?</strong> Chính vì lỗ hổng này. Nếu <code class="inline">List&lt;String&gt;</code> là con của <code class="inline">List&lt;Object&gt;</code>, bạn có thể nhét Integer vào list chuỗi mà compiler không biết. Generics dùng wildcard (<code class="inline">? extends</code>, PECS) để kiểm soát — học ở <a href="roadmap.html#phase-3">3.2 Generics</a>. Còn mảng vẫn giữ covariance từ Java 1.0 để tương thích ngược.</div>
+
+    <p>Mảng nguyên thủy thì <strong>không</strong> covariant, dù bản thân <code class="inline">int[]</code> vẫn là object:</p>
+
+    <div class="errblock">
+      <pre>Object[] bad = nums;
+               ^
+error: incompatible types: int[] cannot be converted to Object[]</pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] nums = {1, 2};
+IO.println(nums instanceof Object);   // true - mang la object
+// nhung int[] KHONG phai Object[]: phan tu la int, khong phai reference</code></pre>
+    </div>
+
+    <h2 id="loi-thuong-gap">8. Lỗi thường gặp với mảng <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Nguyên nhân</th><th>Cách phòng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">ArrayIndexOutOfBoundsException</code></td><td>Truy cập index ngoài <code class="inline">0..length-1</code> (thường do off-by-one <code class="inline">&lt;=</code>)</td><td>Duyệt bằng for-each, hoặc kiểm tra <code class="inline">i &lt; arr.length</code></td></tr>
+        <tr><td><code class="inline">NullPointerException</code></td><td>Biến mảng chưa gán <code class="inline">new</code> (null), hoặc phần tử là null</td><td>Khởi tạo ngay khi khai báo; kiểm tra null trước khi truyền/xử lý</td></tr>
+        <tr><td>So sánh <code class="inline">==</code> hai mảng</td><td>So identity, không so nội dung</td><td><code class="inline">Arrays.equals</code> / <code class="inline">Arrays.deepEquals</code></td></tr>
+        <tr><td>In mảng ra log</td><td>Object.toString ra <code class="inline">[I@hash</code></td><td><code class="inline">Arrays.toString</code> / <code class="inline">deepToString</code></td></tr>
+        <tr><td><code class="inline">Arrays.asList(...).add()</code></td><td>List kích thước cố định</td><td>Dùng <code class="inline">new ArrayList&lt;&gt;(Arrays.asList(...))</code></td></tr>
+        <tr><td>Sửa mảng "bản copy"</td><td>Gán <code class="inline">=</code> chỉ copy reference (alias)</td><td><code class="inline">Arrays.copyOf</code>/<code class="inline">arraycopy</code>/<code class="inline">clone</code></td></tr>
+        <tr><td><code class="inline">ArrayStoreException</code></td><td>Ghi sai kiểu qua mảng covariant</td><td>Không giữ <code class="inline">Object[]</code> trỏ tới mảng kiểu cụ thể rồi ghi linh tinh</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Message thật của JDK 25</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] a = {1, 2, 3};
+IO.println(a[3]);   // Index 3 out of bounds for length 3
+
+static int[] uninit;                       // field chua khoi tao -> null
+IO.println(uninit.length);                 // Cannot read the array length because "ErrorsDemo.uninit" is null
+IO.println(uninit[0]);                     // Cannot load from int array because "ErrorsDemo.uninit" is null
+
+int[] b = new int[3];
+for (int i = 0; i &lt;= b.length; i++) {      // off-by-one: &lt;= thay vi &lt;
+    b[i] = i;
+}
+// Index 3 out of bounds for length 3</code></pre>
+    </div>
+
+    <div class="note"><strong>Helpful messages (JDK 14+):</strong> NullPointerException và ArrayIndexOutOfBoundsException giờ mô tả rõ nguyên nhân thay vì chỉ có null. Tên biến local chỉ xuất hiện khi class có debug info — chạy trực tiếp <code class="inline">java TenFile.java</code> (source-file mode) có thể hiện <code class="inline">&lt;local1&gt;</code> thay vì tên biến; compile bình thường sẽ hiện tên thật. Debugger và đọc stack trace học ở <a href="roadmap.html#phase-4">4.4 Testing &amp; Debugging</a>.</div>
+
+    <h2 id="varargs">9. Varargs — tham số biến đổi <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Varargs cho phép method nhận số lượng đối số tùy ý. Cú pháp <code class="inline">type...</code> và bên trong method nó <strong>chính là một mảng</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static int sum(int... nums) {         // nums co kieu int[]
+    int total = 0;
+    for (int n : nums) {
+        total += n;
+    }
+    return total;
+}
+
+sum();                     // 0    - khong doi so nao
+sum(1, 2, 3);              // 6    - compiler tu tao mang int[]{1, 2, 3}
+int[] arr = {4, 5, 6};
+sum(arr);                  // 15   - truyen mang co san cung duoc
+sum(new int[0]);           // 0</code></pre>
+    </div>
+
+    <p>Vì varargs là mảng, <code class="inline">String[] args</code> của <code class="inline">main</code> tương đương một varargs — gọi hai kiểu đều được:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static void printArgs(String... args) {
+    IO.println("args.length       : " + args.length);
+}
+
+printArgs("--port", "8080");                 // args.length       : 2
+printArgs(new String[]{"--port", "8080"});   // args.length       : 2</code></pre>
+    </div>
+
+    <p>Hai luật bắt buộc nhớ. Thứ nhất, varargs <strong>phải là tham số cuối cùng</strong>:</p>
+
+    <div class="errblock">
+      <pre>static String join(String... parts, String sep) {
+                             ^
+error: varargs parameter must be the last parameter</pre>
+    </div>
+
+    <p>Thứ hai, overload có varargs: bản <strong>fixed arity thắng</strong> (đúng 3 phase của overload resolution — xem <a href="data-types.html#overload">Data Types — mục 9</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static void pick(int a, int b) { IO.println("pick(int, int)"); }
+static void pick(int... a)     { IO.println("pick(int...)"); }
+
+pick(1, 2);      // pick(int, int)
+pick(1, 2, 3);   // pick(int...)</code></pre>
+    </div>
+
+    <p>Nếu hai bản varargs đều khớp mà không bản nào "cụ thể hơn", compiler báo ambiguous:</p>
+
+    <div class="errblock">
+      <pre>m();
+^
+error: reference to m is ambiguous
+  both method m(int...) in VarargsAmbigErr and method m(boolean...) in VarargsAmbigErr match</pre>
+    </div>
+
+    <div class="note warn"><strong>Production:</strong> tránh overload chỉ khác nhau phần varargs — rất dễ gọi nhầm bản. Nếu cần, đặt tên method khác nhau (<code class="inline">sumAll</code> vs <code class="inline">sumRange</code>) hoặc dùng một bản varargs duy nhất.</div>
+
+    <h2 id="sort-object">10. Sort object với Comparable &amp; Comparator <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">Arrays.sort</code> hoạt động với mọi mảng object miễn là các phần tử <strong>so sánh được</strong>. Có hai cách:</p>
+
+    <ul>
+      <li><strong>Comparable</strong> — class tự định nghĩa "thứ tự tự nhiên" qua <code class="inline">compareTo</code>. Một class chỉ có một thứ tự tự nhiên. <code class="inline">String</code>, <code class="inline">Integer</code>, <code class="inline">BigDecimal</code> đều implements <code class="inline">Comparable</code>.</li>
+      <li><strong>Comparator</strong> — tiêu chí so sánh từ bên ngoài, viết bao nhiêu cũng được, truyền vào <code class="inline">Arrays.sort(array, comparator)</code>.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">record Score(String name, int point) implements Comparable&lt;Score&gt; {
+    @Override
+    public int compareTo(Score other) {
+        return Integer.compare(this.point, other.point);
+    }
+}
+
+Score[] scores = {new Score("An", 8), new Score("Binh", 9), new Score("Cuong", 7)};
+Arrays.sort(scores);
+// [Score[name=Cuong, point=7], Score[name=An, point=8], Score[name=Binh, point=9]]</code></pre>
+    </div>
+
+    <p>Với DTO như <code class="inline">record Order</code> (theo convention production ở <a href="index.html#production">Biến trong Java — mục 15</a>), thường không muốn "đóng đinh" một thứ tự — dùng Comparator:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Order(long id, String customer, BigDecimal total) {}
+
+Order[] orders = {
+    new Order(3, "Cuong", new BigDecimal("250.50")),
+    new Order(1, "An", new BigDecimal("1000.00")),
+    new Order(2, "Binh", new BigDecimal("99.99"))
+};
+Arrays.sort(orders, Comparator.comparing(Order::total).reversed());
+//   1 | An | 1000.00
+//   3 | Cuong | 250.50
+//   2 | Binh | 99.99</code></pre>
+    </div>
+
+    <p><code class="inline">Arrays.sort</code> trên object là <strong>stable sort</strong> (TimSort): các phần tử bằng nhau giữ nguyên thứ tự gốc. Điều này quan trọng khi sort nhiều tiêu chí:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Order[] ties = {
+    new Order(1, "An", new BigDecimal("50.00")),
+    new Order(2, "Binh", new BigDecimal("50.00")),
+    new Order(3, "Cuong", new BigDecimal("10.00"))
+};
+Arrays.sort(ties, Comparator.comparing(Order::total));
+//   tie 3 10.00
+//   tie 1 50.00 - An van truoc Binh du cung total
+//   tie 2 50.00</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Sort mảng object không <code class="inline">Comparable</code> sẽ ném <code class="inline">ClassCastException</code></strong> lúc chạy (không phải lỗi compile) — vì <code class="inline">Arrays.sort(Object[])</code> cast phần tử sang <code class="inline">Comparable</code>. Gặp lỗi này, thêm Comparator hoặc cho class implements Comparable. Đào sâu Comparable/Comparator, <code class="inline">thenComparing</code>, so sánh nhiều khóa ở <a href="roadmap.html#phase-3">3.3 Collections</a>.</div>
+
+    <h2 id="mang-vs-list">11. Mảng vs List — chọn cái nào? <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Mảng</th><th>List / ArrayList</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kích thước</td><td>Cố định, chốt lúc <code class="inline">new</code></td><td>Động, <code class="inline">add</code>/<code class="inline">remove</code> thoải mái</td></tr>
+        <tr><td>Lưu primitive</td><td>Có (<code class="inline">int[]</code>, không boxing)</td><td>Không — <code class="inline">List&lt;Integer&gt;</code> phải box (tốn bộ nhớ, chậm hơn)</td></tr>
+        <tr><td>API</td><td>Chỉ <code class="inline">length</code> + index; công cụ ở lớp <code class="inline">Arrays</code></td><td>Phong phú: <code class="inline">contains</code>, <code class="inline">indexOf</code>, <code class="inline">sort</code>, <code class="inline">stream</code>, <code class="inline">subList</code>...</td></tr>
+        <tr><td>Type-safety</td><td>Có covariance — có thể nổ <code class="inline">ArrayStoreException</code> lúc chạy</td><td>Generics an toàn kiểu, lỗi lộ ra lúc compile</td></tr>
+        <tr><td>Hiệu năng</td><td>Nhẹ, ít lớp bọc, cache-friendly</td><td>ArrayList bọc mảng + overhead object; vẫn rất nhanh</td></tr>
+        <tr><td>Khởi tạo nhanh</td><td><code class="inline">{1, 2, 3}</code></td><td><code class="inline">List.of(1, 2, 3)</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] nums = new int[3];                     // kich thuoc chot cung
+nums[0] = 10;
+
+List&lt;String&gt; list = new ArrayList&lt;&gt;();
+list.add("a");
+list.add("b");
+list.add("c");
+list.add("d");
+IO.println(list + " size=" + list.size());   // [a, b, c, d] size=4
+
+List&lt;String&gt; immutable = List.of("x", "y");
+immutable.add("z");                          // UnsupportedOperationException
+
+List&lt;String&gt; view = Arrays.asList("a", "b", "c");
+view.set(0, "z");                            // [z, b, c] - ghi xuyen qua mang goc
+view.add("d");                               // UnsupportedOperationException
+
+String[] backing = {"a", "b"};
+Arrays.asList(backing).set(0, "z");
+IO.println(Arrays.toString(backing));        // [z, b] - view chu khong phai copy
+
+String[] back = view.toArray(new String[0]); // [z, b, c]
+List&lt;String&gt; mutable = new ArrayList&lt;&gt;(List.of("x", "y"));
+mutable.add("z");                            // [x, y, z]</code></pre>
+    </div>
+
+    <p>Quy tắc chọn nhanh:</p>
+    <ul>
+      <li><strong>Dùng mảng</strong> khi số lượng phần tử biết trước và không đổi (buffer, bảng tra cứu, dữ liệu số), hoặc khi API bắt buộc (<code class="inline">main(String[] args)</code>, <code class="inline">toArray</code>, JDBC mảng...), hoặc cần lưu primitive số lượng lớn.</li>
+      <li><strong>Dùng List</strong> cho hầu hết trường hợp còn lại: cần thêm/xóa, cần API phong phú, cần generics an toàn. <code class="inline">ArrayList</code> bên trong vẫn là một mảng động — hiểu mảng là hiểu luôn nó.</li>
+      <li><code class="inline">List.of</code> là immutable (bất biến) — dùng cho hằng số/dữ liệu chỉ đọc; muốn sửa thì <code class="inline">new ArrayList&lt;&gt;(List.of(...))</code>.</li>
+      <li><code class="inline">Arrays.asList</code> chỉ là <strong>view</strong> của mảng gốc, kích thước cố định — không phải List "thật".</li>
+    </ul>
+
+    <div class="note warn">Bẫy nhỏ khi chuyển đổi: <code class="inline">Arrays.asList(new int[]{1, 2, 3})</code> trả về <code class="inline">List&lt;int[]&gt;</code> gồm <strong>1 phần tử</strong> (cả mảng là một object), không phải <code class="inline">List&lt;Integer&gt;</code> 3 phần tử. Với mảng primitive, dùng <code class="inline">Arrays.stream(arr).boxed().toList()</code>.</div>
+
+    <h2 id="production">12. Production patterns <span class="badge b-prod">Production</span></h2>
+
+    <h3>12.1 Nhận <code class="inline">String[] args</code> và parse an toàn</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">static final int DEFAULT_PORT = 8080;   // hang so: static final + UPPER_SNAKE_CASE
+
+static int parsePort(String[] args) {
+    if (args.length == 0) {             // args luon khac null, nhung co the rong
+        return DEFAULT_PORT;
+    }
+    try {
+        return Integer.parseInt(args[0]);
+    } catch (NumberFormatException e) {
+        return DEFAULT_PORT;            // config sai thi fallback, khong crash app
+    }
+}
+
+IO.println(args == null);        // false - JVM luon truyen mang (co the rong)
+IO.println(args.length);         // 0 khi chay: java ProductionDemo.java
+IO.println(parsePort(args));     // 8080</code></pre>
+    </div>
+
+    <p>Chạy kèm đối số: <code class="inline">java ProductionDemo.java 9090</code> → <code class="inline">args.length</code> là 1 và <code class="inline">parsePort</code> trả 9090. Lưu ý khác biệt với input người dùng: config/env thì fallback âm thầm, còn input API thì phải ném lỗi rõ ràng (400), như đã bàn ở <a href="data-types.html#production">Data Types — mục 13</a>.</p>
+
+    <h3>12.2 Kiểm tra rỗng/null trước khi xử lý</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">static boolean isEmpty(String[] a) {
+    return a == null || a.length == 0;
+}
+
+String[] tags = {"java", "backend"};
+IO.println(isEmpty(tags));          // false
+IO.println(isEmpty(null));          // true
+IO.println(isEmpty(new String[0])); // true</code></pre>
+    </div>
+
+    <p>Method nhận mảng từ bên ngoài nên xử lý cả hai trường hợp: mảng null (quên khởi tạo) và mảng rỗng (hợp lệ nhưng không có dữ liệu).</p>
+
+    <h3>12.3 Đọc dữ liệu vào mảng và bẫy in log</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">String csv = "1,2,3,4,5";
+String[] parts = csv.split(",");
+int[] parsed = new int[parts.length];        // biet size ngay sau split
+for (int i = 0; i &lt; parts.length; i++) {
+    parsed[i] = Integer.parseInt(parts[i].trim());
+}
+IO.println(Arrays.toString(parsed));         // [1, 2, 3, 4, 5]
+
+IO.println(tags);                            // [Ljava.lang.String;@23986957 - vo nghia!
+IO.println(Arrays.toString(tags));           // [java, backend]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy log production:</strong> nối chuỗi với mảng gọi <code class="inline">Object.toString</code> → ra <code class="inline">[I@5ffead27</code> (mảng int) hoặc <code class="inline">[Ljava.lang.String;@23986957</code> (mảng String). Phần sau <code class="inline">@</code> là identity hash — <strong>thay đổi mỗi lần chạy</strong>, nên log kiểu này vô nghĩa và còn làm nhiễu khi grep. Luôn dùng <code class="inline">Arrays.toString</code>/<code class="inline">deepToString</code>, hoặc <code class="inline">List.of(array)</code> khi cần định dạng đẹp.</div>
+
+    <h2 id="goc-nodejs">13. Góc Node.js — mảng JS vs mảng Java</h2>
+
+    <p>Nếu bạn đến từ JavaScript, đây là những khác biệt lớn nhất cần "reset" lại phản xạ:</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>JavaScript</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kích thước</td><td>Động: <code class="inline">arr.push(x)</code> thoải mái</td><td>Cố định: hết chỗ phải tạo mảng mới hoặc dùng <code class="inline">List</code>/<code class="inline">ArrayList</code></td></tr>
+        <tr><td><code class="inline">length</code></td><td>Property nhưng <em>gán được</em>: <code class="inline">arr.length = 2</code> cắt mảng</td><td>Field <code class="inline">final</code>: <code class="inline">arr.length = 2</code> không compile</td></tr>
+        <tr><td>Biến đổi dữ liệu</td><td><code class="inline">map</code>/<code class="inline">filter</code>/<code class="inline">reduce</code> có sẵn, trả mảng mới</td><td><code class="inline">Arrays.stream(arr).map(...).toArray()</code> (học ở 3.8) hoặc vòng lặp</td></tr>
+        <tr><td>Kiểm tra kiểu mảng</td><td><code class="inline">Array.isArray(x)</code></td><td><code class="inline">x.getClass().isArray()</code> hoặc <code class="inline">x instanceof int[]</code></td></tr>
+        <tr><td>Index ngoài biên</td><td><code class="inline">arr[99]</code> → <code class="inline">undefined</code> (im lặng)</td><td><code class="inline">ArrayIndexOutOfBoundsException</code> (fail fast)</td></tr>
+        <tr><td>Index "âm"</td><td><code class="inline">arr[-1]</code> là property bình thường, không phải lỗi</td><td>Không tồn tại — index âm ném AIOOBE</td></tr>
+        <tr><td><code class="inline">typeof</code></td><td><code class="inline">typeof []</code> là <code class="inline">"object"</code>, không phải "array"</td><td>Mảng là object thật — <code class="inline">getClass().getName()</code> cho <code class="inline">[I</code>, <code class="inline">[Ljava.lang.String;</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code>const arr = [1, 2, 3];
+arr.push(4);
+const doubled = arr.map((n) =&gt; n * 2);
+console.log(arr.length, doubled.length, typeof arr);   // 4 4 object
+console.log(Array.isArray(arr), arr[-1]);              // true undefined
+
+const fixed = [1, 2, 3];
+fixed.length = 2;                                      // JS cho phep cat mang!
+console.log(fixed);                                    // [ 1, 2 ]</code></pre>
+    </div>
+
+    <p>Chốt một câu: mảng Java giống mảng C hơn là array JS — cố định, fail fast, không có <code class="inline">map/filter</code> sẵn. Muốn sự linh hoạt của JS, Java dùng <code class="inline">ArrayList</code>/<code class="inline">List</code> (học ở <a href="roadmap.html#phase-3">3.3 Collections</a>).</p>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Mảng trong Java là primitive hay object? Nêu 3 bằng chứng.</summary>
+      <div class="answer">Là <strong>object</strong>. (1) <code class="inline">a.getClass().getName()</code> trả <code class="inline">[I</code>, superclass là <code class="inline">java.lang.Object</code>; (2) gán được cho biến <code class="inline">Object</code> và <code class="inline">a instanceof Object</code> là true (kể cả mảng primitive); (3) có field <code class="inline">length</code> và được cấp phát trên heap, biến mảng chỉ là reference trên stack.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Vì sao mảng dùng <code class="inline">length</code> còn String dùng <code class="inline">length()</code>?</summary>
+      <div class="answer"><code class="inline">length</code> là field của object mảng do JVM quản lý (final, không sửa được). Array không phải class thường viết trong source nên không có method nào cả. <code class="inline">String.length()</code> là method vì String là class bình thường. Viết <code class="inline">array.length()</code> bị lỗi compile "cannot find symbol".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Giá trị mặc định của phần tử mảng là gì?</summary>
+      <div class="answer">Số nguyên và số thực: <code class="inline">0</code>/<code class="inline">0.0</code>; <code class="inline">boolean</code>: <code class="inline">false</code>; <code class="inline">char</code>: <code class="inline">'\u0000'</code>; mọi reference (String, record, mảng con): <code class="inline">null</code>. JVM zero-fill nên phần tử không bao giờ là "rác". Bảng đầy đủ ở <a href="index.html#kieu-nguyen-thuy">Biến trong Java — mục 3</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. <code class="inline">a == b</code>, <code class="inline">a.equals(b)</code> và <code class="inline">Arrays.equals(a, b)</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">==</code> so identity (cùng object hay không); <code class="inline">a.equals(b)</code> của mảng <em>không override</em> <code class="inline">Object.equals</code> nên cũng là identity; <code class="inline">Arrays.equals</code> mới so nội dung từng phần tử. Hai mảng cùng nội dung nhưng khác object cho kết quả: false, false, true.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Truyền mảng vào method là pass-by-value hay pass-by-reference? Vì sao sửa phần tử được?</summary>
+      <div class="answer">Java luôn <strong>pass-by-value</strong>; với mảng, giá trị được truyền là bản sao của reference. Sửa phần tử (<code class="inline">nums[0] = 99</code>) ảnh hưởng mảng gốc vì hai reference trỏ cùng object. Gán lại <code class="inline">nums = new int[]{...}</code> chỉ đổi bản sao bên trong method — mảng gốc không đổi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Vì sao for-each không sửa được phần tử mảng? Mảng có implements <code class="inline">Iterable</code> không?</summary>
+      <div class="answer">Biến vòng lặp chỉ nhận bản sao giá trị của từng phần tử, gán vào nó không ghi ngược vào mảng — muốn sửa phải dùng for index. Mảng <strong>không</strong> implements <code class="inline">Iterable</code>; for-each trên mảng là compiler hỗ trợ riêng (dịch thành vòng lặp index), nên <code class="inline">Iterable&lt;Integer&gt; it = array;</code> không compile.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Mảng 2 chiều thực chất là gì? Ragged array là gì?</summary>
+      <div class="answer">Là mảng của các mảng: mảng cha chứa các reference trỏ tới từng mảng con. <code class="inline">new int[3][4]</code> tạo 3 mảng con length 4; <code class="inline">new int[3][]</code> chỉ tạo mảng cha với 3 null, phải gán từng hàng — cho phép mỗi hàng dài khác nhau (ragged). Truy cập <code class="inline">grid[i][j]</code> là hai lần index liên tiếp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">System.arraycopy</code> khác <code class="inline">Arrays.copyOf</code> ở đâu? Copy có sâu không?</summary>
+      <div class="answer"><code class="inline">arraycopy</code> nhận mảng nguồn + đích + offset + length, không tạo mảng mới, xử lý được vùng chồng lấn, ném <code class="inline">IndexOutOfBoundsException</code> nếu vượt biên. <code class="inline">copyOf</code> tạo mảng mới với độ dài tùy chọn (ngắn hơn thì cắt, dài hơn thì pad giá trị mặc định) — tiện để resize. Cả hai đều <strong>shallow</strong>: mảng 2 chiều chỉ được copy các reference hàng, muốn sâu phải tự copy từng hàng.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">binarySearch</code> yêu cầu gì? Kết quả âm có nghĩa gì?</summary>
+      <div class="answer">Mảng phải được sort trước theo đúng thứ tự so sánh — nếu không, kết quả vô nghĩa mà không báo lỗi. Tìm thấy trả index ≥ 0 (không đảm bảo là phần tử đầu tiên khi trùng nhau); không thấy trả <code class="inline">-(điểm chèn) - 1</code>. Ví dụ 25 trong <code class="inline">[10, 20, 30, 40]</code>: điểm chèn 2 → trả -3. Lấy điểm chèn: <code class="inline">int p = -result - 1;</code> hoặc <code class="inline">~result</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao <code class="inline">Arrays.asList(...)</code> <code class="inline">set</code> được mà <code class="inline">add</code> lại ném <code class="inline">UnsupportedOperationException</code>?</summary>
+      <div class="answer"><code class="inline">Arrays.asList</code> trả về <code class="inline">java.util.Arrays$ArrayList</code> — một <em>view kích thước cố định</em> bọc đúng mảng gốc, không có vùng lưu trữ riêng để tăng kích thước. <code class="inline">set</code> chỉ ghi đè phần tử nên ghi xuyên qua mảng gốc; <code class="inline">add</code>/<code class="inline">remove</code> cần đổi kích thước nên không hỗ trợ (message rỗng). Muốn list động: <code class="inline">new ArrayList&lt;&gt;(Arrays.asList(...))</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Array covariance là gì? Vì sao <code class="inline">Object[] o = new String[1]; o[0] = 1;</code> compile được nhưng runtime ném <code class="inline">ArrayStoreException</code>?</summary>
+      <div class="answer">Covariance: <code class="inline">String[]</code> được coi là subtype của <code class="inline">Object[]</code> (vì String là subtype của Object), nên gán ngầm hợp lệ. Compiler chỉ biết kiểu khai báo <code class="inline">Object[]</code> nên cho ghi mọi object; JVM kiểm tra kiểu thật của mảng (<code class="inline">String[]</code>) ở mỗi lần ghi và ném <code class="inline">ArrayStoreException("java.lang.Integer")</code> khi sai. Generics không covariant chính là để tránh lỗ hổng này.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Vì sao <code class="inline">Object[] o = new int[3];</code> không compile?</summary>
+      <div class="answer">Vì <code class="inline">int[]</code> là object nhưng không phải subtype của <code class="inline">Object[]</code>. Covariance chỉ áp dụng khi cả hai đều là mảng reference; phần tử của <code class="inline">int[]</code> là primitive <code class="inline">int</code>, không phải reference. Muốn "hộp" mảng primitive: <code class="inline">Object o = new int[3];</code> (được) nhưng không index qua <code class="inline">o</code> được.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Varargs hoạt động thế nào? Vì sao phải là tham số cuối?</summary>
+      <div class="answer"><code class="inline">int... nums</code> được compiler dịch thành tham số <code class="inline">int[] nums</code>; gọi <code class="inline">sum(1, 2, 3)</code> compiler tự tạo mảng, truyền mảng trực tiếp cũng được — vì vậy <code class="inline">main(String[] args)</code> tương đương varargs. Varargs phải đứng cuối vì nếu không compiler không biết đối số nào thuộc varargs (lỗi "varargs parameter must be the last parameter").</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Overload có cả bản fixed arity lẫn varargs thì chọn bản nào? Khi nào ambiguous?</summary>
+      <div class="answer">Overload resolution theo 3 phase: widening → boxing → varargs. Bản fixed arity khớp ngay phase 1/2 nên <strong>luôn thắng</strong> bản varargs (phase 3): <code class="inline">pick(1, 2)</code> chọn <code class="inline">pick(int, int)</code>. Ambiguous xảy ra khi hai bản varargs đều khớp mà không bản nào cụ thể hơn, ví dụ <code class="inline">m(int...)</code> và <code class="inline">m(boolean...)</code> gọi <code class="inline">m()</code> — compiler báo "reference to m is ambiguous".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. <code class="inline">Arrays.sort</code> trên mảng primitive và mảng object khác nhau thế nào?</summary>
+      <div class="answer">Primitive dùng dual-pivot quicksort — hiệu năng cao, <strong>không stable</strong>; object dùng TimSort — <strong>stable</strong>, các phần tử bằng nhau giữ nguyên thứ tự gốc. Với primitive không cần stable vì hai số bằng nhau không phân biệt được; với object tính stable quan trọng khi sort nhiều tiêu chí (sort theo tên rồi sort tiếp theo lương vẫn giữ thứ tự tên).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Sort mảng object không implements <code class="inline">Comparable</code> thì sao? Comparable khác Comparator ở đâu?</summary>
+      <div class="answer">Ném <code class="inline">ClassCastException</code> lúc chạy vì <code class="inline">Arrays.sort(Object[])</code> cast phần tử sang <code class="inline">Comparable</code>. <code class="inline">Comparable</code> định nghĩa thứ tự tự nhiên của class (một class chỉ một thứ tự, method <code class="inline">compareTo</code>); <code class="inline">Comparator</code> là tiêu chí từ ngoài, tạo bao nhiêu cũng được (<code class="inline">Comparator.comparing(Order::total).reversed()</code>). DTO production thường để mặc định không Comparable rồi truyền Comparator khi cần.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Message của <code class="inline">ArrayIndexOutOfBoundsException</code> và NPE trên JDK hiện đại có gì đáng chú ý?</summary>
+      <div class="answer">Từ JDK 14 (helpful NullPointerExceptions), message rất cụ thể: <code class="inline">Index 3 out of bounds for length 3</code>; NPE: <code class="inline">Cannot read the array length because "ErrorsDemo.uninit" is null</code> hoặc <code class="inline">Cannot load from int array because "ErrorsDemo.uninit" is null</code>. Tên biến local chỉ hiện khi class có debug info — chạy source-file mode (<code class="inline">java TenFile.java</code>) có thể hiện <code class="inline">&lt;local1&gt;</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. In mảng ra log thế nào? Vì sao <code class="inline">System.out.println(array)</code> ra <code class="inline">[I@1a2b3c</code>?</summary>
+      <div class="answer">Mảng không override <code class="inline">toString</code> nên dùng <code class="inline">Object.toString</code>: <code class="inline">tên class + "@" + identityHashCode dạng hex</code>. <code class="inline">[I</code> nghĩa là mảng int, <code class="inline">[Ljava.lang.String;</code> nghĩa là mảng String. Dùng <code class="inline">Arrays.toString</code> (1D), <code class="inline">Arrays.deepToString</code> (2D+), hoặc <code class="inline">List.of(array)</code>/<code class="inline">Arrays.stream(arr).boxed().toList()</code>. Hash thay đổi mỗi lần chạy nên log kiểu này vô nghĩa.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Khi nào chọn mảng, khi nào chọn <code class="inline">List</code>?</summary>
+      <div class="answer">Mảng khi kích thước biết trước và cố định, cần lưu primitive số lượng lớn (không boxing), cần hiệu năng/API cấp thấp, hoặc API bắt buộc (args, toArray, JDBC). <code class="inline">List</code>/<code class="inline">ArrayList</code> khi cần thêm/xóa, kích thước động, API phong phú và an toàn kiểu generics. <code class="inline">ArrayList</code> thực chất bọc một mảng động bên trong — mảng là nền tảng của Collections.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Chia sẻ mảng giữa nhiều thread cần chú ý gì?</summary>
+      <div class="answer">Mảng <strong>không thread-safe</strong>: ghi/đọc đồng thời có thể race và không đảm bảo visibility (thread khác có thể thấy giá trị cũ). <code class="inline">volatile</code> chỉ áp dụng cho biến reference chứ không cho từng phần tử mảng; <code class="inline">final</code> chỉ chốt reference. Cần đồng bộ (lock, copy-on-write, hoặc cấu trúc concurrent) — đào sâu ở <a href="roadmap.html#phase-4">4.2 Concurrency</a>.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = new int[3];
+String[] s = new String[2];
+IO.println(Arrays.toString(a));
+IO.println(Arrays.toString(s));
+IO.println(a.length);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[0, 0, 0]</code>, <code class="inline">[null, null]</code>, <code class="inline">3</code>. Mảng được zero-fill giá trị mặc định; <code class="inline">length</code> là field nên không có ngoặc.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+int[] b = {1, 2, 3};
+IO.println(a == b);
+IO.println(a.equals(b));
+IO.println(Arrays.equals(a, b));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">false</code>, <code class="inline">true</code>. <code class="inline">==</code> và <code class="inline">equals</code> đều so identity (mảng không override equals); chỉ <code class="inline">Arrays.equals</code> mới so nội dung.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+int[] b = a;
+b[2] = 99;
+IO.println(Arrays.toString(a));
+IO.println(a == b);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[1, 2, 99]</code> rồi <code class="inline">true</code>. <code class="inline">int[] b = a;</code> không copy mảng — hai biến trỏ cùng một object.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+for (int x : a) {
+    x = x * 10;
+}
+IO.println(Arrays.toString(a));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[1, 2, 3]</code>. Biến for-each chỉ là bản sao giá trị từng phần tử; gán vào nó không ảnh hưởng mảng. Muốn sửa phải dùng <code class="inline">a[i] = ...</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] src = {1, 2, 3, 4, 5};
+int[] dst = new int[5];
+System.arraycopy(src, 1, dst, 0, 3);
+IO.println(Arrays.toString(dst));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[2, 3, 4, 0, 0]</code>. Copy 3 phần tử từ index 1 của <code class="inline">src</code> (2, 3, 4) vào đầu <code class="inline">dst</code>; hai ô cuối không được ghi nên vẫn là 0.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+int[] b = Arrays.copyOf(a, 5);
+b[0] = 9;
+IO.println(Arrays.toString(a));
+IO.println(Arrays.toString(b));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[1, 2, 3]</code> rồi <code class="inline">[9, 2, 3, 0, 0]</code>. <code class="inline">copyOf</code> tạo mảng mới độc lập, phần dôi ra được pad 0; sửa <code class="inline">b</code> không ảnh hưởng <code class="inline">a</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {10, 20, 30, 40};
+IO.println(Arrays.binarySearch(a, 30));
+IO.println(Arrays.binarySearch(a, 25));
+IO.println(Arrays.binarySearch(a, 5));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2</code>, <code class="inline">-3</code>, <code class="inline">-1</code>. Tìm thấy 30 ở index 2. Không thấy 25: điểm chèn 2 → <code class="inline">-2 - 1 = -3</code>. Không thấy 5: điểm chèn 0 → <code class="inline">-0 - 1 = -1</code> (đây là lý do phải mã hóa kiểu này — nếu trả 0 thì không phân biệt được với "tìm thấy ở index 0").</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;String&gt; list = Arrays.asList("a", "b");
+list.set(0, "z");
+IO.println(list);
+list.add("c");
+IO.println(list);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[z, b]</code> rồi <strong>ném <code class="inline">UnsupportedOperationException</code></strong> và chương trình dừng — dòng in thứ hai không chạy. <code class="inline">Arrays.asList</code> trả view kích thước cố định: <code class="inline">set</code> được, <code class="inline">add</code> không.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[][] x = new int[2][];
+x[0] = new int[]{1, 2};
+x[1] = new int[]{3};
+IO.println(x.length);
+IO.println(x[0].length);
+IO.println(Arrays.deepToString(x));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2</code>, <code class="inline">2</code>, <code class="inline">[[1, 2], [3]]</code>. Đây là ragged array: mảng cha dài 2, hàng đầu dài 2, hàng sau dài 1.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">Object[] o = new String[2];
+o[0] = "ok";
+o[1] = 42;
+IO.println(Arrays.toString(o));</code></pre>
+      </div>
+      <div class="answer"><strong>Không có output</strong> — chương trình ném exception ngay dòng <code class="inline">o[1] = 42;</code> và dừng trước khi in:
+      <div class="errblock">
+        <pre>Exception in thread "main" java.lang.ArrayStoreException: java.lang.Integer</pre>
+      </div>
+      Mảng thật là <code class="inline">String[]</code>; covariance cho phép compiler nhận <code class="inline">Object[]</code>, nhưng JVM kiểm tra lúc ghi và từ chối Integer.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int sum(int... nums) {
+    int total = 0;
+    for (int n : nums) {
+        total += n;
+    }
+    return total;
+}
+
+IO.println(sum());
+IO.println(sum(1, 2));
+IO.println(sum(new int[]{3, 4}));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">0</code>, <code class="inline">3</code>, <code class="inline">7</code>. Varargs là mảng nên <code class="inline">sum()</code> nhận mảng rỗng, còn truyền mảng có sẵn cũng hợp lệ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+int sum = 0;
+for (int i = 0; i &lt;= a.length; i++) {
+    sum += a[i];
+}
+IO.println(sum);</code></pre>
+      </div>
+      <div class="answer"><strong>Không in gì</strong> — vòng lặp chạy tới <code class="inline">i = 3</code> thì ném:
+      <div class="errblock">
+        <pre>Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3</pre>
+      </div>
+      Lỗi off-by-one kinh điển: điều kiện đúng phải là <code class="inline">i &lt; a.length</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Khai báo / khởi tạo</td><td><code class="inline">int[] a = new int[3];</code> · <code class="inline">int[] b = {1, 2, 3};</code> · <code class="inline">int[] c = new int[]{1, 2, 3};</code></td></tr>
+        <tr><td>Mảng 2 chiều / ragged</td><td><code class="inline">int[][] g = new int[2][3];</code> · <code class="inline">int[][] r = new int[2][];</code> rồi gán từng hàng</td></tr>
+        <tr><td>Giá trị mặc định</td><td><code class="inline">0</code> / <code class="inline">0.0</code> / <code class="inline">false</code> / <code class="inline">'\u0000'</code> / <code class="inline">null</code></td></tr>
+        <tr><td>Độ dài</td><td><code class="inline">arr.length</code> (field, không ngoặc) · <code class="inline">String.length()</code></td></tr>
+        <tr><td>Duyệt</td><td><code class="inline">for (int i = 0; i &lt; a.length; i++)</code> · <code class="inline">for (int x : a)</code> (chỉ đọc)</td></tr>
+        <tr><td>Copy</td><td><code class="inline">System.arraycopy(src, p, dst, q, n)</code> · <code class="inline">Arrays.copyOf(a, newLen)</code> · <code class="inline">a.clone()</code> (đều shallow)</td></tr>
+        <tr><td>Copy sâu 2D</td><td>Vòng lặp <code class="inline">deep[i] = Arrays.copyOf(a[i], a[i].length)</code></td></tr>
+        <tr><td>Sort</td><td><code class="inline">Arrays.sort(a)</code> · <code class="inline">Arrays.sort(a, Comparator.comparing(...))</code></td></tr>
+        <tr><td>Tìm kiếm</td><td><code class="inline">Arrays.binarySearch(a, key)</code> — mảng phải sort; âm = <code class="inline">-điểmChèn - 1</code></td></tr>
+        <tr><td>So sánh nội dung</td><td><code class="inline">Arrays.equals(a, b)</code> · <code class="inline">Arrays.deepEquals(a, b)</code> (không dùng <code class="inline">==</code>/<code class="inline">equals</code>)</td></tr>
+        <tr><td>In log</td><td><code class="inline">Arrays.toString(a)</code> · <code class="inline">Arrays.deepToString(a)</code> (không nối chuỗi trực tiếp)</td></tr>
+        <tr><td>Điền giá trị</td><td><code class="inline">Arrays.fill(a, 7)</code> · <code class="inline">Arrays.fill(a, from, to, 7)</code> (nửa mở)</td></tr>
+        <tr><td>Mảng ↔ List</td><td><code class="inline">Arrays.asList(a)</code> (view cố định) · <code class="inline">List.of(a)</code> (immutable) · <code class="inline">list.toArray(new T[0])</code> · <code class="inline">new ArrayList&lt;&gt;(List.of(...))</code></td></tr>
+        <tr><td>Varargs</td><td><code class="inline">static int sum(int... nums)</code> — là mảng, phải đứng cuối, fixed arity thắng khi overload</td></tr>
+        <tr><td>Covariance</td><td><code class="inline">Object[] o = new String[1];</code> compile OK, ghi sai kiểu → <code class="inline">ArrayStoreException</code> lúc chạy</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được mảng là object và vì sao <code class="inline">length</code> không có ngoặc.</li>
+      <li>Kể đúng giá trị mặc định của mọi kiểu phần tử.</li>
+      <li>Phân biệt <code class="inline">==</code>, <code class="inline">equals</code>, <code class="inline">Arrays.equals</code> và <code class="inline">deepEquals</code>.</li>
+      <li>Giải thích pass-by-value của reference và vì sao sửa phần tử được nhưng gán lại mảng thì không.</li>
+      <li>Nói rõ vì sao for-each không sửa được phần tử.</li>
+      <li>Viết lại công thức trả về âm của <code class="inline">binarySearch</code> và cho ví dụ.</li>
+      <li>Giải thích shallow copy và cách deep copy mảng 2 chiều.</li>
+      <li>Trình bày được array covariance + <code class="inline">ArrayStoreException</code> bằng ví dụ tự viết.</li>
+      <li>Viết method varargs, biết vì sao phải đứng cuối và khi nào ambiguous.</li>
+      <li>Chọn được mảng hay List cho một tình huống cụ thể và nêu lý do.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-10.html" target="_blank" rel="noreferrer">JLS Chapter 10 — Arrays</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html#jls-15.10" target="_blank" rel="noreferrer">JLS §15.10 — Array Access Expressions</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/arrays.html" target="_blank" rel="noreferrer">Oracle Tutorial — Arrays</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html" target="_blank" rel="noreferrer">Javadoc — java.util.Arrays</a></li>
+      <li><a href="https://dev.java/learn/language-basics/arrays/" target="_blank" rel="noreferrer">Dev.java — Arrays</a></li>
+      <li><a href="https://openjdk.org/jeps/358" target="_blank" rel="noreferrer">JEP 358 — Helpful NullPointerExceptions</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Arrays · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

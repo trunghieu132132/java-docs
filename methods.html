@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methods — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item active" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="methods">Methods — phương thức trong Java</h1>
+
+    <p class="lead">Method (phương thức) là một khối code có tên, nhận đầu vào, xử lý và trả kết quả — đơn vị tổ chức code cơ bản nhất của Java. Khác JavaScript, Java <strong>không có hàm tự do</strong>: mọi method phải nằm trong class, interface, enum hoặc record. Trang này học từ khai báo, overloading, đệ quy, <code class="inline">static</code> tới cách kiểm thử method ngay khi viết.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 1.5 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — khai báo và gọi method có tham số/return; viết guard clause; overload đúng luật; viết đệ quy có base case; phân biệt <code class="inline">static</code> và instance; tự kiểm thử method với đầu vào bình thường, biên, sai.</li>
+      <li><strong>Phải hiểu</strong> — overload resolution và bẫy <code class="inline">null</code>/boxing; vì sao Java luôn pass-by-value; mỗi lần gọi method là một stack frame nên đệ quy sâu gây <code class="inline">StackOverflowError</code>; JVM tìm và gọi <code class="inline">main</code> thế nào.</li>
+      <li><strong>Nhận biết</strong> — JEP 512 (compact source file, instance main) của JDK 25; builder pattern; record dùng để trả về nhiều giá trị; varargs sẽ học ở <a href="roadmap.html#phase-1">1.6 Arrays</a>.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ.</div>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#khai-bao">Khai báo method</a></li>
+        <li><a href="#return-som">return sớm &amp; guard clause</a></li>
+        <li><a href="#tham-so-mac-dinh">Tham số mặc định &amp; named arguments</a></li>
+        <li><a href="#overloading">Overloading — cùng tên, khác tham số</a></li>
+        <li><a href="#pass-by-value">Pass-by-value (nhắc lại ngắn)</a></li>
+        <li><a href="#recursion">Recursion — đệ quy</a></li>
+        <li><a href="#static-instance">static vs instance</a></li>
+        <li><a href="#main">main method &amp; JVM args</a></li>
+        <li><a href="#chaining">Method chaining &amp; fluent API</a></li>
+        <li><a href="#kiem-thu">Kiểm thử method ngay khi viết</a></li>
+        <li><a href="#best-practices">Best practices</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="khai-bao">2. Khai báo method</h2>
+
+    <p>Đầy đủ một method gồm 6 phần, theo đúng thứ tự:</p>
+
+    <div class="signature">
+      <span class="sig-muted">[access modifier]</span> <span class="sig-muted">[static]</span> <span class="tok-typ">returnType</span> <span class="sig-var">tenMethod</span><span class="sig-muted">(</span><span class="tok-typ">kieuThamSo</span> <span class="sig-var">tenThamSo</span><span class="sig-muted">, ...) { }</span>
+    </div>
+
+    <ul>
+      <li><strong>Access modifier</strong> — <code class="inline">public</code>, <code class="inline">private</code>, <code class="inline">protected</code> hoặc bỏ trống (package-private). Chọn sai mức truy cập là lỗi thiết kế; học sâu ở <a href="roadmap.html#phase-2">2.2 Encapsulation &amp; Immutability</a>. Trong ví dụ dưới dùng <code class="inline">static</code> để gọi được từ <code class="inline">main</code> mà chưa cần tạo object.</li>
+      <li><strong>Return type</strong> — kiểu dữ liệu trả về, hoặc <code class="inline">void</code> nếu không trả gì. Một method chỉ trả về <strong>một</strong> giá trị duy nhất.</li>
+      <li><strong>Tên method</strong> — quy ước camelCase và bắt đầu bằng động từ.</li>
+      <li><strong>Danh sách tham số</strong> — cặp <code class="inline">kiểu tên</code>, có thể rỗng.</li>
+      <li><strong>Body</strong> — khối <code class="inline">{ }</code> chứa code xử lý.</li>
+      <li><strong>Thứ tự khai báo không quan trọng</strong> — method gọi method khác khai báo sau nó vẫn chạy, vì Java biên dịch cả file rồi mới gọi. Đây là điểm khác <em>function expression</em> trong JavaScript.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+public class MethodDemo {
+    static final double VAT_RATE = 0.1;
+
+    static BigDecimal tongTien(BigDecimal donGia, int soLuong) {
+        BigDecimal tamTinh = donGia.multiply(BigDecimal.valueOf(soLuong));
+        BigDecimal thue = tamTinh.multiply(BigDecimal.valueOf(VAT_RATE));
+        return tamTinh.add(thue);
+    }
+
+    static void inKetQua(String nhan, BigDecimal tien) {
+        IO.println(nhan + ": " + tien);
+    }
+
+    public static void main() {
+        BigDecimal donGia = new BigDecimal("120000");
+        inKetQua("Tong tien", tongTien(donGia, 3));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Tong tien: 396000.0</code></pre>
+    </div>
+
+    <h3>Parameter vs argument</h3>
+
+    <p>Tiếng Việt hay gọi chung là "tham số", nhưng tài liệu tiếng Anh phân biệt rõ:</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Parameter (tham số hình thức)</th><th>Argument (đối số)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Nằm ở đâu</td><td>Trong khai báo method</td><td>Trong lời gọi method</td></tr>
+        <tr><td>Ví dụ</td><td><code class="inline">donGia</code>, <code class="inline">soLuong</code></td><td><code class="inline">new BigDecimal("120000")</code>, <code class="inline">3</code></td></tr>
+        <tr><td>Bản chất</td><td>Biến local nhận giá trị khi method chạy</td><td>Giá trị/địa chỉ được truyền vào</td></tr>
+      </tbody>
+    </table>
+
+    <p>Trong lời gọi <code class="inline">tongTien(donGia, 3)</code>: <code class="inline">donGia</code> và <code class="inline">3</code> là argument; chúng được gán cho parameter <code class="inline">donGia</code>, <code class="inline">soLuong</code> theo đúng <strong>thứ tự</strong>, không theo tên. Java không có named arguments (mục <a href="#tham-so-mac-dinh">4</a>).</p>
+
+    <h3>Quy ước đặt tên</h3>
+
+    <ul>
+      <li>Tên method là <strong>động từ hoặc cụm động từ</strong>, camelCase: <code class="inline">tinhTong</code>, <code class="inline">sendEmail</code>, <code class="inline">findById</code>.</li>
+      <li>Method trả <code class="inline">boolean</code> đặt câu hỏi: <code class="inline">isValid</code>, <code class="inline">hasPermission</code>, <code class="inline">canRetry</code>.</li>
+      <li>Accessor theo cặp <code class="inline">getX</code>/<code class="inline">setX</code>; riêng boolean dùng <code class="inline">isX</code>. Record không cần: tự sinh <code class="inline">amount()</code>, <code class="inline">currency()</code>.</li>
+      <li>Tránh tên vô nghĩa: <code class="inline">doStuff</code>, <code class="inline">handle</code>, <code class="inline">process1</code>. Người đọc phải hiểu method làm gì mà không cần mở body.</li>
+    </ul>
+
+    <p>Thứ tự khai báo không ảnh hưởng — đoạn sau in ra bình thường:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class DeclarationOrderDemo {
+    static void goi() {
+        IO.println("goi() chay truoc khi duoc khai bao");
+    }
+
+    public static void main() {
+        goi();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>goi() chay truoc khi duoc khai bao</code></pre>
+    </div>
+
+    <h2 id="return-som">3. <code class="inline">return</code> sớm &amp; guard clause</h2>
+
+    <p><code class="inline">return</code> kết thúc method ngay lập tức. Trong method <code class="inline">void</code>, viết <code class="inline">return;</code> không kèm giá trị để thoát sớm. Trong method có kiểu trả về, mọi nhánh code phải chắc chắn trả về một giá trị — compiler kiểm tra điều này.</p>
+
+    <p><strong>Guard clause</strong> (mệnh đề gác cổng) là pattern: kiểm tra các điều kiện xấu/edge case trước và thoát sớm, để phần logic chính nằm thẳng hàng, không bị lồng sâu trong <code class="inline">if</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class EarlyReturnVoidDemo {
+    static void inThongBao(String ten) {
+        if (ten == null || ten.isBlank()) {
+            return;
+        }
+        IO.println("Xin chao " + ten);
+    }
+
+    static int tinhPhi(int tongTien) {
+        if (tongTien &lt; 0) {
+            throw new IllegalArgumentException("tongTien khong duoc am: " + tongTien);
+        }
+        if (tongTien &gt;= 500_000) {
+            return 0;
+        }
+        return 30_000;
+    }
+
+    public static void main() {
+        inThongBao("An");
+        inThongBao(null);
+        inThongBao("  ");
+        IO.println("phi 600000 = " + tinhPhi(600_000));
+        IO.println("phi 100000 = " + tinhPhi(100_000));
+        try {
+            tinhPhi(-1);
+        } catch (IllegalArgumentException e) {
+            IO.println("loi: " + e.getMessage());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Xin chao An
+phi 600000 = 0
+phi 100000 = 30000
+loi: tongTien khong duoc am: -1</code></pre>
+    </div>
+
+    <p>So sánh hai cách viết cùng logic — guard clause giúp ít lồng nhau hơn, đọc từ trên xuống không cần nhớ ngữ cảnh:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Khong dung guard clause: logic chinh bi day vao trong
+static String xepLoaiCu(double diem) {
+    String ketQua;
+    if (diem &gt;= 0 &amp;&amp; diem &lt;= 10) {
+        if (diem &gt;= 8) {
+            ketQua = "Gioi";
+        } else {
+            ketQua = "Trung binh";
+        }
+    } else {
+        ketQua = "khong hop le";
+    }
+    return ketQua;
+}
+
+// Dung guard clause
+static String xepLoai(double diem) {
+    if (diem &lt; 0 || diem &gt; 10) {
+        return "khong hop le";
+    }
+    if (diem &gt;= 8) {
+        return "Gioi";
+    }
+    return "Trung binh";
+}
+
+public static void main() {
+    IO.println(xepLoaiCu(9.0) + " / " + xepLoai(9.0));
+    IO.println(xepLoaiCu(5.0) + " / " + xepLoai(5.0));
+    IO.println(xepLoaiCu(-1) + " / " + xepLoai(-1));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Gioi / Gioi
+Trung binh / Trung binh
+khong hop le / khong hop le</code></pre>
+    </div>
+
+    <h3>Trả về nhiều giá trị bằng record</h3>
+
+    <p>Java không có tuple như nhiều ngôn ngữ, cũng không tiện <code class="inline">return { ok, reason }</code> như JavaScript. Cách sạch nhất là gói kết quả vào một <strong>record</strong> — DTO bất biến, tự sinh constructor/getter/<code class="inline">equals</code>/<code class="inline">toString</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class GuardClauseDemo {
+    record KyLuan(boolean dat, String lyDo) {}
+
+    static KyLuan xepLoai(double diem) {
+        if (diem &lt; 0 || diem &gt; 10) {
+            return new KyLuan(false, "diem khong hop le: " + diem);
+        }
+        if (diem &gt;= 8) {
+            return new KyLuan(true, "Gioi");
+        }
+        if (diem &gt;= 6.5) {
+            return new KyLuan(true, "Kha");
+        }
+        return new KyLuan(true, "Trung binh");
+    }
+
+    public static void main() {
+        IO.println(xepLoai(9.0));
+        IO.println(xepLoai(7.0));
+        IO.println(xepLoai(-1));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>KyLuan[dat=true, lyDo=Gioi]
+KyLuan[dat=true, lyDo=Kha]
+KyLuan[dat=false, lyDo=diem khong hop le: -1.0]</code></pre>
+    </div>
+
+    <div class="note">Nếu ý nghĩa là "có thể không có kết quả", đừng trả <code class="inline">null</code> — dùng <code class="inline">Optional</code> (học ở <a href="roadmap.html#phase-3">3.7 Optional</a>). Record và DTO được đào sâu ở <a href="roadmap.html#phase-2">2.2 Encapsulation &amp; Immutability</a>.</div>
+
+    <h2 id="tham-so-mac-dinh">4. Java không có tham số mặc định / named arguments</h2>
+
+    <p>JavaScript có giá trị mặc định cho tham số (chạy thật bằng Node v22: in ra 6 rồi 15):</p>
+
+    <div class="codeblock">
+      <pre><code>// JavaScript - chi de so sanh, KHONG phai Java
+function tang(a, b = 1) { return a + b; }
+
+console.log(tang(5));       // 6  - dung gia tri mac dinh
+console.log(tang(5, 10));   // 15</code></pre>
+    </div>
+
+    <p>Java <strong>không có</strong> tham số mặc định. Named arguments thì cả JS lẫn Java đều không có thật — JS muốn "gọi theo tên" phải truyền một object rồi destructure (<code class="inline">tang({ a: 5, b: 10 })</code>). Viết theo kiểu JavaScript sẽ lỗi ngay khi compile:</p>
+
+    <div class="errblock">
+      <pre>DefaultParamsErr.java:2: error: ',', ')', or '[' expected
+    static int tang(int a, int b = 1) {
+                                ^
+1 error</pre>
+    </div>
+
+    <h3>Cách 1 — overload</h3>
+
+    <p>Viết nhiều phiên bản cùng tên, bản ít tham số gọi bản đầy đủ với giá trị mặc định. Đây là cách JDK tự làm khắp nơi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class OverloadDemo {
+    static int tang(int a) {
+        return tang(a, 1);
+    }
+
+    static int tang(int a, int b) {
+        return a + b;
+    }
+
+    static int tang(int a, int b, int c) {
+        return a + b + c;
+    }
+
+    public static void main() {
+        IO.println(tang(5));
+        IO.println(tang(5, 10));
+        IO.println(tang(1, 2, 3));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>6
+15
+6</code></pre>
+    </div>
+
+    <h3>Cách 2 — builder cho nhiều tham số tùy chọn</h3>
+
+    <p>Khi có 4-5 tham số mà phần lớn là tùy chọn, overload sẽ bùng nổ tổ hợp. Builder giải quyết bằng chuỗi method có tên — vừa "named arguments" vừa có giá trị mặc định:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BuilderDemo {
+    record SearchRequest(String keyword, int page, int size, String sort) {
+        static final class Builder {
+            private String keyword = "";
+            private int page = 0;
+            private int size = 20;
+            private String sort = "id";
+
+            Builder keyword(String keyword) {
+                this.keyword = keyword;
+                return this;
+            }
+
+            Builder page(int page) {
+                this.page = page;
+                return this;
+            }
+
+            Builder size(int size) {
+                this.size = size;
+                return this;
+            }
+
+            Builder sort(String sort) {
+                this.sort = sort;
+                return this;
+            }
+
+            SearchRequest build() {
+                return new SearchRequest(keyword, page, size, sort);
+            }
+        }
+    }
+
+    public static void main() {
+        SearchRequest macDinh = new SearchRequest.Builder().build();
+        IO.println(macDinh);
+
+        SearchRequest timKiem = new SearchRequest.Builder()
+                .keyword("ao thun")
+                .page(2)
+                .size(50)
+                .build();
+        IO.println(timKiem);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>SearchRequest[keyword=, page=0, size=20, sort=id]
+SearchRequest[keyword=ao thun, page=2, size=50, sort=id]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Chọn cách nào?</strong> 1-2 tham số tùy chọn đơn giản thì overload; 3+ tùy chọn, nhiều tổ hợp, hoặc tham số boolean khó đọc thì builder. Đừng trộn cả hai cho cùng một API. Thư viện lớn trong JDK dùng đủ cả hai: <code class="inline">List.of()</code> (overload 0..10 phần tử + varargs), <code class="inline">StringBuilder</code>, các builder của Jackson/OkHttp.</div>
+
+    <h2 id="overloading">5. Overloading — cùng tên, khác tham số <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Overload</strong> là nhiều method cùng tên trong cùng class nhưng <strong>khác danh sách tham số</strong>. Khác nhau có thể là: số lượng tham số, kiểu tham số, hoặc thứ tự kiểu tham số.</p>
+
+    <p><strong>Khác return type là không đủ</strong> — Java phân biệt method bằng tên + kiểu tham số (method descriptor), không dùng return type. Đoạn sau lỗi compile vì <code class="inline">tinh(int)</code> đã được định nghĩa:</p>
+
+    <div class="errblock">
+      <pre>DuplicateMethodErr.java:6: error: method tinh(int) is already defined in class DuplicateMethodErr
+    static long tinh(int a) {
+                ^
+1 error</pre>
+    </div>
+
+    <p>Trong bytecode, tên method được gắn kèm kiểu tham số nên mới phân biệt được. Chạy <code class="inline">javap</code> trên <code class="inline">OverloadDemo</code> ở mục 4 ta thấy rõ:</p>
+
+    <div class="codeblock">
+      <pre><code>static int tang(int);
+static int tang(int, int);
+static int tang(int, int, int);</code></pre>
+    </div>
+
+    <p>Đổi tên parameter mà giữ nguyên kiểu thì vẫn là <em>cùng một</em> method — tên parameter không tính vào chữ ký.</p>
+
+    <h3>Overload resolution — chọn bản nào?</h3>
+
+    <p>Khi nhiều bản cùng "vừa" với một lời gọi, compiler chọn theo 3 phase, phase trước thắng phase sau: (1) chỉ widening, không boxing; (2) cho phép boxing/unboxing; (3) cho phép varargs. Toàn bộ luật kèm ví dụ nằm ở <a href="data-types.html#overload">Data Types — mục 9</a>; ở đây tập trung vào hai bẫy thực chiến.</p>
+
+    <h3>Bẫy 1 — <code class="inline">null</code> chọn bản "cụ thể nhất"</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">public class OverloadNullDemo {
+    static void gui(String s) {
+        IO.println("gui(String) - cu the hon");
+    }
+
+    static void gui(Object o) {
+        IO.println("gui(Object)");
+    }
+
+    public static void main() {
+        gui("abc");
+        gui(null);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>gui(String) - cu the hon
+gui(String) - cu the hon</code></pre>
+    </div>
+
+    <p><code class="inline">null</code> hợp với mọi kiểu reference, nên compiler chọn bản <strong>most specific</strong>: <code class="inline">String</code> là subtype của <code class="inline">Object</code>. Nhưng nếu hai bản không có quan hệ cha-con, chương trình không compile:</p>
+
+    <div class="errblock">
+      <pre>OverloadAmbiguousErr.java:11: error: reference to xuLy is ambiguous
+        xuLy(null);
+        ^
+  both method xuLy(Integer) in OverloadAmbiguousErr and method xuLy(Long) in OverloadAmbiguousErr match
+1 error</pre>
+    </div>
+
+    <div class="note"><strong>Bẫy boxing:</strong> nếu class có cả <code class="inline">m(long)</code> lẫn <code class="inline">m(Integer)</code>, lời gọi <code class="inline">m(1)</code> sẽ chọn bản <code class="inline">long</code> — widening thuộc phase 1 thắng boxing phase 2. Minh hoạ chi tiết ở <a href="data-types.html#overload">Data Types — mục 9</a>.</div>
+
+    <h3>Bẫy 2 — chọn nhầm overload có sẵn của JDK</h3>
+
+    <p>Ví dụ production thật: <code class="inline">List</code> có hai bản <code class="inline">remove</code> — <code class="inline">remove(int index)</code> và <code class="inline">remove(Object o)</code>. Truyền số nguyên vào sẽ chọn bản xóa theo <strong>vị trí</strong>, không phải xóa theo giá trị:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class ListRemoveTrap {
+    public static void main() {
+        List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(10, 20, 30));
+        IO.println("remove(1)           : " + nums.remove(1));
+        IO.println("sau remove(1)       : " + nums);
+        IO.println("remove(Integer 30)  : " + nums.remove(Integer.valueOf(30)));
+        IO.println("sau remove(value 30): " + nums);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>remove(1)           : 20
+sau remove(1)       : [10, 30]
+remove(Integer 30)  : true
+sau remove(value 30): [10]</code></pre>
+    </div>
+
+    <p><code class="inline">nums.remove(1)</code> gọi <code class="inline">remove(int)</code> → xóa phần tử ở index 1 (giá trị 20) và trả về phần tử bị xóa. Muốn xóa theo <em>giá trị</em> phải ép boxing rõ ràng: <code class="inline">nums.remove(Integer.valueOf(30))</code> → gọi <code class="inline">remove(Object)</code>, trả về <code class="inline">boolean</code>. <code class="inline">List</code> sẽ học ở <a href="roadmap.html#phase-3">3.3 Collections</a>; bẫy này thì phải nhớ ngay.</p>
+
+    <div class="note warn"><strong>Hệ quả maintain API:</strong> thêm một overload mới có thể <em>đổi method được chọn</em> ở những call site cũ mà không ai sửa gì (ví dụ thêm bản nhận <code class="inline">long</code> trong khi call site đang truyền <code class="inline">int</code>). Vì vậy overload phải khác nhau rõ ràng về ngữ nghĩa, không chỉ để tiện.</div>
+
+    <h2 id="pass-by-value">6. Pass-by-value (nhắc lại ngắn)</h2>
+
+    <p>Cơ chế stack/heap và vì sao Java luôn pass-by-value đã được giải thích đầy đủ ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>. Ghi nhớ 3 dòng:</p>
+
+    <ul>
+      <li>Primitive (<code class="inline">int</code>, <code class="inline">double</code>...) truyền <strong>bản sao giá trị</strong> — sửa trong method không ảnh hưởng ngoài.</li>
+      <li>Object truyền <strong>bản sao địa chỉ (reference copy)</strong> — cả hai cùng trỏ tới một object trên heap.</li>
+      <li>Vì là bản sao, gán lại parameter <code class="inline">sb = new StringBuilder(...)</code> bên trong method <strong>không</strong> đổi biến bên ngoài; nhưng gọi method làm thay đổi nội dung object (<code class="inline">sb.append(...)</code>) thì bên ngoài thấy.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class PassByValueDemo {
+    static void themDauCham(StringBuilder sb) {
+        sb.append("!");
+    }
+
+    static void thayThe(StringBuilder sb) {
+        sb = new StringBuilder("moi");
+        sb.append("?");
+    }
+
+    public static void main() {
+        StringBuilder sb = new StringBuilder("hello");
+        themDauCham(sb);
+        IO.println("sau themDauCham : " + sb);
+        thayThe(sb);
+        IO.println("sau thayThe     : " + sb);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau themDauCham : hello!
+sau thayThe     : hello!</code></pre>
+    </div>
+
+    <p>Record, <code class="inline">String</code>, <code class="inline">BigDecimal</code>... đều <strong>bất biến</strong> nên không bao giờ bị method "sửa lén" — đó là lý do production ưu tiên chúng cho DTO và tiền tệ.</p>
+
+    <h2 id="recursion">7. Recursion — đệ quy <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Recursion là method gọi chính nó. Mọi hàm đệ quy đúng phải có:</p>
+    <ul>
+      <li><strong>Base case</strong> — điều kiện dừng, trả kết quả trực tiếp, không gọi lại.</li>
+      <li><strong>Recursive case</strong> — gọi lại chính nó với bài toán nhỏ hơn, tiến dần về base case.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class RecursionDemo {
+    static long giaiThua(int n) {
+        if (n &lt; 0) {
+            throw new IllegalArgumentException("n phai &gt;= 0: " + n);
+        }
+        if (n &lt;= 1) {
+            return 1;
+        }
+        return n * giaiThua(n - 1);
+    }
+
+    static long fib(int n) {
+        if (n &lt;= 1) {
+            return n;
+        }
+        return fib(n - 1) + fib(n - 2);
+    }
+
+    static long fibVongLap(int n) {
+        long a = 0;
+        long b = 1;
+        for (int i = 0; i &lt; n; i++) {
+            long tiep = a + b;
+            a = b;
+            b = tiep;
+        }
+        return a;
+    }
+
+    public static void main() {
+        IO.println("giaiThua(5)    = " + giaiThua(5));
+        IO.println("giaiThua(0)    = " + giaiThua(0));
+        IO.println("fib(10)        = " + fib(10));
+        IO.println("fibVongLap(50) = " + fibVongLap(50));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>giaiThua(5)    = 120
+giaiThua(0)    = 1
+fib(10)        = 55
+fibVongLap(50) = 12586269025</code></pre>
+    </div>
+
+    <p><code class="inline">fib</code> bản đệ quy ngây thơ có độ phức tạp hàm mũ vì tính lại cùng giá trị rất nhiều lần; <code class="inline">fibVongLap</code> chỉ O(n). Cùng kết quả nhưng chi phí khác hẳn — chọn công cụ theo bài toán, không theo sở thích.</p>
+
+    <div class="note">Cần fib lớn (n &gt; 92) thì <code class="inline">long</code> tràn — dùng <code class="inline">BigInteger</code> (xem <a href="data-types.html#biginteger">Data Types — mục 12</a>) hoặc quy hoạch động với mảng.</div>
+
+    <h3>Vì sao thiếu base case lại ném <code class="inline">StackOverflowError</code>?</h3>
+
+    <p>Mỗi lời gọi method tạo một <strong>stack frame</strong> (biến local, tham số, địa chỉ quay về) đặt lên stack của thread. Đệ quy vô hạn làm stack đầy — JVM ném lỗi thay vì treo máy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class StackOverflowDemo {
+    static int soLanGoi = 0;
+
+    static void deQuyVoHan(int n) {
+        soLanGoi++;
+        deQuyVoHan(n + 1);
+    }
+
+    public static void main() {
+        try {
+            deQuyVoHan(0);
+        } catch (StackOverflowError e) {
+            IO.println("class  : " + e.getClass().getSimpleName());
+            IO.println("message: " + e.getMessage());
+            IO.println("so lan goi: " + soLanGoi);
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Một lần chạy thật trên máy này (JDK 25):</p>
+
+    <div class="codeblock error">
+      <pre><code>class  : StackOverflowError
+message: null
+so lan goi: 44249</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">StackOverflowError</code> là <code class="inline">Error</code>, không phải <code class="inline">Exception</code> — đừng bắt trong code production, chỉ bắt ở đây để demo. Chạy lại nhiều lần cho các số khác nhau (khoảng 17.000-45.000 trên máy này) tùy trạng thái JVM.</li>
+      <li><code class="inline">deQuyVoHan(n + 1)</code> là tail call — lời gọi ở vị trí cuối cùng. Nhiều bạn tưởng nó được tối ưu thành vòng lặp; Java <strong>không có tail-call optimization</strong>, nên vẫn nổ (V8/Node.js cũng không hỗ trợ TCO).</li>
+      <li>Giới hạn ~44.000 frame cho thấy mỗi frame tốn kha khá bộ nhớ stack; đệ quy sâu với dữ liệu lớn có thể nổ dù có base case.</li>
+    </ul>
+
+    <h3>Vòng lặp hay đệ quy?</h3>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Vòng lặp</th><th>Đệ quy</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bộ nhớ</td><td>O(1)</td><td>O(độ sâu) stack frame</td></tr>
+        <tr><td>Tốc độ</td><td>Nhanh hơn (không tốn chi phí gọi)</td><td>Chậm hơn; naive fib là O(2^n)</td></tr>
+        <tr><td>Độ dễ đọc</td><td>Hợp với dãy, mảng, vòng đếm</td><td>Hợp với cấu trúc đệ quy: cây, đồ thị, thư mục, JSON lồng nhau</td></tr>
+        <tr><td>Rủi ro</td><td>Khó viết cho cấu trúc lồng không xác định</td><td><code class="inline">StackOverflowError</code> nếu sâu hoặc thiếu base case</td></tr>
+      </tbody>
+    </table>
+
+    <p>Kinh nghiệm: bài toán trên cấu trúc dữ liệu đệ quy (duyệt cây thư mục, cây DOM/JSON, backtracking, chia để trị) thì viết đệ quy cho dễ đọc; bài toán dãy số thì vòng lặp. Trong production, chia để trị và backtracking gần như luôn dùng đệ quy.</p>
+
+    <h2 id="static-instance">8. <code class="inline">static</code> vs instance <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Hai loại method:</p>
+    <ul>
+      <li><strong>Instance method</strong> — thuộc về object, gọi qua <code class="inline">obj.method()</code>, truy cập được cả field instance lẫn field static, và có <code class="inline">this</code> trỏ tới object hiện tại.</li>
+      <li><strong>Static method</strong> — thuộc về class, gọi qua <code class="inline">TenClass.method()</code>, <strong>không</strong> có <code class="inline">this</code>, chỉ truy cập được field/method static. Vì vậy JVM gọi được <code class="inline">main</code> mà không cần tạo object.</li>
+    </ul>
+
+    <p>Vi phạm điều này bị chặn ngay khi compile — cả hai lỗi thường gặp:</p>
+
+    <div class="errblock">
+      <pre>StaticErr.java:9: error: non-static variable count cannot be referenced from a static context
+        count++;
+        ^
+StaticErr.java:10: error: non-static method tangInstance() cannot be referenced from a static context
+        tangInstance();
+        ^
+2 errors</pre>
+    </div>
+
+    <h3>Static factory method</h3>
+
+    <p>Static method hay dùng nhất là <strong>static factory method</strong>: method static trả về object, thay cho constructor. Tên method nói rõ ý nghĩa, có thể cache, có thể trả subtype:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+public class StaticFactoryDemo {
+    record Money(BigDecimal amount, String currency) {
+        static Money vnd(long amount) {
+            return new Money(BigDecimal.valueOf(amount), "VND");
+        }
+
+        static Money usd(String amount) {
+            return new Money(new BigDecimal(amount), "USD");
+        }
+    }
+
+    public static void main() {
+        IO.println(Money.vnd(250_000));
+        IO.println(Money.usd("19.99"));
+        IO.println(BigDecimal.valueOf(0.1));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Money[amount=250000, currency=VND]
+Money[amount=19.99, currency=USD]
+0.1</code></pre>
+    </div>
+
+    <p>JDK đầy ví dụ: <code class="inline">BigDecimal.valueOf(...)</code>, <code class="inline">List.of(...)</code>, <code class="inline">LocalDate.of(...)</code>, <code class="inline">Integer.parseInt(...)</code>, <code class="inline">Optional.empty()</code>. So với constructor, static factory: có tên gọi rõ nghĩa, không bắt buộc trả object mới mỗi lần, và có thể trả về subtype ẩn — chi tiết ở <a href="roadmap.html#phase-2">2.1 Classes &amp; Objects</a>.</p>
+
+    <h3>Khi nào dùng static?</h3>
+
+    <table>
+      <thead>
+        <tr><th>Nên static</th><th>Không nên static</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Hàm tiện ích thuần túy: <code class="inline">Math.max</code>, <code class="inline">Objects.requireNonNull</code></td><td>State dùng chung: static mutable field là nguồn race condition (xem <a href="index.html#production">Biến trong Java — mục 15</a>)</td></tr>
+        <tr><td>Factory method, hằng số <code class="inline">static final</code></td><td>Service/Repository trong Spring: là bean instance, không phải static (giai đoạn 5)</td></tr>
+        <tr><td>Method không phụ thuộc dữ liệu của object</td><td>Method cần đọc/ghi field của object</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="main">9. <code class="inline">main</code> method &amp; JVM args <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Entry point chuẩn mà mọi tài liệu/phỏng vấn dùng:</p>
+
+    <div class="signature">
+      <span class="sig-muted">public static void</span> <span class="sig-var">main</span><span class="sig-muted">(</span><span class="tok-typ">String</span><span class="sig-muted">[]</span> <span class="sig-var">args</span><span class="sig-muted">)</span>
+    </div>
+
+    <ul>
+      <li><code class="inline">public</code> — JVM (ở package khác) phải gọi được.</li>
+      <li><code class="inline">static</code> — JVM gọi trước khi có object nào.</li>
+      <li><code class="inline">void</code> — JVM không nhận giá trị trả về; muốn báo mã thoát dùng <code class="inline">System.exit(code)</code>.</li>
+      <li><code class="inline">String[] args</code> — mảng tham số dòng lệnh (mảng học ở <a href="roadmap.html#phase-1">1.6 Arrays</a>).</li>
+    </ul>
+
+    <h3>Thí nghiệm: <code class="inline">java File.java a b c</code> có truyền được args không?</h3>
+
+    <p>Nhiều bạn tưởng chế độ chạy file đơn không nhận tham số. <strong>Thực tế nhận bình thường</strong> — mọi thứ sau tên file là argument của chương trình (các option của chính lệnh <code class="inline">java</code> mới phải đặt trước tên file):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class MainArgsDemo {
+    public static void main(String[] args) {
+        IO.println("args.length = " + args.length);
+        for (int i = 0; i &lt; args.length; i++) {
+            IO.println("args[" + i + "] = " + args[i]);
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy thật <code class="inline">java MainArgsDemo.java a b c</code>:</p>
+
+    <div class="codeblock error">
+      <pre><code>args.length = 3
+args[0] = a
+args[1] = b
+args[2] = c</code></pre>
+    </div>
+
+    <p>Chạy <code class="inline">java MainArgsDemo.java</code> không truyền gì: <code class="inline">args.length = 0</code> — <code class="inline">args</code> là <strong>mảng rỗng</strong>, không bao giờ <code class="inline">null</code>, nên cứ <code class="inline">args.length</code> thoải mái. Chương trình thật thường kiểm tra và in hướng dẫn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class MainArgsSum {
+    public static void main(String[] args) {
+        if (args.length &lt; 2) {
+            IO.println("Dung: java MainArgsSum.java &lt;so1&gt; &lt;so2&gt;");
+            return;
+        }
+        int a = Integer.parseInt(args[0]);
+        int b = Integer.parseInt(args[1]);
+        IO.println(a + " + " + b + " = " + (a + b));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>$ java MainArgsSum.java 3 4
+3 + 4 = 7
+$ java MainArgsSum.java
+Dung: java MainArgsSum.java &lt;so1&gt; &lt;so2&gt;</code></pre>
+    </div>
+
+    <h3>JDK 25 — JEP 512: compact source file &amp; instance main</h3>
+
+    <p>Từ JDK 25 (JEP 512), với file đơn bạn không cần khai báo class, có thể viết <strong>instance main</strong> và bỏ luôn phần lớn boilerplate. Đây là các dạng đã chạy thật trên máy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// File 1 - main khong tham so: JVM tu tao object roi goi
+void main() {
+    IO.println("instance main() (khong static) chay duoc");
+}
+
+// File 2 - main nhan args nhu thuong
+void main(String[] args) {
+    IO.println("args.length = " + args.length);
+}</code></pre>
+    </div>
+
+    <p>Kết quả chạy thật của file 1 (dạng không tham số):</p>
+
+    <div class="codeblock error">
+      <pre><code>instance main() (khong static) chay duoc</code></pre>
+    </div>
+
+    <p>File 2 nhận args bình thường — chạy <code class="inline">java MainInstanceArgsDemo.java x y</code> in ra:</p>
+
+    <div class="codeblock error">
+      <pre><code>args.length = 2</code></pre>
+    </div>
+
+    <p>Và nếu file chỉ có <code class="inline">static void main()</code> không tham số, chạy kèm args cũng không lỗi — args đơn giản bị bỏ qua:</p>
+
+    <div class="codeblock error">
+      <pre><code>$ java MainNoArgsDemo.java a b c
+main() khong tham so van chay</code></pre>
+    </div>
+
+    <div class="note"><strong>Học gì để đi làm:</strong> dạng compact/instance main rất tiện để học và viết script nhỏ. Nhưng codebase production (đặc biệt Spring Boot) vẫn dùng <code class="inline">public static void main(String[] args)</code> + <code class="inline">System.out.println</code> trong tài liệu cũ. JEP 512 còn tự import mọi package của module <code class="inline">java.base</code> cho file compact (nên <code class="inline">BigDecimal</code>, <code class="inline">List</code> dùng được không cần import) — còn class có tên đầy đủ thì <strong>không</strong> có đặc ân đó.</div>
+
+    <h2 id="chaining">10. Method chaining &amp; fluent API <span class="badge b-prod">Production</span></h2>
+
+    <p>Method chaining là gọi liên tiếp <code class="inline">a().b().c()</code> vì mỗi method trả về một object để gọi tiếp. Có hai kiểu trả về:</p>
+    <ul>
+      <li><strong>Trả về chính object</strong> (<code class="inline">return this</code>) — kiểu <code class="inline">StringBuilder</code>, builder pattern. Object bị thay đổi tại chỗ (mutable).</li>
+      <li><strong>Trả về object mới</strong> — kiểu <code class="inline">String</code> bất biến: mỗi method trả chuỗi mới, chuỗi gốc không đổi.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ChainingDemo {
+    public static void main() {
+        String maDon = new StringBuilder()
+                .append("DH")
+                .append('-')
+                .append(2026)
+                .append('-')
+                .append(String.format("%05d", 42))
+                .toString();
+        IO.println(maDon);
+
+        String s = "hello";
+        String s2 = s.toUpperCase().trim().concat("!");
+        IO.println(s2);
+        IO.println(s);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>DH-2026-00042
+HELLO!
+hello</code></pre>
+    </div>
+
+    <p>Vì sao <code class="inline">StringBuilder</code> chain được? Mỗi <code class="inline">append</code> trả về <code class="inline">this</code> — cùng một object. <code class="inline">String</code> cũng chain được nhưng tạo object mới mỗi bước; trong vòng lặp nối chuỗi nhiều lần thì <code class="inline">StringBuilder</code> nhanh hơn hẳn (xem <a href="index.html#string">Biến trong Java — mục 14</a>, đào sâu ở <a href="roadmap.html#phase-1">1.7 Strings</a>).</p>
+
+    <p>Builder ở mục 4 chính là fluent API: <code class="inline">.keyword(...).page(2).size(50).build()</code>. Các API <code class="inline">java.time</code> cũng theo phong cách này: <code class="inline">ngay.plusDays(3).withYear(2027)</code> trả về object mới (bất biến). Stream ở <a href="roadmap.html#phase-3">3.8</a> là fluent API mạnh nhất của Java.</p>
+
+    <div class="note warn">Chuỗi quá dài khó debug vì breakpoint khó đặt giữa các bước. Nếu chain quá 5-7 bước hoặc cần log trung gian, tách thành biến trung gian có tên.</div>
+
+    <h2 id="kiem-thu">11. Kiểm thử method ngay khi viết <span class="badge b-prod">Production</span></h2>
+
+    <p>Thói quen quan trọng nhất của người viết method nghiêm túc: nghĩ ngay tới <strong>3 loại đầu vào</strong> trước khi tự tin method đúng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Loại đầu vào</th><th>Câu hỏi</th><th>Ví dụ với <code class="inline">chia(int a, int b)</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bình thường</td><td>Ca dùng phổ biến nhất</td><td><code class="inline">chia(10, 2)</code> → <code class="inline">5</code></td></tr>
+        <tr><td>Biên (boundary)</td><td>Giá trị nhỏ nhất/lớn nhất, 0, âm, làm tròn</td><td><code class="inline">chia(7, 2)</code> → <code class="inline">3</code>; <code class="inline">chia(Integer.MIN_VALUE, -1)</code> → tràn</td></tr>
+        <tr><td>Sai (invalid)</td><td>Dữ liệu không hợp lệ, chia 0, null</td><td><code class="inline">chia(1, 0)</code> → phải ném lỗi rõ ràng</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khi chưa có JUnit, tự kiểm thử bằng so sánh kết quả và in PASS/FAIL — cùng tinh thần với assert:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ManualTestDemo {
+    static int chia(int a, int b) {
+        if (b == 0) {
+            throw new ArithmeticException("chia cho 0");
+        }
+        return a / b;
+    }
+
+    static void check(String ten, int mongDoi, int thucTe) {
+        String ketQua = mongDoi == thucTe ? "PASS" : "FAIL";
+        IO.println(ketQua + " " + ten + " -> " + thucTe);
+    }
+
+    static void checkNemLoi(String ten, int a, int b) {
+        try {
+            int ketQua = chia(a, b);
+            IO.println("FAIL " + ten + " -> khong nem loi, tra ve " + ketQua);
+        } catch (ArithmeticException e) {
+            IO.println("PASS " + ten + " -> " + e.getMessage());
+        }
+    }
+
+    public static void main() {
+        check("binh thuong: 10 / 2", 5, chia(10, 2));
+        check("lam tron xuong: 7 / 2", 3, chia(7, 2));
+        check("bien: MIN_VALUE / -1", Integer.MIN_VALUE, chia(Integer.MIN_VALUE, -1));
+        checkNemLoi("sai: chia cho 0", 1, 0);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>PASS binh thuong: 10 / 2 -> 5
+PASS lam tron xuong: 7 / 2 -> 3
+PASS bien: MIN_VALUE / -1 -> -2147483648
+PASS sai: chia cho 0 -> chia cho 0</code></pre>
+    </div>
+
+    <p>Ca biên <code class="inline">MIN_VALUE / -1</code> không ném lỗi mà trả về chính <code class="inline">MIN_VALUE</code> — tràn số nguyên quay vòng âm thầm (xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>). Đây chính là ca mà người mới hay bỏ sót; nếu nghiệp vụ không cho phép, phải tự kiểm tra <code class="inline">a == Integer.MIN_VALUE &amp;&amp; b == -1</code> và ném lỗi.</p>
+
+    <div class="note"><strong>Dẫn tới JUnit:</strong> <code class="inline">check(...)</code> thủ công chính là tiền thân của <code class="inline">assertEquals</code>, <code class="inline">checkNemLoi(...)</code> là tiền thân của <code class="inline">assertThrows</code>. Sang <a href="roadmap.html#phase-4">4.4 Testing</a> bạn sẽ viết đúng những ca này bằng JUnit, chạy tự động trong build. Không dùng <code class="inline">IO.println</code> làm test trong code production.</div>
+
+    <h2 id="best-practices">12. Best practices</h2>
+
+    <table>
+      <thead>
+        <tr><th>Nên</th><th>Tránh</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tên là động từ rõ nghĩa: <code class="inline">tinhTongTien</code></td><td><code class="inline">xuLy</code>, <code class="inline">doStuff</code>, <code class="inline">process2</code></td><td>Đọc tên là biết method làm gì, không cần mở body</td></tr>
+        <tr><td>Một method một việc</td><td>Vừa tính toán, vừa in, vừa ghi DB</td><td>Dễ test, dễ tái sử dụng; method trộn nhiều việc không test được</td></tr>
+        <tr><td>Tham số ít (1-3); nhiều thì gói record/builder</td><td>7 tham số, 3 boolean liền nhau</td><td><code class="inline">guiEmail(true, false, true)</code> không ai đọc được nghĩa</td></tr>
+        <tr><td>Tách method khi một boolean điều khiển 2 hành vi</td><td><code class="inline">guiEmail(boolean laNhap, ...)</code> với <code class="inline">if/else</code> bên trong</td><td>Boolean flag = 2 method trộn làm một; tách ra tên rõ hơn</td></tr>
+        <tr><td>Pure function khi có thể: chỉ phụ thuộc tham số, không sửa state ngoài</td><td>Sửa field static/global trong method tính toán</td><td>Pure function test cực dễ, không phụ thuộc thứ tự gọi</td></tr>
+        <tr><td>Fail fast: validate tham số ngay đầu method</td><td>Để dữ liệu xấu chạy sâu vào trong rồi mới lỗi</td><td>Stack trace gần nguồn lỗi hơn; guard clause (mục 3)</td></tr>
+        <tr><td>Trả về kiểu hẹp nhất đủ dùng; không trả <code class="inline">null</code> cho collection</td><td>Trả <code class="inline">null</code> thay vì list rỗng/Optional</td><td>Tránh NPE rải rác ở call site (xem <a href="index.html#wrapper">Biến trong Java — mục 12</a>)</td></tr>
+        <tr><td>Method ngắn vừa một màn hình; tách khi phải cuộn</td><td>Method 300 dòng với comment "phần 1/2/3"</td><td>Method dài là nơi bug ẩn và khó review</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ghi chú về "một method một việc": tiêu chí thực dụng là mô tả method bằng một câu không có chữ "và". Nếu phải viết "method này tính tổng <em>và</em> gửi email", cần tách.</p>
+
+    <h2 id="goc-nodejs">13. Góc Node.js — method Java vs function JavaScript</h2>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Nơi định nghĩa</td><td>Function tự do, arrow function ở bất kỳ đâu</td><td>Mọi method phải nằm trong class/interface/enum/record; lambda chỉ là cú pháp gọn cho functional interface (học ở <a href="roadmap.html#phase-3">3.6</a>)</td></tr>
+        <tr><td>Tham số mặc định</td><td><code class="inline">function f(a, b = 1)</code></td><td>Không có; dùng overload hoặc builder (mục 4)</td></tr>
+        <tr><td>Named arguments</td><td><code class="inline">f({ a: 1, b: 2 })</code></td><td>Không có; builder giả lập (mục 4)</td></tr>
+        <tr><td>Overload</td><td>Không có — khai báo trùng tên là ghi đè</td><td>Có, dựa trên kiểu/số lượng tham số (mục 5)</td></tr>
+        <tr><td><code class="inline">this</code></td><td>Động: phụ thuộc cách gọi; <code class="inline">bind</code>/<code class="inline">call</code>/<code class="inline">apply</code> đổi được</td><td>Cố định: instance method luôn có <code class="inline">this</code> là object hiện tại, không đổi được</td></tr>
+        <tr><td>Hoisting / thứ tự</td><td>Function declaration hoisting; function expression thì không</td><td>Không có hoisting; thứ tự khai báo không quan trọng vì biên dịch cả file</td></tr>
+        <tr><td>Trả nhiều giá trị</td><td><code class="inline">return { ok, reason }</code></td><td>Record/DTO (mục 3)</td></tr>
+        <tr><td>Truyền object</td><td>Cũng là "bản sao reference" — sửa property thấy, gán lại không thấy</td><td>Giống hệt: pass-by-value với reference copy (mục 6)</td></tr>
+        <tr><td><code class="inline">args</code></td><td><code class="inline">process.argv</code> chứa cả đường dẫn node/script</td><td><code class="inline">String[] args</code> chỉ chứa tham số sau tên file (mục 9)</td></tr>
+        <tr><td>Bất đồng bộ</td><td>async/await, event loop, một luồng</td><td>Method chạy đồng bộ trên thread gọi; concurrency học ở <a href="roadmap.html#phase-4">4.2</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Method trong Java là gì? Khác gì function trong JavaScript?</summary>
+      <div class="answer">Method là khối code có tên, nhận tham số và trả kết quả, thuộc về một class/interface/enum/record. Khác JavaScript, Java không cho phép hàm tự do đứng ngoài class. Trước Java 8, muốn truyền hàm phải dùng anonymous class; từ Java 8 có lambda/method reference nhưng vẫn phải gắn với functional interface.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Parameter và argument khác nhau thế nào?</summary>
+      <div class="answer">Parameter là biến trong <em>khai báo</em> method (<code class="inline">BigDecimal donGia</code>); argument là giá trị thực tế trong <em>lời gọi</em> (<code class="inline">tongTien(gia, 3)</code>). Chúng khớp theo thứ tự, không theo tên — Java không có named arguments.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Vì sao <code class="inline">main</code> phải là <code class="inline">public static void</code>?</summary>
+      <div class="answer"><code class="inline">public</code> để JVM từ ngoài package gọi được; <code class="inline">static</code> vì JVM gọi trước khi tạo object nào; <code class="inline">void</code> vì JVM không dùng giá trị trả về. JDK 25 (JEP 512) nới lỏng cho file đơn: instance <code class="inline">void main()</code> cũng chạy, nhưng <code class="inline">public static void main(String[] args)</code> vẫn là dạng phải thuộc lòng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. <code class="inline">void</code> nghĩa là gì? Làm sao thoát sớm khỏi method <code class="inline">void</code>?</summary>
+      <div class="answer"><code class="inline">void</code> nghĩa là method không trả về giá trị. Dùng <code class="inline">return;</code> (không kèm giá trị) để thoát sớm — thường gặp trong guard clause: kiểm tra dữ liệu xấu rồi return ngay.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Java có tham số mặc định không? Muốn có hành vi tương tự thì làm sao?</summary>
+      <div class="answer">Không có default parameter và không có named argument. Cách thay thế: overload (bản ít tham số gọi bản đầy đủ với giá trị mặc định) hoặc builder (mỗi tham số tùy chọn một method, có giá trị mặc định trong builder).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Overloading là gì? Hai method là overload của nhau khi nào?</summary>
+      <div class="answer">Cùng tên trong cùng class nhưng khác danh sách tham số: khác số lượng, khác kiểu, hoặc khác thứ tự kiểu. Tên parameter không tính — đổi tên parameter giữ nguyên kiểu là vẫn trùng method.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Hai method chỉ khác return type có phải overload không? Vì sao?</summary>
+      <div class="answer">Không, đó là lỗi compile "method ... is already defined". Trình biên dịch dùng method descriptor gồm tên + kiểu tham số (không có return type) để phân biệt. Nhìn bytecode qua <code class="inline">javap</code>: <code class="inline">tang(int)</code> và <code class="inline">tang(int, int)</code> là hai method khác nhau.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">static</code> method khác instance method thế nào?</summary>
+      <div class="answer">Static thuộc class, gọi qua tên class, không có <code class="inline">this</code>, chỉ truy cập được thành phần static — nên không đọc được field instance. Instance thuộc object, gọi qua object, có <code class="inline">this</code>, truy cập mọi thành phần. JVM cần <code class="inline">main</code> static chính vì lý do đầu tiên.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Java truyền tham số theo giá trị hay tham chiếu?</summary>
+      <div class="answer">Luôn theo giá trị (pass-by-value). Với object, giá trị được truyền là bản sao của địa chỉ, nên method sửa được nội dung object nhưng gán lại parameter (trỏ sang object khác) thì bên ngoài không đổi. Chi tiết stack/heap ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Một hàm đệ quy đúng cần gì? Khi nào dùng thay vòng lặp?</summary>
+      <div class="answer">Cần base case (điều kiện dừng) và bước đệ quy tiến dần về base case. Dùng khi cấu trúc dữ liệu/bài toán mang tính đệ quy: cây, đồ thị, thư mục, JSON lồng nhau, backtracking, chia để trị. Dãy số/tính toán tuyến tính thì vòng lặp nhanh và an toàn hơn.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Overload resolution chọn method theo thứ tự nào?</summary>
+      <div class="answer">3 phase theo thứ tự, phase trước thắng: (1) chỉ widening, không boxing/unboxing; (2) cho phép boxing/unboxing; (3) cho phép varargs. Ví dụ có <code class="inline">m(long)</code> và <code class="inline">m(Integer)</code>, gọi <code class="inline">m(1)</code> chọn bản <code class="inline">long</code> vì widening thuộc phase 1. Chi tiết ở <a href="data-types.html#overload">Data Types — mục 9</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Có <code class="inline">gui(String)</code> và <code class="inline">gui(Object)</code>, gọi <code class="inline">gui(null)</code> chọn bản nào?</summary>
+      <div class="answer">Bản <code class="inline">gui(String)</code>. <code class="inline">null</code> hợp lệ với mọi kiểu reference nên compiler chọn bản "cụ thể nhất" (most specific); <code class="inline">String</code> là subtype của <code class="inline">Object</code>. Nếu hai bản không có quan hệ cha-con (ví dụ <code class="inline">Integer</code> và <code class="inline">Long</code>), gọi <code class="inline">xuLy(null)</code> là lỗi compile "reference to xuLy is ambiguous".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Vì sao có cả <code class="inline">m(long)</code> và <code class="inline">m(Integer)</code>, gọi <code class="inline">m(1)</code> lại vào bản <code class="inline">long</code>?</summary>
+      <div class="answer">Vì overload resolution ưu tiên phase 1 (widening <code class="inline">int → long</code>, không boxing) trước phase 2 (boxing <code class="inline">int → Integer</code>). Đây là bẫy production: hai bản xử lý khác nhau, đặc biệt nếu bản <code class="inline">Integer</code> chấp nhận <code class="inline">null</code>, thì call site truyền số sẽ đi vào bản <code class="inline">long</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">List.remove(1)</code> xóa gì? Muốn xóa theo giá trị thì viết thế nào?</summary>
+      <div class="answer"><code class="inline">remove(1)</code> gọi <code class="inline">remove(int index)</code> — xóa phần tử ở vị trí 1 và trả về phần tử bị xóa. Muốn xóa theo giá trị phải ép boxing: <code class="inline">remove(Integer.valueOf(1))</code> — gọi <code class="inline">remove(Object)</code>, trả về <code class="inline">boolean</code>. Đây là ví dụ điển hình của việc chọn nhầm overload.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Vì sao đệ quy thiếu base case ném <code class="inline">StackOverflowError</code> mà không treo máy?</summary>
+      <div class="answer">Mỗi lời gọi method tạo một stack frame trên stack của thread. Đệ quy vô hạn làm stack đầy; JVM phát hiện và ném <code class="inline">StackOverflowError</code> (là <code class="inline">Error</code>, message thường là <code class="inline">null</code>) để thread chết thay vì treo cả tiến trình. Vì vậy trong production không catch <code class="inline">Error</code> — hãy sửa thuật toán.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Java có tối ưu tail recursion (TCO) không?</summary>
+      <div class="answer">Không. Tail call vẫn tạo stack frame mới và vẫn <code class="inline">StackOverflowError</code> — có thể kiểm chứng bằng hàm <code class="inline">deQuyVoHan(n + 1)</code>. V8/Node.js cũng không hỗ trợ TCO. Muốn an toàn với độ sâu lớn, chuyển sang vòng lặp hoặc dùng cấu trúc dữ liệu ngăn xếp thủ công.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. <code class="inline">String[] args</code> có bao giờ <code class="inline">null</code> không? Chạy <code class="inline">java File.java a b</code> có nhận args không?</summary>
+      <div class="answer"><code class="inline">args</code> không bao giờ <code class="inline">null</code>; không truyền gì thì là mảng rỗng (<code class="inline">length == 0</code>). Chế độ chạy file đơn vẫn nhận đầy đủ args: <code class="inline">java MainArgsDemo.java a b c</code> cho <code class="inline">args = [a, b, c]</code>. Chỉ các option của chính lệnh <code class="inline">java</code> (ví dụ <code class="inline">--enable-preview</code>) mới phải đứng trước tên file.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. JEP 512 (JDK 25) có gì liên quan tới method?</summary>
+      <div class="answer">Compact source files cho phép bỏ khai báo class bao ngoài và dùng instance main method: <code class="inline">void main()</code> hoặc <code class="inline">void main(String[] args)</code> chạy trực tiếp bằng <code class="inline">java File.java</code>. Mục đích là giảm boilerplate cho người mới và script nhỏ; code production với build tool vẫn dùng dạng <code class="inline">public static void main</code> như trước. File compact cũng được tự động import các package của <code class="inline">java.base</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Static factory method có lợi gì so với constructor? Cho ví dụ trong JDK.</summary>
+      <div class="answer">Có tên rõ nghĩa (<code class="inline">BigDecimal.valueOf</code> thay vì <code class="inline">new BigDecimal</code> mơ hồ), có thể cache object (không bắt buộc tạo mới), có thể trả subtype ẩn, và có thể thực hiện logic trước khi tạo object. Ví dụ JDK: <code class="inline">List.of</code>, <code class="inline">LocalDate.of</code>, <code class="inline">Integer.parseInt</code>, <code class="inline">Optional.empty</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Method chaining hoạt động thế nào? Vì sao <code class="inline">StringBuilder</code> chain được?</summary>
+      <div class="answer">Mỗi method trả về đối tượng cho method kế tiếp gọi. <code class="inline">StringBuilder.append</code> trả về <code class="inline">this</code> nên chuỗi gọi tiếp trên cùng object. <code class="inline">String</code> cũng chain được nhưng mỗi bước trả về object mới (bất biến). Chaining là nền tảng của fluent API/builder; nếu quá dài thì khó debug nên tách ra.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">static void pick(long x)    { IO.println("long"); }
+static void pick(Integer x) { IO.println("Integer"); }
+
+pick(1);
+pick(1L);
+pick(Integer.valueOf(1));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">long</code>, <code class="inline">long</code>, <code class="inline">Integer</code>. <code class="inline">pick(1)</code> và <code class="inline">pick(1L)</code> khớp bản <code class="inline">long</code> ngay phase 1 (widening). <code class="inline">pick(Integer.valueOf(1))</code> là <code class="inline">Integer</code> — phase 1 khớp chính xác bản <code class="inline">Integer</code> nhờ identity, nên không cần unbox.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">static void gui(String s) { IO.println("String"); }
+static void gui(Object o) { IO.println("Object"); }
+
+gui(null);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">String</code>. <code class="inline">null</code> khớp cả hai, compiler chọn bản cụ thể nhất — <code class="inline">String</code> là subtype của <code class="inline">Object</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(10, 20, 30));
+IO.println(nums.remove(1));
+IO.println(nums);
+IO.println(nums.remove(Integer.valueOf(30)));
+IO.println(nums);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">20</code>, <code class="inline">[10, 30]</code>, <code class="inline">true</code>, <code class="inline">[10]</code>. Bản đầu gọi <code class="inline">remove(int index)</code> (xóa theo vị trí, trả về phần tử); bản sau gọi <code class="inline">remove(Object)</code> (xóa theo giá trị, trả về boolean).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int tang(int a, int b = 1) {
+    return a + b;
+}
+
+IO.println(tang(5));</code></pre>
+      </div>
+      <div class="answer"><strong>Không chạy được.</strong> Java không có tham số mặc định; compile lỗi tại <code class="inline">b = 1</code>: "error: ',', ')', or '[' expected". Sửa bằng overload: thêm <code class="inline">tang(int a)</code> gọi <code class="inline">tang(a, 1)</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">static long giaiThua(int n) {
+    if (n &lt;= 1) {
+        return 1;
+    }
+    return n * giaiThua(n - 1);
+}
+
+IO.println(giaiThua(5));
+IO.println(giaiThua(0));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">120</code> rồi <code class="inline">1</code>. <code class="inline">giaiThua(5) = 5*4*3*2*1 = 120</code>; base case <code class="inline">n &lt;= 1</code> trả 1 nên <code class="inline">giaiThua(0) = 1</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int f(int n) {
+    return f(n + 1);
+}
+
+IO.println(f(0));</code></pre>
+      </div>
+      <div class="answer">Ném <strong>StackOverflowError</strong> (<code class="inline">Exception in thread "main" java.lang.StackOverflowError</code>), không phải treo máy vô hạn. Thiếu base case nên mỗi lời gọi đẩy thêm một stack frame tới khi đầy.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class Exercise07 {
+    int count = 0;
+
+    static void tang() {
+        count++;
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> Lỗi: "non-static variable count cannot be referenced from a static context". Static method không có <code class="inline">this</code> nên không truy cập được field instance. Sửa: cho <code class="inline">count</code> thành <code class="inline">static</code>, hoặc biến <code class="inline">tang()</code> thành instance method.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">static void themDauCham(StringBuilder sb) {
+    sb.append("!");
+}
+
+static void thayThe(StringBuilder sb) {
+    sb = new StringBuilder("moi");
+}
+
+StringBuilder sb = new StringBuilder("hello");
+themDauCham(sb);
+IO.println(sb);
+thayThe(sb);
+IO.println(sb);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">hello!</code> rồi <code class="inline">hello!</code>. <code class="inline">append</code> sửa nội dung object nên thấy thay đổi; gán lại parameter <code class="inline">sb</code> chỉ đổi bản sao reference, không ảnh hưởng biến ngoài.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">String s = new StringBuilder()
+        .append("A")
+        .append(1)
+        .append(true)
+        .toString();
+IO.println(s);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">A1true</code>. Mỗi <code class="inline">append</code> trả về <code class="inline">this</code> nên chain được; <code class="inline">append</code> nhận mọi kiểu dữ liệu và chuyển thành chuỗi.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int phiVanChuyen(int tongTien) {
+    if (tongTien &gt;= 500_000) {
+        return 0;
+    }
+    return 30_000;
+}
+
+IO.println(phiVanChuyen(500_000));
+IO.println(phiVanChuyen(499_999));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">0</code> rồi <code class="inline">30000</code>. Guard clause: đủ 500.000 thì miễn phí; ngược lại 30.000. Chú ý điều kiện dùng <code class="inline">&gt;=</code> nên đúng mốc 500.000 được miễn.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">static String loai(int x)    { return "int"; }
+static String loai(double x) { return "double"; }
+
+IO.println(loai(5));
+IO.println(loai(5.0f));
+IO.println(loai('a'));
+IO.println(loai(5L));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">int</code>, <code class="inline">double</code>, <code class="inline">int</code>, <code class="inline">double</code>. <code class="inline">5.0f</code> (float) widening lên <code class="inline">double</code>; <code class="inline">'a'</code> (char) widening lên <code class="inline">int</code>; <code class="inline">5L</code> (long) chỉ còn đường widening lên <code class="inline">double</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class Exercise12 {
+    public static void main(String[] args) {
+        IO.println(args.length &gt; 0 ? args[0] : "khong co");
+    }
+}</code></pre>
+      </div>
+      <div class="answer">Chạy <code class="inline">java Exercise12.java xin chao</code> in ra <code class="inline">xin</code> — args nhận đủ ở chế độ chạy file đơn. Chạy <code class="inline">java Exercise12.java</code> in ra <code class="inline">khong co</code> vì <code class="inline">args</code> là mảng rỗng, không phải <code class="inline">null</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Khai báo method</td><td><code class="inline">[modifier] [static] returnType tenMethod(kieu ten, ...) { }</code></td></tr>
+        <tr><td>Không trả giá trị</td><td><code class="inline">void</code> + <code class="inline">return;</code> để thoát sớm</td></tr>
+        <tr><td>Trả nhiều giá trị</td><td>Gói vào <code class="inline">record</code> (hoặc DTO); đừng trả <code class="inline">Object[]</code>/<code class="inline">Map</code> mơ hồ</td></tr>
+        <tr><td>"Tham số mặc định"</td><td>Overload bản ít tham số gọi bản đầy đủ; nhiều tùy chọn thì builder</td></tr>
+        <tr><td>Named arguments</td><td>Không có; builder với method <code class="inline">.keyword(...).page(2).build()</code></td></tr>
+        <tr><td>Overload hợp lệ</td><td>Khác số lượng/kiểu/thứ tự tham số; <strong>không</strong> tính return type và tên parameter</td></tr>
+        <tr><td>Thứ tự chọn overload</td><td>(1) widening → (2) boxing → (3) varargs</td></tr>
+        <tr><td><code class="inline">null</code> + overload</td><td>Chọn bản cụ thể nhất; hai bản không cha-con thì lỗi "ambiguous"</td></tr>
+        <tr><td>Pass-by-value</td><td>Primitive: copy giá trị; object: copy địa chỉ; gán lại reference không ảnh hưởng ngoài</td></tr>
+        <tr><td>Recursion</td><td>Base case + bước nhỏ hơn; Java không có TCO; sâu quá → <code class="inline">StackOverflowError</code></td></tr>
+        <tr><td>static method</td><td>Không có <code class="inline">this</code>, không đọc field instance; dùng cho utility/factory</td></tr>
+        <tr><td>Entry point</td><td><code class="inline">public static void main(String[] args)</code>; args không bao giờ null; file đơn JDK 25 có thể dùng <code class="inline">void main()</code></td></tr>
+        <tr><td>Chaining / fluent API</td><td>Method trả <code class="inline">this</code> (StringBuilder, builder) hoặc object mới (String, java.time)</td></tr>
+        <tr><td>Kiểm thử ngay</td><td>3 loại: bình thường / biên / sai; assert thủ công → JUnit ở 4.4</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Khai báo và gọi được method có tham số, return, void mà không cần tra cứu.</li>
+      <li>Phân biệt parameter và argument, kể cả khi phỏng vấn hỏi bằng tiếng Anh.</li>
+      <li>Giải thích được vì sao Java không có default param và hai cách thay thế.</li>
+      <li>Viết được 3 phiên bản overload của cùng một method và giải thích vì sao chúng hợp lệ.</li>
+      <li>Giải thích vì sao đổi return type / tên parameter không tạo overload mới.</li>
+      <li>Dự đoán đúng kết quả <code class="inline">gui(null)</code>, <code class="inline">pick(1)</code> khi có <code class="inline">pick(long)</code>/<code class="inline">pick(Integer)</code>.</li>
+      <li>Nhớ bẫy <code class="inline">List.remove(1)</code> và cách xóa theo giá trị.</li>
+      <li>Trả lời trôi chảy "Java pass-by-value hay pass-by-reference" kèm ví dụ.</li>
+      <li>Viết được hàm đệ quy có base case và giải thích StackOverflowError.</li>
+      <li>Phân biệt static/instance và biết khi nào không nên dùng static.</li>
+      <li>Biết args của main nhận từ dòng lệnh thế nào, kể cả chạy file đơn.</li>
+      <li>Nêu được 3 loại đầu vào cần test cho một method bất kỳ.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.4" target="_blank" rel="noreferrer">JLS §8.4 — Method Declarations</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html#jls-15.12" target="_blank" rel="noreferrer">JLS §15.12 — Method Invocation Expressions (overload resolution)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/methods.html" target="_blank" rel="noreferrer">Oracle Tutorial — Defining Methods</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/arguments.html" target="_blank" rel="noreferrer">Oracle Tutorial — Passing Information to a Method or a Constructor</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+      <li><a href="https://dev.java/learn/classes-objects/" target="_blank" rel="noreferrer">Dev.java — Classes &amp; Objects (methods)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Methods · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

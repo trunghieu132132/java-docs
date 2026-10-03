@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Flow — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item active" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="control-flow">Control Flow — điều khiển luồng chạy</h1>
+
+    <p class="lead">Bạn đã biết biến và kiểu dữ liệu (<a href="index.html">Biến trong Java</a>, <a href="data-types.html">Data Types &amp; Type Casting</a>). Giờ đến phần quyết định code rẽ nhánh và lặp thế nào: <code class="inline">if/else</code>, <code class="inline">switch</code> (cả bản cũ lẫn switch expression Java 14+), bốn loại vòng lặp, <code class="inline">break/continue</code> với label, và những bẫy đọc code là thấy ngay — nhưng viết thì vẫn sai. Đây là chủ đề 1.4 trong <a href="roadmap.html#phase-1">lộ trình</a>.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của doc này:</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết <code class="inline">if/else</code> và guard clause (return sớm); chuyển if dây chuyền thành switch expression; chọn đúng <code class="inline">for</code>/<code class="inline">while</code>/<code class="inline">do-while</code>/for-each; dùng <code class="inline">break</code>/<code class="inline">continue</code>/label đúng chỗ; tự giải 12 bài tập đoán output.</li>
+      <li><strong>Phải hiểu</strong> — fall-through của switch cũ và vì sao phải <code class="inline">break</code>; vì sao switch expression bắt buộc exhaustive (bao hết mọi giá trị); vì sao for-each không sửa được phần tử mảng primitive; scope của biến khai báo trong <code class="inline">for</code>; điều kiện của Java bắt buộc là <code class="inline">boolean</code>.</li>
+      <li><strong>Nhận biết</strong> — pattern matching for switch và record pattern (Java 21), kết hợp sealed để compiler tự kiểm tra đủ nhánh (sealed đào sâu ở <a href="roadmap.html#phase-2">2.4 Polymorphism</a>).</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Tự tay sửa lại các đoạn có compiler error cho compile được — cách này nhớ lâu hơn đọc.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+    </ol>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#if-else">if/else, nested if và guard clause</a></li>
+        <li><a href="#switch-truyen-thong">switch truyền thống và fall-through</a></li>
+        <li><a href="#switch-expression">switch expression (Java 14+)</a></li>
+        <li><a href="#pattern-matching">Pattern matching for switch (Java 21)</a></li>
+        <li><a href="#vong-lap">for, while, do-while, for-each</a></li>
+        <li><a href="#for-each">for-each và chuyện không sửa được phần tử</a></li>
+        <li><a href="#break-continue">break, continue và label</a></li>
+        <li><a href="#pitfalls">Pitfalls tổng hợp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#production">Production patterns</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="if-else">2. if/else, nested if và guard clause</h2>
+
+    <p><code class="inline">if</code> là cấu trúc rẽ nhánh cơ bản nhất: đúng thì chạy, sai thì bỏ qua. Chuỗi <code class="inline">else if</code> kiểm tra lần lượt từ trên xuống, nhánh nào đúng đầu tiên thì dừng — nên <strong>thứ tự điều kiện quan trọng</strong>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class IfElseDemo {
+    public static void main() {
+        int score = 72;
+
+        if (score &gt;= 90) {
+            IO.println("Xuat sac");
+        } else if (score &gt;= 80) {
+            IO.println("Gioi");
+        } else if (score &gt;= 70) {
+            IO.println("Kha");
+        } else {
+            IO.println("Can co gang");
+        }
+    }
+}
+// Kha</code></pre>
+    </div>
+
+    <div class="note"><strong>Điểm khác JS đầu tiên:</strong> điều kiện của Java bắt buộc là <code class="inline">boolean</code> thật sự. Java không có truthy/falsy — không có chuyện số khác 0, chuỗi khác rỗng hay object tồn tại được coi là "đúng" như JavaScript. JLS định nghĩa điều kiện <code class="inline">if</code> là biểu thức kiểu <code class="inline">boolean</code> (hoặc <code class="inline">Boolean</code> — sẽ tự unbox).</div>
+
+    <h3>2.1. Bẫy JS: <code class="inline">if (1)</code> và <code class="inline">if ("a")</code></h3>
+
+    <p>Đoạn code sau chạy ngon trong Node.js nhưng <strong>không compile được</strong> trong Java:</p>
+
+    <div class="errblock">
+      <pre>        if (1) {
+            ^
+error: incompatible types: int cannot be converted to boolean
+
+        if ("a") {
+            ^
+error: incompatible types: String cannot be converted to boolean</pre>
+    </div>
+
+    <p>Muốn kiểm tra "khác rỗng" phải viết tường minh: <code class="inline">if (count != 0)</code>, <code class="inline">if (!name.isEmpty())</code>, <code class="inline">if (obj != null)</code>. Dài hơn một chút nhưng người đọc biết chính xác đang kiểm tra gì — đây là lý do Java chọn boolean bắt buộc.</p>
+
+    <p>Cẩn thận khi điều kiện là wrapper <code class="inline">Boolean</code>: nó tự unbox, và unbox <code class="inline">null</code> ném NPE (xem thêm <a href="index.html#wrapper">Biến trong Java — mục 12</a>).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Boolean enabled = null;
+if (enabled) {          // tuong duong enabled.booleanValue()
+    IO.println("bat");
+}
+// NullPointerException: Cannot invoke "java.lang.Boolean.booleanValue()" because "&lt;local0&gt;" is null</code></pre>
+    </div>
+
+    <p>Cách viết an toàn: <code class="inline">if (Boolean.TRUE.equals(enabled))</code>.</p>
+
+    <h3>2.2. Nested if vs guard clause</h3>
+
+    <p>Nested if (if lồng trong if) hoạt động đúng, nhưng khi lồng 3-4 tầng thì nhánh "thành công" bị đẩy sâu vào trong, người đọc phải giữ nhiều điều kiện trong đầu. <strong>Guard clause</strong> là kỹ thuật đảo ngược: kiểm tra điều kiện sai trước và <code class="inline">return</code>/<code class="inline">throw</code> sớm, để phần còn lại của method chỉ còn "happy path" phẳng.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Cach 1: nested if - happy path bi chon 3 tang
+static String shippingLabelNested(long orderId, String customer, boolean paid) {
+    if (orderId &gt; 0) {
+        if (customer != null &amp;&amp; !customer.isBlank()) {
+            return paid ? "Gui hang - DH" + orderId + " - " + customer
+                        : "Cho thanh toan - DH" + orderId;
+        } else {
+            throw new IllegalArgumentException("customer khong duoc rong");
+        }
+    } else {
+        throw new IllegalArgumentException("orderId phai &gt; 0");
+    }
+}
+
+// Cach 2: guard clause - kiem tra loi truoc, happy path phang
+static String shippingLabelGuard(long orderId, String customer, boolean paid) {
+    if (orderId &lt;= 0) {
+        throw new IllegalArgumentException("orderId phai &gt; 0");
+    }
+    if (customer == null || customer.isBlank()) {
+        throw new IllegalArgumentException("customer khong duoc rong");
+    }
+    if (!paid) {
+        return "Cho thanh toan - DH" + orderId;
+    }
+    return "Gui hang - DH" + orderId + " - " + customer;
+}
+// shippingLabelGuard(101, "An", true)    -> Gui hang - DH101 - An
+// shippingLabelGuard(102, "Binh", false) -> Cho thanh toan - DH102
+// shippingLabelGuard(0, "Chi", true)     -> IllegalArgumentException: orderId phai &gt; 0</code></pre>
+    </div>
+
+    <p>Hai bản cho cùng kết quả (đã chạy thật), nhưng bản guard clause dễ đọc hơn vì: điều kiện lỗi nằm ngay gần đầu method, mỗi guard kiểm tra đúng một việc, và không cần <code class="inline">else</code>. Quy tắc thực dụng khi review code: <strong>method không nên có quá 2 tầng lồng</strong>; thấy tầng thứ 3 là dấu hiệu nên tách method hoặc dùng guard clause.</p>
+
+    <h2 id="switch-truyen-thong">3. switch truyền thống và fall-through</h2>
+
+    <p><code class="inline">switch</code> sinh ra để thay chuỗi <code class="inline">if/else if</code> dài khi cùng kiểm tra một biểu thức với nhiều giá trị rời rạc. Bản truyền thống (kiểu C, JavaScript cũng vậy) có một đặc điểm phải hiểu rõ: <strong>fall-through</strong> — sau khi khớp một <code class="inline">case</code>, chương trình chạy tiếp xuống các lệnh bên dưới cho tới khi gặp <code class="inline">break</code> hoặc hết switch.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int day = 3;
+
+switch (day) {
+    case 1:
+        IO.println("Thu Hai");
+    case 2:
+        IO.println("Thu Ba");
+    case 3:
+        IO.println("Thu Tu");
+    case 4:
+        IO.println("Thu Nam");
+    default:
+        IO.println("Cuoi tuan");
+}
+// Thu Tu
+// Thu Nam
+// Cuoi tuan</code></pre>
+    </div>
+
+    <p>Vào <code class="inline">case 3</code> in "Thu Tu", thiếu <code class="inline">break</code> nên rơi (fall through) xuống <code class="inline">case 4</code> in "Thu Nam", rơi tiếp vào <code class="inline">default</code> in "Cuoi tuan". Không có lỗi nào được báo — đây là nguồn bug kinh điển. Viết đúng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static String dayType(int day) {
+    String result;
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            result = "Ngay lam viec";
+            break;
+        case 6:
+        case 7:
+            result = "Cuoi tuan";
+            break;
+        default:
+            result = "Ngay khong hop le: " + day;
+    }
+    return result;
+}
+// dayType(3) -> Ngay lam viec
+// dayType(6) -> Cuoi tuan
+// dayType(9) -> Ngay khong hop le: 9</code></pre>
+    </div>
+
+    <p>Hai ý cần nhớ:</p>
+    <ul>
+      <li><strong>Nhiều case chung một khối lệnh</strong>: xếp các <code class="inline">case</code> liền nhau, chỉ case cuối có thân lệnh. Đây là fall-through được dùng <em>có chủ đích</em> — khác hẳn fall-through do quên break.</li>
+      <li><strong>default không bắt buộc và không nhất thiết nằm cuối</strong>, nhưng nên đặt cuối cho dễ đọc. Với dữ liệu từ bên ngoài, luôn có default để xử lý giá trị lạ.</li>
+    </ul>
+
+    <h3>3.1. Giới hạn của switch truyền thống</h3>
+
+    <table>
+      <thead>
+        <tr><th>Quy tắc</th><th>Chi tiết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kiểu selector hợp lệ</td><td><code class="inline">byte</code>, <code class="inline">short</code>, <code class="inline">char</code>, <code class="inline">int</code> và wrapper tương ứng; <code class="inline">String</code> (Java 7+); <code class="inline">enum</code>. Không nhận <code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code>, <code class="inline">boolean</code>.</td></tr>
+        <tr><td>Case label</td><td>Phải là hằng số compile-time (literal, <code class="inline">static final</code>, enum constant) — không được là biến thường.</td></tr>
+        <tr><td>Selector <code class="inline">null</code></td><td>Ném <code class="inline">NullPointerException</code> khi switch trên <code class="inline">String</code>/wrapper (phải kiểm tra null trước).</td></tr>
+      </tbody>
+    </table>
+
+    <p>Case label dùng biến thường không compile được:</p>
+
+    <div class="errblock">
+      <pre>            case target:
+                 ^
+error: constant expression required</pre>
+    </div>
+
+    <p>Còn đây là lỗi thật khi switch trên chuỗi <code class="inline">null</code> — message là helpful NPE của JDK hiện đại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String mode = null;
+switch (mode) {          // NPE: goi mode.hashCode()
+    case "A":
+        IO.println("A");
+        break;
+    default:
+        IO.println("khac");
+}
+// NullPointerException: Cannot invoke "String.hashCode()" because "&lt;local1&gt;" is null</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao switch trên String cần <code class="inline">hashCode</code>?</strong> JLS chỉ định switch String so sánh bằng <code class="inline">equals</code>; javac hiện thực bằng cách gọi <code class="inline">hashCode()</code> trước rồi mới <code class="inline">equals</code> từng case khớp hash — nên selector null nổ ngay ở bước hashCode. Chi tiết hiện thực này hay được hỏi ở vòng phỏng vấn khó.</div>
+
+    <h2 id="switch-expression">4. switch expression (Java 14+) <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Java 14 (JEP 361) biến switch thành <strong>expression</strong> — tức là nó <em>trả về một giá trị</em>, dùng cú pháp mũi tên <code class="inline">-&gt;</code>, không fall-through, và compiler bắt buộc phải bao hết mọi trường hợp (exhaustive). Đây là cách viết switch được khuyến nghị trong code mới.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum OrderStatus { PENDING, PAID, SHIPPED, CANCELLED }
+
+// enum: khong can default vi compiler biet het cac hang
+static String message(OrderStatus status) {
+    return switch (status) {
+        case PENDING -&gt; "Cho thanh toan";
+        case PAID -&gt; "Da thanh toan";
+        case SHIPPED -&gt; "Dang giao";
+        case CANCELLED -&gt; "Da huy";
+    };
+}
+
+// nhieu label chung, block nhieu dong thi dung yield
+static String classify(int score) {
+    return switch (score / 10) {
+        case 10, 9 -&gt; "A";
+        case 8 -&gt; "B";
+        case 7 -&gt; "C";
+        case 6 -&gt; "D";
+        default -&gt; {
+            if (score &lt; 0) {
+                yield "INVALID";
+            }
+            yield "F";
+        }
+    };
+}
+// message(PAID) -> Da thanh toan
+// classify(85)  -> B
+// classify(-5)  -> INVALID
+// classify(61)  -> D</code></pre>
+    </div>
+
+    <p>Các điểm phải nắm:</p>
+    <ul>
+      <li><strong>Mũi tên <code class="inline">-&gt;</code> không fall-through</strong> — mỗi nhánh độc lập, không cần <code class="inline">break</code>, hết nhánh là thoát.</li>
+      <li><strong><code class="inline">yield</code></strong> — trả giá trị cho switch expression khi thân nhánh là block nhiều dòng. Nó khác <code class="inline">return</code>: <code class="inline">return</code> thoát khỏi cả method, <code class="inline">yield</code> chỉ thoát khỏi switch. Trong nhánh một dòng, <code class="inline">-&gt;</code> đã là yield ngầm.</li>
+      <li><strong>Nhiều label một nhánh</strong>: <code class="inline">case 10, 9 -&gt;</code> — gọn hơn xếp chồng case của bản cũ.</li>
+      <li><strong>Exhaustive</strong>: switch expression với <code class="inline">int</code>/<code class="inline">String</code> phải có <code class="inline">default</code>; với <code class="inline">enum</code> chỉ cần liệt kê đủ các hằng (hoặc có default). Thiếu là lỗi compile:</li>
+    </ul>
+
+    <div class="errblock">
+      <pre>        int code = switch (s) {
+                   ^
+error: the switch expression does not cover all possible input values</pre>
+    </div>
+
+    <p>Cú pháp <code class="inline">-&gt;</code> dùng được cả trong switch <em>statement</em> (không trả giá trị), khi đó không cần exhaustive:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">switch (x) {
+    case 1 -&gt; IO.println("mot");
+    case 2 -&gt; {
+        IO.println("hai");
+        IO.println("hai trong block");
+    }
+    default -&gt; IO.println("khac");
+}
+// voi x = 2: hai
+//            hai trong block</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th></th><th>switch statement (cũ)</th><th>switch expression (Java 14+)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Trả giá trị</td><td>Không</td><td>Có</td></tr>
+        <tr><td>Fall-through</td><td>Có (phải <code class="inline">break</code>)</td><td>Không</td></tr>
+        <tr><td>Cú pháp nhánh</td><td><code class="inline">case X:</code></td><td><code class="inline">case X -&gt;</code> hoặc nhiều dòng + <code class="inline">yield</code></td></tr>
+        <tr><td>Exhaustive</td><td>Không bắt buộc</td><td>Bắt buộc (enum đủ hằng, còn lại cần default)</td></tr>
+        <tr><td>Dùng khi</td><td>Chạy lệnh rồi thôi</td><td>Cần giá trị để gán/return/truyền tham số</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="pattern-matching">5. Pattern matching for switch (Java 21) — mức nhận biết</h2>
+
+    <p>Java 21 (JEP 441) cho phép <code class="inline">case</code> khớp theo <strong>kiểu dữ liệu</strong> thay vì chỉ theo giá trị hằng: <code class="inline">case Integer i -&gt;</code> vừa kiểm tra object có phải <code class="inline">Integer</code>, vừa gán nó vào biến <code class="inline">i</code> để dùng luôn trong nhánh — khỏi phải viết <code class="inline">instanceof</code> rồi ép kiểu. Có thể thêm <strong>guard</strong> bằng <code class="inline">when</code> để lọc thêm điều kiện.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">sealed interface Payment permits CardPayment, BankTransfer, CashPayment {}
+
+record CardPayment(String last4, long amountCents) implements Payment {}
+record BankTransfer(String bankCode, long amountCents) implements Payment {}
+record CashPayment(long amountCents) implements Payment {}
+
+// sealed + record: compiler biet het cac kha nang -> khong can default
+static String describe(Payment payment) {
+    return switch (payment) {
+        case CardPayment c -&gt; "The " + c.last4() + ": " + c.amountCents() + " cents";
+        case BankTransfer b -&gt; "Chuyen khoan " + b.bankCode();
+        case CashPayment c -&gt; "Tien mat: " + c.amountCents() + " cents";
+    };
+}
+
+// type pattern + guard + case null
+static String classify(Object obj) {
+    return switch (obj) {
+        case null -&gt; "null";
+        case Integer i when i &lt; 0 -&gt; "So nguyen am: " + i;
+        case Integer i -&gt; "So nguyen: " + i;
+        case String s when s.isBlank() -&gt; "Chuoi rong";
+        case String s -&gt; "Chuoi: " + s;
+        default -&gt; "Khong biet";
+    };
+}
+// describe(new CardPayment("4242", 199_000L)) -> The 4242: 199000 cents
+// describe(new BankTransfer("VCB", 500_000L)) -> Chuyen khoan VCB
+// describe(new CashPayment(50_000L))          -> Tien mat: 50000 cents
+// classify(-3)      -> So nguyen am: -3
+// classify(42)      -> So nguyen: 42
+// classify("hello") -> Chuoi: hello
+// classify("  ")    -> Chuoi rong
+// classify(null)    -> null</code></pre>
+    </div>
+
+    <p>Khi nào dùng (mức nhận biết — chưa cần thành thạo):</p>
+    <ul>
+      <li>Khi cần rẽ nhánh theo kiểu thực tế của object và muốn compiler kiểm tra đủ nhánh — thay cho chuỗi <code class="inline">if (x instanceof A)</code> rồi ép kiểu thủ công.</li>
+      <li>Kết hợp <strong>sealed hierarchy</strong> (sealed interface/class + record) thì switch không cần <code class="inline">default</code> và thêm subtype mới là compiler báo lỗi ngay. Sealed/records học ở <a href="roadmap.html#phase-2">2.4 Polymorphism</a>.</li>
+      <li><strong>Record pattern</strong> (cũng Java 21) cho phép bóc tách component ngay trong case, ví dụ <code class="inline">case CardPayment(String last4, long cents)</code> — đọc thêm khi cần.</li>
+      <li>Nhớ: tính năng này chỉ dùng được khi runtime/compiler từ Java 21; project cũ dùng Java 17 thì không có.</li>
+    </ul>
+
+    <h2 id="vong-lap">6. for, while, do-while, for-each</h2>
+
+    <p>Java có đúng 4 loại vòng lặp, mỗi loại hợp một tình huống. Cả bốn đều hỗ trợ <code class="inline">break</code>/<code class="inline">continue</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// for: biet truoc so lan lap, can bien dem
+for (int i = 1; i &lt;= 3; i++) {
+    IO.println("for i = " + i);
+}
+// for i = 1
+// for i = 2
+// for i = 3
+
+// while: kiem tra dieu kien truoc, co the khong chay lan nao
+int count = 3;
+while (count &gt; 0) {
+    IO.println("while count = " + count);
+    count--;
+}
+// while count = 3
+// while count = 2
+// while count = 1
+
+// do-while: than chay it nhat 1 lan vi kiem tra dieu kien SAU
+int retries = 0;
+do {
+    retries++;
+    IO.println("do-while chay lan " + retries);
+} while (retries &lt; 0);
+// do-while chay lan 1   <- dieu kien sai ngay tu dau nhung van chay 1 lan
+
+// for-each: duyet toan bo mang/collection, khong can index
+int[] prices = {100, 200, 300};
+int sum = 0;
+for (int price : prices) {
+    sum += price;
+}
+IO.println("for-each sum = " + sum);
+// for-each sum = 600</code></pre>
+    </div>
+
+    <h3>6.1. Scope của biến trong for</h3>
+
+    <p>Biến khai báo trong phần đầu của <code class="inline">for</code> chỉ sống trong thân vòng lặp — hết vòng lặp là biến biến mất (block scope, xem <a href="index.html#scope">Biến trong Java — mục 6</a>):</p>
+
+    <div class="errblock">
+      <pre>        IO.println(i);
+                   ^
+error: cannot find symbol
+  symbol:   variable i
+  location: class ForScopeError</pre>
+    </div>
+
+    <p>Vì scope hẹp nên hai vòng for liên tiếp có thể cùng đặt tên <code class="inline">i</code> mà không đụng nhau. Ngược lại, <code class="inline">for (int i = ...)</code> mà muốn dùng <code class="inline">i</code> sau vòng lặp thì phải khai báo <code class="inline">i</code> bên ngoài — nhưng khi đó nhớ rằng nếu vòng lặp không chạy lần nào, <code class="inline">i</code> giữ giá trị ban đầu.</p>
+
+    <h3>6.2. Vòng lặp vô hạn</h3>
+
+    <p>Vòng lặp vô hạn không phải lúc nào cũng là bug — với server, event loop hay retry loop, nó là chủ ý. Hai cách viết phổ biến:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int attempts = 0;
+while (true) {              // tuong minh, de doc hon for (;;)
+    attempts++;
+    if (attempts == 3) {
+        IO.println("thoat vong lap vo han tai attempts = " + attempts);
+        break;              // luon co duong thoat
+    }
+}
+// thoat vong lap vo han tai attempts = 3</code></pre>
+    </div>
+
+    <p><code class="inline">while (true)</code> là cách viết được khuyến nghị; <code class="inline">for (;;)</code> tương đương nhưng khó đọc hơn. Điều bắt buộc: bên trong phải có <code class="inline">break</code>, <code class="inline">return</code>, <code class="inline">throw</code> hoặc điều kiện dừng rõ ràng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Tình huống</th><th>Dùng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Biết trước số lần lặp, cần index</td><td><code class="inline">for</code></td></tr>
+        <tr><td>Lặp đến khi điều kiện sai, có thể 0 lần</td><td><code class="inline">while</code></td></tr>
+        <tr><td>Thân phải chạy ít nhất 1 lần (menu, retry, đọc input)</td><td><code class="inline">do-while</code></td></tr>
+        <tr><td>Duyệt toàn bộ mảng/collection, không cần index</td><td>for-each</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="for-each">7. for-each và chuyện không sửa được phần tử</h2>
+
+    <p>Đây là bẫy rất hay gặp với người từ JS sang: trong for-each, biến vòng lặp là <strong>bản sao giá trị</strong> của phần tử, không phải tham chiếu tới ô mảng. Gán vào nó chỉ đổi bản sao — mảng giữ nguyên.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] prices = {100, 200, 300};
+
+for (int p : prices) {
+    p = p * 2;                  // chi doi bien cuc bo p
+}
+IO.println("sau for-each : " + prices[0] + " " + prices[1] + " " + prices[2]);
+// sau for-each : 100 200 300
+
+for (int i = 0; i &lt; prices.length; i++) {
+    prices[i] = prices[i] * 2;  // sua truc tiep qua index
+}
+IO.println("sau for-index: " + prices[0] + " " + prices[1] + " " + prices[2]);
+// sau for-index: 200 400 600</code></pre>
+    </div>
+
+    <p>Với <strong>object</strong> thì khác một nửa: biến vòng lặp vẫn là bản sao, nhưng bản sao đó là bản sao <em>reference</em> — trỏ cùng object. Gọi method làm thay đổi nội dung object thì có hiệu lực (giống pass-by-value trong <a href="index.html#stack-heap">Biến trong Java — mục 7</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">StringBuilder[] names = {new StringBuilder("an"), new StringBuilder("binh")};
+for (StringBuilder name : names) {
+    name.append("!");           // sua noi dung object -> OK
+}
+IO.println("sua noi dung object: " + names[0] + " " + names[1]);
+// sua noi dung object: an! binh!</code></pre>
+    </div>
+
+    <p>Quy tắc nhớ nhanh: <strong>gán lại biến vòng lặp = vô hiệu; gọi method trên object = có hiệu lực</strong>. Muốn thay phần tử primitive thì dùng <code class="inline">for</code> với index. Ngoài ra for-each không duyệt ngược được, không biết vị trí hiện tại, và không nên xóa phần tử khỏi collection trong lúc duyệt (sẽ học ở Collections).</p>
+
+    <h2 id="break-continue">8. break, continue và label</h2>
+
+    <ul>
+      <li><code class="inline">break</code> — thoát hẳn vòng lặp gần nhất (hoặc thoát switch).</li>
+      <li><code class="inline">continue</code> — bỏ phần còn lại của lần lặp hiện tại, nhảy sang lần lặp kế tiếp.</li>
+      <li><strong>label</strong> — đặt tên cho vòng lặp để <code class="inline">break</code>/<code class="inline">continue</code> tác động lên vòng <em>ngoài</em>, dùng khi có vòng lặp lồng nhau.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">int[][] matrix = {
+    {1, 2, 3},
+    {4, 5, 6},
+    {7, 8, 9}
+};
+int target = 5;
+boolean found = false;
+
+outer:
+for (int row = 0; row &lt; matrix.length; row++) {
+    for (int col = 0; col &lt; matrix[row].length; col++) {
+        if (matrix[row][col] == target) {
+            IO.println("Tim thay " + target + " tai [" + row + "][" + col + "]");
+            found = true;
+            break outer;            // thoat CA HAI vong lap
+        }
+    }
+}
+if (!found) {
+    IO.println("Khong tim thay " + target);
+}
+// Tim thay 5 tai [1][1]
+
+skip:
+for (int i = 1; i &lt;= 3; i++) {
+    for (int j = 1; j &lt;= 3; j++) {
+        if (j == 2) {
+            continue skip;      // bo qua phan con lai cua vong ngoai hien tai
+        }
+        IO.println("i=" + i + " j=" + j);
+    }
+}
+// i=1 j=1
+// i=2 j=1
+// i=3 j=1</code></pre>
+    </div>
+
+    <p>Không có label, <code class="inline">break</code> trong ví dụ tìm kiếm chỉ thoát vòng trong, vòng ngoài chạy tiếp — phải thêm biến cờ <code class="inline">found</code> và kiểm tra ở mỗi tầng. Label xử lý gọn hơn hẳn.</p>
+
+    <p>Best practices cho label:</p>
+    <ul>
+      <li>Chỉ dùng cho vòng lặp lồng nhau khi cần thoát/continue vòng ngoài; không dùng label cho khối if hay câu lệnh thường.</li>
+      <li>Đặt tên có nghĩa (<code class="inline">search</code>, <code class="inline">rows</code>) và viết ngay trước vòng lặp ngoài, thụt lề cùng cấp.</li>
+      <li>Lồng quá 2 tầng thì ưu tiên <strong>tách method con và <code class="inline">return</code> sớm</strong> — vừa thoát đúng chỗ, vừa dễ test.</li>
+      <li>Lint của công ty có thể cấm label; hỏi trước khi dùng trong code base lạ.</li>
+    </ul>
+
+    <h2 id="pitfalls">9. Pitfalls tổng hợp <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <h3>9.1. Dangling else — else treo</h3>
+
+    <p><code class="inline">else</code> luôn gắn với <code class="inline">if</code> <strong>gần nhất chưa có else</strong>, bất kể thụt lề thế nào:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int a = -1, b = -1, x = 0;
+if (a &gt; 0)
+    if (b &gt; 0)
+        x = 1;
+    else
+        x = 2;
+IO.println("dangling else x = " + x);
+// dangling else x = 0</code></pre>
+    </div>
+
+    <p>Đọc thụt lề tưởng <code class="inline">else</code> thuộc <code class="inline">if (a &gt; 0)</code>, nhưng thực tế nó thuộc <code class="inline">if (b &gt; 0)</code>. Vì <code class="inline">a = -1</code> nên cả hai if đều không chạy, <code class="inline">x</code> giữ 0. Luôn dùng ngoặc nhọn cho mọi thân if/else.</p>
+
+    <h3>9.2. Quên ngoặc nhọn và thụt lề đánh lừa</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int total = 0;
+for (int k = 0; k &lt; 3; k++)
+    total += k;
+    IO.println("dong thut le chay 1 lan, total = " + total);
+// dong thut le chay 1 lan, total = 3</code></pre>
+    </div>
+
+    <p>Dòng <code class="inline">IO.println</code> thụt lề như nằm trong vòng lặp nhưng thực tế nằm ngoài (for chỉ có một câu lệnh). Code chạy "đúng" theo cú pháp, sai theo ý người viết. Ngoặc nhọn là bắt buộc trong convention production.</p>
+
+    <h3>9.3. Gán nhầm <code class="inline">=</code> trong điều kiện</h3>
+
+    <p>Trong JavaScript, <code class="inline">if (x = 1)</code> chạy được (gán xong lấy giá trị 1 làm điều kiện). Java tách bạch phép gán và so sánh nên đoạn này <strong>không compile</strong>:</p>
+
+    <div class="errblock">
+      <pre>        if (x = 1) {
+              ^
+error: incompatible types: int cannot be converted to boolean</pre>
+    </div>
+
+    <p>Đây là lỗi compile tốt cho sức khỏe — không bao giờ lọt vào bản build như JS. Muốn so sánh viết <code class="inline">==</code>, muốn so sánh giá trị object viết <code class="inline">equals</code>.</p>
+
+    <h3>9.4. Dấu chấm phẩy thừa sau if</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int stock = 5;
+if (stock &gt; 0);
+    IO.println("con hang - luon in du dieu kien dung hay sai");
+// con hang - luon in du dieu kien dung hay sai</code></pre>
+    </div>
+
+    <p><code class="inline">if (stock &gt; 0);</code> là một câu lệnh rỗng — điều kiện được tính rồi vứt đi, còn dòng println luôn chạy. Compiler không báo gì. Đây là biến thể của pitfall 9.2.</p>
+
+    <h3>9.5. So sánh số thực trong điều kiện</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">double sum = 0.1 + 0.2;
+IO.println("0.1 + 0.2 == 0.3           : " + (sum == 0.3));            // false
+IO.println("Math.abs(sum - 0.3) &lt; 1e-9 : " + (Math.abs(sum - 0.3) &lt; 1e-9));  // true</code></pre>
+    </div>
+
+    <p>Vì biểu diễn nhị phân của <code class="inline">double</code>, <code class="inline">0.1 + 0.2</code> không bằng chính xác <code class="inline">0.3</code>. So sánh float/double bằng <code class="inline">==</code> trong điều kiện hầu như luôn sai về mặt logic — dùng epsilon (<code class="inline">Math.abs(a - b) &lt; 1e-9</code>) hoặc chuyển sang <code class="inline">BigDecimal</code> khi là tiền tệ (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>).</p>
+
+    <h3>9.6. Vòng lặp vô hạn do cập nhật sai biến</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int i = 0;
+int j = 0;
+while (i &lt; 3) {
+    j++;                // cap nhat nham bien: i khong bao gio tang
+    if (j == 3) {
+        IO.println("i van = " + i + " sau 3 lan lap -&gt; vong lap vo tan");
+        break;          // them break chi de minh hoa
+    }
+}
+// i van = 0 sau 3 lan lap -&gt; vong lap vo tan</code></pre>
+    </div>
+
+    <p>Biến điều khiển không bao giờ tiến tới điều kiện dừng. Cách phòng: đặt tên biến đếm rõ ràng, và với vòng lặp <code class="inline">while</code> luôn tự hỏi "cái gì làm điều kiện này sai đi?".</p>
+
+    <h3>9.7. Bảng tổng hợp</h3>
+
+    <table>
+      <thead>
+        <tr><th>Đoạn code</th><th>Kết quả</th><th>Cách phòng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">if (1)</code>, <code class="inline">if ("a")</code></td><td>Compile error</td><td>Điều kiện phải boolean: <code class="inline">if (n != 0)</code>, <code class="inline">if (!s.isEmpty())</code></td></tr>
+        <tr><td><code class="inline">if (enabled)</code> với <code class="inline">Boolean enabled = null</code></td><td>NPE khi unbox</td><td><code class="inline">Boolean.TRUE.equals(enabled)</code></td></tr>
+        <tr><td><code class="inline">switch</code> thiếu <code class="inline">break</code></td><td>Fall-through, chạy sai nhánh</td><td>Dùng switch expression; hoặc break mỗi nhánh</td></tr>
+        <tr><td><code class="inline">switch (mode)</code> với <code class="inline">mode = null</code></td><td>NPE</td><td>Kiểm tra null trước; pattern switch có <code class="inline">case null</code></td></tr>
+        <tr><td><code class="inline">case target:</code> với biến thường</td><td><code class="inline">constant expression required</code></td><td>Dùng literal, <code class="inline">static final</code>, hoặc enum constant</td></tr>
+        <tr><td><code class="inline">if (a &gt; 0) if (b &gt; 0) ... else ...</code></td><td>Dangling else</td><td>Luôn dùng ngoặc nhọn</td></tr>
+        <tr><td><code class="inline">if (available);</code></td><td>Câu lệnh rỗng, thân luôn chạy</td><td>Bỏ dấu <code class="inline">;</code> thừa</td></tr>
+        <tr><td><code class="inline">if (x = 1)</code></td><td>Compile error</td><td>Viết <code class="inline">==</code> hoặc <code class="inline">equals</code></td></tr>
+        <tr><td><code class="inline">sum == 0.3</code></td><td>Sai do làm tròn nhị phân</td><td>Epsilon hoặc <code class="inline">BigDecimal</code></td></tr>
+        <tr><td><code class="inline">while (i &lt; 3)</code> quên <code class="inline">i++</code></td><td>Vô hạn</td><td>Đảm bảo có đường thoát; test biên</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">10. Góc Node.js: đừng mang thói quen JS vào</h2>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Điều kiện if</td><td>Truthy/falsy: <code class="inline">if (1)</code>, <code class="inline">if ("a")</code>, <code class="inline">if ([])</code> đều chạy</td><td>Bắt buộc <code class="inline">boolean</code>; <code class="inline">if (1)</code> là compile error</td></tr>
+        <tr><td>Duyệt mảng</td><td><code class="inline">for...of</code> gần giống nhất; <code class="inline">for...in</code> duyệt key (Java không có tương đương)</td><td><code class="inline">for (int x : arr)</code></td></tr>
+        <tr><td><code class="inline">forEach</code></td><td><code class="inline">arr.forEach(...)</code> không <code class="inline">break</code>/<code class="inline">continue</code> được, <code class="inline">return</code> chỉ bỏ qua một phần tử, không dùng tốt với async</td><td>for-each là cấu trúc điều khiển thật: <code class="inline">break</code>/<code class="inline">continue</code> chạy bình thường</td></tr>
+        <tr><td>Labeled break</td><td>Cú pháp y hệt: <code class="inline">outer: for (...) { break outer; }</code></td><td>Giống hệt — nhiều dev JS chưa từng dùng nên tưởng Java mới có</td></tr>
+        <tr><td>switch</td><td>Cũng fall-through, không trả giá trị; nhiều người thay bằng object map</td><td>switch expression trả giá trị, không fall-through, exhaustive</td></tr>
+        <tr><td>do...while</td><td>Có</td><td>Có, cú pháp tương tự</td></tr>
+        <tr><td>So sánh chuỗi</td><td><code class="inline">===</code> so sánh giá trị</td><td><code class="inline">==</code> so sánh reference — phải dùng <code class="inline">equals</code> (xem <a href="index.html#string">Biến trong Java — mục 14</a>)</td></tr>
+        <tr><td>Optional chaining</td><td><code class="inline">obj?.field</code></td><td>Không có; phải <code class="inline">if (obj != null &amp;&amp; obj.field() != null)</code> hoặc dùng <code class="inline">Optional</code> (học ở giai đoạn 3)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Điểm khác biệt lớn nhất khi đọc code Java lần đầu: code Java <strong>dài hơn nhưng tường minh hơn</strong>. Không có truthy, không có side effect ngầm trong điều kiện — compiler chặn gần hết các lỗi mà JS chỉ phát hiện lúc runtime.</p>
+
+    <h2 id="production">11. Production patterns <span class="badge b-prod">Production</span></h2>
+
+    <h3>11.1. Validate input bằng guard clause + record</h3>
+
+    <p>Convention: validate ngay khi tạo object, throw <code class="inline">IllegalArgumentException</code> với message nói rõ sai gì — fail fast, không để dữ liệu bẩn đi sâu vào hệ thống. Record với compact constructor là chỗ đặt validation gọn nhất:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record CreateOrderRequest(long customerId, BigDecimal totalAmount) {
+    CreateOrderRequest {
+        if (customerId &lt;= 0) {
+            throw new IllegalArgumentException("customerId phai &gt; 0");
+        }
+        if (totalAmount == null || totalAmount.signum() &lt;= 0) {
+            throw new IllegalArgumentException("totalAmount phai &gt; 0");
+        }
+    }
+}
+// new CreateOrderRequest(42L, new BigDecimal("199000.00"))
+//   -> CreateOrderRequest[customerId=42, totalAmount=199000.00]
+// new CreateOrderRequest(0L, ...) -> IllegalArgumentException: customerId phai &gt; 0</code></pre>
+    </div>
+
+    <p>Chú ý convention: ID dùng <code class="inline">long</code>, tiền dùng <code class="inline">BigDecimal</code> (không dùng <code class="inline">double</code>), trạng thái dùng <code class="inline">enum</code>.</p>
+
+    <h3>11.2. Mapping enum sang message bằng switch expression</h3>
+
+    <p>Không dùng magic string rải rác; gom mapping vào một chỗ bằng switch expression exhaustive. Khi thêm hằng enum mới, compiler ép bạn cập nhật mọi switch — đây là lợi ích production lớn nhất so với <code class="inline">if/else if</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">enum PaymentMethod { CARD, BANK_TRANSFER, COD }
+
+static final int MAX_RETRY = 3;   // hang so: static final + UPPER_SNAKE_CASE
+
+static String paymentHint(PaymentMethod method) {
+    return switch (method) {
+        case CARD -&gt; "Thanh toan bang the (ho tro 3D Secure)";
+        case BANK_TRANSFER -&gt; "Chuyen khoan trong 24h";
+        case COD -&gt; "Thanh toan khi nhan hang";
+    };
+}
+
+static int retryLimit(PaymentMethod method) {
+    return switch (method) {
+        case CARD -&gt; MAX_RETRY;
+        case BANK_TRANSFER -&gt; 1;
+        case COD -&gt; 0;
+    };
+}
+// CARD | Thanh toan bang the (ho tro 3D Secure) | retry=3
+// BANK_TRANSFER | Chuyen khoan trong 24h | retry=1
+// COD | Thanh toan khi nhan hang | retry=0</code></pre>
+    </div>
+
+    <h3>11.3. Tránh lồng quá 2 tầng</h3>
+
+    <p>Quy tắc thực dụng được nhiều team áp dụng: <strong>tối đa 2 tầng lồng trong một method</strong>. Cách xử lý theo thứ tự ưu tiên:</p>
+    <ol>
+      <li>Guard clause + return sớm cho các trường hợp lỗi/biên (mục 2.2).</li>
+      <li>Gộp điều kiện bằng <code class="inline">&amp;&amp;</code>/<code class="inline">||</code> khi chúng cùng ý nghĩa.</li>
+      <li>Tách đoạn lồng sâu thành method riêng có tên mô tả việc nó làm.</li>
+      <li>Dùng switch expression thay chuỗi if/else if so sánh cùng một biến.</li>
+      <li>Đảo điều kiện: xử lý trường hợp hiếm trước, happy path sau cùng.</li>
+    </ol>
+
+    <p>Lợi ích không chỉ là đọc dễ: method phẳng hơn thì tách test dễ hơn, và mỗi method con có thể test độc lập (bước chuẩn bị cho JUnit ở giai đoạn 4).</p>
+
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Điều kiện của <code class="inline">if</code> trong Java khác gì JavaScript?</summary>
+      <div class="answer">Java bắt buộc điều kiện là <code class="inline">boolean</code> (hoặc <code class="inline">Boolean</code> — tự unbox). Không có truthy/falsy như JS, nên <code class="inline">if (1)</code>, <code class="inline">if ("a")</code>, <code class="inline">if ([])</code> đều là compile error. Phải viết tường minh <code class="inline">if (n != 0)</code>, <code class="inline">if (!s.isEmpty())</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Fall-through trong <code class="inline">switch</code> là gì? Vì sao phải <code class="inline">break</code>?</summary>
+      <div class="answer">Khi một <code class="inline">case</code> khớp, chương trình chạy từ đó xuống hết các câu lệnh phía dưới, kể cả của case khác, cho tới khi gặp <code class="inline">break</code> hoặc hết switch. Đây là hành vi cố ý của JLS (cho phép nhiều case chung một thân), nhưng nếu quên <code class="inline">break</code> thì chạy sai nhánh mà compiler không báo. Switch expression không có fall-through.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Làm sao cho nhiều <code class="inline">case</code> dùng chung một khối lệnh?</summary>
+      <div class="answer">Switch cũ: xếp các label liền nhau, chỉ case cuối có thân — <code class="inline">case 1: case 2: case 3: ... break;</code>. Switch expression: <code class="inline">case 1, 2, 3 -&gt; ...</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Switch expression khác switch statement ở đâu?</summary>
+      <div class="answer">Switch expression trả về giá trị (dùng được trong gán, return, truyền tham số), dùng cú pháp <code class="inline">-&gt;</code>, không fall-through, và bắt buộc exhaustive. Switch statement chỉ chạy lệnh, có fall-through, không cần bao hết trường hợp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">yield</code> khác <code class="inline">return</code> thế nào?</summary>
+      <div class="answer"><code class="inline">yield</code> trả giá trị cho switch expression rồi thoát khỏi switch, còn method chạy tiếp. <code class="inline">return</code> thoát khỏi cả method. <code class="inline">yield</code> chỉ dùng trong block của nhánh <code class="inline">-&gt;</code> khi cần nhiều dòng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">do-while</code> khác <code class="inline">while</code> thế nào?</summary>
+      <div class="answer"><code class="inline">do-while</code> kiểm tra điều kiện <em>sau</em> khi chạy thân, nên thân luôn chạy ít nhất một lần — kể cả điều kiện sai ngay từ đầu. <code class="inline">while</code> kiểm tra trước, có thể không chạy lần nào. Dùng <code class="inline">do-while</code> cho menu, retry, đọc input đến khi hợp lệ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Khi nào <em>không</em> nên dùng for-each?</summary>
+      <div class="answer">Khi cần index (duyệt ngược, so sánh phần tử kề, in vị trí), cần sửa phần tử mảng primitive, cần xóa/tìm theo vị trí trong collection, hoặc cần duyệt có bước nhảy khác 1. for-each vẫn <code class="inline">break</code>/<code class="inline">continue</code> được bình thường.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Vì sao for-each không sửa được phần tử mảng <code class="inline">int</code>?</summary>
+      <div class="answer">Biến vòng lặp là bản sao giá trị của phần tử (giống tham số truyền vào method). Gán vào nó chỉ đổi bản sao, không đổi ô mảng. Với mảng object, bản sao là bản sao reference nên gọi method làm thay đổi nội dung object vẫn có hiệu lực, nhưng gán lại biến vòng lặp thì không.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">break</code> và <code class="inline">continue</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">break</code> thoát hẳn vòng lặp (hoặc switch) gần nhất. <code class="inline">continue</code> chỉ bỏ phần còn lại của lần lặp hiện tại rồi sang lần kế tiếp. Cả hai đều bị ảnh hưởng bởi label nếu có.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">switch</code> nhận những kiểu selector nào?</summary>
+      <div class="answer">Các kiểu nguyên thủy <code class="inline">byte</code>, <code class="inline">short</code>, <code class="inline">char</code>, <code class="inline">int</code> và wrapper tương ứng; <code class="inline">String</code> (Java 7+); <code class="inline">enum</code>. Không nhận <code class="inline">long</code>, <code class="inline">float</code>, <code class="inline">double</code>, <code class="inline">boolean</code>. Từ Java 21, pattern switch mở rộng cho reference type bất kỳ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Vì sao case label phải là hằng số compile-time?</summary>
+      <div class="answer">Compiler sinh bảng nhảy/tra cứu từ các giá trị case, phải biết trước lúc compile — biến thường chỉ biết lúc runtime. Hợp lệ: literal, <code class="inline">static final</code> hằng, enum constant. <code class="inline">case target:</code> với biến thường báo "constant expression required".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Vì sao switch expression với enum không cần <code class="inline">default</code>, nhưng với <code class="inline">int</code> thì bắt buộc?</summary>
+      <div class="answer">Vì tính exhaustive: compiler biết chính xác tập hằng của enum nên kiểm tra đủ nhánh được. Với <code class="inline">int</code>/<code class="inline">String</code>, tập giá trị không hữu hạn (theo góc nhìn compiler) nên phải có <code class="inline">default</code> để bao các trường hợp còn lại. Thiếu exhaustive báo lỗi "the switch expression does not cover all possible input values".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Thêm một hằng enum mới thì code switch bị ảnh hưởng gì?</summary>
+      <div class="answer">Với switch expression liệt kê đủ hằng (không default): compile error ngay tại mọi chỗ switch — buộc dev cập nhật, tránh bỏ sót. Đây là lợi ích production lớn; nếu lạm dụng <code class="inline">default</code> thì hằng mới rơi vào default âm thầm và logic có thể sai.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">if (x = 1)</code> trong Java có chạy không?</summary>
+      <div class="answer">Không compile: "incompatible types: int cannot be converted to boolean". Java tách phép gán (trả về giá trị) khỏi ngữ cảnh điều kiện (cần boolean), nên bẫy kinh điển của C/JavaScript không tồn tại. Muốn so sánh viết <code class="inline">==</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Pattern matching for switch là gì? Cho ví dụ.</summary>
+      <div class="answer">Java 21: <code class="inline">case</code> có thể khớp theo kiểu — <code class="inline">case Integer i -&gt; "so " + i</code> vừa kiểm tra kiểu vừa gán vào biến. Kèm guard <code class="inline">when</code> để lọc thêm điều kiện (<code class="inline">case Integer i when i &lt; 0 -&gt;</code>) và <code class="inline">case null</code>. Kết hợp sealed hierarchy thì không cần default; record pattern còn bóc tách được component của record.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Dangling else là gì và tránh thế nào?</summary>
+      <div class="answer"><code class="inline">else</code> luôn gắn với <code class="inline">if</code> gần nhất chưa có else, bất kể thụt lề. Trong <code class="inline">if (a) if (b) ... else ...</code>, else thuộc <code class="inline">if (b)</code>. Luôn dùng ngoặc nhọn cho mọi thân if/else để loại bỏ hoàn toàn nhập nhằng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. So sánh <code class="inline">float</code>/<code class="inline">double</code> trong điều kiện thế nào cho đúng?</summary>
+      <div class="answer">Không dùng <code class="inline">==</code> vì sai số biểu diễn nhị phân (<code class="inline">0.1 + 0.2 != 0.3</code>). Dùng epsilon: <code class="inline">Math.abs(a - b) &lt; 1e-9</code>. Với tiền tệ, không dùng số thực từ đầu — dùng <code class="inline">BigDecimal</code> và so sánh bằng <code class="inline">compareTo</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Làm sao giảm if lồng nhau sâu?</summary>
+      <div class="answer">Guard clause + return/throw sớm cho trường hợp lỗi; gộp điều kiện cùng ý nghĩa; tách method con đặt tên mô tả; dùng switch expression khi nhiều nhánh so sánh cùng biến; đảo điều kiện để happy path ở cuối. Mục tiêu: tối đa 2 tầng lồng.</div>
+    </details>
+
+    <h3>Câu hỏi khó</h3>
+
+    <details class="qa">
+      <summary>Câu 19. Vì sao <code class="inline">if (booleanWrapper)</code> có thể ném NPE?</summary>
+      <div class="answer">Điều kiện cần <code class="inline">boolean</code> nên compiler chèn unboxing (<code class="inline">booleanValue()</code>). Wrapper <code class="inline">null</code> thì unbox ném NPE — dù code đọc như đang "kiểm tra object có tồn tại hay không". An toàn: <code class="inline">Boolean.TRUE.equals(b)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. <code class="inline">switch</code> trên chuỗi <code class="inline">null</code> ném gì? Vì sao?</summary>
+      <div class="answer">NullPointerException ngay khi tính selector. javac hiện thực switch String bằng <code class="inline">hashCode()</code> trước rồi mới <code class="inline">equals</code> từng case khớp hash — gọi method trên null là nổ. Phải kiểm tra null trước; pattern switch Java 21 có thể bắt bằng <code class="inline">case null -&gt;</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Label có phải bad practice không? Khi nào nên dùng, thay thế bằng gì?</summary>
+      <div class="answer">Label bị xem là khó đọc nên nhiều team hạn chế. Dùng khi cần thoát/continue vòng ngoài từ trong vòng lồng 2 tầng. Thay thế: tách method con và return sớm, dùng biến cờ (dài dòng hơn), hoặc cấu trúc dữ liệu phẳng hơn. Nếu dùng, đặt tên có nghĩa và chỉ cho vòng lặp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Vì sao switch trên String hoạt động được?</summary>
+      <div class="answer">Java 7 thêm switch String. JLS quy định so sánh bằng <code class="inline">equals</code>; javac sinh code: tính <code class="inline">hashCode()</code> của selector, nhảy theo bảng hash, rồi gọi <code class="inline">equals</code> cho từng case khớp hash (tránh collision). Vì vậy selector null nổ ở bước hashCode.</div>
+    </details>
+
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">int x = 5;
+if (x &gt; 3)
+    if (x &gt; 10)
+        IO.println("A");
+    else
+        IO.println("B");</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">B</code>. <code class="inline">else</code> gắn với <code class="inline">if (x &gt; 10)</code> gần nhất: <code class="inline">x = 5</code> thỏa <code class="inline">x &gt; 3</code> nhưng không thỏa <code class="inline">x &gt; 10</code> nên chạy nhánh else.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">int n = 2;
+switch (n) {
+    case 1:
+        IO.println("mot");
+    case 2:
+        IO.println("hai");
+    case 3:
+        IO.println("ba");
+        break;
+    default:
+        IO.println("khac");
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">hai</code> rồi <code class="inline">ba</code>. <code class="inline">case 2</code> thiếu <code class="inline">break</code> nên fall through xuống <code class="inline">case 3</code>; gặp <code class="inline">break</code> ở đây mới dừng, không rơi vào default.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">int day = 6;
+String type = switch (day) {
+    case 1, 2, 3, 4, 5 -&gt; "lam viec";
+    case 6, 7 -&gt; {
+        IO.println("cuoi tuan");
+        yield "nghi";
+    }
+    default -&gt; "khong hop le";
+};
+IO.println(type);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">cuoi tuan</code> rồi <code class="inline">nghi</code>. Block của nhánh <code class="inline">-&gt;</code> chạy câu lệnh println trước, sau đó <code class="inline">yield</code> trả giá trị cho biến <code class="inline">type</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">int i = 10;
+do {
+    IO.println("than lap i = " + i);
+    i++;
+} while (i &lt; 5);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">than lap i = 10</code>. Điều kiện <code class="inline">10 &lt; 5</code> sai, nhưng <code class="inline">do-while</code> kiểm tra sau nên thân đã chạy một lần.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] a = {1, 2, 3};
+for (int v : a) {
+    v = v * 10;
+}
+IO.println(a[0] + " " + a[1] + " " + a[2]);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1 2 3</code>. Biến <code class="inline">v</code> là bản sao giá trị từng phần tử; gán <code class="inline">v = v * 10</code> chỉ đổi bản sao, mảng không đổi.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">outer:
+for (int i = 0; i &lt; 3; i++) {
+    for (int j = 0; j &lt; 3; j++) {
+        if (i + j == 2) {
+            break outer;
+        }
+        IO.println(i + "," + j);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">0,0</code> rồi <code class="inline">0,1</code>. Tới <code class="inline">i = 0, j = 2</code> thì <code class="inline">i + j = 2</code>, <code class="inline">break outer</code> thoát cả hai vòng lặp.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">outer:
+for (int i = 1; i &lt;= 3; i++) {
+    for (int j = 1; j &lt;= 3; j++) {
+        if (j == 2) {
+            continue outer;
+        }
+        IO.println(i + "-" + j);
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1-1</code>, <code class="inline">2-1</code>, <code class="inline">3-1</code>. Mỗi vòng trong in xong <code class="inline">j = 1</code> thì gặp <code class="inline">j == 2</code>, <code class="inline">continue outer</code> nhảy sang lần lặp kế tiếp của vòng ngoài — nên j = 2, 3 không bao giờ được in.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">int score = 85;
+String grade = switch (score / 10) {
+    case 10, 9 -&gt; "A";
+    case 8 -&gt; "B";
+    default -&gt; "C";
+};
+IO.println(grade);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">B</code>. <code class="inline">85 / 10</code> là phép chia nguyên nên bằng 8, khớp <code class="inline">case 8</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">int i = 0;
+while (i &lt; 3) {
+    i++;
+    IO.println(i);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code>, <code class="inline">2</code>, <code class="inline">3</code> (mỗi số một dòng). Tăng trước khi in nên lần in đầu là 1, không phải 0.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">for (int i = 0; i &lt; 5; i++) {
+    if (i % 2 == 0) {
+        continue;
+    }
+    IO.println(i);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code> rồi <code class="inline">3</code>. Các giá trị chẵn bị <code class="inline">continue</code> bỏ qua; số lẻ còn lại trong 0..4 là 1 và 3.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">Object o = 42;
+String s = switch (o) {
+    case Integer i when i &gt; 100 -&gt; "lon";
+    case Integer i -&gt; "so " + i;
+    default -&gt; "khac";
+};
+IO.println(s);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">so 42</code>. Guard <code class="inline">when i &gt; 100</code> không thỏa vì 42 &lt; 100, nên rơi xuống type pattern <code class="inline">case Integer i</code> phía sau.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">int x = 9;
+int result = 0;
+switch (x) {
+    default:
+        result = 100;
+    case 1:
+        result += 1;
+        break;
+    case 2:
+        result += 2;
+}
+IO.println(result);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">101</code>. <code class="inline">x = 9</code> không khớp case nào nên vào <code class="inline">default</code> (đặt trước case 1): <code class="inline">result = 100</code>, thiếu break nên fall through xuống <code class="inline">case 1</code>: <code class="inline">result += 1</code> thành 101 rồi gặp break. Đây là ví dụ cho thấy fall-through và vị trí default đều có thể gây bất ngờ.</div>
+    </details>
+
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Rẽ nhánh cơ bản</td><td><code class="inline">if</code> / <code class="inline">else if</code> / <code class="inline">else</code> — điều kiện là <code class="inline">boolean</code>, không truthy/falsy</td></tr>
+        <tr><td>Kiểm tra null / rỗng</td><td><code class="inline">if (obj == null) return;</code> · <code class="inline">if (s == null || s.isBlank())</code> — không viết <code class="inline">if (obj)</code></td></tr>
+        <tr><td>So sánh chuỗi</td><td><code class="inline">"A".equals(mode)</code> — không dùng <code class="inline">==</code></td></tr>
+        <tr><td>Guard clause</td><td>Kiểm tra lỗi trước, <code class="inline">throw</code>/<code class="inline">return</code> sớm; happy path phẳng, tối đa 2 tầng lồng</td></tr>
+        <tr><td>Switch cũ</td><td><code class="inline">case X:</code> + <code class="inline">break</code>; nhiều case chung xếp liền nhau; <code class="inline">default</code> cho giá trị lạ</td></tr>
+        <tr><td>Switch expression</td><td><code class="inline">case X -&gt; giá trị;</code> · block nhiều dòng: <code class="inline">yield</code> · enum không cần default</td></tr>
+        <tr><td>Pattern matching (Java 21)</td><td><code class="inline">case Integer i -&gt;</code> · guard <code class="inline">when</code> · <code class="inline">case null -&gt;</code> · kết hợp sealed để exhaustive</td></tr>
+        <tr><td>Lặp biết số lần, cần index</td><td><code class="inline">for (int i = 0; i &lt; n; i++)</code></td></tr>
+        <tr><td>Lặp theo điều kiện</td><td><code class="inline">while (dieuKien)</code>; chạy ít nhất 1 lần: <code class="inline">do { ... } while (...)</code></td></tr>
+        <tr><td>Duyệt mảng/collection</td><td><code class="inline">for (int x : arr)</code> — không sửa được phần tử primitive, cần sửa thì dùng index</td></tr>
+        <tr><td>Thoát / bỏ qua</td><td><code class="inline">break</code> · <code class="inline">continue</code> · label cho vòng lặp lồng: <code class="inline">outer: ... break outer;</code></td></tr>
+        <tr><td>So sánh số thực</td><td><code class="inline">Math.abs(a - b) &lt; 1e-9</code>; tiền tệ dùng <code class="inline">BigDecimal</code></td></tr>
+        <tr><td>Enum → message</td><td>Switch expression exhaustive, không <code class="inline">default</code>, để compiler bắt khi thêm hằng mới</td></tr>
+        <tr><td>Hằng số</td><td><code class="inline">static final</code> + <code class="inline">UPPER_SNAKE_CASE</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được vì sao <code class="inline">if (1)</code> là compile error trong Java còn JS thì không.</li>
+      <li>Viết lại được một nested if 3 tầng thành guard clause phẳng.</li>
+      <li>Giải thích fall-through của switch cũ bằng ví dụ tự viết, và chỉ ra lỗi khi quên <code class="inline">break</code>.</li>
+      <li>Chuyển một switch statement sang switch expression, dùng <code class="inline">yield</code> cho nhánh nhiều dòng.</li>
+      <li>Giải thích vì sao switch expression với enum không cần default, và vì sao điều đó hữu ích khi thêm hằng mới.</li>
+      <li>Phân biệt 4 loại vòng lặp và chọn đúng cho từng tình huống.</li>
+      <li>Giải thích vì sao for-each không sửa được phần tử mảng primitive, nhưng sửa được nội dung object.</li>
+      <li>Viết được vòng lặp lồng dùng label để thoát cả hai vòng, và nêu cách thay thế.</li>
+      <li>Nhận diện 5 pitfall: dangling else, thiếu ngoặc nhọn, <code class="inline">if (x = 1)</code>, so sánh float bằng <code class="inline">==</code>, quên cập nhật biến đếm.</li>
+      <li>Nhận biết pattern matching for switch (Java 21): type pattern, guard <code class="inline">when</code>, <code class="inline">case null</code>.</li>
+      <li>Áp dụng được record validation + switch expression mapping enum trong ví dụ production.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-14.html" target="_blank" rel="noreferrer">JLS Chapter 14 — Blocks, Statements, Patterns, and Expressions</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/flow.html" target="_blank" rel="noreferrer">Oracle Tutorial — Control Flow Statements</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/switch.html" target="_blank" rel="noreferrer">Oracle Tutorial — The switch Statement</a></li>
+      <li><a href="https://openjdk.org/jeps/361" target="_blank" rel="noreferrer">JEP 361 — Switch Expressions (Java 14)</a></li>
+      <li><a href="https://openjdk.org/jeps/441" target="_blank" rel="noreferrer">JEP 441 — Pattern Matching for switch (Java 21)</a></li>
+      <li><a href="https://dev.java/learn/" target="_blank" rel="noreferrer">Dev.java — Learning Java</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Control Flow · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

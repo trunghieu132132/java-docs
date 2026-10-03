@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operators &amp; Math — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item active" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="toan-tu">Operators &amp; Math</h1>
+
+    <p class="lead">Toán tử là các ký hiệu để tính toán, so sánh và kết hợp điều kiện. Doc <a href="index.html">Biến trong Java</a> đã dạy khai báo biến và chuyển kiểu; trang này đi hết bộ toán tử bạn dùng hằng ngày: short-circuit, so sánh, <code class="inline">++</code>/<code class="inline">--</code>, bitwise, thứ tự ưu tiên, lớp <code class="inline">Math</code> và sinh số ngẫu nhiên. Khác JavaScript rõ nhất: Java <strong>không có truthy/falsy</strong>, <strong>không có <code class="inline">===</code></strong>, và mọi điều kiện bắt buộc là <code class="inline">boolean</code>.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của doc này:</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết điều kiện short-circuit an toàn (chống NPE), phân biệt prefix/postfix, chọn đúng method của <code class="inline">Math</code> (<code class="inline">floorMod</code>, <code class="inline">addExact</code>, <code class="inline">round</code>...), tự giải bài tập đoán output.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">&amp;</code> khác <code class="inline">&amp;&amp;</code>, vì sao không so sánh float bằng <code class="inline">==</code>, vì sao <code class="inline">1 &lt;&lt; 32</code> bằng 1, thứ tự ưu tiên toán tử.</li>
+      <li><strong>Nhận biết</strong> — bitmask/bit flags, hash dùng <code class="inline">31 * h</code>, <code class="inline">SecureRandom</code> vs <code class="inline">Random</code>, <code class="inline">ThreadLocalRandom</code> khi đa luồng.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#short-circuit">Short-circuit &amp;&amp; / ||</a></li>
+        <li><a href="#so-sanh">Toán tử so sánh</a></li>
+        <li><a href="#tang-giam">Tăng/giảm ++ và --</a></li>
+        <li><a href="#bitwise">Bitwise &amp; shift</a></li>
+        <li><a href="#precedence">Precedence — thứ tự ưu tiên</a></li>
+        <li><a href="#math">Lớp Math</a></li>
+        <li><a href="#random">Sinh số ngẫu nhiên</a></li>
+        <li><a href="#ternary">Ternary ?:</a></li>
+        <li><a href="#assignment">Assignment &amp; compound</a></li>
+        <li><a href="#pitfalls">Pitfalls &amp; production patterns</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="short-circuit">2. Short-circuit <code class="inline">&amp;&amp;</code> / <code class="inline">||</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Hai toán tử logic chạy theo luật <strong>short-circuit</strong> (đoản mạch): Java đánh giá từ trái sang phải và <strong>dừng ngay khi biết kết quả</strong>.</p>
+
+    <ul>
+      <li><code class="inline">A &amp;&amp; B</code> — nếu <code class="inline">A</code> là <code class="inline">false</code>, <code class="inline">B</code> <strong>không được chạy</strong> (vì chắc chắn kết quả false).</li>
+      <li><code class="inline">A || B</code> — nếu <code class="inline">A</code> là <code class="inline">true</code>, <code class="inline">B</code> <strong>không được chạy</strong> (vì chắc chắn kết quả true).</li>
+    </ul>
+
+    <p>Điều này quan trọng vì nhánh phải có thể có <strong>side effect</strong> (gọi hàm, tăng biến, truy cập object). Ví dụ chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ShortCircuitDemo {
+    static int calls = 0;
+
+    static boolean check(boolean ketQua) {
+        calls++;
+        return ketQua;
+    }
+
+    public static void main() {
+        calls = 0;
+        boolean a = check(false) &amp;&amp; check(true);
+        IO.println("false &amp;&amp; true : " + a + ", so lan goi = " + calls);
+        // false &amp;&amp; true : false, so lan goi = 1   - check(true) KHONG chay
+
+        calls = 0;
+        boolean b = check(true) || check(false);
+        IO.println("true || false : " + b + ", so lan goi = " + calls);
+        // true || false : true, so lan goi = 1    - check(false) KHONG chay
+
+        calls = 0;
+        boolean c = check(false) &amp; check(true);
+        IO.println("false &amp;  true : " + c + ", so lan goi = " + calls);
+        // false &amp;  true : false, so lan goi = 2   - &amp; luon chay ca hai
+
+        calls = 0;
+        boolean d = check(true) | check(false);
+        IO.println("true  | false : " + d + ", so lan goi = " + calls);
+        // true  | false : true, so lan goi = 2    - | luon chay ca hai
+    }
+}</code></pre>
+    </div>
+
+    <h3>Ứng dụng quan trọng nhất: chống NullPointerException</h3>
+
+    <p>Idiom quen thuộc <code class="inline">s != null &amp;&amp; s.length() &gt; 0</code> hoạt động được nhờ short-circuit: nhánh phải chỉ chạy khi nhánh trái đã xác nhận không null.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String s = null;
+IO.println("s != null &amp;&amp; s.length() &gt; 0 : " + (s != null &amp;&amp; s.length() &gt; 0));
+// s != null &amp;&amp; s.length() &gt; 0 : false    - an toan, khong NPE
+
+try {
+    IO.println(s != null &amp; s.length() &gt; 0);
+} catch (NullPointerException e) {
+    IO.println("s != null &amp;  s.length() &gt; 0 : NullPointerException");
+}
+// s != null &amp;  s.length() &gt; 0 : NullPointerException   - &amp; chay ca s.length()</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Thứ tự điều kiện có ý nghĩa:</strong> đặt check null/rẻ tiền ở bên trái. <code class="inline">user != null &amp;&amp; user.isActive()</code> an toàn; đảo thành <code class="inline">user.isActive() &amp;&amp; user != null</code> là NPE. Tuyệt đối không dùng <code class="inline">&amp;</code> cho điều kiện có thể null — nó vẫn nổ như thường.</div>
+
+    <h3><code class="inline">&amp;</code> và <code class="inline">|</code> trên boolean — không short-circuit</h3>
+
+    <p><code class="inline">&amp;</code> (bitwise AND) và <code class="inline">|</code> (bitwise OR) khi áp vào hai <code class="inline">boolean</code> cũng cho kết quả logic, nhưng <strong>luôn đánh giá cả hai nhánh</strong>. Chúng hữu ích khi cả hai vế đều là phép tính không có side effect (ví dụ gộp cờ), còn cho điều kiện thông thường hãy dùng <code class="inline">&amp;&amp;</code>/<code class="inline">||</code>.</p>
+
+    <div class="note"><strong>Góc Node.js:</strong> JS có truthy/falsy nên viết được <code class="inline">if (count)</code> hay <code class="inline">if (name)</code>. Java <strong>bắt buộc</strong> điều kiện là <code class="inline">boolean</code> — số, chuỗi, object đều không tự chuyển. Và trong JS, <code class="inline">a &amp;&amp; b</code> trả về <em>một trong hai toán hạng</em>, còn Java luôn trả <code class="inline">boolean</code>. Pattern JS <code class="inline">value || defaultValue</code> khi sang Java dùng ternary hoặc <code class="inline">Objects.requireNonNullElse</code>.</div>
+
+    <p>Thử compile đoạn kiểu JS:</p>
+
+    <div class="errblock">
+      <pre>ErrTruthy.java:4: error: incompatible types: int cannot be converted to boolean
+        if (count) {
+            ^
+1 error</pre>
+    </div>
+
+    <h2 id="so-sanh">3. Toán tử so sánh <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Nhóm so sánh gồm <code class="inline">==</code>, <code class="inline">!=</code>, <code class="inline">&lt;</code>, <code class="inline">&gt;</code>, <code class="inline">&lt;=</code>, <code class="inline">&gt;=</code> — tất cả trả về <code class="inline">boolean</code>.</p>
+
+    <ul>
+      <li>Với <strong>primitive</strong>, <code class="inline">==</code> so <strong>giá trị</strong>: <code class="inline">5 == 5</code> là true.</li>
+      <li>Với <strong>reference</strong>, <code class="inline">==</code> so <strong>địa chỉ</strong> (có phải cùng một object không). Muốn so nội dung phải dùng <code class="inline">.equals()</code> — chi tiết và cache wrapper đã có ở <a href="index.html#wrapper">Biến trong Java — mục 12</a> và <a href="index.html#string">mục 14</a>.</li>
+      <li>Java <strong>không có <code class="inline">===</code></strong>. <code class="inline">==</code> của Java đã là so sánh chặt, không ép kiểu như <code class="inline">==</code> của JS.</li>
+    </ul>
+
+    <h3>Không so sánh float/double bằng <code class="inline">==</code></h3>
+
+    <p>Số thực IEEE 754 có sai số biểu diễn, nên so bằng <code class="inline">==</code> gần như luôn sai. Ví dụ chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">double a = 0.1 + 0.2;
+double b = 0.3;
+IO.println("0.1 + 0.2        = " + a);              // 0.30000000000000004
+IO.println("a == b           = " + (a == b));       // false
+IO.println("|a - b|          = " + Math.abs(a - b)); // 5.551115123125783E-17
+
+double eps = 1e-9;
+IO.println("|a - b| &lt; 1e-9   = " + (Math.abs(a - b) &lt; eps));  // true
+
+IO.println("Double.compare a,b = " + Double.compare(a, b));   // 1
+IO.println("Double.compare a,a = " + Double.compare(a, a));   // 0
+
+IO.println("NaN == NaN       = " + (Double.NaN == Double.NaN));            // false
+IO.println("compare NaN,NaN  = " + Double.compare(Double.NaN, Double.NaN)); // 0
+IO.println("0.0 == -0.0      = " + (0.0 == -0.0));                          // true
+IO.println("Float.compare 1,1 = " + Float.compare(1.0f, 1.0f));             // 0
+
+IO.println("BigDecimal 0.1+0.2 = " + new BigDecimal("0.1").add(new BigDecimal("0.2")));  // 0.3
+IO.println("compareTo 0.3      = " + new BigDecimal("0.1").add(new BigDecimal("0.2")).compareTo(new BigDecimal("0.3")));  // 0</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Epsilon</strong> — coi hai số là bằng nhau nếu <code class="inline">Math.abs(a - b) &lt; 1e-9</code> (chọn epsilon theo độ chính xác nghiệp vụ).</li>
+      <li><strong>Double.compare / Float.compare</strong> — so sánh chuẩn, xử lý đúng NaN và <code class="inline">-0.0</code>; trả về -1, 0, 1 như <code class="inline">compareTo</code>.</li>
+      <li><strong>NaN</strong> — mọi phép <code class="inline">==</code> với NaN đều false, kể cả <code class="inline">NaN == NaN</code>; <code class="inline">Double.compare(NaN, NaN) == 0</code>.</li>
+      <li><strong>Tiền tệ</strong> — đừng dùng float/double từ đầu; dùng <code class="inline">BigDecimal</code> (xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>).</li>
+    </ul>
+
+    <h2 id="tang-giam">4. Tăng/giảm <code class="inline">++</code> và <code class="inline">--</code></h2>
+
+    <p>Đây là toán tử một ngôi, có hai dạng cho mỗi phép:</p>
+
+    <table>
+      <thead>
+        <tr><th>Dạng</th><th>Tên</th><th>Thứ tự</th><th>Trả về</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">++i</code></td><td>Prefix increment</td><td>Tăng trước</td><td>Giá trị <strong>mới</strong></td></tr>
+        <tr><td><code class="inline">i++</code></td><td>Postfix increment</td><td>Tăng sau</td><td>Giá trị <strong>cũ</strong></td></tr>
+        <tr><td><code class="inline">--i</code></td><td>Prefix decrement</td><td>Giảm trước</td><td>Giá trị mới</td></tr>
+        <tr><td><code class="inline">i--</code></td><td>Postfix decrement</td><td>Giảm sau</td><td>Giá trị cũ</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">int i = 5;
+IO.println("i ban dau   : " + i);        // i ban dau   : 5
+IO.println("i++ tra ve  : " + (i++));    // i++ tra ve  : 5   - tra gia tri cu
+IO.println("i sau i++   : " + i);        // i sau i++   : 6
+IO.println("++i tra ve  : " + (++i));    // ++i tra ve  : 7   - tra gia tri moi
+IO.println("i sau ++i   : " + i);        // i sau ++i   : 7
+
+int j = 1;
+int k = j++ + ++j;
+IO.println("j++ + ++j   : " + k + " (j = " + j + ")");
+// j++ + ++j   : 4 (j = 3)
+// j++ tra 1 (j thanh 2); ++j tang j thanh 3 va tra 3 -> 1 + 3 = 4
+
+int x = 5;
+int y = x++ + x++;
+IO.println("x++ + x++   : " + y + " (x = " + x + ")");
+// x++ + x++   : 11 (x = 7)
+// 5 + 6 = 11, vi ve trai tra 5 (x=6) roi ve phai tra 6 (x=7)
+
+int z = ++x + x++;
+IO.println("++x + x++   : " + z + " (x = " + x + ")");
+// ++x + x++   : 16 (x = 9)
+// x dang la 7: ++x tra 8 (x=8), x++ tra 8 (x=9) -> 16</code></pre>
+    </div>
+
+    <p>Biểu thức <code class="inline">j++ + ++j</code> là câu hỏi phỏng vấn kinh điển. Cách giải: Java đánh giá <strong>trái sang phải</strong>; mỗi toán tử postfix trả giá trị cũ rồi mới tăng; prefix tăng rồi trả giá trị mới.</p>
+
+    <h3>Bẫy thường gặp</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">int m = 5;
+m = m++;
+IO.println("m = m++     : " + m);           // m = m++     : 5   - khong tang!
+
+byte by = Byte.MAX_VALUE;                  // 127
+by++;
+IO.println("byte 127 ++ : " + by);         // byte 127 ++ : -128  - tran quay vong
+
+int p = 0;
+int q = p++ + ++p + p--;
+IO.println("p++ + ++p + p--: " + q + " (p = " + p + ")");
+// p++ + ++p + p--: 4 (p = 1)   - 0 + 2 + 2 = 4</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">m = m++</code> là <strong>no-op</strong>: <code class="inline">m++</code> trả 5 (m thành 6), rồi phép gán ghi đè lại 5. Không bao giờ viết kiểu này.</li>
+      <li><code class="inline">by++</code> trên <code class="inline">byte</code> hợp lệ (có ngầm ép kiểu) nhưng tràn thì quay vòng âm thầm — xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>.</li>
+      <li>Quy tắc production: <strong>không nhồi <code class="inline">++</code>/<code class="inline">--</code> vào biểu thức</strong>. Mỗi dòng một phép tăng, code dễ đọc và không phụ thuộc thứ tự đánh giá.</li>
+    </ul>
+
+    <h2 id="bitwise">5. Bitwise &amp; shift <span class="badge b-junior">Nhận biết</span></h2>
+
+    <p>Nhóm toán tử bit làm việc trực tiếp trên từng bit của số nguyên. Trong code nghiệp vụ ít gặp, nhưng rất hay dùng cho <strong>cờ (bit flags)</strong>, quyền, giao thức, hash và tối ưu.</p>
+
+    <table>
+      <thead>
+        <tr><th>Toán tử</th><th>Tên</th><th>Ví dụ (int)</th><th>Kết quả</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">&amp;</code></td><td>AND</td><td><code class="inline">0b1100 &amp; 0b1010</code></td><td><code class="inline">0b1000</code> = 8</td></tr>
+        <tr><td><code class="inline">|</code></td><td>OR</td><td><code class="inline">0b1100 | 0b1010</code></td><td><code class="inline">0b1110</code> = 14</td></tr>
+        <tr><td><code class="inline">^</code></td><td>XOR</td><td><code class="inline">0b1100 ^ 0b1010</code></td><td><code class="inline">0b0110</code> = 6</td></tr>
+        <tr><td><code class="inline">~</code></td><td>Đảo bit (complement)</td><td><code class="inline">~0b1100</code></td><td>-13</td></tr>
+        <tr><td><code class="inline">&lt;&lt;</code></td><td>Dịch trái</td><td><code class="inline">0b1100 &lt;&lt; 1</code></td><td>24</td></tr>
+        <tr><td><code class="inline">&gt;&gt;</code></td><td>Dịch phải giữ dấu</td><td><code class="inline">0b1100 &gt;&gt; 1</code></td><td>6</td></tr>
+        <tr><td><code class="inline">&gt;&gt;&gt;</code></td><td>Dịch phải lấp 0</td><td><code class="inline">-8 &gt;&gt;&gt; 1</code></td><td>2147483644</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">int a = 0b1100;
+int b = 0b1010;
+IO.println("a &amp; b    = " + (a &amp; b));   // 8
+IO.println("a | b    = " + (a | b));   // 14
+IO.println("a ^ b    = " + (a ^ b));   // 6
+IO.println("~a       = " + (~a));      // -13
+IO.println("~0       = " + (~0));      // -1
+IO.println("a &lt;&lt; 1   = " + (a &lt;&lt; 1));  // 24
+IO.println("a &gt;&gt; 1   = " + (a &gt;&gt; 1));  // 6
+
+IO.println("1 &lt;&lt; 31  = " + (1 &lt;&lt; 31));    // -2147483648   - bit dau thanh 1
+IO.println("1 &lt;&lt; 32  = " + (1 &lt;&lt; 32));    // 1            - 32 &amp; 0b11111 = 0
+IO.println("1 &lt;&lt; 33  = " + (1 &lt;&lt; 33));    // 2            - 33 &amp; 0b11111 = 1
+IO.println("1L &lt;&lt; 63 = " + (1L &lt;&lt; 63));   // -9223372036854775808
+IO.println("1L &lt;&lt; 64 = " + (1L &lt;&lt; 64));   // 1            - long dung 6 bit cuoi
+
+int neg = -8;
+IO.println("-8 &gt;&gt; 1  = " + (neg &gt;&gt; 1));   // -4           - giu dau am
+IO.println("-8 &gt;&gt;&gt; 1 = " + (neg &gt;&gt;&gt; 1));  // 2147483644   - lap 0
+IO.println("-8 &gt;&gt;&gt; 28= " + (neg &gt;&gt;&gt; 28)); // 15</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy shift count:</strong> Java chỉ dùng <strong>5 bit thấp</strong> của số dịch với <code class="inline">int</code> (vì cần 5 bit để biểu diễn 0..31) và <strong>6 bit thấp</strong> với <code class="inline">long</code>. Nên <code class="inline">1 &lt;&lt; 32</code> = <code class="inline">1 &lt;&lt; 0</code> = 1, <code class="inline">1 &lt;&lt; 33</code> = <code class="inline">1 &lt;&lt; 1</code> = 2 — không phải lỗi compile, chỉ là kết quả "lạ". Và <code class="inline">1 &lt;&lt; 31</code> là số âm vì bit 31 là bit dấu.</div>
+
+    <h3>Cờ bit với enum (bit flags)</h3>
+
+    <p>Mỗi quyền là một bit; gộp nhiều quyền bằng <code class="inline">|</code>, kiểm tra bằng <code class="inline">&amp;</code>, bật bằng <code class="inline">|=</code>, tắt bằng <code class="inline">&amp;= ~</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.EnumSet;
+
+public class BitwiseShiftDemo {
+    enum Permission {
+        READ(1 &lt;&lt; 0),
+        WRITE(1 &lt;&lt; 1),
+        DELETE(1 &lt;&lt; 2);
+
+        static final int ALL = READ.bit | WRITE.bit | DELETE.bit;
+
+        final int bit;
+
+        Permission(int bit) {
+            this.bit = bit;
+        }
+    }
+
+    static boolean has(int mask, Permission p) {
+        return (mask &amp; p.bit) != 0;
+    }
+
+    static int validate(int mask) {
+        if ((mask &amp; ~Permission.ALL) != 0) {
+            throw new IllegalArgumentException("Bit la: " + mask);
+        }
+        return mask;
+    }
+
+    public static void main() {
+        IO.println("READ.bit    = " + Permission.READ.bit);     // 1
+        IO.println("WRITE.bit   = " + Permission.WRITE.bit);    // 2
+        IO.println("DELETE.bit  = " + Permission.DELETE.bit);   // 4
+
+        int mask = Permission.READ.bit | Permission.WRITE.bit;
+        IO.println("mask R|W    = " + mask + " (binary " + Integer.toBinaryString(mask) + ")");
+        // mask R|W    = 3 (binary 11)
+
+        IO.println("has READ    = " + has(mask, Permission.READ));    // true
+        IO.println("has DELETE  = " + has(mask, Permission.DELETE));  // false
+
+        mask |= Permission.DELETE.bit;
+        IO.println("sau |= DEL  = " + mask);    // 7
+        mask &amp;= ~Permission.WRITE.bit;
+        IO.println("sau &amp;= ~W   = " + mask);    // 5
+        mask ^= Permission.READ.bit;
+        IO.println("sau ^= R    = " + mask);    // 4
+
+        IO.println("validate(7) = " + validate(7));   // 7
+        try {
+            validate(8);
+        } catch (IllegalArgumentException e) {
+            IO.println("validate(8) : " + e.getMessage());   // Bit la: 8
+        }
+
+        IO.println("EnumSet     = " + EnumSet.of(Permission.READ, Permission.WRITE));
+        // EnumSet     = [READ, WRITE]
+    }
+}</code></pre>
+    </div>
+
+    <div class="note"><strong>Production:</strong> khi làm việc với tập nhỏ các cờ, <code class="inline">EnumSet&lt;Permission&gt;</code> là lựa chọn hiện đại — type-safe, đọc rõ nghĩa hơn bitmask, vẫn tối ưu. Chỉ dùng bitmask khi giao tiếp với DB/protocol đã quy định sẵn dạng số, hoặc cần nhồi cờ vào một cột <code class="inline">int</code>/<code class="inline">long</code>.</div>
+
+    <h3>Ứng dụng: hash code</h3>
+
+    <p><code class="inline">String.hashCode()</code> dùng công thức <code class="inline">h = 31 * h + c</code>, và <code class="inline">31 * h</code> tương đương <code class="inline">(h &lt;&lt; 5) - h</code> — trình biên dịch/JIT hay dùng dạng dịch bit này. Chạy thử:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">String s = "java";
+int h = 0;
+for (char c : s.toCharArray()) {
+    h = 31 * h + c;
+}
+IO.println("hash tinh tay = " + h);          // 3254818
+IO.println("s.hashCode()  = " + s.hashCode()); // 3254818
+IO.println("(h &lt;&lt; 5) - h  = " + ((h &lt;&lt; 5) - h)); // 100899358  = 31 * 3254818</code></pre>
+    </div>
+
+    <div class="note"><strong>Góc Node.js:</strong> JS cũng có đủ bộ toán tử bit này (kể cả <code class="inline">&gt;&gt;&gt;</code>), nhưng mọi phép bit trong JS đều ép về số nguyên <strong>32-bit</strong> rồi trả về <code class="inline">number</code> — không có bitwise 64-bit. Java làm việc đúng theo width của <code class="inline">int</code> (32-bit) hoặc <code class="inline">long</code> (64-bit), nên <code class="inline">1L &lt;&lt; 40</code> mới có ý nghĩa.</div>
+
+    <h2 id="precedence">6. Precedence — thứ tự ưu tiên</h2>
+
+    <p>Các nhóm toán tử, từ ưu tiên cao xuống thấp:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nhóm</th><th>Toán tử</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Postfix</td><td><code class="inline">expr++ expr--</code></td></tr>
+        <tr><td>Prefix / một ngôi</td><td><code class="inline">++expr --expr +expr -expr ~ !</code></td></tr>
+        <tr><td>Nhân chia</td><td><code class="inline">* / %</code></td></tr>
+        <tr><td>Cộng trừ</td><td><code class="inline">+ -</code> (còn là nối chuỗi)</td></tr>
+        <tr><td>Shift</td><td><code class="inline">&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code></td></tr>
+        <tr><td>Quan hệ</td><td><code class="inline">&lt; &gt; &lt;= &gt;= instanceof</code></td></tr>
+        <tr><td>So bằng</td><td><code class="inline">== !=</code></td></tr>
+        <tr><td>Bit AND</td><td><code class="inline">&amp;</code></td></tr>
+        <tr><td>Bit XOR</td><td><code class="inline">^</code></td></tr>
+        <tr><td>Bit OR</td><td><code class="inline">|</code></td></tr>
+        <tr><td>Logic AND</td><td><code class="inline">&amp;&amp;</code></td></tr>
+        <tr><td>Logic OR</td><td><code class="inline">||</code></td></tr>
+        <tr><td>Ternary</td><td><code class="inline">? :</code></td></tr>
+        <tr><td>Gán</td><td><code class="inline">= += -= *= /= %= &amp;= ^= |= &lt;&lt;= &gt;&gt;= &gt;&gt;&gt;=</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("2 + 3 * 4      = " + (2 + 3 * 4));      // 14  - nhan truoc cong
+IO.println("(2 + 3) * 4    = " + ((2 + 3) * 4));    // 20
+IO.println("1 &lt;&lt; 2 + 3     = " + (1 &lt;&lt; 2 + 3));     // 32  - cong (2+3=5) truoc shift
+IO.println("(1 &lt;&lt; 2) + 3   = " + ((1 &lt;&lt; 2) + 3));   // 7
+IO.println("1 + 2 + \"x\"   = " + (1 + 2 + "x"));   // 3x  - cong so truoc
+IO.println("true || false &amp;&amp; false      = " + (true || false &amp;&amp; false));    // true  - &amp;&amp; truoc ||
+IO.println("(true || false) &amp;&amp; false    = " + ((true || false) &amp;&amp; false));  // false
+IO.println("5 &gt; 3 == true  = " + (5 &gt; 3 == true));  // true  - so sanh lon truoc ==
+IO.println("1 | 2 &amp; 2      = " + (1 | 2 &amp; 2));      // 3     - &amp; truoc |
+IO.println("(1 | 2) &amp; 2    = " + ((1 | 2) &amp; 2));    // 2
+IO.println("10 - 4 - 3     = " + (10 - 4 - 3));     // 3     - cung cap, trai sang phai
+IO.println("2 + 3 &gt; 4 ? 10 : 20         = " + (2 + 3 &gt; 4 ? 10 : 20));  // 10</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy precedence với bitwise:</strong> <code class="inline">==</code> ưu tiên <em>cao hơn</em> <code class="inline">&amp;</code>, nên <code class="inline">1 &amp; 3 == 3</code> được hiểu là <code class="inline">1 &amp; (3 == 3)</code> — vế phải là boolean trong khi vế trái là int, compile fail ngay:</div>
+
+    <div class="errblock">
+      <pre>ErrBitwise.java:3: error: bad operand types for binary operator '&amp;'
+        int result = 1 &amp; 3 == 3;
+                       ^
+  first type:  int
+  second type: boolean
+1 error</pre>
+    </div>
+
+    <p>Lời khuyên thực dụng: <strong>đừng học thuộc bảng precedence</strong>. Khi trộn nhiều nhóm toán tử, cứ thêm ngoặc cho rõ ý — người đọc code không phải tự suy luận, và compiler cũng không phàn nàn.</p>
+
+    <h2 id="math">7. Lớp <code class="inline">Math</code> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">java.lang.Math</code> chứa toàn static method toán học. Các method hay dùng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Ý nghĩa</th><th>Kiểu trả về</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Math.abs(x)</code></td><td>Giá trị tuyệt đối</td><td>Cùng kiểu tham số</td></tr>
+        <tr><td><code class="inline">Math.max(a, b) / min(a, b)</code></td><td>Lớn hơn / nhỏ hơn</td><td>Cùng kiểu tham số</td></tr>
+        <tr><td><code class="inline">Math.pow(a, b)</code></td><td>a mũ b</td><td><code class="inline">double</code> (luôn luôn)</td></tr>
+        <tr><td><code class="inline">Math.sqrt(x)</code></td><td>Căn bậc hai</td><td><code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">Math.round(x)</code></td><td>Làm tròn .5 lên (với số dương)</td><td><code class="inline">long</code> (double) / <code class="inline">int</code> (float)</td></tr>
+        <tr><td><code class="inline">Math.floor(x) / ceil(x)</code></td><td>Xuống / lên số nguyên gần nhất</td><td><code class="inline">double</code></td></tr>
+        <tr><td><code class="inline">Math.floorMod(a, b)</code></td><td>Modulo cùng dấu với số chia — số chia dương thì kết quả không âm</td><td>int/long</td></tr>
+        <tr><td><code class="inline">Math.addExact / multiplyExact</code></td><td>Cộng/nhân, ném lỗi nếu tràn</td><td>int/long</td></tr>
+        <tr><td><code class="inline">Math.toIntExact(long)</code></td><td>Ép long sang int an toàn</td><td><code class="inline">int</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">IO.println("abs(-5)        = " + Math.abs(-5));              // 5
+IO.println("abs(MIN_VALUE) = " + Math.abs(Integer.MIN_VALUE)); // -2147483648
+IO.println("max(3, 7)      = " + Math.max(3, 7));            // 7
+IO.println("min(3, 7)      = " + Math.min(3, 7));            // 3
+IO.println("pow(2, 10)     = " + Math.pow(2, 10));           // 1024.0
+IO.println("(int) pow      = " + (int) Math.pow(2, 10));     // 1024
+IO.println("(int) pow(2,31)= " + (int) Math.pow(2, 31));     // 2147483647
+IO.println("sqrt(16)       = " + Math.sqrt(16));             // 4.0
+IO.println("hypot(3, 4)    = " + Math.hypot(3, 4));          // 5.0
+IO.println("round(2.5)     = " + Math.round(2.5));           // 3
+IO.println("round(-2.5)    = " + Math.round(-2.5));          // -2
+IO.println("round(2.4)     = " + Math.round(2.4));           // 2
+IO.println("floor(2.9)     = " + Math.floor(2.9));           // 2.0
+IO.println("ceil(2.1)      = " + Math.ceil(2.1));            // 3.0
+IO.println("floor(-2.1)    = " + Math.floor(-2.1));          // -3.0
+IO.println("-1 % 7         = " + (-1 % 7));                  // -1
+IO.println("floorMod(-1, 7)= " + Math.floorMod(-1, 7));      // 6
+IO.println("floorDiv(-1, 7)= " + Math.floorDiv(-1, 7));      // -1
+IO.println("round(double) type = " + ((Object) Math.round(2.5)).getClass().getSimpleName());   // Long
+IO.println("round(float) type  = " + ((Object) Math.round(2.5f)).getClass().getSimpleName());  // Integer
+IO.println("PI             = " + Math.PI);                   // 3.141592653589793
+IO.println("max(0.0, -0.0) = " + Math.max(0.0, -0.0));       // 0.0
+
+try {
+    Math.addExact(Integer.MAX_VALUE, 1);
+} catch (ArithmeticException e) {
+    IO.println("addExact     : " + e.getMessage());          // integer overflow
+}
+try {
+    Math.multiplyExact(1_000_000, 1_000_000);
+} catch (ArithmeticException e) {
+    IO.println("multiplyExact: " + e.getMessage());          // integer overflow
+}
+try {
+    Math.toIntExact(Long.MAX_VALUE);
+} catch (ArithmeticException e) {
+    IO.println("toIntExact   : " + e.getMessage());          // integer overflow
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">Math.pow</code> luôn trả <code class="inline">double</code></strong> — đây là bẫy phổ biến. <code class="inline">Math.pow(2, 10)</code> in ra <code class="inline">1024.0</code>; nếu cần int phải ép. Và <code class="inline">(int) Math.pow(2, 31)</code> bị kẹp về <code class="inline">Integer.MAX_VALUE</code> chứ không tràn — xem luật ép double → int ở <a href="data-types.html#narrowing">Data Types — mục 4</a>.</li>
+      <li><strong><code class="inline">Math.round</code></strong> làm tròn theo công thức <code class="inline">floor(x + 0.5)</code>, nên <code class="inline">-2.5 → -2</code> (không phải <code class="inline">-3</code>). Nếu nghiệp vụ yêu cầu "làm tròn xa số 0" (<code class="inline">-2.5 → -3</code>), dùng <code class="inline">BigDecimal.setScale(..., RoundingMode.UP/HALF_UP)</code>.</li>
+      <li><strong><code class="inline">Math.abs(Integer.MIN_VALUE)</code> vẫn âm</strong> vì <code class="inline">-2147483648</code> không có biểu diễn dương trong 32-bit. Đừng dùng <code class="inline">Math.abs</code> làm "chuẩn hóa" ID/timestamp.</li>
+      <li><strong><code class="inline">Math.floorMod</code></strong> — modulo của Java giữ dấu số bị chia (<code class="inline">-1 % 7 = -1</code>), còn <code class="inline">floorMod</code> cho kết quả cùng dấu với số chia — số chia dương thì luôn không âm (<code class="inline">floorMod(-1, 7) = 6</code>). Rất hữu ích cho chỉ số vòng (circular index) — xem <a href="#pitfalls">mục 11</a>.</li>
+      <li><strong><code class="inline">Math.addExact</code>, <code class="inline">multiplyExact</code>, <code class="inline">toIntExact</code></strong> ném <code class="inline">ArithmeticException</code> (message <code class="inline">integer overflow</code>) thay vì tràn âm thầm — xem <a href="index.html#tran-so">Biến trong Java — mục 9</a>.</li>
+    </ul>
+
+    <h2 id="random">8. Sinh số ngẫu nhiên <span class="badge b-junior">Nhận biết</span></h2>
+
+    <p>Có 4 lựa chọn, dùng theo mục đích:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cách</th><th>Dùng cho</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Math.random()</code></td><td>Tiện dụng, không cần seed</td><td>Trả <code class="inline">double</code> trong <code class="inline">[0.0, 1.0)</code>; phải công thức hóa để ra khoảng khác</td></tr>
+        <tr><td><code class="inline">java.util.Random</code></td><td>Game, mô phỏng, test</td><td>Có seed → tái lập được; <strong>không an toàn</strong> cho bảo mật</td></tr>
+        <tr><td><code class="inline">SecureRandom</code></td><td>Token, OTP, mật khẩu, session ID</td><td>Chậm hơn nhưng không đoán được từ seed</td></tr>
+        <tr><td><code class="inline">ThreadLocalRandom</code></td><td>Code đa luồng</td><td>Nhanh hơn <code class="inline">Random</code> chia sẻ, không cần new</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">double r = Math.random();
+IO.println("Math.random() trong [0,1) : " + (r &gt;= 0.0 &amp;&amp; r &lt; 1.0));   // true
+
+int dice = (int) (Math.random() * 6) + 1;
+IO.println("dice trong 1..6           : " + (dice &gt;= 1 &amp;&amp; dice &lt;= 6)); // true
+
+Random seeded = new Random(42);
+IO.println("seed 42 #1                : " + seeded.nextInt(100));   // 30
+IO.println("seed 42 #2                : " + seeded.nextInt(100));   // 63
+Random seeded2 = new Random(42);
+IO.println("seed 42 tao lai #1        : " + seeded2.nextInt(100));  // 30
+
+Random rnd = new Random();
+int bound = rnd.nextInt(10);
+IO.println("nextInt(10) trong 0..9    : " + (bound &gt;= 0 &amp;&amp; bound &lt; 10));   // true
+IO.println("nextBoolean()             : " + rnd.nextBoolean());                // true/false
+IO.println("nextDouble() trong [0,1)  : " + (rnd.nextDouble() &lt; 1.0));        // true
+
+ThreadLocalRandom tl = ThreadLocalRandom.current();
+int tlVal = tl.nextInt(1, 7);
+IO.println("TLR nextInt(1, 7) trong 1..6 : " + (tlVal &gt;= 1 &amp;&amp; tlVal &lt;= 6)); // true
+
+try {
+    new Random().nextInt(0);
+} catch (IllegalArgumentException e) {
+    IO.println("nextInt(0) : " + e.getMessage());   // bound must be positive
+}
+
+byte[] token = new byte[16];
+new SecureRandom().nextBytes(token);
+String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(token);
+IO.println("SecureRandom 16 byte -&gt; token base64 dai: " + encoded.length());   // 22</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Công thức khoảng:</strong> <code class="inline">(int) (Math.random() * n) + min</code> cho số nguyên trong <code class="inline">[min, min + n)</code>. Với <code class="inline">Random</code> thì viết gọn hơn: <code class="inline">rnd.nextInt(1, 7)</code> cho 1..6 (cận trên không tính).</li>
+      <li><strong>Seed</strong> tái lập dãy số — cực hữu ích khi test: cùng seed luôn ra cùng kết quả. Nhưng vì tái lập được nên <strong>tuyệt đối không dùng <code class="inline">Random</code> cho token bảo mật</strong>; kẻ tấn công dò được seed là đoán được dãy.</li>
+      <li><strong>SecureRandom</strong> lấy entropy từ hệ điều hành; tạo token nên dùng <code class="inline">nextBytes</code> + Base64 URL-safe (16 byte → 22 ký tự, không <code class="inline">+ / =</code>).</li>
+      <li><strong>ThreadLocalRandom</strong> tránh tranh chấp giữa các thread — thay cho việc chia sẻ một <code class="inline">Random</code> chung (nhiều thread cùng đọc sẽ bị chậm và có thể là nguồn contention).</li>
+    </ul>
+
+    <div class="note"><strong>Góc Node.js:</strong> <code class="inline">Math.random()</code> của hai ngôn ngữ giống nhau về ý tưởng và đều <strong>không dùng cho bảo mật</strong>. Bên JS có <code class="inline">crypto.getRandomValues()</code> / <code class="inline">crypto.randomUUID()</code>; bên Java là <code class="inline">SecureRandom</code> (và <code class="inline">java.util.UUID.randomUUID()</code> — bên trong cũng dùng SecureRandom).</div>
+
+    <h2 id="ternary">9. Ternary <code class="inline">? :</code></h2>
+
+    <p>Toán tử ba ngôi là cách viết if/else <strong>trả về giá trị</strong> trên một dòng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int score = 75;
+String grade = score &gt;= 80 ? "A" : score &gt;= 60 ? "B" : "C";
+IO.println("grade        = " + grade);        // B
+
+int a = 5;
+int b = 3;
+IO.println("max          = " + (a &gt; b ? a : b));   // 5
+
+String nhan = a == b ? "bang" : a &gt; b ? "lon hon" : "nho hon";
+IO.println("nhan         = " + nhan);          // lon hon
+
+boolean flag = true;
+IO.println("int/double   = " + (flag ? 1 : 2.0));   // 1.0
+
+int safe = flag ? 0 : Integer.parseInt("x");
+IO.println("chi cham 1 nhanh = " + safe);     // 0
+
+try {
+    int risky = flag ? Integer.parseInt("x") : 0;
+    IO.println(risky);
+} catch (NumberFormatException e) {
+    IO.println("nhanh duoc chon moi chay: NumberFormatException");
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Lazy:</strong> chỉ nhánh được chọn mới được đánh giá — nên <code class="inline">flag ? 0 : Integer.parseInt("x")</code> chạy an toàn khi <code class="inline">flag</code> true; đảo lại là nổ <code class="inline">NumberFormatException</code>.</li>
+      <li><strong>Kiểu kết quả:</strong> hai nhánh được đưa về cùng một kiểu theo numeric promotion — <code class="inline">flag ? 1 : 2.0</code> trả <code class="inline">1.0</code>. Bẫy unboxing khi một nhánh là wrapper <code class="inline">null</code> đã phân tích ở <a href="data-types.html#ternary">Data Types — mục 7</a>.</li>
+      <li><strong>Đọc hiểu:</strong> lồng 2-3 tầng vẫn ổn, sâu hơn thì nên chuyển sang <code class="inline">if/else</code> hoặc <code class="inline">switch</code> (và <code class="inline">switch expression</code> ở Control Flow). Đừng viết ternary mà mỗi nhánh lại là một ternary khác khó đọc.</li>
+      <li><strong>Không lạm dụng:</strong> ternary dùng để <em>lấy giá trị</em>, đừng dùng để chạy side effect kiểu <code class="inline">flag ? doA() : doB();</code> — dùng <code class="inline">if/else</code> cho rõ.</li>
+    </ul>
+
+    <div class="note"><strong>Góc Node.js:</strong> JS cũng có <code class="inline">?:</code> nhưng nhận điều kiện truthy; Java bắt buộc <code class="inline">boolean</code>. JS có thêm optional chaining <code class="inline">?.</code> và nullish coalescing <code class="inline">??</code> — Java không có; thay thế bằng <code class="inline">Optional</code>, <code class="inline">Objects.requireNonNullElse</code> hoặc ternary.</div>
+
+    <h2 id="assignment">10. Assignment &amp; compound</h2>
+
+    <p>Các toán tử gán: <code class="inline">=</code>, <code class="inline">+=</code>, <code class="inline">-=</code>, <code class="inline">*=</code>, <code class="inline">/=</code>, <code class="inline">%=</code>, <code class="inline">&amp;=</code>, <code class="inline">^=</code>, <code class="inline">|=</code>, <code class="inline">&lt;&lt;=</code>, <code class="inline">&gt;&gt;=</code>, <code class="inline">&gt;&gt;&gt;=</code>.</p>
+
+    <p>Phần quan trọng nhất của compound assignment — ngầm ép kiểu về kiểu biến bên trái — đã có ở <a href="data-types.html#compound">Data Types — mục 6</a>, trang này không nhắc lại. Ở đây chỉ bổ sung hai điểm về bản thân phép gán:</p>
+
+    <p><strong>1. Phép gán là biểu thức, trả về giá trị vừa gán</strong> — nên gán chuỗi được, chạy từ phải sang trái:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int a, b, c;
+a = b = c = 5;
+IO.println(a + " " + b + " " + c);   // 5 5 5
+
+int d = 10;
+int e = d = 3;
+IO.println("d = " + d + ", e = " + e);   // d = 3, e = 3</code></pre>
+    </div>
+
+    <p><strong>2. Compound assignment kết hợp với <code class="inline">++</code> trong chỉ số mảng</strong> — chạy được nhưng là code smell, hãy tách dòng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">int[] arr = {1, 2, 3};
+int i = 1;
+arr[i++] += 10;
+IO.println("arr[i++] += 10 -&gt; " + java.util.Arrays.toString(arr) + ", i = " + i);
+// arr[i++] += 10 -&gt; [1, 12, 3], i = 2</code></pre>
+    </div>
+
+    <div class="note warn">Đừng bao giờ gán trong điều kiện kiểu <code class="inline">if (user = findUser())</code> — Java sẽ báo lỗi vì <code class="inline">user</code> không phải <code class="inline">boolean</code> (khác C), nhưng nếu cả hai đều boolean thì lại compile và gây bug. Cần so sánh thì dùng <code class="inline">==</code>.</div>
+
+    <h2 id="pitfalls">11. Pitfalls tổng hợp &amp; production patterns</h2>
+
+    <h3>11.1 Bảng pitfalls</h3>
+
+    <table>
+      <thead>
+        <tr><th>Đoạn code</th><th>Kết quả</th><th>Cách phòng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">s != null &amp; s.length() &gt; 0</code></td><td>NullPointerException</td><td>Dùng <code class="inline">&amp;&amp;</code> để short-circuit</td></tr>
+        <tr><td><code class="inline">if (count)</code> với <code class="inline">int</code></td><td>Compile error</td><td>Viết rõ: <code class="inline">if (count != 0)</code></td></tr>
+        <tr><td><code class="inline">m = m++;</code></td><td>Không tăng, giữ nguyên giá trị cũ</td><td>Tách: <code class="inline">m++;</code></td></tr>
+        <tr><td><code class="inline">i++ + ++i</code> trong biểu thức</td><td>Phụ thuộc thứ tự, rất dễ đọc sai</td><td>Tách mỗi phép tăng một dòng</td></tr>
+        <tr><td><code class="inline">byte b = 127; b++;</code></td><td>Quay vòng thành <code class="inline">-128</code></td><td>Dùng <code class="inline">int</code>/<code class="inline">long</code>, hoặc kiểm tra biên</td></tr>
+        <tr><td><code class="inline">0.1 + 0.2 == 0.3</code></td><td><code class="inline">false</code></td><td>Epsilon hoặc <code class="inline">BigDecimal.compareTo</code></td></tr>
+        <tr><td><code class="inline">Double a, b; a == b</code></td><td>So địa chỉ, sai</td><td><code class="inline">Double.compare(a, b) == 0</code> hoặc <code class="inline">equals</code></td></tr>
+        <tr><td><code class="inline">(int) Math.pow(2, 31)</code></td><td>2147483647 (kẹp MAX, không lỗi)</td><td>Dùng <code class="inline">1L &lt;&lt; 31</code> hoặc long</td></tr>
+        <tr><td><code class="inline">1 &lt;&lt; 32</code></td><td>Bằng 1 (mask 5 bit thấp)</td><td>Kiểm tra lại số shift, tránh shift quá width</td></tr>
+        <tr><td><code class="inline">Math.abs(Integer.MIN_VALUE)</code></td><td>Vẫn âm: <code class="inline">-2147483648</code></td><td>Không dùng <code class="inline">abs</code> để chuẩn hóa giá trị biên</td></tr>
+        <tr><td><code class="inline">Math.round(-2.5)</code></td><td><code class="inline">-2</code> (không phải -3)</td><td>Cần "xa số 0" thì dùng <code class="inline">RoundingMode.UP/HALF_UP</code></td></tr>
+        <tr><td><code class="inline">-1 % 7</code> làm chỉ số</td><td><code class="inline">-1</code> → index sai</td><td><code class="inline">Math.floorMod(-1, 7)</code> = 6</td></tr>
+        <tr><td><code class="inline">new Random()</code> cho token</td><td>Đoán được, mất bảo mật</td><td><code class="inline">SecureRandom</code> + Base64</td></tr>
+        <tr><td><code class="inline">1 &amp; 3 == 3</code></td><td>Compile error (precedence)</td><td>Thêm ngoặc: <code class="inline">(1 &amp; 3) == 3</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>11.2 Production patterns</h3>
+
+    <p><strong>Chỉ số vòng với <code class="inline">Math.floorMod</code></strong> — khi index có thể âm (xoay vòng danh sách, carousel, chia ca trực):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static String ngayTrongTuan(int index) {
+    String[] days = {"Thu 2", "Thu 3", "Thu 4", "Thu 5", "Thu 6", "Thu 7", "Chu nhat"};
+    return days[Math.floorMod(index, days.length)];
+}
+
+IO.println("index -1  -&gt; " + ngayTrongTuan(-1));    // index -1  -&gt; Chu nhat
+IO.println("index 0   -&gt; " + ngayTrongTuan(0));     // index 0   -&gt; Thu 2
+IO.println("index 7   -&gt; " + ngayTrongTuan(7));     // index 7   -&gt; Thu 2
+IO.println("index 100 -&gt; " + ngayTrongTuan(100));   // index 100 -&gt; Thu 4</code></pre>
+    </div>
+
+    <p><strong>Validate bitmask</strong> — chặn dữ liệu rác từ DB/API trước khi tin tưởng các bit:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static final int READ = 1 &lt;&lt; 0;
+static final int WRITE = 1 &lt;&lt; 1;
+static final int DELETE = 1 &lt;&lt; 2;
+static final int ALL = READ | WRITE | DELETE;
+
+static int validateMask(int mask) {
+    if ((mask &amp; ~ALL) != 0) {
+        throw new IllegalArgumentException("Mask chua bit la: " + mask);
+    }
+    return mask;
+}
+
+IO.println("validateMask(5) = " + validateMask(5));   // validateMask(5) = 5
+try {
+    validateMask(8);
+} catch (IllegalArgumentException e) {
+    IO.println("validateMask(8) : " + e.getMessage());   // Mask chua bit la: 8
+}</code></pre>
+    </div>
+
+    <p><strong>Tính tiền với <code class="inline">BigDecimal</code></strong> — toán tử số học trên tiền luôn đi qua <code class="inline">BigDecimal</code>, không bao giờ dùng <code class="inline">double</code> hay <code class="inline">Math.round</code> cho số tiền. Chi tiết scale/RoundingMode ở <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">BigDecimal price = new BigDecimal("199000");
+BigDecimal vat = price.multiply(new BigDecimal("0.10"));
+IO.println("VAT 10% chua lam tron : " + vat);                              // 19900.00
+IO.println("VAT 10% lam tron      : " + vat.setScale(0, RoundingMode.HALF_UP)); // 19900
+
+int quantity = 3;
+BigDecimal total = price.multiply(BigDecimal.valueOf(quantity));
+IO.println("Tong 3 san pham       : " + total);                          // 597000</code></pre>
+    </div>
+
+    <p><strong>Thứ tự điều kiện null-safe</strong> — pattern đọc dữ liệu lồng nhau, luôn để check null/rẻ nhất bên trái:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.util.Objects;
+
+public class NullSafeConditionDemo {
+    record Customer(String name, boolean active) {}
+
+    record Order(Customer customer, BigDecimal total) {}
+
+    public static void main() {
+        Order order = new Order(new Customer("An", true), new BigDecimal("199000"));
+        if (order != null
+                &amp;&amp; order.customer() != null
+                &amp;&amp; order.customer().active()
+                &amp;&amp; order.total().signum() &gt; 0) {
+            IO.println("Don hang hop le: " + order.total());
+        }
+        // Don hang hop le: 199000
+
+        String inputName = null;
+        String name = Objects.requireNonNullElse(inputName, "Khach le");
+        IO.println("name = " + name);
+        // name = Khach le   - thay cho JS: inputName || "Khach le"
+    }
+}</code></pre>
+    </div>
+
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. <code class="inline">&amp;&amp;</code> và <code class="inline">&amp;</code> khác nhau thế nào khi dùng với boolean?</summary>
+      <div class="answer"><code class="inline">&amp;&amp;</code> short-circuit: nếu vế trái false thì vế phải không chạy. <code class="inline">&amp;</code> luôn đánh giá cả hai vế rồi mới AND. Vì vậy <code class="inline">s != null &amp; s.length() &gt; 0</code> ném NPE còn <code class="inline">s != null &amp;&amp; s.length() &gt; 0</code> thì không.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. <code class="inline">||</code> và <code class="inline">|</code> khác nhau thế nào?</summary>
+      <div class="answer">Tương tự: <code class="inline">||</code> dừng khi vế trái true (vế phải không chạy); <code class="inline">|</code> luôn chạy cả hai vế. Trên boolean cả hai đều cho kết quả logic; trên số nguyên <code class="inline">|</code> là OR từng bit.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Short-circuit giúp tránh NullPointerException như thế nào? Cho ví dụ.</summary>
+      <div class="answer">Đặt check null bên trái: <code class="inline">if (s != null &amp;&amp; s.length() &gt; 0)</code>. Vì <code class="inline">s.length()</code> chỉ chạy khi <code class="inline">s != null</code>, không bao giờ gọi method trên null. Cùng idiom với <code class="inline">user != null &amp;&amp; user.isActive()</code> hay <code class="inline">list != null &amp;&amp; !list.isEmpty()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Java có truthy/falsy như JavaScript không? <code class="inline">if (1)</code> có chạy không?</summary>
+      <div class="answer">Không. Điều kiện trong Java bắt buộc là <code class="inline">boolean</code>; <code class="inline">if (1)</code> hay <code class="inline">if (name)</code> là compile error <em>"incompatible types: int cannot be converted to boolean"</em>. In JS <code class="inline">a &amp;&amp; b</code> trả về một toán hạng, còn Java luôn trả boolean.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">==</code> và <code class="inline">equals()</code> khác nhau thế nào?</summary>
+      <div class="answer">Với primitive, <code class="inline">==</code> so giá trị. Với reference, <code class="inline">==</code> so địa chỉ (identity); <code class="inline">equals()</code> so nội dung nếu class override (String, wrapper, record...). Java không có <code class="inline">===</code>; <code class="inline">==</code> của Java giống <code class="inline">===</code> của JS hơn là <code class="inline">==</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Vì sao không nên so sánh <code class="inline">double</code> bằng <code class="inline">==</code>? Cách đúng?</summary>
+      <div class="answer">IEEE 754 có sai số biểu diễn: <code class="inline">0.1 + 0.2 == 0.3</code> là false (<code class="inline">0.30000000000000004</code>). Cách đúng: so với epsilon <code class="inline">Math.abs(a - b) &lt; 1e-9</code>, hoặc <code class="inline">Double.compare(a, b) == 0</code> (xử lý đúng NaN, -0.0). Với tiền tệ dùng <code class="inline">BigDecimal.compareTo</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">++i</code> và <code class="inline">i++</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">++i</code> tăng trước rồi trả giá trị mới; <code class="inline">i++</code> trả giá trị cũ rồi mới tăng. <code class="inline">int i = 5; IO.println(i++);</code> in 5 rồi i thành 6; <code class="inline">IO.println(++i);</code> in 7.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">int j = 1; int k = j++ + ++j;</code> — k bằng bao nhiêu, j bằng bao nhiêu?</summary>
+      <div class="answer"><code class="inline">k = 4</code>, <code class="inline">j = 3</code>. Đánh giá trái sang phải: <code class="inline">j++</code> trả 1 (j thành 2); <code class="inline">++j</code> tăng j lên 3 và trả 3; tổng 1 + 3 = 4.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">1 &lt;&lt; 32</code> bằng bao nhiêu? Vì sao?</summary>
+      <div class="answer">Bằng 1. Java chỉ dùng 5 bit thấp của số dịch với <code class="inline">int</code>: 32 = <code class="inline">0b100000</code>, lấy 5 bit thấp là 0, nên thành <code class="inline">1 &lt;&lt; 0</code>. Tương tự <code class="inline">1 &lt;&lt; 33</code> = <code class="inline">1 &lt;&lt; 1</code> = 2; với <code class="inline">long</code> dùng 6 bit thấp nên <code class="inline">1L &lt;&lt; 64</code> = 1.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">&gt;&gt;</code> và <code class="inline">&gt;&gt;&gt;</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">&gt;&gt;</code> dịch phải giữ dấu (bit dấu được kéo theo, số âm vẫn âm): <code class="inline">-8 &gt;&gt; 1 = -4</code>. <code class="inline">&gt;&gt;&gt;</code> dịch phải lấp 0 — với <code class="inline">int</code>, dịch từ 1 bit trở lên luôn cho kết quả không âm: <code class="inline">-8 &gt;&gt;&gt; 1 = 2147483644</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Vì sao <code class="inline">1 &lt;&lt; 31</code> là số âm?</summary>
+      <div class="answer">Bit cao nhất (bit 31) là bit dấu trong biểu diễn bù hai của <code class="inline">int</code>. <code class="inline">1 &lt;&lt; 31</code> đặt bit 31 lên 1 nên giá trị là <code class="inline">Integer.MIN_VALUE</code> = -2147483648. Với <code class="inline">long</code>, <code class="inline">1L &lt;&lt; 63</code> cho <code class="inline">Long.MIN_VALUE</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Bitmask (bit flags) là gì? Vì sao production hay dùng <code class="inline">EnumSet</code> thay thế?</summary>
+      <div class="answer">Bitmask là dùng từng bit để biểu diễn nhiều cờ trong một số: <code class="inline">READ = 1 &lt;&lt; 0</code>, <code class="inline">WRITE = 1 &lt;&lt; 1</code>; gộp bằng <code class="inline">|</code>, kiểm tra bằng <code class="inline">(mask &amp; flag) != 0</code>. Nhược điểm: không type-safe, khó đọc, phải validate bit lạ. <code class="inline">EnumSet</code> type-safe, có tên rõ nghĩa, vẫn tối ưu — dùng khi không bị ràng buộc bởi DB/protocol dạng số.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. <code class="inline">Math.abs(Integer.MIN_VALUE)</code> bằng bao nhiêu? Vì sao?</summary>
+      <div class="answer">Vẫn là <code class="inline">-2147483648</code>. Số dương lớn nhất biểu diễn được là 2147483647, nên giá trị đối của MIN_VALUE không tồn tại trong 32-bit; Java trả về chính nó (tràn). Đừng dùng <code class="inline">Math.abs</code> để chuẩn hóa giá trị có thể chạm biên.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">-1 % 7</code> và <code class="inline">Math.floorMod(-1, 7)</code> khác nhau thế nào? Khi nào cần <code class="inline">floorMod</code>?</summary>
+      <div class="answer"><code class="inline">-1 % 7 = -1</code> (Java giữ dấu số bị chia); <code class="inline">Math.floorMod(-1, 7) = 6</code> (kết quả cùng dấu với số chia; số chia dương thì không âm). Cần <code class="inline">floorMod</code> khi index có thể âm: xoay vòng mảng, carousel, chọn ca theo modulo — dùng <code class="inline">%</code> sẽ ra index âm và ném <code class="inline">ArrayIndexOutOfBoundsException</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Bẫy của <code class="inline">Math.pow</code> là gì?</summary>
+      <div class="answer">Luôn trả <code class="inline">double</code>, kể cả khi đầu vào là số nguyên: <code class="inline">Math.pow(2, 10)</code> = <code class="inline">1024.0</code>. Cần int phải ép, và ép giá trị vượt khoảng sẽ bị kẹp chứ không tràn: <code class="inline">(int) Math.pow(2, 31)</code> = <code class="inline">Integer.MAX_VALUE</code>. Với lũy thừa nguyên chính xác nên nhân dần với <code class="inline">multiplyExact</code> hoặc dùng <code class="inline">1L &lt;&lt; n</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. <code class="inline">Math.round(-2.5)</code> bằng bao nhiêu? Vì sao? Khi nào cần khác?</summary>
+      <div class="answer">Bằng <code class="inline">-2</code>. <code class="inline">Math.round</code> làm theo công thức <code class="inline">floor(x + 0.5)</code>: <code class="inline">-2.5 + 0.5 = -2.0</code> → -2. Nếu nghiệp vụ yêu cầu làm tròn "xa số 0" (<code class="inline">-2.5 → -3</code>), dùng <code class="inline">BigDecimal.setScale(0, RoundingMode.UP)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. <code class="inline">Random</code> và <code class="inline">SecureRandom</code> khác nhau thế nào? Khi nào dùng cái nào?</summary>
+      <div class="answer"><code class="inline">Random</code> là PRNG thông thường, dãy số xác định nếu biết seed — phù hợp game, mô phỏng, test (có seed để tái lập). <code class="inline">SecureRandom</code> lấy entropy từ hệ điều hành, không đoán được — dùng cho token, OTP, session ID, mật khẩu tạm. Tuyệt đối không dùng <code class="inline">Random</code> cho mục đích bảo mật.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. <code class="inline">ThreadLocalRandom</code> khác <code class="inline">Math.random()</code> ở đâu? Khi nào dùng?</summary>
+      <div class="answer"><code class="inline">Math.random()</code> dùng chung một <code class="inline">Random</code> static — nhiều thread gọi cùng lúc sẽ tranh chấp. <code class="inline">ThreadLocalRandom.current()</code> cho mỗi thread một instance riêng, không contention, nhanh hơn trong code đa luồng. Đây là mức nhận biết; code một luồng dùng <code class="inline">Random</code>/<code class="inline">Math.random()</code> là đủ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Vì sao <code class="inline">String.hashCode()</code> dùng 31? <code class="inline">31 * h</code> liên quan gì tới shift?</summary>
+      <div class="answer">Công thức là <code class="inline">h = 31 * h + c</code>; 31 là số nguyên tố lẻ, nhân nhanh và phân bố hash tốt. Về bit, <code class="inline">31 * h == (h &lt;&lt; 5) - h</code> — JIT thường tối ưu theo dạng dịch bit này. Đó là ví dụ thực tế nhất của toán tử shift trong code thường ngày.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. <code class="inline">1 &lt;&lt; 2 + 3</code> bằng bao nhiêu? Vì sao? Lời khuyên?</summary>
+      <div class="answer">Bằng 32 vì <code class="inline">+</code> ưu tiên cao hơn <code class="inline">&lt;&lt;</code>: <code class="inline">1 &lt;&lt; (2 + 3)</code> = <code class="inline">1 &lt;&lt; 5</code> = 32. Tương tự, <code class="inline">==</code> ưu tiên hơn <code class="inline">&amp;</code> nên <code class="inline">1 &amp; 3 == 3</code> là compile error (<code class="inline">1 &amp; (3 == 3)</code>). Lời khuyên: không học thuộc precedence, hãy thêm ngoặc khi trộn nhóm toán tử.</div>
+    </details>
+
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+
+    <p>Quy tắc: tự đoán kết quả rồi mới mở đáp án. Tất cả bài dưới đây đã được chạy thật bằng JDK 25.</p>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">int count = 0;
+boolean ok = false &amp;&amp; count++ &gt; 0;
+IO.println(ok + " " + count);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false 0</code>. <code class="inline">false &amp;&amp; ...</code> short-circuit nên <code class="inline">count++</code> không bao giờ chạy — count giữ nguyên 0.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">int count = 0;
+boolean ok = true || count++ &gt; 0;
+IO.println(ok + " " + count);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true 0</code>. <code class="inline">true || ...</code> short-circuit nên nhánh phải không chạy, count vẫn 0.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">int j = 1;
+IO.println(j++ + ++j);
+IO.println(j);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">4</code> rồi <code class="inline">3</code>. <code class="inline">j++</code> trả 1 (j = 2); <code class="inline">++j</code> tăng j lên 3 và trả 3; 1 + 3 = 4.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(0.1 + 0.2 == 0.3);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>. <code class="inline">0.1 + 0.2</code> = <code class="inline">0.30000000000000004</code> do sai số IEEE 754 — không so sánh double bằng <code class="inline">==</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println((1 &lt;&lt; 32) + " " + (1 &lt;&lt; 33));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1 2</code>. Java lấy 5 bit thấp của số dịch với int: 32 → 0, 33 → 1, nên thành <code class="inline">1 &lt;&lt; 0</code> và <code class="inline">1 &lt;&lt; 1</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(-8 &gt;&gt; 1);
+IO.println(-8 &gt;&gt;&gt; 1);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-4</code> rồi <code class="inline">2147483644</code>. <code class="inline">&gt;&gt;</code> giữ dấu âm; <code class="inline">&gt;&gt;&gt;</code> lấp 0 nên ra số dương lớn.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Math.round(-2.5));
+IO.println(Math.round(2.5));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-2</code> rồi <code class="inline">3</code>. <code class="inline">Math.round</code> là <code class="inline">floor(x + 0.5)</code>: <code class="inline">-2.5 + 0.5 = -2.0</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(-1 % 7);
+IO.println(Math.floorMod(-1, 7));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-1</code> rồi <code class="inline">6</code>. Modulo thường giữ dấu số bị chia; <code class="inline">floorMod</code> trả kết quả cùng dấu với số chia (ở đây số chia 7 dương nên ra 6).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Math.abs(Integer.MIN_VALUE));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-2147483648</code> — vẫn âm. Không có biểu diễn dương cho <code class="inline">-2147483648</code> trong 32-bit, nên <code class="inline">abs</code> trả về chính nó.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">int score = 75;
+IO.println(score &gt;= 80 ? "A" : score &gt;= 60 ? "B" : "C");</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">B</code>. Ternary lồng chạy từ trái sang phải: 75 không đủ 80, rơi vào nhánh sau và đủ 60.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">int m = 5;
+m = m++;
+IO.println(m);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">5</code>. <code class="inline">m++</code> trả 5 rồi m thành 6, nhưng phép gán ghi đè lại 5 — no-op.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">int READ = 1;
+int WRITE = 2;
+int mask = READ | WRITE;
+IO.println((mask &amp; WRITE) != 0);
+IO.println((mask &amp; 4) != 0);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code> rồi <code class="inline">false</code>. Mask = 3 có bit WRITE (2) nhưng không có bit 4 (DELETE).</div>
+    </details>
+
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Điều kiện an toàn null</td><td><code class="inline">s != null &amp;&amp; s.length() &gt; 0</code> — đặt check null bên trái</td></tr>
+        <tr><td>Điều kiện boolean</td><td>Java bắt buộc <code class="inline">boolean</code>; không có truthy/falsy</td></tr>
+        <tr><td>So sánh</td><td>Primitive: <code class="inline">==</code> · Object/String/wrapper: <code class="inline">equals</code></td></tr>
+        <tr><td>So sánh double</td><td><code class="inline">Math.abs(a - b) &lt; 1e-9</code> · <code class="inline">Double.compare(a, b) == 0</code></td></tr>
+        <tr><td>Tăng trước / sau</td><td><code class="inline">++i</code> trả giá trị mới · <code class="inline">i++</code> trả giá trị cũ · đừng nhồi vào biểu thức</td></tr>
+        <tr><td>Bitwise</td><td><code class="inline">&amp;</code> AND · <code class="inline">|</code> OR · <code class="inline">^</code> XOR · <code class="inline">~</code> đảo bit</td></tr>
+        <tr><td>Shift</td><td><code class="inline">&lt;&lt;</code> trái · <code class="inline">&gt;&gt;</code> phải giữ dấu · <code class="inline">&gt;&gt;&gt;</code> phải lấp 0 · int mask 5 bit, long mask 6 bit</td></tr>
+        <tr><td>Cờ bit</td><td><code class="inline">flag = 1 &lt;&lt; n</code> · bật <code class="inline">|=</code> · tắt <code class="inline">&amp;= ~</code> · kiểm tra <code class="inline">(mask &amp; flag) != 0</code> · validate bit lạ</td></tr>
+        <tr><td>Precedence</td><td>Không học thuộc — thêm ngoặc; nhớ <code class="inline">+</code> trước <code class="inline">&lt;&lt;</code>, <code class="inline">==</code> trước <code class="inline">&amp;</code></td></tr>
+        <tr><td>Math tránh bẫy</td><td><code class="inline">Math.pow</code> trả double · <code class="inline">Math.round(-2.5) = -2</code> · <code class="inline">abs(MIN_VALUE)</code> vẫn âm</td></tr>
+        <tr><td>Chống tràn</td><td><code class="inline">Math.addExact</code>, <code class="inline">multiplyExact</code>, <code class="inline">toIntExact</code> → ném <code class="inline">ArithmeticException</code></td></tr>
+        <tr><td>Modulo dương</td><td><code class="inline">Math.floorMod(index, size)</code> cho chỉ số vòng</td></tr>
+        <tr><td>Random an toàn</td><td><code class="inline">SecureRandom</code> cho token/OTP · <code class="inline">Random(seed)</code> cho test · <code class="inline">ThreadLocalRandom</code> đa luồng</td></tr>
+        <tr><td>Tiền tệ</td><td><code class="inline">BigDecimal</code> + <code class="inline">setScale(2, RoundingMode.HALF_UP)</code> — không dùng double/Math.round</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích short-circuit và tự viết ví dụ tránh NPE.</li>
+      <li>Phân biệt <code class="inline">&amp;&amp;</code>/<code class="inline">&amp;</code>, <code class="inline">||</code>/<code class="inline">|</code> và nói được khi nào side effect bị bỏ qua.</li>
+      <li>Giải thích vì sao Java không có truthy/falsy, không có <code class="inline">===</code>.</li>
+      <li>So sánh double bằng epsilon hoặc <code class="inline">Double.compare</code> thành thạo.</li>
+      <li>Tính nhẩm được <code class="inline">j++ + ++j</code> và giải thích từng bước.</li>
+      <li>Giải thích <code class="inline">1 &lt;&lt; 32 = 1</code>, <code class="inline">1 &lt;&lt; 31</code> âm, <code class="inline">&gt;&gt;</code> vs <code class="inline">&gt;&gt;&gt;</code>.</li>
+      <li>Viết được helper bitmask: kiểm tra, bật, tắt, validate bit lạ; biết <code class="inline">EnumSet</code> thay thế.</li>
+      <li>Nêu 5 method <code class="inline">Math</code> hay dùng và bẫy của từng cái.</li>
+      <li>Biết <code class="inline">floorMod</code> cho index vòng và <code class="inline">addExact</code> chống tràn.</li>
+      <li>Phân biệt <code class="inline">Random</code> / <code class="inline">SecureRandom</code> / <code class="inline">ThreadLocalRandom</code> và nêu đúng use case.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html" target="_blank" rel="noreferrer">JLS Chapter 15 — Expressions (precedence, short-circuit, shift, ternary, assignment)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html" target="_blank" rel="noreferrer">Oracle Tutorial — Operators</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Math.html" target="_blank" rel="noreferrer">Javadoc — java.lang.Math</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Random.html" target="_blank" rel="noreferrer">Javadoc — java.util.Random</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/security/SecureRandom.html" target="_blank" rel="noreferrer">Javadoc — java.security.SecureRandom</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ThreadLocalRandom.html" target="_blank" rel="noreferrer">Javadoc — java.util.concurrent.ThreadLocalRandom</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html" target="_blank" rel="noreferrer">Javadoc — java.lang.Integer (hashCode, toBinaryString)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Operators &amp; Math · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

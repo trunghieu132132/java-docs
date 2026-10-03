@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lộ trình học Java Backend — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java</span><span class="count">8</span></summary>
+        <a class="item active" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Đây là bản khung lộ trình. Nội dung chi tiết từng chủ đề sẽ được viết dần thành doc riêng, cùng format với "Biến trong Java".</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="lo-trinh">Lộ trình học Java Backend</h1>
+
+    <p class="lead">Lộ trình từ nền tảng tới mức tự tin phỏng vấn <strong>Junior+ (2-3 năm)</strong> và làm việc trong môi trường production thật. Mỗi chủ đề sẽ được viết thành một doc riêng: lý thuyết đầy đủ, ví dụ chạy thật, bẫy phỏng vấn, Q&amp;A và bài tập — đúng format doc "Biến trong Java".</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#phase-0">Giai đoạn 0 — Chuẩn bị môi trường</a></li>
+        <li><a href="#phase-1">Giai đoạn 1 — Java Core</a></li>
+        <li><a href="#phase-2">Giai đoạn 2 — OOP</a></li>
+        <li><a href="#phase-3">Giai đoạn 3 — Dữ liệu &amp; xử lý lỗi</a></li>
+        <li><a href="#phase-4">Giai đoạn 4 — Production essentials</a></li>
+        <li><a href="#phase-5">Giai đoạn 5 — Backend stack</a></li>
+        <li><a href="#phase-6">Giai đoạn 6 — Interview prep</a></li>
+        <li><a href="#tieu-chi">Tiêu chí sẵn sàng phỏng vấn</a></li>
+        <li><a href="#thoi-gian">Ước lượng thời gian</a></li>
+      </ol>
+    </nav>
+
+    <div class="badges-legend">
+      <span class="badge b-done">Đã có sẵn / đã xong</span>
+      <span class="badge b-next">Tiếp theo</span>
+      <span class="badge b-todo">Chưa học</span>
+      <span class="badge b-opt">Tùy chọn / nâng cao</span>
+    </div>
+
+    <div class="note"><strong>Nguyên tắc học:</strong> mỗi chủ đề phải đi kèm bài tập tay; hết mỗi giai đoạn có 1 mini project; DSA (LeetCode) chạy song song từ giai đoạn 2; không nhảy cóc Collections khi chưa vững OOP. Test và debug là thói quen từ giai đoạn 1: tự kiểm thử hàm vừa viết (đầu vào bình thường, biên, sai) và dùng breakpoint khi xem object; công cụ đầy đủ ở 4.4 và 4.7.</div>
+
+    <h3>Ba mức độ cho mỗi chủ đề</h3>
+
+    <ul>
+      <li><strong>Phải làm được</strong> — tự giải một bài tương tự với yêu cầu thay đổi, kiểm thử kết quả và giải thích lựa chọn.</li>
+      <li><strong>Phải hiểu</strong> — nắm cơ chế, giới hạn và lỗi thường gặp; trả lời được câu hỏi "tại sao".</li>
+      <li><strong>Nhận biết</strong> — biết nó tồn tại và khi nào cần tìm hiểu thêm; chưa cần thành thạo.</li>
+    </ul>
+
+    <p>Mỗi doc chủ đề sẽ ghi rõ mức nào là bắt buộc. Nhãn "Phỏng vấn: ...", "Production: ..." và các mục đánh dấu "Tùy chọn" chỉ là mức ưu tiên tham khảo, không phải điều kiện cứng.</p>
+
+    <div class="note"><strong>Project xuyên suốt (khuyến nghị):</strong> một project "quản lý đơn hàng" đi từ giai đoạn 1 tới 5 — console + mảng/method (GĐ1) → model OOP + enum + equals/hashCode (GĐ2) → lưu file CSV + thống kê bằng Stream (GĐ3) → Maven + JUnit + logging (GĐ4) → REST API + PostgreSQL + Docker (GĐ5). Học kiến thức nào áp ngay vào project, thấy rõ vì sao cần.</div>
+
+    <h3>Cầu nối Node.js → Java</h3>
+
+    <table>
+      <thead>
+        <tr><th>Bạn đã biết (Node.js)</th><th>Tương ứng Java</th><th>Khác biệt cần đổi cách nghĩ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>npm, package.json</td><td>Maven, pom.xml</td><td>Dependency có scope; xung đột phiên bản là lỗi thật, có BOM để quản lý</td></tr>
+        <tr><td>JS coercion (<code class="inline">==</code>, <code class="inline">+</code>)</td><td>Casting &amp; numeric promotion</td><td>Java kiểm tra kiểu chặt chẽ; widening/promotion/boxing tự động, các chuyển đổi khác cần ép tường minh hoặc bị từ chối; tràn số quay vòng âm thầm</td></tr>
+        <tr><td>Promise / async-await</td><td>CompletableFuture / thread</td><td>Java đa luồng thật — nhiều thread song song và có shared state cần bảo vệ</td></tr>
+        <tr><td>Express middleware</td><td>Servlet filter / Spring interceptor</td><td>Chạy trong container servlet, thứ tự và scope khác middleware</td></tr>
+        <tr><td>JS object linh hoạt</td><td>class / record / Map</td><td>Kiểu cố định; record bất biến nông, Map cho cặp key-value động</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Đánh giá đầu vào:</strong> nếu đã làm Node.js, làm nhanh bài kiểm tra HTTP, JSON, Git, Docker trước; phần nào vững thì lướt, dồn thời gian cho khác biệt của Java.</div>
+
+    <h3>Tổng quan tiến độ</h3>
+
+    <table>
+      <thead>
+        <tr><th>Giai đoạn</th><th>Số chủ đề</th><th>Có sẵn</th><th>Doc đã viết</th><th>Trọng tâm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0. Chuẩn bị</td><td>5</td><td>3</td><td>0</td><td>Môi trường, Git, Linux</td></tr>
+        <tr><td>1. Java Core</td><td>7</td><td>0</td><td>7</td><td>Ngôn ngữ nền tảng</td></tr>
+        <tr><td>2. OOP</td><td>9</td><td>0</td><td>0</td><td>Trái tim Java, phỏng vấn nặng nhất</td></tr>
+        <tr><td>3. Dữ liệu &amp; lỗi</td><td>8</td><td>0</td><td>0</td><td>Exceptions, Generics, Collections, Streams</td></tr>
+        <tr><td>4. Production essentials</td><td>7</td><td>0</td><td>0</td><td>JVM, Concurrency, Maven, Testing, Logging</td></tr>
+        <tr><td>5. Backend stack</td><td>9</td><td>0</td><td>0</td><td>SQL, Spring, JPA, Docker</td></tr>
+        <tr><td>6. Interview prep</td><td>6</td><td>0</td><td>0</td><td>DSA, Q&amp;A, mock, project</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>51</strong></td><td><strong>3</strong></td><td><strong>7</strong></td><td>~9 tháng với 10–15 giờ/tuần</td></tr>
+      </tbody>
+    </table>
+
+    <p>"Có sẵn" = công cụ/môi trường đã cài (0.1–0.3); "Doc đã viết" = doc học hoàn chỉnh (1.1–1.7). Đã cài công cụ chưa có nghĩa là đã học xong chủ đề.</p>
+
+    <h2 id="phase-0">Giai đoạn 0 — Chuẩn bị môi trường</h2>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">0.1 JDK 25</span><span class="badge b-done">Đã có</span></div>
+      <div class="topic-meta">Cài đặt, JAVA_HOME, chạy file đơn bằng <code class="inline">java File.java</code></div>
+      <ul class="topic-sub">
+        <li>Bức tranh phiên bản: 8/11/17/21/25 LTS — vì sao production hay kẹt ở 17/21 và điều đó ảnh hưởng gì khi viết code</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">0.2 IntelliJ IDEA</span><span class="badge b-done">Đã có</span></div>
+      <div class="topic-meta">Tạo project, chạy/debug (breakpoint, step over/into cơ bản), cấu trúc thư mục Maven</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">0.3 Maven cơ bản (dùng được)</span><span class="badge b-done">Đã có</span></div>
+      <div class="topic-meta">Học sâu ở mục 4.3 — hiện tại biết <code class="inline">mvn compile/package</code> là đủ</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">0.4 Git &amp; GitHub</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: thấp · Production: bắt buộc — học căn bản dùng ngay; quy trình team ở mục 4.6</div>
+      <ul class="topic-sub">
+        <li>commit, branch, merge, pull request, xử lý conflict</li>
+        <li>conventional commits; đọc diff; <code class="inline">.gitignore</code>, stash, rebase mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">0.5 Linux &amp; terminal cơ bản</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: thấp · Production: bắt buộc — dev Node.js hay bỏ qua phần này</div>
+      <ul class="topic-sub">
+        <li>ssh, tiến trình, port, quyền file, biến môi trường</li>
+        <li>Đọc log production: <code class="inline">tail -f</code>, grep, pipe; tìm nguyên nhân lỗi từ log</li>
+      </ul>
+    </div>
+
+    <h2 id="phase-1">Giai đoạn 1 — Java Core (nền tảng ngôn ngữ)</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> Các kiểu thường gặp trong JS gồm number/string/boolean/BigInt/undefined/null/symbol/object (Java không có undefined); Java tách 8 primitive + wrapper, kiểm tra kiểu chặt chẽ — widening, numeric promotion và boxing/unboxing tự động, các chuyển đổi khác cần ép tường minh hoặc bị từ chối. Hàm JS là first-class; method Java gắn với class. <code class="inline">for...of</code> gần giống for-each, nhưng for-each của Java chỉ để duyệt, không sửa được phần tử primitive.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.1 Biến &amp; kiểu dữ liệu cơ bản</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="index.html">Biến trong Java</a> — 20 mục, 30 Q&amp;A, 16 bài tập</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.2 Data Types &amp; Type Casting chuyên sâu</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="data-types.html">Data Types &amp; Type Casting</a> — 17 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Ôn nhanh 8 primitive (bảng đầy đủ ở doc 1.1); tập trung bẫy ép kiểu và mất dữ liệu</li>
+        <li>Widening / narrowing / numeric promotion chi tiết theo JLS</li>
+        <li>Ép kiểu tường minh, tràn khi ép, <code class="inline">parseInt</code>/<code class="inline">valueOf</code>/<code class="inline">parseXxx</code></li>
+        <li>BigInteger cho số cực lớn; khi nào chọn BigInteger vs BigDecimal</li>
+        <li>Bài tập đoán output riêng, không lặp ví dụ doc 1.1</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.3 Operators &amp; Math</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="operators.html">Operators &amp; Math</a> — 14 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Short-circuit <code class="inline">&amp;&amp;</code>/<code class="inline">||</code> và thứ tự đánh giá biểu thức</li>
+        <li>Ternary lồng nhau; khi nào nên tránh để code dễ đọc</li>
+        <li>Bitwise (&amp; | ^ ~ &lt;&lt; &gt;&gt; &gt;&gt;&gt;) mức nhận biết, ứng dụng thực tế (cờ bit, hash)</li>
+        <li>Precedence; lớp <code class="inline">Math</code> (abs, max, min, pow, sqrt, round, random)</li>
+        <li>So sánh số thực bằng epsilon; <code class="inline">Math.random</code> vs <code class="inline">Random</code>/<code class="inline">SecureRandom</code></li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.4 Control Flow</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="control-flow.html">Control Flow</a> — 14 mục, 22 Q&amp;A, 12 bài tập · Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>if/else, nested if, điều kiện gọn</li>
+        <li>switch truyền thống + switch expression (Java 14+)</li>
+        <li>Pattern matching for switch (Java 21) mức nhận biết</li>
+        <li>for, while, do-while, for-each</li>
+        <li>break / continue / nhãn (label); best practices</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.5 Methods</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="methods.html">Methods</a> — 16 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Khai báo, tham số, return; tham số mặc định không có (dùng overload)</li>
+        <li>Method overloading; pass-by-value (đào sâu)</li>
+        <li>Recursion và khi nào dùng</li>
+        <li>static vs instance method; scope; main method &amp; JVM args</li>
+        <li>Kiểm thử method ngay khi viết: đầu vào bình thường, biên, sai — thói quen dẫn tới JUnit ở 4.4</li>
+        <li>Best practices: tên, độ dài, một việc duy nhất</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.6 Arrays</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="arrays.html">Arrays</a> — 16 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Mảng 1 chiều, 2 chiều; khởi tạo; giá trị mặc định</li>
+        <li>Duyệt mảng; mảng có kích thước cố định</li>
+        <li>Lớp <code class="inline">Arrays</code>: sort, copyOf, toString, equals, fill, binarySearch</li>
+        <li>Varargs; mảng trong method</li>
+        <li>Mảng vs List (chuẩn bị cho Collections)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">1.7 Strings chuyên sâu</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="strings.html">Strings chuyên sâu</a> — 13 mục, 22 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Các method quan trọng: length, charAt, substring, indexOf, split, replace, trim, toUpperCase...</li>
+        <li><code class="inline">compareTo</code>, <code class="inline">equalsIgnoreCase</code>; <code class="inline">strip</code> vs <code class="inline">trim</code> (Unicode)</li>
+        <li>StringBuilder vs StringBuffer chi tiết; nối chuỗi trong vòng lặp và cách compiler tối ưu <code class="inline">+</code></li>
+        <li><code class="inline">format</code>/<code class="inline">printf</code>, text blocks (Java 15+), regex cơ bản và bẫy backtracking</li>
+        <li><code class="inline">chars()</code>/<code class="inline">codePoints()</code> và Unicode (emoji, tiếng Việt) mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>Milestone giai đoạn 1:</strong> viết app console (project xuyên suốt "quản lý đơn hàng") dùng mảng + method + nhập liệu; mỗi method tự kiểm thử 3 loại đầu vào (bình thường, biên, sai) trước khi ghép; code sạch, xử lý lỗi nhập sai.</div>
+
+    <h2 id="phase-2">Giai đoạn 2 — OOP (trái tim của Java)</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> JS dùng prototype chain, Java dùng kế thừa đơn + interface. <code class="inline">this</code> trong JS phụ thuộc cách gọi hàm, còn <code class="inline">this</code> trong Java luôn là instance hiện tại. So sánh object trong JS bằng reference; trong Java mặc định cũng vậy, muốn so giá trị phải override <code class="inline">equals</code>/<code class="inline">hashCode</code>.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.1 Classes &amp; Objects</span><span class="badge b-next">Tiếp theo</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>class, object, <code class="inline">new</code>, constructor (mặc định, có tham số, overload)</li>
+        <li><code class="inline">this</code>, <code class="inline">static</code> (field/method/block), thứ tự khởi tạo</li>
+        <li>Package &amp; import; access modifiers: public/private/protected/default</li>
+        <li>JavaBean conventions; POJO</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.2 Encapsulation &amp; Immutability</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Đóng gói: private field + getter/setter; khi nào không cần setter</li>
+        <li>Immutable object: final field, không lộ reference, defensive copy</li>
+        <li>Record như công cụ immutable sẵn (đã giới thiệu ở doc Biến) — chỉ chặn gán lại field, không làm object bên trong bất biến</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.3 Inheritance</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li><code class="inline">extends</code>, <code class="inline">super</code>, constructor chaining, thứ tự khởi tạo class cha/con</li>
+        <li>Method overriding, annotation <code class="inline">@Override</code>, quy tắc không được phá vỡ</li>
+        <li><code class="inline">final</code> class/method; composition vs inheritance (ưu tiên composition)</li>
+        <li>Lớp <code class="inline">Object</code>: toString, equals, hashCode, getClass</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.4 Polymorphism</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Compile-time (overloading) vs runtime (overriding)</li>
+        <li>Dynamic dispatch hoạt động thế nào</li>
+        <li>Upcasting / downcasting; <code class="inline">instanceof</code> pattern (Java 16+)</li>
+        <li>Overloading vs overriding: quy tắc phân biệt</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.5 Abstract class vs Interface</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao (câu kinh điển) · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Khi nào chọn abstract class, khi nào interface (kèm ví dụ quyết định)</li>
+        <li>default / static / private method trong interface</li>
+        <li>Functional interface; interface segregation</li>
+        <li>Đa kế thừa "hành vi" qua interface</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.6 Object contract: equals / hashCode / toString</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Hợp đồng equals/hashCode; hậu quả khi vi phạm (HashMap/HashSet "mất" phần tử)</li>
+        <li>Override đúng cách; generated code của IDE; record làm sẵn</li>
+        <li>Liên hệ trực tiếp với HashMap internals (mục 3.3)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.7 Enum, nested &amp; sealed classes</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Enum có field/constructor/method; dùng thay magic string</li>
+        <li>Static nested vs inner vs local vs anonymous class</li>
+        <li>Sealed class/interface (Java 17) mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.8 SOLID &amp; design patterns cơ bản</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình–cao · Production: nên biết</div>
+      <ul class="topic-sub">
+        <li>5 nguyên tắc SOLID kèm ví dụ Java</li>
+        <li>Singleton (thread-safe), Factory, Builder, Strategy, Observer</li>
+        <li>Nhận diện pattern trong code thật (Spring dùng rất nhiều)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">2.9 Annotations &amp; Reflection</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: nên biết — nền tảng của mọi "magic" Spring</div>
+      <ul class="topic-sub">
+        <li>Annotation built-in: <code class="inline">@Override</code>, <code class="inline">@Deprecated</code>, <code class="inline">@SuppressWarnings</code></li>
+        <li>Tự định nghĩa annotation: <code class="inline">@Retention</code>, <code class="inline">@Target</code>; cách framework đọc annotation</li>
+        <li>Reflection: <code class="inline">Class</code>, <code class="inline">getDeclaredFields</code>/<code class="inline">Methods</code>, <code class="inline">invoke</code>, <code class="inline">newInstance</code></li>
+        <li>Liên hệ Spring DI/AOP: Spring quét annotation + reflection để tạo bean và proxy</li>
+        <li>Cảnh báo: chậm hơn gọi trực tiếp, phá encapsulation — hạn chế dùng trong code business</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>Milestone giai đoạn 2:</strong> refactor app console "quản lý đơn hàng" theo OOP; model có interface + enum + equals/hashCode; giải thích được chỗ nào chọn composition thay vì kế thừa (không dùng kế thừa cho đủ checklist); dùng breakpoint xem object và lời gọi method trong debugger.</div>
+
+    <h2 id="phase-3">Giai đoạn 3 — Dữ liệu &amp; xử lý lỗi</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> <code class="inline">Array.map/filter/reduce</code> của JS gần giống Stream, nhưng Stream của Java là lazy, chỉ chạy một lần và có thể parallel. <code class="inline">Date</code> của JS tương ứng <code class="inline">java.time</code>; <code class="inline">JSON.stringify/parse</code> sẽ được thay bằng Jackson ở giai đoạn 5.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.1 Exception Handling</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Checked vs unchecked; Error vs Exception; hierarchy</li>
+        <li>try/catch/finally; try-with-resources; multi-catch</li>
+        <li><code class="inline">throw</code> / <code class="inline">throws</code>; custom exception</li>
+        <li>Best practices: không nuốt exception, không catch chung chung, log đúng chỗ</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.2 Generics</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc · Học phần cơ bản trước Collections; PECS/type erasure đào sâu sau khi đã dùng quen</div>
+      <ul class="topic-sub">
+        <li>Generic class/method; type parameter; bounded type</li>
+        <li>Đọc hiểu cú pháp type parameter và dùng được ví dụ đơn giản; thành thạo List/Map là kết quả của phần Collections sau đó</li>
+        <li>Wildcards: <code class="inline">? extends</code>, <code class="inline">? super</code>; PECS</li>
+        <li>Type erasure và hệ quả; raw type</li>
+        <li>So sánh với generics TypeScript (dễ chuyển)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.3 Collections Framework</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao (chủ đề số 1) · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Hierarchy: Iterable → Collection → List/Set/Queue; Map</li>
+        <li>List: ArrayList vs LinkedList (khi nào dùng cái nào)</li>
+        <li>Set: HashSet vs LinkedHashSet vs TreeSet</li>
+        <li>Map: HashMap internals (hash, bucket, resize), LinkedHashMap, TreeMap</li>
+        <li>Queue/Deque, ArrayDeque, PriorityQueue</li>
+        <li>Iterator, fail-fast, ConcurrentModificationException</li>
+        <li>Comparable vs Comparator; Collections utility; List.of / immutability</li>
+        <li>Big-O của từng thao tác trên từng collection</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.4 I/O &amp; Files</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>InputStream/OutputStream, Reader/Writer; Buffered*</li>
+        <li>NIO: Path, Files.readAllLines/write, walk</li>
+        <li>Encoding UTF-8 — bẫy tiếng Việt</li>
+        <li>Mini project: đọc file CSV, thống kê, ghi kết quả</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.5 java.time</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>LocalDate / LocalTime / LocalDateTime / Instant / ZonedDateTime</li>
+        <li>Duration / Period; format &amp; parse ISO-8601</li>
+        <li>Bẫy timezone và DST — lý do production lưu UTC</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.6 Lambda &amp; Functional interfaces</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Functional interface; 4 interface lõi: Predicate, Function, Consumer, Supplier</li>
+        <li>Lambda syntax; method reference (4 loại)</li>
+        <li>Closure &amp; effectively final</li>
+        <li>Function composition (andThen, compose)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.7 Optional</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc · Học ngay sau Lambda vì dùng chung functional interface</div>
+      <ul class="topic-sub">
+        <li>Optional API: map, filter, orElse, orElseThrow; best practices (chỉ return type)</li>
+        <li>Optional vs <code class="inline">null</code>: khi nào không nên dùng (field, tham số, collection)</li>
+        <li>Optional trong Stream — xem tiếp 3.8</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">3.8 Stream API</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Pipeline: source → intermediate → terminal; lazy evaluation</li>
+        <li>map / filter / reduce / collect / flatMap / sorted / distinct</li>
+        <li>Collectors: groupingBy, partitioningBy, joining, toMap, counting</li>
+        <li>Optional trong Stream; so sánh vòng lặp vs Stream (khi nào không nên dùng)</li>
+        <li>Parallel stream: khi nào dùng, khi nào tránh</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>Milestone giai đoạn 3:</strong> trên project "quản lý đơn hàng": đọc file CSV bằng NIO, xử lý/thống kê bằng Stream + Collectors, exception handling đầy đủ; so sánh hiệu năng ArrayList vs LinkedList đơn giản.</div>
+
+    <h2 id="phase-4">Giai đoạn 4 — Production essentials</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> JavaScript thông thường chạy trên thread của event loop, còn Node.js có thêm worker pool cho một số tác vụ như file I/O, crypto và nén (tác vụ tính toán nặng trong JS không tự chuyển sang pool); trong Java nhiều request chạy song song trên nhiều thread và cùng truy cập object, nên phải học bảo vệ shared state. <code class="inline">Promise</code> + chuỗi xử lý bất đồng bộ tương ứng <code class="inline">CompletableFuture</code> (callback hell là vấn đề tổ chức code, không có API tương ứng). Virtual threads cho phép viết code blocking mà vẫn scale. npm scripts/CI tương ứng Maven lifecycle + GitHub Actions.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.1 JVM cơ bản</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình–cao · Production: nên biết — học trước concurrency để hiểu memory model</div>
+      <ul class="topic-sub">
+        <li>JDK vs JRE vs JVM; bytecode; classloader</li>
+        <li>Memory areas: stack, heap, metaspace; GC cơ bản (G1, khi nào full GC)</li>
+        <li>StackOverflowError vs OutOfMemoryError; JVM flags (-Xmx, -Xms)</li>
+        <li>Đọc stack trace; jstack/jcmd/heap dump mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.2 Concurrency cơ bản</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Thread, Runnable/Callable, lifecycle, join/sleep</li>
+        <li>Race condition, deadlock; synchronized, volatile vs Atomic; JMM &amp; happens-before mức nhận biết</li>
+        <li>ExecutorService, thread pool; CompletableFuture (async)</li>
+        <li>Concurrent collections: ConcurrentHashMap, CopyOnWriteArrayList, BlockingQueue</li>
+        <li>Virtual threads (Java 21+): khi nào nên/không nên dùng; từ JDK 24 (JEP 491) <code class="inline">synchronized</code> hết pinning — chỉ còn pinning ở native/JNI/FFM và class initializer</li>
+        <li>Scoped Values (final ở JDK 25) và Structured Concurrency (vẫn preview) mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.3 Maven &amp; Gradle</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Cấu trúc pom.xml; dependency &amp; scope (compile/test/provided/runtime)</li>
+        <li>Lifecycle: compile/test/package/install; plugin; wrapper</li>
+        <li>Xung đột phiên bản, BOM, <code class="inline">mvn dependency:tree</code> — lỗi production rất hay gặp</li>
+        <li>Multi-module mức nhận biết; Gradle cơ bản (nhiều công ty dùng)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.4 Testing</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>JUnit 5: annotations, assertions, parameterized test, lifecycle</li>
+        <li>Mockito: mock, stub, verify (<code class="inline">@MockitoBean</code> — thay <code class="inline">@MockBean</code> đã bị loại bỏ ở Spring Boot 4); AssertJ</li>
+        <li>TDD; coverage; unit vs integration test</li>
+        <li>Testcontainers mức nhận biết (test với DB thật)</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.5 Logging</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>SLF4J + Logback; log level; placeholder logging (không cộng chuỗi)</li>
+        <li>Không dùng System.out.println trong production</li>
+        <li>Không log dữ liệu nhạy cảm; log exception đúng cách</li>
+        <li>MDC / correlation id mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.6 Code quality &amp; quy trình team</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: thấp–trung bình · Production: bắt buộc — Git căn bản đã học ở 0.4</div>
+      <ul class="topic-sub">
+        <li>Quy trình team: Agile/Scrum, Jira, estimate, definition of done</li>
+        <li>PR review: checklist, cách nhận và trả feedback</li>
+        <li>Clean code: naming, hàm nhỏ, tránh duplicate, comment đúng chỗ</li>
+        <li>SonarQube / Checkstyle / SpotBugs mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">4.7 Debugging</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: thấp · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>IntelliJ debugger: breakpoint, step over/into, watch, evaluate expression</li>
+        <li>Đọc stack trace thành thạo; xác định root cause</li>
+        <li>Reproduce bug; đọc log production để tìm lỗi</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>Milestone giai đoạn 4:</strong> project "quản lý đơn hàng" lên Maven có JUnit test + logging chuẩn + build pipeline GitHub Actions (build + test), không dùng System.out trong code chính; chủ động dùng debugger khi test đỏ.</div>
+
+    <h2 id="phase-5">Giai đoạn 5 — Backend stack (đích công việc)</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> Express router ↔ Spring controller; middleware ↔ filter/interceptor (khác về thứ tự và scope); <code class="inline">JSON.parse</code> ↔ Jackson; ORM kiểu Mongoose/Prisma ↔ JPA/Hibernate (khác ở transaction và lazy loading). Đừng mang tư duy "mọi thứ async" sang Java — ở đây luồng chạy tuần tự trong một request cho tới khi bạn chủ động tách thread.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.1 HTTP &amp; REST</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Request/response, methods, status codes, headers, cookies</li>
+        <li>REST conventions: resource, versioning, pagination, idempotency</li>
+        <li>JSON; test API bằng curl/Postman</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.2 JSON &amp; Jackson</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc — nền Spring Boot 4.1 dùng Jackson 3 (<code class="inline">tools.jackson</code>, <code class="inline">JsonMapper</code> bất biến); Boot 3.5 vẫn là Jackson 2 (<code class="inline">com.fasterxml.jackson</code>, <code class="inline">ObjectMapper</code>)</div>
+      <ul class="topic-sub">
+        <li>Đọc/ghi JSON: Jackson 3 dùng <code class="inline">JsonMapper</code> bất biến (Jackson 2: <code class="inline">ObjectMapper</code>); cấu hình fail-on-unknown</li>
+        <li>Map record/DTO ↔ JSON: <code class="inline">@JsonProperty</code>, <code class="inline">@JsonIgnore</code> (annotation vẫn ở <code class="inline">com.fasterxml.jackson.annotation</code>), snake_case vs camelCase</li>
+        <li>Ngày giờ: Jackson 3 mặc định ISO-8601 (java.time hỗ trợ sẵn); BigDecimal trong JSON — bẫy mất precision</li>
+        <li>JSON lồng nhau, generic <code class="inline">TypeReference</code>; cây JSON với JsonNode</li>
+        <li>Bẫy: field thiếu/null, vòng lặp tham chiếu khi serialize entity, JSON injection</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.3 SQL &amp; PostgreSQL</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>SELECT/WHERE/ORDER BY/LIMIT; hàm aggregate; GROUP BY/HAVING</li>
+        <li>JOIN các loại; subquery; UNION</li>
+        <li>Index (B-tree), khi nào index không được dùng; EXPLAIN mức nhận biết</li>
+        <li>Transaction &amp; ACID; isolation levels mức nhận biết; lock cơ bản</li>
+        <li>Normalization; thiết kế schema; migration với Flyway/Liquibase</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.4 Spring Core</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc · Jakarta EE (<code class="inline">jakarta.*</code>), baseline Java 17+</div>
+      <ul class="topic-sub">
+        <li>IoC/DI; constructor vs field injection (vì sao ưu tiên constructor)</li>
+        <li>Bean lifecycle, singleton vs prototype; <code class="inline">@Bean</code> vs <code class="inline">@Component</code></li>
+        <li><code class="inline">@Component</code> vs <code class="inline">@Service</code> vs <code class="inline">@Repository</code>; component scanning</li>
+        <li>AOP &amp; proxy: <code class="inline">@Transactional</code> chạy qua proxy, bẫy self-invocation; <code class="inline">@Cacheable</code> mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.5 Spring Boot &amp; REST API (nền: Boot 4.1)</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Production: bắt buộc · Ví dụ dùng Spring Boot 4.1 + Java 25; Boot 3.5 dùng Jackson 2, HTTP Interface Client phải cấu hình thủ công; Boot 4 bổ sung auto-configuration cho HTTP Service Clients và API versioning tích hợp</div>
+      <ul class="topic-sub">
+        <li>Auto-configuration và điều kiện (<code class="inline">@ConditionalOnMissingBean</code>) mức hiểu cơ chế</li>
+        <li>Kiến trúc 3 lớp: Controller → Service → Repository; DTO mapping (MapStruct mức nhận biết)</li>
+        <li>REST API: @RestController, @RequestMapping, DTO, ResponseEntity; API versioning</li>
+        <li>Validation (Bean Validation); xử lý lỗi tập trung @ControllerAdvice</li>
+        <li>Config: <code class="inline">@ConfigurationProperties</code> vs <code class="inline">@Value</code>; profiles; application.yml; actuator</li>
+        <li>Gọi service khác: RestClient/WebClient; HTTP Interface Client (<code class="inline">@HttpExchange</code>) — Boot 3.5 cấu hình thủ công qua <code class="inline">HttpServiceProxyFactory</code>, Boot 4 auto-config; timeout, retry</li>
+        <li>Lombok mức nhận biết — bẫy <code class="inline">@Data</code> trên JPA entity</li>
+        <li>Testing Spring: @SpringBootTest vs slice test (@WebMvcTest, @DataJpaTest); MockMvc</li>
+        <li>API docs: springdoc-openapi/Swagger mức nhận biết</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.6 JDBC → JPA/Hibernate → Spring Data JPA</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc · Học sau Spring Core để hiểu bean, proxy và <code class="inline">@Transactional</code></div>
+      <ul class="topic-sub">
+        <li>JDBC thuần; PreparedStatement (chống SQL injection); connection pool HikariCP</li>
+        <li>ORM concept; entity mapping &amp; entity lifecycle; quan hệ 1-1/1-N/N-N</li>
+        <li>Repository; JPQL; derived query; phân trang với Pageable/Specification mức nhận biết</li>
+        <li>N+1 problem (câu hỏi phỏng vấn rất hay); fetch type; cascade; <code class="inline">@EntityGraph</code></li>
+        <li><code class="inline">@Transactional</code>: rollback, transaction trong service layer, propagation/isolation mức nhận biết</li>
+        <li>Dirty checking, first/second-level cache; optimistic locking <code class="inline">@Version</code> vs pessimistic lock</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.7 Spring Security &amp; JWT</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Authentication vs authorization; filter chain (khái niệm)</li>
+        <li>Password hashing: BCrypt; không bao giờ lưu plain text</li>
+        <li>JWT flow: login → token → verify; refresh token mức nhận biết</li>
+        <li>CORS; phân quyền theo role (RBAC) cơ bản</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.8 Docker &amp; CI/CD</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <ul class="topic-sub">
+        <li>Dockerfile (multi-stage build cho Java); image, container, volume, network</li>
+        <li>docker-compose: app + PostgreSQL + env</li>
+        <li>GitHub Actions: build, test, push image; deploy cơ bản</li>
+        <li>Biến môi trường &amp; secrets; health check</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">5.9 Nâng cao (chỉ cần biết để phỏng vấn không "trắng")</span><span class="badge b-opt">Tùy chọn</span></div>
+      <div class="topic-meta">Phỏng vấn: thấp–trung bình · Production: tùy dự án</div>
+      <ul class="topic-sub">
+        <li>Redis cache; message broker Kafka/RabbitMQ (khái niệm, use case)</li>
+        <li>Microservices: service discovery, API gateway, resilience (khái niệm)</li>
+        <li>WebFlux / reactive (khác gì Spring MVC); cloud cơ bản (AWS/GCP)</li>
+      </ul>
+    </div>
+
+    <div class="note"><strong>Milestone giai đoạn 5:</strong> REST API CRUD hoàn chỉnh (Spring Boot + PostgreSQL + JWT + validation + test + Docker + README), deploy được, có Postman collection. Phải xử lý được 5 tình huống kiểm chứng năng lực:
+      <ul>
+        <li>Tạo đơn hàng thất bại giữa chừng — dữ liệu có rollback đúng không?</li>
+        <li>Hai request cùng mua sản phẩm cuối cùng — có bán vượt tồn kho không?</li>
+        <li>Client gửi lại request tạo đơn — có tạo đơn trùng không (idempotency)?</li>
+        <li>Người dùng A truy cập đơn của B — có chặn đúng không (authorization)?</li>
+        <li>API chậm — có tìm được nguyên nhân từ log và query SQL (EXPLAIN) không?</li>
+      </ul>
+    </div>
+
+    <h2 id="phase-6">Giai đoạn 6 — Interview prep (chạy song song từ giai đoạn 2)</h2>
+
+    <div class="note"><strong>Góc Node.js:</strong> bạn có lợi thế về HTTP, JSON, Git, Docker và tư duy async — dùng thời gian tiết kiệm được cho DSA và đào sâu Java (Collections, JVM, concurrency), là những phần Node.js không dạy.</div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.1 DSA &amp; luyện coding</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Phỏng vấn: rất cao · Xuyên suốt từ giai đoạn 2 (LeetCode chạy song song)</div>
+      <ul class="topic-sub">
+        <li>Big-O, độ phức tạp thời gian/bộ nhớ</li>
+        <li>Array, String, HashMap, two pointers, sliding window</li>
+        <li>Stack/Queue, sorting, binary search, linked list, recursion</li>
+        <li>LeetCode easy → medium (mục tiêu tham khảo 100–150 bài, tùy vị trí ứng tuyển), ôn lại theo chủ đề</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.2 Ôn Q&amp;A theo chủ đề</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Mỗi doc đều có phần này — ôn lại định kỳ, không học dồn</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.3 Đoán output &amp; tricky questions</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Như mục bài tập trong doc "Biến trong Java" — luyện phản xạ đọc code</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.4 Project để kể trong CV</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">1–2 project production-like có README, test, Docker; kể được trade-off đã chọn</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.5 Mock interview &amp; câu hỏi hành vi</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-meta">Giới thiệu bản thân; kể project theo STAR; câu hỏi tình huống; hỏi ngược nhà tuyển dụng</div>
+    </div>
+
+    <div class="topic">
+      <div class="topic-head"><span class="topic-name">6.6 System design cơ bản</span><span class="badge b-opt">Tùy chọn</span></div>
+      <div class="topic-meta">Mức Junior+: hiểu khái niệm, không cần vẽ kiến trúc phức tạp</div>
+      <ul class="topic-sub">
+        <li>Load balancing, caching, database replication (khái niệm)</li>
+        <li>Bài tập quen thuộc: URL shortener, rate limiting, pagination, idempotency</li>
+      </ul>
+    </div>
+
+    <h2 id="tieu-chi">Tiêu chí sẵn sàng phỏng vấn Junior+</h2>
+
+    <ul class="checklist">
+      <li>Giải thích được 4 tính chất OOP kèm ví dụ code tự viết.</li>
+      <li>Phân biệt abstract class vs interface và chọn đúng trong tình huống cụ thể.</li>
+      <li>Trình bày HashMap hoạt động thế nào, equals/hashCode liên quan ra sao.</li>
+      <li>So sánh ArrayList vs LinkedList, HashSet vs TreeSet kèm Big-O.</li>
+      <li>Viết được Stream pipeline có groupingBy mà không cần tra Google.</li>
+      <li>Phân biệt checked/unchecked exception và cách xử lý đúng.</li>
+      <li>Giải thích race condition, synchronized vs volatile vs Atomic.</li>
+      <li>Viết unit test JUnit + Mockito cho service cơ bản.</li>
+      <li>Viết được REST API Spring Boot có validation và xử lý lỗi tập trung.</li>
+      <li>Viết được query SQL có JOIN + GROUP BY; giải thích index dùng để làm gì.</li>
+      <li>Kể được 1 project có DB, test, Docker — nêu được 2-3 trade-off.</li>
+      <li>Giải LeetCode medium trong 30–40 phút, nói được độ phức tạp.</li>
+    </ul>
+
+    <p>Các mốc trên là định hướng tham khảo, không phải chuẩn chung — mỗi vị trí và thị trường hỏi khác nhau. Điều nhà tuyển dụng chấm là project thật và khả năng giải thích trade-off, không phải số bài LeetCode.</p>
+
+    <h2 id="thoi-gian">Ước lượng thời gian (10–15 giờ/tuần)</h2>
+
+    <table>
+      <thead>
+        <tr><th>Giai đoạn</th><th>Thời lượng dự kiến</th><th>Kết thúc bằng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0. Chuẩn bị</td><td>1 tuần</td><td>Môi trường + Git + Linux cơ bản</td></tr>
+        <tr><td>1. Java Core</td><td>4–5 tuần</td><td>App console dùng mảng + method</td></tr>
+        <tr><td>2. OOP</td><td>4–5 tuần</td><td>Model hướng đối tượng + DSA bắt đầu</td></tr>
+        <tr><td>3. Dữ liệu &amp; lỗi</td><td>6 tuần</td><td>Xử lý file + thống kê bằng Stream</td></tr>
+        <tr><td>4. Production essentials</td><td>4–5 tuần</td><td>Project Maven có test + logging + CI</td></tr>
+        <tr><td>5. Backend stack</td><td>10–12 tuần</td><td>REST API full stack + Docker</td></tr>
+        <tr><td>6. Interview prep</td><td>Song song + 2–3 tuần dồn</td><td>Mock interview + CV sẵn sàng</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>~9 tháng</strong></td><td>Sẵn sàng phỏng vấn Junior+</td></tr>
+      </tbody>
+    </table>
+
+    <p>Mốc thời gian chỉ để lập kế hoạch. Hoàn thành lộ trình không tự động tương đương 2–3 năm kinh nghiệm làm việc — thứ được chấm là project, cách giải thích trade-off và khả năng debug.</p>
+
+    <p class="footer">Java Docs · Lộ trình học Java Backend · JDK 25 · Cập nhật 18/09/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>
