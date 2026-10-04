@@ -95,7 +95,7 @@
       <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
     </ol>
 
-    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Điều quan trọng nhất cần nhớ ngay: <strong>generic chỉ tồn tại lúc compile</strong>; sau khi biên dịch, type argument bị xóa (mục <a href="#erasure">7</a>). Vì vậy generic giúp bắt lỗi sớm chứ không tạo ra class mới lúc runtime.</div>
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Điều quan trọng nhất cần nhớ ngay: <strong>generic chỉ tồn tại lúc compile</strong>; sau khi biên dịch, type argument bị xóa khỏi kiểu tĩnh/descriptor, class file chỉ còn giữ attribute <code class="inline">Signature</code> cho các khai báo generic (mục <a href="#erasure">7</a>). Vì vậy generic giúp bắt lỗi sớm chứ không tạo ra class mới lúc runtime.</div>
 
     <nav class="toc">
       <div class="toc-title">Mục lục</div>
@@ -478,8 +478,54 @@ xoai
     <p>Hai kiểu bound quan trọng:</p>
     <ul>
       <li><code class="inline">&lt;T extends Number&gt;</code> — chỉ nhận <code class="inline">Integer</code>, <code class="inline">Double</code>, <code class="inline">BigDecimal</code>... và nhờ vậy gọi được <code class="inline">doubleValue()</code>.</li>
-      <li><code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code> — bound "tự tham chiếu" (self-referential), đảm bảo mọi <code class="inline">T</code> so sánh được với chính kiểu <code class="inline">T</code>. Đây chính là bound của <code class="inline">Collections.max</code> và <code class="inline">Collections.sort</code> trong JDK.</li>
+      <li><code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code> — bound "tự tham chiếu" (self-referential), đảm bảo mọi <code class="inline">T</code> so sánh được với chính kiểu <code class="inline">T</code>. Đây là bản giản hoá dễ hiểu của bound thật trong JDK: <code class="inline">Collections.sort</code> và <code class="inline">Collections.max</code> dùng dạng PECS rộng hơn <code class="inline">&lt;T extends Comparable&lt;? super T&gt;&gt;</code> (riêng <code class="inline">max</code> còn thêm <code class="inline">Object &amp;</code>). Kiểm chứng bằng javap:</li>
     </ul>
+    <div class="codeblock">
+      <pre><code>$ javap -p java.util.Collections | grep -E "sort\(|max\("
+  public static &lt;T extends java.lang.Comparable&lt;? super T&gt;&gt; void sort(java.util.List&lt;T&gt;);
+  public static &lt;T&gt; void sort(java.util.List&lt;T&gt;, java.util.Comparator&lt;? super T&gt;);
+  public static &lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt; T max(java.util.Collection&lt;? extends T&gt;);
+  public static &lt;T&gt; T max(java.util.Collection&lt;? extends T&gt;, java.util.Comparator&lt;? super T&gt;);</code></pre>
+    </div>
+    <p>Vì sao <code class="inline">? super T</code> quan trọng: nó cho phép so sánh danh sách kiểu con bằng <code class="inline">compareTo</code> của kiểu cha. Với bound đơn giản <code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code>, đoạn dưới đây không compile vì <code class="inline">Cho</code> chỉ là <code class="inline">Comparable&lt;DongVat&gt;</code>; JDK chấp nhận nhờ <code class="inline">Comparable&lt;? super Cho&gt;</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class PecsBoundDemo {
+    static class DongVat implements Comparable&lt;DongVat&gt; {
+        final String ten;
+
+        DongVat(String ten) {
+            this.ten = ten;
+        }
+
+        public int compareTo(DongVat other) {
+            return ten.compareTo(other.ten);
+        }
+
+        public String toString() {
+            return ten;
+        }
+    }
+
+    static class Cho extends DongVat {
+        Cho(String ten) {
+            super(ten);
+        }
+    }
+
+    public static void main() {
+        List&lt;Cho&gt; ds = new ArrayList&lt;&gt;(List.of(new Cho("Milu"), new Cho("Becgie")));
+        Collections.sort(ds);
+        IO.println(ds);
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[Becgie, Milu]</code></pre>
+    </div>
 
     <h3>Multiple bounds</h3>
 
@@ -731,7 +777,8 @@ public class CaptureHelperDemo {
 
     <h2 id="erasure">7. Type erasure &amp; hệ quả <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
 
-    <p>Java chọn <strong>type erasure</strong> (xóa kiểu) để generics tương thích ngược với hàng triệu dòng code viết trước Java 5: compiler dùng type argument để kiểm tra, rồi <em>xóa sạch</em> chúng khỏi bytecode. Cụ thể: <code class="inline">List&lt;String&gt;</code> → <code class="inline">List</code>, <code class="inline">T</code> → bound trái nhất (mặc định <code class="inline">Object</code>), và compiler tự chèn các lệnh cast ở call site. Bằng chứng:</p>
+    <p>Java chọn <strong>type erasure</strong> (xóa kiểu) để generics tương thích ngược với hàng triệu dòng code viết trước Java 5: compiler dùng type argument để kiểm tra, rồi xoá chúng khỏi <em>kiểu tĩnh và descriptor</em> trong bytecode. Cụ thể: <code class="inline">List&lt;String&gt;</code> → <code class="inline">List</code>, <code class="inline">T</code> → bound trái nhất (mặc định <code class="inline">Object</code>), và compiler tự chèn các lệnh cast tại call site.</p>
+    <p>Nhưng nói "mất sạch khỏi bytecode" là chưa chính xác: các khai báo generic (class, field, method, constructor, interface implements) vẫn được ghi lại trong attribute <code class="inline">Signature</code> của class file. Reflection, Jackson, Spring... đọc attribute này qua <code class="inline">getGenericSuperclass()</code>, <code class="inline">getGenericInterfaces()</code>, <code class="inline">getGenericParameterTypes()</code> để biết type argument. Cái bị xoá hẳn chỉ là type argument trong <em>thân method</em>, biến local và những vị trí mà descriptor buộc phải dùng kiểu raw/bound. Bằng chứng đầu tiên — hai generic class khác type argument là cùng một class runtime:</p>
 
     <div class="codeblock">
       <pre><code class="java">import java.util.ArrayList;
@@ -753,6 +800,29 @@ public class ErasureDemo {
 ten class: java.util.ArrayList
 a instanceof List: true</code></pre>
     </div>
+
+    <p>Bằng chứng thứ hai — khai báo generic vẫn nằm trong class file và reflection đọc lại được nhờ attribute <code class="inline">Signature</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+
+public class SignatureAttrDemo {
+    static class StringList extends ArrayList&lt;String&gt; {
+    }
+
+    public static void main() {
+        ParameterizedType superType =
+                (ParameterizedType) StringList.class.getGenericSuperclass();
+        IO.println("generic superclass: " + superType);
+        IO.println("type argument     : " + superType.getActualTypeArguments()[0]);
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>generic superclass: java.util.ArrayList&lt;java.lang.String&gt;
+type argument     : class java.lang.String</code></pre>
+    </div>
+    <p>Điều này giải thích vì sao framework DI/serialization (Spring, Jackson) vẫn "thấy" <code class="inline">List&lt;User&gt;</code> khi bạn truyền token kiểu <code class="inline">new TypeReference&lt;&gt;() {}</code> — khai báo generic nằm trong Signature. Ngược lại, type argument của từng lời gọi trong thân method thì bị xoá, nên nếu cần kiểu thật lúc runtime vẫn phải mang theo <code class="inline">Class&lt;T&gt;</code> token (mục <a href="#bay">8</a>).</p>
 
     <p>Erasure là nguồn gốc của gần như mọi câu hỏi phỏng vấn khó về generics. Sáu hệ quả lớn:</p>
 
@@ -845,18 +915,26 @@ class HoSo implements Comparable&lt;HoSo&gt; {
 qua Comparable: 1</code></pre>
     </div>
 
-    <p>Chạy <code class="inline">javap -p HoSo</code> sẽ thấy tận hai method <code class="inline">compareTo</code>; còn <code class="inline">javap -v</code> cho thấy cờ <code class="inline">ACC_BRIDGE</code> của bản nhận <code class="inline">Object</code>:</p>
+    <p>Hai lệnh tách biệt để tái lập được. Trước hết <code class="inline">javap -p HoSo</code> cho thấy tận hai method <code class="inline">compareTo</code>:</p>
 
     <div class="codeblock">
-      <pre><code>Compiled from "BridgeGenericsDemo.java"
+      <pre><code>$ javap -p HoSo
+Compiled from "BridgeGenericsDemo.java"
 class HoSo implements java.lang.Comparable&lt;HoSo&gt; {
   final java.lang.String ten;
   final int tuoi;
   HoSo(java.lang.String, int);
   public int compareTo(HoSo);
   public int compareTo(java.lang.Object);
-    flags: (0x1041) ACC_PUBLIC, ACC_BRIDGE, ACC_SYNTHETIC
 }</code></pre>
+    </div>
+
+    <p>Còn cờ <code class="inline">ACC_BRIDGE</code> chỉ hiện khi chạy <code class="inline">javap -v</code> (trích đúng phần method bridge):</p>
+    <div class="codeblock">
+      <pre><code>$ javap -v HoSo
+  public int compareTo(java.lang.Object);
+    descriptor: (Ljava/lang/Object;)I
+    flags: (0x1041) ACC_PUBLIC, ACC_BRIDGE, ACC_SYNTHETIC</code></pre>
     </div>
 
     <p>Compiler sinh bridge ở mọi nơi generic bị "chốt kiểu": interface <code class="inline">Comparable&lt;T&gt;</code> khai báo <code class="inline">compareTo(T)</code>, erasure thành <code class="inline">compareTo(Object)</code>; class của bạn viết <code class="inline">compareTo(HoSo)</code>; bridge đứng giữa nhận <code class="inline">Object</code>, cast và gọi method thật. Bridge cũng xuất hiện với covariant return type — cùng chủ đề với <a href="polymorphism.html#covariant">Polymorphism — mục 9</a>.</p>
@@ -970,6 +1048,51 @@ RawTypeDemo.java:8: warning: [unchecked] unchecked call to add(E) as a member of
 
     <div class="note"><strong>Phân biệt:</strong> <code class="inline">List</code> (raw) tắt hết kiểm tra; <code class="inline">List&lt;Object&gt;</code> kiểm tra đầy đủ nhưng cho chứa mọi object; <code class="inline">List&lt;?&gt;</code> chỉ cho đọc ra <code class="inline">Object</code> và không cho ghi. Cần "chứa mọi thứ" thì dùng <code class="inline">List&lt;Object&gt;</code>, không dùng raw.</div>
 
+    <h3>7.7 Override method generic — nhìn bridge bằng javap</h3>
+    <p>Bridge không chỉ xuất hiện khi implement interface. Nó cũng sinh ra khi class con override method generic của class cha và "chốt" type parameter thành kiểu cụ thể. Class cha <code class="inline">Cha&lt;T&gt;</code> có <code class="inline">T tao()</code>; class con <code class="inline">Con extends Cha&lt;String&gt;</code> override thành <code class="inline">String tao()</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">public class OverrideBridgeDemo {
+    static class Cha&lt;T&gt; {
+        T tao() {
+            return null;
+        }
+    }
+
+    static class Con extends Cha&lt;String&gt; {
+        @Override
+        String tao() {
+            return "abc";
+        }
+    }
+
+    public static void main() {
+        Cha&lt;String&gt; c = new Con();
+        IO.println("qua kieu cha: " + c.tao());
+        IO.println("class that  : " + c.getClass().getSimpleName());
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>qua kieu cha: abc
+class that  : Con</code></pre>
+    </div>
+    <p>Biên dịch rồi chạy <code class="inline">javap -p 'OverrideBridgeDemo$Con'</code> — có tới hai method <code class="inline">tao()</code>, bản trả <code class="inline">Object</code> là bridge:</p>
+    <div class="codeblock">
+      <pre><code>$ javap -p 'OverrideBridgeDemo$Con'
+Compiled from "OverrideBridgeDemo.java"
+class OverrideBridgeDemo$Con extends OverrideBridgeDemo$Cha&lt;java.lang.String&gt; {
+  OverrideBridgeDemo$Con();
+  java.lang.String tao();
+  java.lang.Object tao();
+}
+
+$ javap -v 'OverrideBridgeDemo$Con'   (trích)
+  java.lang.Object tao();
+    descriptor: ()Ljava/lang/Object;
+    flags: (0x1040) ACC_BRIDGE, ACC_SYNTHETIC</code></pre>
+    </div>
+    <p>Nhờ bridge, lời gọi qua kiểu cha (<code class="inline">c.tao()</code>, descriptor trả <code class="inline">Object</code>) vẫn dispatch vào method override của <code class="inline">Con</code> thay vì rơi về method của <code class="inline">Cha</code>; bridge cast kết quả về <code class="inline">String</code> rồi gọi method thật.</p>
+
     <h2 id="bay">8. Bẫy thường gặp tổng hợp <span class="badge b-prod">Production</span></h2>
 
     <table>
@@ -1042,7 +1165,83 @@ public class ClassTokenDemo {
 ClassCastException: Cannot cast java.lang.String to java.lang.Integer</code></pre>
     </div>
 
-    <p><code class="inline">Class&lt;T&gt;</code> token là cầu nối duy nhất giữa generic lúc compile và kiểu thật lúc runtime: nó cho phép method generic biết type argument cụ thể để validate, tạo instance/mảng, hoặc parse. Đây cũng là cách các framework DI/serialization (Spring, Jackson) lấy được kiểu generic — đào sâu ở <a href="annotations-reflection.html">2.9 Annotations &amp; Reflection</a>.</p>
+    <p><code class="inline">Class&lt;T&gt;</code> token là cầu nối <em>trực tiếp</em> giữa generic lúc compile và kiểu thật lúc runtime: attribute <code class="inline">Signature</code> chỉ giữ khai báo generic cố định trong class file, còn token mang theo type argument của từng lời gọi để method generic validate, tạo instance/mảng, hoặc parse. Đây cũng là nền tảng để framework DI/serialization (Spring, Jackson) lấy được kiểu generic — đào sâu ở <a href="annotations-reflection.html">2.9 Annotations &amp; Reflection</a>.</p>
+
+    <h3>Generic exception bất hợp lệ — và enum cũng không generic được</h3>
+    <p>Hai luật của ngôn ngữ hay bị bỏ qua:</p>
+    <ul>
+      <li><strong>Generic class không được kế thừa <code class="inline">Throwable</code></strong> (JLS §8.1.2): <code class="inline">class MyEx&lt;T&gt; extends Exception</code> là lỗi compile, vì catch/rethrow cần kiểu exception xác định sau erasure còn type parameter thì không đảm bảo được.</li>
+      <li><strong>Không catch type variable hay parameterized type</strong> (JLS §8.5 và luật catch §14.20): kiểu catch phải là class type là con của <code class="inline">Throwable</code>; <code class="inline">catch (T e)</code> và <code class="inline">catch (Hop&lt;String&gt; e)</code> đều bị chặn ngay khi compile.</li>
+    </ul>
+    <div class="errblock">
+      <pre>GenericExExtendsErr.java:1: error: a generic class may not extend java.lang.Throwable
+class MyEx&lt;T&gt; extends Exception {
+                      ^
+1 error</pre>
+    </div>
+    <div class="errblock">
+      <pre>GenericExCatchErr.java:5: error: unexpected type
+        } catch (T e) {
+                 ^
+  required: class
+  found:    type parameter T
+  where T is a type-variable:
+    T extends Exception declared in method &lt;T&gt;bat()
+1 error</pre>
+    </div>
+    <div class="errblock">
+      <pre>CatchParamErr.java:8: error: incompatible types: Hop&lt;String&gt; cannot be converted to Throwable
+        } catch (Hop&lt;String&gt; e) {
+                    ^
+1 error</pre>
+    </div>
+    <p>Còn <strong>enum không thể generic</strong> (JLS §8.9): mỗi hằng enum là static field của chính kiểu enum, mà static member không được dùng type variable — nên <code class="inline">enum E&lt;T&gt;</code> vô nghĩa ngay từ thiết kế. Muốn enum mang dữ liệu kèm theo, hãy dùng field/constructor (mỗi hằng giữ một mã, một nhãn...), không phải type parameter.</p>
+
+    <h3><code class="inline">@SuppressWarnings("unchecked")</code> — tắt đúng chỗ, không tắt cả file</h3>
+    <p>Unchecked warning là tín hiệu mất an toàn kiểu, không phải lỗi. Chỉ tắt khi bạn đã chứng minh được thao tác an toàn (dữ liệu đến từ API legacy có kiểm soát, hoặc vừa validate bằng <code class="inline">Class&lt;T&gt;</code>), và luôn gắn ở phạm vi <strong>nhỏ nhất</strong> — local variable hoặc method nhỏ — kèm comment giải thích. Gắn lên cả class để "tắt cả file" là che luôn warning mới phát sinh sau này:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class SuppressUncheckedDemo {
+    static List&lt;?&gt; apiCu() {
+        return List.of("a", "b");
+    }
+
+    static List&lt;String&gt; nhanTuApiCu() {
+        @SuppressWarnings("unchecked")
+        List&lt;String&gt; ketQua = (List&lt;String&gt;) apiCu();
+        return ketQua;
+    }
+
+    public static void main() {
+        IO.println(nhanTuApiCu());
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[a, b]</code></pre>
+    </div>
+    <div class="note"><strong>Kiểm chứng:</strong> <code class="inline">javac -Xlint:unchecked SuppressUncheckedDemo.java</code> không còn warning vì annotation phủ đúng dòng cast. Bỏ annotation, warning <code class="inline">unchecked cast</code> sẽ hiện ngay tại dòng đó — phạm vi càng nhỏ, người review càng dễ đánh giá "lời hứa" này.</div>
+
+    <h3>Intersection cast — <code class="inline">(Runnable &amp; Serializable)</code></h3>
+    <p>Intersection type cho phép ép một biểu thức về nhiều interface cùng lúc; thường dùng với lambda để vừa chạy được vừa đủ điều kiện serialize (RMI, cache, session). Khác với lambda target typing chỉ chọn một functional interface, intersection cast khẳng định biểu thức thoả cả hai hợp đồng:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.io.Serializable;
+
+public class IntersectionCastDemo {
+    public static void main() {
+        Runnable viec = (Runnable &amp; Serializable) () -&gt; IO.println("chay duoc");
+
+        viec.run();
+        IO.println("Serializable? " + (viec instanceof Serializable));
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>chay duoc
+Serializable? true</code></pre>
+    </div>
+    <div class="note">Intersection cast chỉ hợp lệ khi các vế không xung đột (không có hai class, không trùng abstract method) và biểu thức đúng là functional interface. Cùng cú pháp <code class="inline">&amp;</code> còn dùng để khai báo multiple bounds: <code class="inline">&lt;T extends Runnable &amp; Serializable&gt;</code> (mục 5). Ứng dụng lambda đào sâu ở <a href="lambda-functional.html#cu-phap">3.6 Lambda &amp; Functional interfaces</a>.</div>
 
     <h2 id="goc-nodejs">9. Góc Node.js — Generics trong TypeScript <span class="badge b-junior">Junior+</span></h2>
 
@@ -1087,7 +1286,7 @@ ds = [ 1, 2, 3, 'x' ]</code></pre>
       <li><strong>Type chỉ có trên giấy:</strong> dòng cuối nhét <code class="inline">"x"</code> vào mảng khai báo <code class="inline">number[]</code> mà chương trình vẫn chạy và in ra phần tử chuỗi. TS cố tình covariant <code class="inline">number[]</code> → <code class="inline">unknown[]</code> (giống Java cho mảng covariant), nhưng JS/Node không có JVM để kiểm tra — cái giá là hoàn toàn không có lưới an toàn runtime.</li>
       <li><strong>Java cần wildcard vì nominal + invariant;</strong> TS thường không cần "PECS" bởi kết hợp structural typing và variance annotation, nhưng cái giá là tính unsound cao hơn. Muốn an toàn trong TS, dùng <code class="inline">readonly T[]</code> (chặn <code class="inline">push</code>) và tránh cast qua <code class="inline">any</code>.</li>
       <li><strong>Không có bridge method</strong> trong TS/JS vì method call không bị ràng buộc bởi descriptor kiểu như bytecode Java.</li>
-      <li><strong>Primitive:</strong> cả hai đều không cho type argument nguyên thủy — Java bắt dùng wrapper (<code class="inline">Integer</code>), TS chỉ có <code class="inline">number</code> nên không gặp vấn đề này.</li>
+      <li><strong>Primitive:</strong> Java cấm type argument nguyên thủy — <code class="inline">Box&lt;int&gt;</code> là lỗi compile, buộc dùng wrapper (<code class="inline">Integer</code>, <code class="inline">Double</code>...) với autoboxing. TypeScript viết <code class="inline">Array&lt;number&gt;</code> bình thường vì số trong TS vẫn là giá trị, không có wrapper; đây là hệ quả của erasure (generic Java chỉ nhận kiểu reference), không phải TS "không có generic cho số".</li>
     </ul>
 
     <h2 id="qa">10. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
@@ -1147,7 +1346,7 @@ ds = [ 1, 2, 3, 'x' ]</code></pre>
 
     <details class="qa">
       <summary>Câu 10. Type erasure là gì? Kể các hệ quả chính.</summary>
-      <div class="answer">Erasure là việc compiler xóa type argument khi biên dịch để tương thích ngược: <code class="inline">List&lt;String&gt;</code> thành <code class="inline">List</code>, <code class="inline">T</code> thành bound trái nhất (<code class="inline">Object</code> nếu không bound); compiler chèn cast tại call site. Hệ quả: không <code class="inline">new T()</code>, không <code class="inline">new T[]</code>/<code class="inline">new List&lt;String&gt;[]</code>, không <code class="inline">instanceof List&lt;String&gt;</code>, không overload nếu erasure trùng, không dùng type param của class trong static context, phát sinh bridge method và heap pollution với varargs generic.</div>
+      <div class="answer">Erasure là việc compiler xóa type argument khỏi kiểu tĩnh/descriptor khi biên dịch để tương thích ngược: <code class="inline">List&lt;String&gt;</code> thành <code class="inline">List</code>, <code class="inline">T</code> thành bound trái nhất (<code class="inline">Object</code> nếu không bound); compiler chèn cast tại call site. Lưu ý: class file <em>không</em> mất sạch thông tin generic — attribute <code class="inline">Signature</code> vẫn giữ khai báo generic để reflection/Jackson/Spring đọc qua <code class="inline">getGenericSuperclass()</code>/<code class="inline">getGenericInterfaces()</code>; chỉ type argument trong thân method và local variable mới mất hẳn. Hệ quả: không <code class="inline">new T()</code>, không <code class="inline">new T[]</code>/<code class="inline">new List&lt;String&gt;[]</code>, không <code class="inline">instanceof List&lt;String&gt;</code>, không overload nếu erasure trùng, không dùng type param của class trong static context, phát sinh bridge method và heap pollution với varargs generic.</div>
     </details>
 
     <details class="qa">

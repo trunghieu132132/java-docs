@@ -246,7 +246,7 @@ LinkedList instanceof RandomAccess : false</code></pre>
       </tbody>
     </table>
 
-    <div class="note"><strong>JDK 21+ — SequencedCollection:</strong> <code class="inline">List</code>, <code class="inline">Deque</code>, <code class="inline">LinkedHashSet</code> và <code class="inline">LinkedHashMap</code> giờ có API chung cho hai đầu: <code class="inline">getFirst/getLast</code>, <code class="inline">addFirst/addLast</code>, <code class="inline">removeFirst/removeLast</code>, <code class="inline">reversed()</code>. JDK 25 kế thừa trọn vẹn API này:</div>
+    <div class="note"><strong>JDK 21+ — SequencedCollection &amp; SequencedMap:</strong> <code class="inline">List</code>, <code class="inline">Deque</code> và <code class="inline">LinkedHashSet</code> (→ <code class="inline">SequencedSet</code>) implement <code class="inline">SequencedCollection</code> với API hai đầu: <code class="inline">getFirst/getLast</code>, <code class="inline">addFirst/addLast</code>, <code class="inline">removeFirst/removeLast</code>, <code class="inline">reversed()</code>. Riêng <code class="inline">LinkedHashMap</code> implement <code class="inline">SequencedMap</code> — API <strong>khác hẳn</strong>, không có <code class="inline">getFirst/addFirst</code> mà dùng entry: <code class="inline">firstEntry/lastEntry</code>, <code class="inline">pollFirstEntry/pollLastEntry</code>, <code class="inline">putFirst/putLast</code>, <code class="inline">reversed()</code>. JDK 25 kế thừa trọn vẹn API này:</div>
 
     <div class="codeblock">
       <pre><code class="java">import java.util.*;
@@ -263,6 +263,14 @@ void main() {
     set.addFirst("a");
     IO.println("set          : " + set);
     IO.println("set.getLast(): " + set.getLast());
+
+    LinkedHashMap&lt;String, Integer&gt; map = new LinkedHashMap&lt;&gt;();
+    map.put("b", 2);
+    map.putFirst("a", 1);
+    map.putLast("c", 3);
+    IO.println("map          : " + map);
+    IO.println("firstEntry   : " + map.firstEntry());
+    IO.println("reversed map : " + map.reversed());
 }</code></pre>
     </div>
 
@@ -271,7 +279,10 @@ void main() {
 getFirst/Last: a / d
 reversed     : [d, c, b, a]
 set          : [a, b, c]
-set.getLast(): c</code></pre>
+set.getLast(): c
+map          : {a=1, b=2, c=3}
+firstEntry   : a=1
+reversed map : {c=3, b=2, a=1}</code></pre>
     </div>
 
     <h2 id="list">3. List — ArrayList, LinkedList, Vector <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
@@ -522,6 +533,40 @@ contains("20")      = false</code></pre>
 
     <p>Hai method tìm kiếm <code class="inline">indexOf</code> và <code class="inline">contains</code> đều dựa trên <code class="inline">equals</code> của phần tử (với <code class="inline">contains</code> thì so <code class="inline">o.equals(elementData[i])</code>), nên object muốn tìm đúng phải override <code class="inline">equals</code> — xem <a href="object-contract.html#equals-contract">Object contract — mục 4</a>. Ví dụ <code class="inline">contains("20")</code> trả <code class="inline">false</code> vì <code class="inline">Integer(20)</code> không equals <code class="inline">String "20"</code>.</p>
 
+    <h3>toArray — List ↔ mảng</h3>
+
+    <p>Hai overload nghe giống nhau nhưng khác kiểu trả về: <code class="inline">toArray()</code> luôn trả <code class="inline">Object[]</code> (không cast được sang <code class="inline">String[]</code>); muốn mảng đúng kiểu hãy truyền mảng đích. Idiom hiện đại là <code class="inline">toArray(new T[0])</code> — mảng rỗng để JVM tự cấp đúng kích thước (nhanh hơn <code class="inline">new T[list.size()]</code> trên JDK mới):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = List.of("a", "b", "c");
+    Object[] obj = list.toArray();
+    String[] arr = list.toArray(new String[0]);
+    IO.println("toArray()         : " + obj.getClass().getSimpleName());
+    IO.println("toArray(new T[0]) : " + arr.getClass().getSimpleName() + " " + Arrays.toString(arr));
+
+    arr[0] = "z";
+    IO.println("sua mang, list    : " + list);
+    List&lt;String&gt; view = Arrays.asList(arr);
+    IO.println("Arrays.asList     : " + view);
+    List&lt;String&gt; copy = new ArrayList&lt;&gt;(view);
+    copy.add("d");
+    IO.println("copy mutable      : " + copy);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>toArray()         : Object[]
+toArray(new T[0]) : String[] [a, b, c]
+sua mang, list    : [a, b, c]
+Arrays.asList     : [z, b, c]
+copy mutable      : [z, b, c, d]</code></pre>
+    </div>
+
+    <p>Nhớ hai chiều: <code class="inline">toArray</code> là <strong>bản sao</strong> (sửa mảng không ảnh hưởng list), còn <code class="inline">Arrays.asList(array)</code> là <strong>view fixed-size</strong> trỏ thẳng vào mảng gốc (sửa một bên thấy bên kia); muốn list mutable độc lập thì bọc thêm <code class="inline">new ArrayList&lt;&gt;(...)</code>.</p>
+
     <h2 id="set">4. Set — HashSet, LinkedHashSet, TreeSet <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
     <p><code class="inline">Set</code> là tập hợp <strong>không có phần tử trùng</strong>. "Trùng" được quyết định bởi <code class="inline">equals</code> + <code class="inline">hashCode</code> (với <code class="inline">HashSet</code>/<code class="inline">LinkedHashSet</code>) hoặc <code class="inline">compareTo</code> (với <code class="inline">TreeSet</code>) — nền tảng nằm ở <a href="object-contract.html#hashcode-contract">Object contract — mục 7</a>.</p>
@@ -649,6 +694,14 @@ void main() {
     IO.println("complementOf : " + EnumSet.complementOf(dau));
     IO.println("allOf        : " + EnumSet.allOf(Grade.class));
     IO.println("range(B, D)  : " + EnumSet.range(Grade.B, Grade.D));
+
+    EnumSet&lt;Grade&gt; none = EnumSet.noneOf(Grade.class);
+    none.add(Grade.A);
+    none.add(Grade.C);
+    EnumSet&lt;Grade&gt; copy = EnumSet.copyOf(none);
+    copy.add(Grade.F);
+    IO.println("noneOf + add : " + none);
+    IO.println("copyOf       : " + copy);
 }</code></pre>
     </div>
 
@@ -657,7 +710,9 @@ void main() {
 contains(B)  : true
 complementOf : [D, F]
 allOf        : [A, B, C, D, F]
-range(B, D)  : [B, C, D]</code></pre>
+range(B, D)  : [B, C, D]
+noneOf + add : [A, C]
+copyOf       : [A, C, F]</code></pre>
     </div>
 
     <h2 id="map">5. Map — HashMap internals &amp; method hiện đại <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
@@ -726,11 +781,12 @@ map.size() : 2</code></pre>
     <ul>
       <li><strong>Capacity mặc định 16</strong>, <strong>load factor 0.75</strong>. Khi <code class="inline">size &gt; capacity × 0.75</code> (16 × 0.75 = 12 entry), map <strong>resize</strong>: nhân đôi capacity và phân bố lại toàn bộ entry. Chi phí một lần resize là O(n) nhưng chia đều ra vẫn O(1) khấu hao.</li>
       <li><strong>Capacity luôn là lũy thừa 2</strong> để dùng mask <code class="inline">(n - 1) &amp; hash</code>. Truyền capacity không phải lũy thừa 2 (ví dụ <code class="inline">new HashMap&lt;&gt;(100)</code>) thì map tự làm tròn lên lũy thừa 2 gần nhất (128).</li>
-      <li><strong>Treeify</strong>: khi một bucket có <strong>≥ 8 node</strong> (TREEIFY_THRESHOLD) <em>và</em> capacity đạt <strong>≥ 64</strong> (MIN_TREEIFY_CAPACITY), bucket chuyển từ linked list sang <strong>cây đỏ-đen</strong>, tra cứu trong bucket còn ~O(log n) thay vì O(n). Nếu capacity còn &lt; 64 thì map ưu tiên <strong>resize</strong> thay vì treeify. Khi bucket co xuống ≤ 6 node (untreeify) nó quay về linked list.</li>
+      <li><strong>Treeify</strong>: bucket <strong>8 node vẫn là linked list</strong>; chỉ khi <strong>thêm node thứ 9</strong> vào bucket đang có ≥ 8 node <em>và</em> capacity đạt <strong>≥ 64</strong> (MIN_TREEIFY_CAPACITY) thì bucket mới chuyển từ linked list sang <strong>cây đỏ-đen</strong>, tra cứu trong bucket còn ~O(log n) thay vì O(n). Nếu capacity còn &lt; 64 thì map ưu tiên <strong>resize</strong> thay vì treeify — nên với map mặc định 16, bucket phải qua vài lần resize mới đủ điều kiện treeify.</li>
+      <li><strong>Untreeify khi xóa:</strong> hằng số <code class="inline">UNTREEIFY_THRESHOLD = 6</code> chỉ được dùng trong <code class="inline">split()</code> khi resize; còn khi <strong>xóa</strong>, việc bucket quay về linked list do <code class="inline">removeTreeNode</code> quyết định theo <strong>hình dạng cây</strong>, không phải đếm "còn ≤ 6 node". Đừng viết code dựa vào "bucket nhỏ là linked list".</li>
       <li>Trường hợp xấu nhất khi bị tấn công hash (mọi key cùng hash): O(log n) nhờ cây đỏ-đen (từ Java 8); trước đó là O(n).</li>
     </ul>
 
-    <div class="note">Vì vậy khi biết trước số phần tử, hãy tạo map đủ lớn để tránh resize: <code class="inline">new HashMap&lt;&gt;(soPhanTu / 0.75 + 1)</code>, hoặc dùng <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+) cho ý nghĩa rõ ràng.</div>
+    <div class="note">Vì vậy khi biết trước số phần tử, hãy tạo map đủ lớn để tránh resize: <code class="inline">new HashMap&lt;&gt;((int) Math.ceil(soPhanTu / 0.75))</code> — nhớ cast <code class="inline">(int)</code> vì <code class="inline">soPhanTu / 0.75</code> là <code class="inline">double</code> và <code class="inline">HashMap</code> không có constructor nhận <code class="inline">double</code> (<code class="inline">new HashMap&lt;&gt;(soPhanTu / 0.75 + 1)</code> không compile). Gọn hơn, dùng <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+): JDK tự tính capacity vừa đủ, không cần bạn nhớ công thức.</div>
 
     <h3>5.3 LinkedHashMap — LRU cache trong 10 dòng</h3>
 
@@ -848,6 +904,39 @@ m                   : {a=1}</code></pre>
 
     <div class="note">Thứ tự duyệt của <code class="inline">Map.of</code>/<code class="inline">Set.of</code> <strong>không được đảm bảo</strong> (JDK dùng salt ngẫu nhiên mỗi lần chạy để chống tấn công hash). Đừng viết test phụ thuộc vào thứ tự đó; cần thứ tự thì bọc qua <code class="inline">TreeMap</code>/<code class="inline">LinkedHashMap</code>.</div>
 
+    <p>Bộ factory bất biến còn có <code class="inline">Set.copyOf</code> và <code class="inline">Map.copyOf</code> (đủ bộ cùng với <code class="inline">List.copyOf</code> ở mục 3). Chúng <strong>sao chép</strong> dữ liệu tại thời điểm gọi — khác view unmodifiable — và <strong>từ chối null</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Set&lt;String&gt; s = Set.copyOf(List.of("a", "b", "a"));
+    Map&lt;String, Integer&gt; m = Map.copyOf(Map.of("a", 1, "b", 2));
+    IO.println("Set.copyOf : " + new TreeSet&lt;&gt;(s));
+    IO.println("Map.copyOf : " + new TreeMap&lt;&gt;(m));
+
+    try {
+        Set.copyOf(Arrays.asList("a", null));
+    } catch (NullPointerException e) {
+        IO.println("Set.copyOf co null    -&gt; NullPointerException");
+    }
+    Map&lt;String, Integer&gt; coNull = new HashMap&lt;&gt;();
+    coNull.put("k", null);
+    try {
+        Map.copyOf(coNull);
+    } catch (NullPointerException e) {
+        IO.println("Map.copyOf null value -&gt; NullPointerException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Set.copyOf : [a, b]
+Map.copyOf : {a=1, b=2}
+Set.copyOf co null    -&gt; NullPointerException
+Map.copyOf null value -&gt; NullPointerException</code></pre>
+    </div>
+
     <h3>5.6 Method hiện đại: getOrDefault → compute → merge</h3>
 
     <p>Từ Java 8, <code class="inline">Map</code> có các default method giúp code ngắn và tránh null check lặp lại:</p>
@@ -915,12 +1004,14 @@ sau remove(b,999) roi remove(b,2) : {a=11, c=3, d=40}</code></pre>
     <p>Ba pattern đáng nhớ: đếm tần suất bằng <code class="inline">merge</code>, khởi tạo danh sách con bằng <code class="inline">computeIfAbsent</code>, và cộng dồn nhóm bằng <code class="inline">merge</code>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">Map&lt;String, List&lt;String&gt;&gt; theoNhom = new HashMap&lt;&gt;();
+      <pre><code class="java">Map&lt;String, List&lt;String&gt;&gt; theoNhom = new TreeMap&lt;&gt;();
 for (String sp : List.of("ao", "quan", "ao", "giay")) {
     theoNhom.computeIfAbsent(sp, k -&gt; new ArrayList&lt;&gt;()).add("SP-" + sp);
 }
-// {ao=[SP-ao, SP-ao], quan=[SP-quan], giay=[SP-giay]}</code></pre>
+// TreeMap sap theo key: {ao=[SP-ao, SP-ao], giay=[SP-giay], quan=[SP-quan]}</code></pre>
     </div>
+
+    <div class="note">Ví dụ dùng <code class="inline">TreeMap</code> để thứ tự in ổn định; nếu thay bằng <code class="inline">HashMap</code>, thứ tự duyệt <strong>không được đảm bảo</strong> — output thực tế có thể là <code class="inline">{quan=..., giay=..., ao=...}</code> và còn phụ thuộc JDK/capacity. Đừng viết test hay logic dựa vào thứ tự đó.</div>
 
     <h3>5.7 Bẫy key mutable</h3>
 
@@ -971,6 +1062,103 @@ map van giu entry: 1</code></pre>
     </div>
 
     <p>Quy tắc production: key nên là <strong>immutable</strong> — <code class="inline">String</code>, số wrapper, <code class="inline">enum</code>, <code class="inline">record</code>, <code class="inline">UUID</code>, <code class="inline">LocalDate</code>. Nếu buộc dùng object mutable làm key, hãy copy giá trị tại thời điểm <code class="inline">put</code> hoặc "đóng băng" nó.</p>
+
+    <h3>5.8 View: keySet(), entrySet(), values()</h3>
+
+    <p>Ba method này trả <strong>view</strong> trỏ thẳng vào map, không phải bản sao: xóa qua view là xóa thẳng entry trong map, và map đổi thì view thấy ngay. Duyệt-xóa vẫn phải qua iterator/<code class="inline">removeIf</code> (không sửa map trực tiếp trong for-each):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+    map.put("a", 1);
+    map.put("b", 2);
+    map.put("c", 3);
+
+    Set&lt;String&gt; keys = map.keySet();
+    Collection&lt;Integer&gt; values = map.values();
+    Set&lt;Map.Entry&lt;String, Integer&gt;&gt; entries = map.entrySet();
+
+    keys.remove("a");
+    IO.println("sau keySet().remove(a) : " + new TreeMap&lt;&gt;(map));
+    values.remove(2);
+    IO.println("sau values().remove(2) : " + new TreeMap&lt;&gt;(map));
+    entries.removeIf(e -&gt; e.getKey().equals("c"));
+    IO.println("sau entrySet removeIf  : " + new TreeMap&lt;&gt;(map));
+    map.put("d", 4);
+    IO.println("them d, keys           : " + keys);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau keySet().remove(a) : {b=2, c=3}
+sau values().remove(2) : {c=3}
+sau entrySet removeIf  : {}
+them d, keys           : [d]</code></pre>
+    </div>
+
+    <p>Mẹo: dùng <code class="inline">for (var e : map.entrySet())</code> thay cho <code class="inline">map.get(key)</code> khi cần cả key lẫn value — tránh tra cứu hai lần. Còn <code class="inline">Iterator.forEachRemaining</code> đẩy phần còn lại của iterator vào một consumer:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Iterator&lt;String&gt; it = List.of("a", "b", "c").iterator();
+    IO.println("bo qua  : " + it.next());
+    StringBuilder sb = new StringBuilder();
+    it.forEachRemaining(sb::append);
+    IO.println("con lai : " + sb);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>bo qua  : a
+con lai : bc</code></pre>
+    </div>
+
+    <h3>5.9 WeakHashMap &amp; IdentityHashMap</h3>
+
+    <p><code class="inline">WeakHashMap</code> giữ key bằng <strong>weak reference</strong>: khi không còn reference mạnh nào tới key, entry có thể bị GC thu hồi — hợp cho cache tạm (key đang được dùng ở nơi khác). <code class="inline">IdentityHashMap</code> so key bằng <code class="inline">==</code> (danh tính object) thay vì <code class="inline">equals</code>, hữu ích khi cần map theo chính instance — nó cố ý vi phạm hợp đồng equals chung của <code class="inline">Map</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() throws Exception {
+    Map&lt;Object, String&gt; cache = new WeakHashMap&lt;&gt;();
+    Object key = new Object();
+    cache.put(key, "gia tri");
+    IO.println("truoc GC: size=" + cache.size());
+    key = null;
+    for (int i = 0; i &lt; 5 &amp;&amp; !cache.isEmpty(); i++) {
+        System.gc();
+        Thread.sleep(50);
+    }
+    IO.println("sau GC  : size=" + cache.size());
+
+    String a = new String("x");
+    String b = new String("x");
+    Map&lt;String, Integer&gt; identity = new IdentityHashMap&lt;&gt;();
+    identity.put(a, 1);
+    identity.put(b, 2);
+    Map&lt;String, Integer&gt; hash = new HashMap&lt;&gt;();
+    hash.put(a, 1);
+    hash.put(b, 2);
+    IO.println("a.equals(b)     : " + a.equals(b));
+    IO.println("IdentityHashMap : size=" + identity.size());
+    IO.println("HashMap         : size=" + hash.size());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>truoc GC: size=1
+sau GC  : size=0
+a.equals(b)     : true
+IdentityHashMap : size=2
+HashMap         : size=1</code></pre>
+    </div>
+
+    <div class="note warn"><strong>WeakHashMap</strong> chỉ hợp khi chính key là thứ bạn muốn GC thu hồi; value không được giữ reference mạnh ngược lại key (nếu không key không bao giờ bị thu). Thời điểm entry biến mất do GC quyết định — output trên minh hoạ một lần chạy HotSpot, đừng dựa vào đó cho logic bắt buộc. <strong>IdentityHashMap</strong> không dùng <code class="inline">hashCode/equals</code> nên chỉ dùng khi thật sự cần so theo reference (ví dụ giữ metadata theo instance object).</div>
 
     <h2 id="queue-deque">6. Queue &amp; Deque — ArrayDeque, PriorityQueue <span class="badge b-junior">Junior+</span></h2>
 
@@ -1238,6 +1426,41 @@ COW iterator.remove       : UnsupportedOperationException</code></pre>
     </table>
 
     <p>Một chi tiết hay bị hỏi: <code class="inline">it.remove()</code> chỉ gọi được <strong>sau</strong> <code class="inline">it.next()</code>; gọi trước đó ném <code class="inline">IllegalStateException</code>. Và <code class="inline">removeIf</code> thường được implementation tối ưu (ví dụ <code class="inline">ArrayList</code> duyệt một lần rồi dịch mảng) nên hiệu quả hơn tự viết vòng lặp iterator.</p>
+
+    <h3>ListIterator — duyệt hai chiều, sửa an toàn khi duyệt</h3>
+
+    <p><code class="inline">List</code> có thêm <code class="inline">ListIterator</code>: duyệt xuôi/ngược bằng <code class="inline">hasNext/next</code> và <code class="inline">hasPrevious/previous</code>, đồng thời cho phép <code class="inline">set</code> (ghi đè phần tử vừa đi qua) và <code class="inline">add</code> (chèn ngay trước vị trí con trỏ) <em>an toàn</em> — không ném CME vì thao tác qua chính iterator:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("a", "b", "c"));
+    ListIterator&lt;String&gt; it = list.listIterator();
+    while (it.hasNext()) {
+        String s = it.next();
+        if (s.equals("b")) {
+            it.set("B");
+            it.add("b2");
+        }
+    }
+    IO.println("sau duyet xuoi : " + list);
+
+    StringBuilder sb = new StringBuilder();
+    ListIterator&lt;String&gt; rev = list.listIterator(list.size());
+    while (rev.hasPrevious()) {
+        sb.append(rev.previous()).append(' ');
+    }
+    IO.println("duyet nguoc    : " + sb.toString().trim());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau duyet xuoi : [a, B, b2, c]
+duyet nguoc    : c b2 B a</code></pre>
+    </div>
+
+    <p>Khác <code class="inline">Iterator</code> (chỉ có <code class="inline">remove</code>), <code class="inline">ListIterator</code> chỉ tồn tại trên <code class="inline">List</code>. Cách nhớ vị trí: con trỏ nằm <em>giữa</em> hai phần tử — <code class="inline">add</code> chèn vào ngay trước phần tử mà <code class="inline">next()</code> sẽ trả, còn <code class="inline">set</code> thay phần tử mà <code class="inline">next()/previous()</code> vừa trả.</p>
 
     <h2 id="comparator">8. Comparable vs Comparator <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -1558,6 +1781,45 @@ view sau khi goc them b : [a, b]</code></pre>
 
     <p>Chi tiết đầy đủ về <code class="inline">Arrays</code> (copy nông/sâu, <code class="inline">ArrayStoreException</code>, varargs) nằm ở <a href="arrays.html#arrays-class">Arrays — mục 6</a>; so sánh mảng vs List ở <a href="arrays.html#mang-vs-list">Arrays — mục 11</a>.</p>
 
+    <h3>Wrapper: synchronized &amp; checked</h3>
+
+    <p><code class="inline">Collections.synchronizedMap/Set</code> (cùng họ với <code class="inline">synchronizedList</code> đã gặp ở mục 7) bọc collection thường thành bản khóa từng method. <strong>Duyệt vẫn phải tự synchronized</strong> trên chính wrapper, nếu không sẽ dính CME khi thread khác sửa. <code class="inline">Collections.checkedList/Map</code> là <em>view kiểm tra kiểu</em> — chặn ghi sai kiểu ngay tại wrapper (hữu ích với collection raw/legacy), nhưng không bảo vệ collection gốc nếu bị sửa vòng qua wrapper:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+@SuppressWarnings({"unchecked", "rawtypes"})
+void main() {
+    Map&lt;String, Integer&gt; syncMap = Collections.synchronizedMap(new HashMap&lt;&gt;());
+    syncMap.put("a", 1);
+    synchronized (syncMap) {                 // bat buoc khi duyet
+        StringBuilder sb = new StringBuilder();
+        for (var e : syncMap.entrySet()) {
+            sb.append(e);
+        }
+        IO.println("duyet trong synchronized: " + sb);
+    }
+
+    List&lt;String&gt; raw = new ArrayList&lt;&gt;();
+    List&lt;String&gt; checked = Collections.checkedList(raw, String.class);
+    checked.add("ok");
+    try {
+        ((List) checked).add(42);
+    } catch (ClassCastException e) {
+        IO.println("checkedList.add(42) -&gt; ClassCastException");
+    }
+    IO.println("raw: " + raw);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>duyet trong synchronized: a=1
+checkedList.add(42) -&gt; ClassCastException
+raw: [ok]</code></pre>
+    </div>
+
+    <div class="note warn">synchronized wrapper khóa thô (toàn collection) và iterator vẫn fail-fast — code mới ưu tiên <code class="inline">ConcurrentHashMap</code>/<code class="inline">CopyOnWriteArrayList</code>. checked wrapper chỉ kiểm tra kiểu lúc ghi <em>qua chính nó</em>, hoàn toàn không phải cơ chế thread-safety hay bảo mật.</div>
+
     <h2 id="big-o">10. Big-O tổng hợp, chọn theo use case &amp; production <span class="badge b-prod">Production</span></h2>
 
     <h3>Bảng Big-O tổng hợp</h3>
@@ -1609,7 +1871,7 @@ view sau khi goc them b : [a, b]</code></pre>
 
     <ul>
       <li><strong>Boxing có giá:</strong> <code class="inline">List&lt;Integer&gt;</code> lưu reference tới object <code class="inline">Integer</code> (~16 byte) cộng slot trong mảng (4–8 byte), trong khi <code class="inline">int[]</code> chỉ 4 byte/ô. Với hàng triệu số, chênh lệch bộ nhớ và cache miss là đáng kể — dùng mảng hoặc <code class="inline">IntStream</code> cho đường nóng (hot path).</li>
-      <li><strong>Pre-size khi biết trước số phần tử:</strong> <code class="inline">new ArrayList&lt;&gt;(10_000)</code> tránh nhiều lần copy mảng; <code class="inline">new HashMap&lt;&gt;(soPhanTu / 0.75 + 1)</code> tránh resize — hoặc <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+) cho rõ nghĩa.</li>
+      <li><strong>Pre-size khi biết trước số phần tử:</strong> <code class="inline">new ArrayList&lt;&gt;(10_000)</code> tránh nhiều lần copy mảng; <code class="inline">new HashMap&lt;&gt;((int) Math.ceil(soPhanTu / 0.75))</code> tránh resize — hoặc <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+) cho rõ nghĩa. Lưu ý <code class="inline">soPhanTu / 0.75</code> là <code class="inline">double</code> nên phải cast <code class="inline">(int)</code>, nếu không sẽ không compile.</li>
       <li><strong>LinkedList tốn bộ nhớ:</strong> mỗi phần tử là một node với 2 reference + header object. Gần như mọi nhu cầu "chèn/xóa nhanh hai đầu" của LinkedList đều được <code class="inline">ArrayDeque</code> giải quyết tốt hơn (nhanh hơn, ít bộ nhớ hơn).</li>
       <li><strong>Load factor của HashMap:</strong> 0.75 là điểm cân bằng mặc định. Giảm xuống 0.5 → ít collision hơn nhưng tốn bộ nhớ; tăng lên 0.9 → tiết kiệm bộ nhớ nhưng nhiều collision, chậm hơn. Chỉ chỉnh khi đã đo đạc.</li>
       <li><strong>List.contains trong vòng lặp</strong> là O(n) mỗi lần, dễ biến thuật toán thành O(n²). Cần membership check nhiều lần → chuyển sang <code class="inline">HashSet</code>.</li>
@@ -1623,11 +1885,36 @@ view sau khi goc them b : [a, b]</code></pre>
       <li><strong><code class="inline">ConcurrentHashMap</code></strong> — map chuẩn cho đa luồng: không khóa toàn cục, <code class="inline">computeIfAbsent</code> chạy atomic (khác <code class="inline">HashMap</code> + tự khóa), iterator weakly consistent. Không cho null key/value. Dùng cho cache, counter, registry.</li>
       <li><strong><code class="inline">CopyOnWriteArrayList</code></strong> — mỗi lần ghi copy toàn bộ mảng, đổi lại đọc và duyệt không cần khóa. Chỉ dùng khi ghi rất ít (danh sách listener, cấu hình). Ghi nhiều là thảm họa hiệu năng.</li>
       <li><strong><code class="inline">BlockingQueue</code></strong> — trái tim của producer–consumer: <code class="inline">ArrayBlockingQueue</code> (bounded, chống tràn bộ nhớ), <code class="inline">LinkedBlockingQueue</code>, <code class="inline">PriorityBlockingQueue</code>, <code class="inline">SynchronousQueue</code>. Học sâu ở Giai đoạn 4.</li>
+      <li><strong><code class="inline">BlockingDeque</code></strong> — hàng đợi blocking hai đầu (<code class="inline">LinkedBlockingDeque</code> là implementation chính), thêm được <code class="inline">putFirst/putLast</code>, <code class="inline">takeFirst/takeLast</code> — dùng cho work-stealing hoặc deque producer–consumer hai chiều.</li>
+      <li><strong><code class="inline">ConcurrentSkipListMap</code>/<code class="inline">ConcurrentSkipListSet</code></strong> — bản concurrent của <code class="inline">TreeMap</code>/<code class="inline">TreeSet</code> (skip list): giữ thứ tự sort, hỗ trợ range query, không khóa toàn cục. Dùng khi cần map/set <em>có thứ tự</em> chia sẻ giữa nhiều thread, vì <code class="inline">ConcurrentHashMap</code> không sort được.</li>
       <li><strong><code class="inline">Collections.synchronizedXxx</code></strong> — wrapper khóa từng method; duyệt vẫn phải tự <code class="inline">synchronized (list) { ... }</code>. Code mới ưu tiên concurrent collections thay vì wrapper này.</li>
       <li><strong>Không dùng <code class="inline">Vector</code>, <code class="inline">Stack</code>, <code class="inline">Hashtable</code></strong> trong code mới — legacy, khóa thô, API lỗi thời. Thay bằng <code class="inline">ArrayList</code>/<code class="inline">ArrayDeque</code>/<code class="inline">ConcurrentHashMap</code>.</li>
       <li><strong>Đừng trả <code class="inline">null</code> cho collection</strong> — trả <code class="inline">List.of()</code> hoặc <code class="inline">Collections.emptyList()</code> để call site không phải null check. Ở biên API, dùng <code class="inline">List.copyOf</code> để phòng thủ (defensive copy).</li>
       <li><strong>Đóng gói collection nội bộ:</strong> field <code class="inline">private final List&lt;...&gt;</code>, getter trả <code class="inline">List.copyOf</code> hoặc <code class="inline">unmodifiableList</code>; không để lộ reference cho bên ngoài sửa (chi tiết ở <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>).</li>
     </ul>
+
+    <h3>ConcurrentHashMap internals (JDK 8+) &amp; chuyện size()</h3>
+
+    <p>Không khóa toàn cục như <code class="inline">Hashtable</code>: với bucket rỗng, <code class="inline">put</code> dùng <strong>CAS</strong> để gắn node đầu; khi bucket đã có node, nó <code class="inline">synchronized</code> trên <strong>chính head node</strong> của bucket đó (khóa mịn theo bin) — nhiều thread ghi vào các bucket khác nhau không chặn nhau. Đổi lại, <code class="inline">size()</code> <strong>chỉ là ước lượng</strong> (Javadoc nói rõ) vì được tổng hợp từ các <code class="inline">CounterCell</code> cập nhật phân tán; dưới concurrency hãy dùng <code class="inline">mappingCount()</code> (trả <code class="inline">long</code>, không tràn <code class="inline">int</code>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.*;
+
+void main() {
+    ConcurrentHashMap&lt;String, Integer&gt; chm = new ConcurrentHashMap&lt;&gt;();
+    chm.put("a", 1);
+    chm.computeIfAbsent("b", k -&gt; 2);
+    IO.println("size()         = " + chm.size());
+    IO.println("mappingCount() = " + chm.mappingCount());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>size()         = 2
+mappingCount() = 2</code></pre>
+    </div>
+
+    <div class="note warn">Không dùng <code class="inline">size()</code> để quyết định logic dưới concurrency (giá trị có thể là trung gian); cần đếm chính xác hãy dùng <code class="inline">LongAdder</code> hoặc tự quản lý. CHM cũng <strong>không nhận null</strong> key/value, và <code class="inline">computeIfAbsent</code> chạy atomic trên đúng bucket đó.</div>
 
     <h2 id="goc-nodejs">11. Góc Node.js — Array/Map/Set của JS vs Java</h2>
 
@@ -1643,9 +1930,29 @@ view sau khi goc them b : [a, b]</code></pre>
         <tr><td>Object làm map</td><td>Key bị ép về string; dính prototype, key <code class="inline">1</code> và <code class="inline">"1"</code> là một</td><td><code class="inline">HashMap</code> có kiểu; không ép kiểu, không prototype</td></tr>
         <tr><td>Thứ tự Map</td><td><code class="inline">Map</code> giữ thứ tự chèn (đảm bảo)</td><td><code class="inline">HashMap</code> không đảm bảo; <code class="inline">LinkedHashMap</code> mới giữ</td></tr>
         <tr><td>LRU</td><td><code class="inline">Map</code> + <code class="inline">delete</code>/<code class="inline">set</code> lại key</td><td><code class="inline">LinkedHashMap</code> access-order có sẵn</td></tr>
-        <tr><td>Duyệt &amp; xóa</td><td><code class="inline">forEach</code> trên snapshot hoặc tự quản lý</td><td>Iterator/<code class="inline">removeIf</code>; sửa trực tiếp → CME</td></tr>
+        <tr><td>Duyệt &amp; xóa</td><td><code class="inline">Array.forEach</code> duyệt <strong>động</strong>: bỏ qua phần tử bị xóa trước lượt, không thăm phần tử thêm vào vượt <code class="inline">length</code> ban đầu — không phải snapshot</td><td>Iterator/<code class="inline">removeIf</code>; sửa trực tiếp → CME</td></tr>
       </tbody>
     </table>
+
+    <div class="codeblock">
+      <pre><code>const xoa = ["a", "b", "c", "d"];
+const daTham = [];
+xoa.forEach((x) => {
+  daTham.push(x);
+  if (x === "a") xoa.splice(1, 1);   // "b" bi xoa truoc luot -> khong tham
+});
+console.log(daTham);                  // [ 'a', 'c', 'd' ]
+
+const them = ["a", "b", "c"];
+const daTham2 = [];
+them.forEach((x) => {
+  daTham2.push(x);
+  if (x === "a") them.push("d");      // index 3 >= length ban dau 3 -> khong tham
+});
+console.log(daTham2);                 // [ 'a', 'b', 'c' ]</code></pre>
+    </div>
+
+    <p>Muốn "snapshot" thật trong JS thì tự copy trước: <code class="inline">[...mang].forEach(...)</code>. Bên Java, chỉ các collection như <code class="inline">CopyOnWriteArrayList</code> mới có iterator trên snapshot; <code class="inline">ArrayList</code> thì fail-fast.</p>
 
     <div class="codeblock">
       <pre><code>const arr = [1, 2, 3];
@@ -1768,7 +2075,7 @@ console.log([...lru.map.keys()]);      // [ 'c', 'a', 'd' ]</code></pre>
 
     <details class="qa">
       <summary>Câu 9. HashMap hoạt động thế nào? Load factor và treeify là gì?</summary>
-      <div class="answer">Mảng bucket; index = <code class="inline">(n-1) &amp; (h ^ (h &gt;&gt;&gt; 16))</code>; trong bucket dùng equals. Load factor 0.75: khi size vượt 75% capacity thì resize gấp đôi và rehash. Từ Java 8, bucket ≥ 8 node <em>và</em> capacity ≥ 64 thì chuyển linked list thành cây đỏ-đen (treeify) để tra cứu ~O(log n); nếu capacity &lt; 64 thì resize trước. Bucket co về ≤ 6 node thì quay lại linked list.</div>
+      <div class="answer">Mảng bucket; index = <code class="inline">(n-1) &amp; (h ^ (h &gt;&gt;&gt; 16))</code>; trong bucket dùng equals. Load factor 0.75: khi size vượt 75% capacity thì resize gấp đôi và rehash. Từ Java 8: bucket 8 node vẫn là linked list; chỉ khi <strong>thêm node thứ 9</strong> vào bucket đang có ≥ 8 node <em>và</em> capacity ≥ 64 (MIN_TREEIFY_CAPACITY) mới treeify thành cây đỏ-đen để tra cứu ~O(log n); nếu capacity &lt; 64 thì resize trước. Ngưỡng 6 (UNTREEIFY_THRESHOLD) chỉ dùng trong <code class="inline">split()</code> lúc resize; khi xóa, việc quay về linked list do <code class="inline">removeTreeNode</code> quyết định theo hình dạng cây, không đếm node ≤ 6.</div>
     </details>
 
     <details class="qa">

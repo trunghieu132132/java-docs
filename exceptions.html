@@ -266,6 +266,55 @@ bat ArithmeticException: / by zero</code></pre>
       <li><strong>Error</strong> — không bắt, không ném, không khai báo.</li>
     </ul>
     <div class="note"><strong>Chốt gọn:</strong> chỉ <code class="inline">Throwable</code> mới <code class="inline">throw</code> được. Compiler <em>ép</em> xử lý checked; <em>không ép</em> unchecked. Error là chuyện của JVM — sửa gốc, đừng bắt. Khi phân vân thiết kế custom exception: mặc định chọn unchecked; chỉ dùng checked khi caller chắc chắn phải recover.</div>
+
+    <h3>2.5 JEP 358 — Helpful NullPointerException (mặc định từ JDK 15)</h3>
+    <p>Từ JDK 15, message của <code class="inline">NullPointerException</code> không còn trống rỗng: JVM mô tả chính xác biểu thức nào <code class="inline">null</code> và vì sao. Tính năng bật mặc định (JEP 358); tắt bằng <code class="inline">-XX:-ShowCodeDetailsInExceptionMessages</code>, bật lại bằng <code class="inline">-XX:+ShowCodeDetailsInExceptionMessages</code>.</p>
+    <div class="codeblock">
+      <pre><code class="java">public class HelpfulNpeDemo {
+    static class Khach {
+        DiaChi diaChi;
+    }
+
+    static class DiaChi {
+        String thanhPho;
+    }
+
+    static Khach khach = new Khach();
+
+    public static void main() {
+        try {
+            IO.println(khach.diaChi.thanhPho);
+        } catch (NullPointerException e) {
+            IO.println("message: " + e.getMessage());
+        }
+        IO.println("tiep tuc chay");
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>message: Cannot read field "thanhPho" because "HelpfulNpeDemo.khach.diaChi" is null
+tiep tuc chay</code></pre>
+    </div>
+    <p>Khi tắt bằng <code class="inline">java -XX:-ShowCodeDetailsInExceptionMessages HelpfulNpeDemo.java</code>, message trở về trống:</p>
+    <div class="codeblock error">
+      <pre><code>message: null
+tiep tuc chay</code></pre>
+    </div>
+    <div class="note">Tên trong message lấy từ thông tin debug khi biên dịch: biến static/field hiện tên đầy đủ (<code class="inline">HelpfulNpeDemo.khach.diaChi</code>), còn biến local không có tên debug sẽ hiện dạng <code class="inline">&lt;local0&gt;</code>. Chi tiết này chỉ giúp debug — không nên parse message để xử lý logic.</div>
+
+    <h3>2.6 NoClassDefFoundError vs ClassNotFoundException</h3>
+    <p>Hai cái tên na ná nhau nhưng nằm ở hai tầng và hai họ khác nhau:</p>
+    <table>
+      <thead>
+        <tr><th></th><th>ClassNotFoundException</th><th>NoClassDefFoundError</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Họ</td><td>Checked — kế thừa <code class="inline">Exception</code></td><td>Unchecked — kế thừa <code class="inline">Error</code></td></tr>
+        <tr><td>Do ai ném</td><td>Code của bạn qua reflection: <code class="inline">Class.forName</code>, <code class="inline">ClassLoader.loadClass</code></td><td>JVM khi bytecode đang chạy tham chiếu tới class không load được (thiếu classpath lúc chạy, lỗi static initializer...)</td></tr>
+        <tr><td>Ý nghĩa</td><td>"Tìm class theo tên mà không thấy" — biết trước, có thể xử lý (plugin, JDBC driver)</td><td>"Class chắc chắn phải có đã không load nổi" — thường là lỗi đóng gói/deploy, không nên bắt</td></tr>
+      </tbody>
+    </table>
+    <div class="note">Mẹo nhớ: <code class="inline">ClassNotFoundException</code> là <em>bạn</em> chủ động yêu cầu load class và nhận thông báo; <code class="inline">NoClassDefFoundError</code> là <em>JVM</em> nổ khi đang chạy code tham chiếu tới class đó. Cùng một class có thể ném <code class="inline">NoClassDefFoundError</code> vì lần load đầu tiên static initializer của nó đã ném lỗi — nguyên nhân production rất hay bị bỏ sót khi đọc log.</div>
     <h2 id="try-catch-finally">3. try / catch / finally <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
     <div class="signature">
       <span class="sig-muted">try</span> <span class="sig-muted">{</span> <span class="sig-muted">... code co the nem exception ...</span> <span class="sig-muted">}</span> <span class="sig-muted">catch</span> <span class="sig-muted">(</span><span class="tok-typ">KieuLoi</span> <span class="sig-var">e</span><span class="sig-muted">)</span> <span class="sig-muted">{</span> <span class="sig-muted">... xu ly ...</span> <span class="sig-muted">}</span> <span class="sig-muted">finally</span> <span class="sig-muted">{</span> <span class="sig-muted">... luon chay ...</span> <span class="sig-muted">}</span>
@@ -303,8 +352,9 @@ bat ArithmeticException: / by zero</code></pre>
         <tr><td>Có exception, được catch</td><td>Có (catch phù hợp)</td><td>Có</td></tr>
         <tr><td>Có exception, không catch</td><td>Không (hoặc catch không khớp)</td><td>Có, rồi exception tiếp tục nổi lên</td></tr>
         <tr><td><code class="inline">return</code> / <code class="inline">break</code> / <code class="inline">continue</code></td><td>Không</td><td>Có, trước khi thoát</td></tr>
-        <tr><td><code class="inline">System.exit(...)</code></td><td>—</td><td><strong>Không</strong> — JVM thoát ngay</td></tr>
+        <tr><td><code class="inline">System.exit(...)</code> / <code class="inline">Runtime.getRuntime().halt(...)</code></td><td>—</td><td><strong>Không</strong> — JVM thoát ngay</td></tr>
         <tr><td>Thread bị treo/block vô hạn trong try</td><td>—</td><td>Chưa chạy (vì còn kẹt trong try)</td></tr>
+        <tr><td>Process bị kill từ ngoài (SIGKILL/taskkill) hoặc native crash</td><td>—</td><td><strong>Không</strong> — JVM không còn cơ hội chạy</td></tr>
       </tbody>
     </table>
     <p>Chạy thật <code class="inline">System.exit(0)</code> — dòng trong finally không bao giờ được in (và chương trình thoát với mã 0):</p>
@@ -357,7 +407,7 @@ FinallyReturnTrap.java:7: warning: [finally] finally clause cannot complete norm
     <div class="note warn"><strong>Quy tắc:</strong> không bao giờ đặt <code class="inline">return</code>, <code class="inline">break</code>, <code class="inline">continue</code> hay <code class="inline">throw</code> trong <code class="inline">finally</code>. <code class="inline">finally</code> chỉ để giải phóng tài nguyên, ghi log kết thúc, phục hồi state. Từ Java 7, việc đóng tài nguyên nên giao hẳn cho <a href="#try-with-resources">try-with-resources</a> ở mục 4.</div>
 
     <h3>3.3 Multi-catch — một catch cho nhiều loại lỗi</h3>
-    <p>Khi nhiều exception được xử lý giống nhau, gộp bằng dấu <code class="inline">|</code>. Biến <code class="inline">e</code> trong multi-catch là <em>effectively final</em> và có kiểu chung nhất của các nhánh:</p>
+    <p>Khi nhiều exception được xử lý giống nhau, gộp bằng dấu <code class="inline">|</code>. Biến <code class="inline">e</code> trong multi-catch là <em>implicitly final</em> (JLS §14.20) — không phải "effectively final" như biến thường dùng trong lambda — và có kiểu chung nhất của các nhánh:</p>
     <div class="codeblock">
       <pre><code class="java">import java.io.IOException;
 
@@ -399,7 +449,16 @@ khong loi</code></pre>
 1 error</pre>
     </div>
     <ul>
-      <li>Biến <code class="inline">e</code> là <em>effectively final</em> — không được gán lại <code class="inline">e = ...</code>.</li>
+      <li>Biến <code class="inline">e</code> là <em>implicitly final</em> — JLS nói rõ nó "is not considered effectively final" — nên gán lại <code class="inline">e = ...</code> bị javac chặn:</li>
+    </ul>
+    <div class="errblock">
+      <pre>MultiCatchAssignErr.java:8: error: multi-catch parameter e may not be assigned
+            e = new IOException("khac");
+            ^
+1 error</pre>
+    </div>
+    <ul>
+      <li>Ngược lại, biến của catch <em>đơn</em> (<code class="inline">catch (IOException e)</code>) gán lại được; chỉ khi muốn capture nó trong lambda mới cần nó <em>effectively final</em>.</li>
       <li>Khi <code class="inline">rethrow</code>, compiler vẫn phân tích được tập exception có thể bay ra (precise rethrow, JLS §11.2.2): method khai báo <code class="inline">throws IOException, SQLException</code> thì trong multi-catch vẫn giữ đúng hai kiểu đó.</li>
     </ul>
 
@@ -435,7 +494,7 @@ khong loi</code></pre>
     </table>
     <div class="note warn"><strong>Không bao giờ</strong> viết <code class="inline">catch (Throwable t)</code> hay <code class="inline">catch (Error e)</code> trong code thường: bạn sẽ bắt cả <code class="inline">OutOfMemoryError</code> và biến sự cố nghiêm trọng thành thứ "chạy tiếp được" một cách vô vọng.</div>
     <h2 id="try-with-resources">4. try-with-resources <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
-    <p>Từ Java 7, tài nguyên (file, socket, connection...) được khai báo ngay trong <code class="inline">try</code> và JVM tự đóng khi khối <code class="inline">try</code> kết thúc — dù bình thường, có exception, hay có <code class="inline">return</code>. Không cần <code class="inline">finally</code> thủ công.</p>
+    <p>Từ Java 7, tài nguyên (file, socket, connection...) được khai báo ngay trong <code class="inline">try</code> và được đóng tự động khi khối <code class="inline">try</code> kết thúc — dù bình thường, có exception, hay có <code class="inline">return</code>. Chính <strong>compiler</strong> sinh code gọi <code class="inline">close()</code> đúng thứ tự (JLS §14.20.3, pseudo-code ở mục 4.4); JVM chỉ thực thi bytecode đó. Không cần <code class="inline">finally</code> thủ công.</p>
     <div class="signature">
       <span class="sig-muted">try (</span><span class="tok-typ">TaiNguyen</span> <span class="sig-var">a</span> <span class="sig-muted">= ...;</span> <span class="tok-typ">TaiNguyen</span> <span class="sig-var">b</span> <span class="sig-muted">= ...) { ... }</span>
     </div>
@@ -480,7 +539,7 @@ khong loi</code></pre>
 dong B
 dong A</code></pre>
     </div>
-    <p>Thứ tự này quan trọng: nếu <code class="inline">B</code> dùng dữ liệu của <code class="inline">A</code> (ví dụ <code class="inline">BufferedWriter</code> bọc <code class="inline">FileWriter</code>), đóng theo thứ tự mở sẽ làm <code class="inline">B</code> flush vào writer đã đóng. JVM đóng hộ bạn đúng thứ tự an toàn.</p>
+    <p>Thứ tự này quan trọng: nếu <code class="inline">B</code> dùng dữ liệu của <code class="inline">A</code> (ví dụ <code class="inline">BufferedWriter</code> bọc <code class="inline">FileWriter</code>), đóng theo thứ tự mở sẽ làm <code class="inline">B</code> flush vào writer đã đóng. Compiler sinh code đóng hộ bạn đúng thứ tự an toàn (JLS §14.20.3).</p>
 
     <h3>4.3 Suppressed exception — không đánh mất lỗi khi đóng</h3>
     <p>Câu hỏi khó: nếu thân <code class="inline">try</code> ném exception, rồi lúc đóng resource cũng ném exception, lỗi nào thắng? try-with-resources giữ <strong>cả hai</strong>: lỗi chính được ném ra, lỗi khi đóng bị "đính kèm" (suppressed) và đọc bằng <code class="inline">getSuppressed()</code>.</p>
@@ -595,7 +654,7 @@ public class TwrEffectivelyFinalDemo {
     <div class="codeblock error">
       <pre><code>doc duoc 4 ky tu: Java</code></pre>
     </div>
-    <div class="note"><strong>"Effectively final"</strong> nghĩa là biến chỉ được gán một lần — cùng khái niệm bạn gặp ở <a href="index.html#var">var</a> và lambda. Biến gán lại sau đó không được phép đứng trong <code class="inline">try (...)</code>.</div>
+    <div class="note"><strong>"Effectively final"</strong> nghĩa là biến chỉ được gán một lần — cùng khái niệm bạn gặp ở <a href="index.html#final">final / effectively final</a> và lambda. Biến gán lại sau đó không được phép đứng trong <code class="inline">try (...)</code>.</div>
 
     <h3>4.6 Resource null thì sao?</h3>
     <p>Nếu biểu thức resource trả về <code class="inline">null</code>, <code class="inline">close()</code> bị bỏ qua và <strong>không có NullPointerException</strong> — hành vi này được JLS quy định rõ:</p>
@@ -621,6 +680,45 @@ public class TwrEffectivelyFinalDemo {
 khong NPE, ket thuc binh thuong</code></pre>
     </div>
     <div class="note warn">Đừng lợi dụng hành vi này để "chống null". Nếu tài nguyên có thể không mở được, hãy kiểm tra và xử lý tường minh — code đọc dễ hiểu hơn là dựa vào chi tiết ngầm của ngôn ngữ.</div>
+
+    <h3>4.7 addSuppressed thủ công — gom lỗi ngoài try-with-resources</h3>
+    <p><code class="inline">Throwable.addSuppressed(Throwable)</code> không dành riêng cho try-with-resources. Khi một tác vụ chạy nhiều bước độc lập (cập nhật nhiều dòng, gửi nhiều request), bạn có thể gom hết lỗi con vào lỗi chính rồi ném một lần — thay vì nuốt các lỗi phía sau:</p>
+    <div class="codeblock">
+      <pre><code class="java">public class AddSuppressedDemo {
+    static void capNhat(String ma) {
+        throw new RuntimeException("khong cap nhat duoc " + ma);
+    }
+
+    static void xuLyLo() {
+        RuntimeException chinh = new IllegalStateException("dong goi that bai");
+        for (String ma : new String[] {"AO-01", "QUAN-02"}) {
+            try {
+                capNhat(ma);
+            } catch (RuntimeException e) {
+                chinh.addSuppressed(e);
+            }
+        }
+        throw chinh;
+    }
+
+    public static void main() {
+        try {
+            xuLyLo();
+        } catch (RuntimeException e) {
+            IO.println("chinh: " + e.getMessage());
+            for (Throwable s : e.getSuppressed()) {
+                IO.println("suppressed: " + s.getMessage());
+            }
+        }
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>chinh: dong goi that bai
+suppressed: khong cap nhat duoc AO-01
+suppressed: khong cap nhat duoc QUAN-02</code></pre>
+    </div>
+    <div class="note"><strong>Phân biệt cause và suppressed:</strong> mỗi <code class="inline">Throwable</code> chỉ có một <code class="inline">cause</code> (chuỗi nhân quả, in ra dưới dạng "Caused by") nhưng giữ được nhiều suppressed. Truyền <code class="inline">null</code> hoặc chính nó vào <code class="inline">addSuppressed</code> sẽ ném lỗi ngay. Chỉ dùng khi một thao tác tổng hợp thực sự cần báo cáo tất cả lỗi con.</div>
     <h2 id="throw-throws">5. throw, throws &amp; exception chaining <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
     <div class="signature">
       <span class="sig-muted">throw</span> <span class="sig-var">bieuThucThrowable</span><span class="sig-muted">;</span> &nbsp;&nbsp;·&nbsp;&nbsp; <span class="sig-muted">kieuTraVe</span> <span class="sig-var">method</span><span class="sig-muted">(...) throws</span> <span class="tok-typ">LoiA</span><span class="sig-muted">,</span> <span class="tok-typ">LoiB</span> <span class="sig-muted">{ ... }</span>
@@ -924,16 +1022,53 @@ docSo("abc") = 0  &lt;- sai am tham</code></pre>
     <p>Nếu buộc phải "coi như thành công", hãy chọn cách có ghi dấu vết: dùng giá trị mặc định + log cảnh báo, hoặc ném <code class="inline">IllegalArgumentException</code> cho caller quyết định. Có đúng một trường hợp catch rỗng chấp nhận được: đóng tài nguyên trong <code class="inline">finally</code> của code rất cũ, khi bản thân lỗi đóng không quan trọng — và hiện đại hơn là dùng TWR.</p>
 
     <h3>7.2 Log-and-throw — log hai lần, alert ba lần</h3>
+    <p>Ví dụ compile và chạy được ngay — để ý cùng một lỗi bị ghi log hai lần:</p>
     <div class="codeblock">
-      <pre><code class="java">// Anti-pattern: vua log vua nem o tang trong, roi tang ngoai lai log tiep
-static void xuLy() {
-    try {
-        docFile();
-    } catch (IOException e) {
-        LOG.error("doc file that bai", e);   // log lan 1
-        throw new ServiceException("khong doc duoc du lieu", e);
+      <pre><code class="java">import java.io.IOException;
+
+public class LogAndThrowDemo {
+    static final Logger LOG = new Logger();
+
+    static class Logger {
+        void error(String message, Throwable e) {
+            IO.println("[ERROR] " + message + " - " + e.getMessage());
+        }
+    }
+
+    static class ServiceException extends RuntimeException {
+        ServiceException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    static void docFile() throws IOException {
+        throw new IOException("file hong");
+    }
+
+    // Anti-pattern: vua log vua nem o tang trong, roi tang ngoai lai log tiep
+    static void xuLy() {
+        try {
+            docFile();
+        } catch (IOException e) {
+            LOG.error("doc file that bai", e);   // log lan 1
+            throw new ServiceException("khong doc duoc du lieu", e);
+        }
+    }
+
+    public static void main() {
+        try {
+            xuLy();
+        } catch (ServiceException e) {
+            LOG.error("xu ly that bai", e);      // log lan 2 - trung lap
+            IO.println("cause: " + e.getCause().getMessage());
+        }
     }
 }</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[ERROR] doc file that bai - file hong
+[ERROR] xu ly that bai - khong doc duoc du lieu
+cause: file hong</code></pre>
     </div>
     <p>Cách đúng: wrap và ném ở tầng trong (không log), chỉ log ở nơi <strong>handle cuối cùng</strong> (tầng biên hoặc job). Ngoại lệ: log ở tầng trong với mục đích audit nghiệp vụ (ví dụ ghi rõ mã đơn vi phạm) — khi đó message log phải khác message exception.</p>
 
@@ -951,6 +1086,100 @@ static void xuLy() {
       </tbody>
     </table>
     <div class="note"><strong>Nguyên tắc log:</strong> log ở nơi có đủ ngữ cảnh và quyền quyết định (retry, trả response, dừng job). Exception nên chảy qua tầng giữa một cách "im lặng nhưng giàu thông tin": wrap có message + cause, không log lặp.</div>
+
+    <h3>7.4 UncaughtExceptionHandler — lưới an toàn cuối cùng cho thread</h3>
+    <p>Exception không được bắt trong một thread sẽ làm thread đó chết và mặc định in stack trace ra <code class="inline">System.err</code>. Đặt <code class="inline">Thread.setDefaultUncaughtExceptionHandler</code> để log/telemetry tập trung cho mọi thread, hoặc gắn handler riêng qua <code class="inline">thread.setUncaughtExceptionHandler(...)</code>. Đây là chỗ phù hợp để ghi nhận lỗi cuối cùng thay vì rải try/catch quanh mọi <code class="inline">Runnable</code>.</p>
+    <div class="codeblock">
+      <pre><code class="java">public class UncaughtHandlerDemo {
+    public static void main() throws InterruptedException {
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -&gt;
+                IO.println("bat duoc: " + e.getMessage() + " tren thread " + t.getName()));
+
+        Thread worker = new Thread(() -&gt; {
+            throw new IllegalStateException("no tren worker");
+        }, "worker-1");
+        worker.start();
+        worker.join();
+
+        IO.println("main van song");
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>bat duoc: no tren worker tren thread worker-1
+main van song</code></pre>
+    </div>
+    <div class="note"><strong>Thứ tự ưu tiên:</strong> handler gắn cho từng thread (nếu có) thắng handler mặc định. Handler <em>không cứu</em> thread — thread vẫn chết; nó chỉ đảm bảo lỗi được ghi nhận ở nơi bạn kiểm soát. <code class="inline">worker.join()</code> giữ output theo thứ tự cố định.</div>
+
+    <h3>7.5 getStackTrace() — đọc stack trace bằng code</h3>
+    <p><code class="inline">Throwable.getStackTrace()</code> trả về mảng <code class="inline">StackTraceElement</code> — mỗi phần tử là một frame với class, method, file và line. Đây là cách viết log có cấu trúc thay vì chỉ gọi <code class="inline">printStackTrace()</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">public class StackTraceDemo {
+    static void xuLy() {
+        throw new IllegalStateException("loi demo");
+    }
+
+    public static void main() {
+        try {
+            xuLy();
+        } catch (IllegalStateException e) {
+            StackTraceElement frame = e.getStackTrace()[0];
+            IO.println("frame dau: " + frame.getClassName() + "#"
+                    + frame.getMethodName() + " dong " + frame.getLineNumber());
+        }
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>frame dau: StackTraceDemo#xuLy dong 3</code></pre>
+    </div>
+
+    <h3>7.6 Checked exception trong lambda/Stream</h3>
+    <p>Functional interface chuẩn như <code class="inline">Function</code>, <code class="inline">Consumer</code> không khai báo <code class="inline">throws</code>, nên gọi method checked bên trong lambda là lỗi compile <code class="inline">unreported exception</code>. Cách xử lý sạch: bọc ngay thành <code class="inline">UncheckedIOException</code> (giữ cause) rồi bắt ở ngoài — chi tiết thêm ở <a href="streams.html#bay">Stream API — mục 9.3</a>.</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+public class LambdaCheckedDemo {
+    static String xuLy(String dong) throws IOException {
+        if (dong.isBlank()) {
+            throw new IOException("gap dong rong");
+        }
+        return dong.toUpperCase();
+    }
+
+    public static void main() throws IOException {
+        Path file = Files.createTempFile("lambda", ".txt");
+        Files.writeString(file, "dong mot\n\n");
+        try {
+            List&lt;String&gt; ketQua = Files.readAllLines(file).stream()
+                    .map(dong -&gt; {
+                        try {
+                            return xuLy(dong);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .toList();
+            IO.println("so dong: " + ketQua.size());
+        } catch (UncheckedIOException e) {
+            IO.println("wrap: " + e.getMessage());
+            IO.println("cause: " + e.getCause().getClass().getSimpleName()
+                    + " - " + e.getCause().getMessage());
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>wrap: java.io.IOException: gap dong rong
+cause: IOException - gap dong rong</code></pre>
+    </div>
+    <div class="note">Stream là <em>lazy</em>: để thấy lỗi, pipeline phải được kéo chạy thật — ví dụ qua <code class="inline">toList()</code>, <code class="inline">forEach()</code>. Một số thao tác như <code class="inline">count()</code> có thể tối ưu bỏ qua <code class="inline">map()</code> nên lỗi bên trong không nổ; đừng dựa vào tác dụng phụ trong <code class="inline">map</code>.</div>
     <h2 id="production">8. Exception trong production &amp; project đơn hàng <span class="badge b-prod">Production</span></h2>
     <p>Ví dụ xuyên suốt: một <code class="inline">OrderService</code> đọc tồn kho từ file qua <code class="inline">KhoRepository</code>, validate nghiệp vụ, và xử lý đủ ba nhóm lỗi: lỗi hạ tầng (IOException), lỗi nghiệp vụ (hết hàng, số lượng sai), lỗi lập trình (không bắt vội).</p>
     <div class="codeblock">
@@ -1156,7 +1385,7 @@ Promise.reject(new Error("loi khong ai bat"));</code></pre>
     </details>
     <details class="qa">
       <summary>Câu 4. finally có luôn chạy không? Có ngoại lệ nào?</summary>
-      <div class="answer">finally chạy khi: try kết thúc bình thường, có exception (được bắt hay không), có <code class="inline">return</code>/<code class="inline">break</code>/<code class="inline">continue</code>. Không chạy khi: JVM thoát bằng <code class="inline">System.exit</code>/<code class="inline">Runtime.halt</code>, thread bị kill, hoặc thread còn kẹt/treo bên trong try (finally chưa tới lượt). Ngoài ra nếu chương trình crash ở tầng dưới JVM (native) cũng không có cơ hội chạy.</div>
+      <div class="answer">finally chạy khi: try kết thúc bình thường, có exception (được bắt hay không), có <code class="inline">return</code>/<code class="inline">break</code>/<code class="inline">continue</code>. Không chạy khi: JVM thoát bằng <code class="inline">System.exit</code> hoặc <code class="inline">Runtime.getRuntime().halt(...)</code> (<code class="inline">halt</code> là instance method, phải gọi qua <code class="inline">getRuntime()</code>); thread còn kẹt/treo trong try (finally chưa tới lượt); process bị kill từ ngoài (SIGKILL/taskkill) hoặc native crash. Lưu ý: <code class="inline">Thread.stop()</code> (deprecated for removal) từ JDK 20 ném <code class="inline">UnsupportedOperationException</code> chứ không còn kill thread; kể cả thời còn hoạt động, nó chỉ ném <code class="inline">ThreadDeath</code> vào thread nên <strong>finally vẫn chạy</strong> — đừng dùng nó như cách "bỏ qua finally".</div>
     </details>
     <details class="qa">
       <summary>Câu 5. Vì sao không nên viết <code class="inline">return</code> trong finally?</summary>
@@ -1170,7 +1399,7 @@ Promise.reject(new Error("loi khong ai bat"));</code></pre>
     <h3>Nâng cao (Junior+)</h3>
     <details class="qa">
       <summary>Câu 7. try-with-resources hoạt động thế nào? Thứ tự đóng resource ra sao?</summary>
-      <div class="answer">Resource phải implement <code class="inline">AutoCloseable</code> (hoặc <code class="inline">Closeable</code>). JVM đóng theo thứ tự <strong>ngược với thứ tự khai báo</strong> (mở A rồi B thì đóng B rồi A), đảm bảo resource bọc ngoài còn sống khi resource bọc trong flush/đóng. close được gọi cả khi try kết thúc bình thường, có exception, hay có return.</div>
+      <div class="answer">Resource phải implement <code class="inline">AutoCloseable</code> (hoặc <code class="inline">Closeable</code>). Compiler sinh code gọi <code class="inline">close()</code> theo thứ tự <strong>ngược với thứ tự khai báo</strong> (mở A rồi B thì đóng B rồi A) — JVM chỉ thực thi bytecode đó — đảm bảo resource bọc ngoài còn sống khi resource bọc trong flush/đóng. close được gọi cả khi try kết thúc bình thường, có exception, hay có return.</div>
     </details>
     <details class="qa">
       <summary>Câu 8. Suppressed exception là gì? Đọc chúng thế nào?</summary>
@@ -1378,7 +1607,7 @@ class DocDemo {
       <li>Nêu 3 anti-pattern: nuốt exception, log-and-throw, catch <code class="inline">Exception</code> quá rộng — kèm cách thay thế.</li>
       <li>Biết cách phục hồi cờ ngắt khi gặp <code class="inline">InterruptedException</code>.</li>
     </ul>
-    <h3 id="nguon">Nguồn tham khảo</h3>
+    <h2 id="nguon">13. Nguồn tham khảo</h2>
     <ul>
       <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-11.html" target="_blank" rel="noreferrer">JLS §11 — Exceptions</a></li>
       <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-11.html#jls-11.2" target="_blank" rel="noreferrer">JLS §11.2 — Compile-Time Checking of Exceptions</a></li>

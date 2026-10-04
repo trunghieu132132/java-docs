@@ -274,7 +274,7 @@ public class OptionalMicro {
 }</code></pre>
     </div>
 
-    <div class="note"><code class="inline">Optional</code> là <strong>value-based class</strong> giống <code class="inline">Integer</code>/<code class="inline">String</code> (xem <a href="object-contract.html">2.6 equals / hashCode / toString</a>): <code class="inline">equals</code> so theo giá trị bên trong, không so địa chỉ, nên <code class="inline">Optional.of("a").equals(Optional.of("a"))</code> là <code class="inline">true</code>. Vì vậy đừng bao giờ dùng <code class="inline">==</code> để so hai Optional, và đừng <code class="inline">synchronized</code> trên Optional.</div>
+    <div class="note"><code class="inline">Optional</code> là <strong>value-based class</strong> giống <code class="inline">Integer</code>/<code class="inline">LocalDate</code> — các lớp này được JDK chú thích <code class="inline">@jdk.internal.ValueBased</code>; lưu ý <code class="inline">String</code> <strong>không</strong> phải value-based class dù <code class="inline">equals</code> của nó cũng so theo giá trị (JDK không đảm bảo tráo đổi instance cho String; xem <a href="object-contract.html">2.6 equals / hashCode / toString</a>). Với Optional, <code class="inline">equals</code> so theo giá trị bên trong, không so địa chỉ, nên <code class="inline">Optional.of("a").equals(Optional.of("a"))</code> là <code class="inline">true</code>. Vì vậy đừng bao giờ dùng <code class="inline">==</code> để so hai Optional, và đừng <code class="inline">synchronized</code> trên Optional.</div>
 
     <h2 id="truy-xuat">4. Kiểm tra &amp; truy xuất giá trị</h2>
 
@@ -603,6 +603,11 @@ public class OptionalPrimitive {
                 .findFirst();
         IO.println(tuChuoi.getAsInt());   // 42
 
+        IO.println(OptionalInt.of(7).stream().sum());       // 7
+        IO.println(OptionalLong.of(5).stream().sum());      // 5
+        IO.println(OptionalDouble.of(2.5).stream().sum());  // 2.5
+        IO.println(rong.stream().count());                  // 0
+
         Optional&lt;Integer&gt; boxing = Optional.of(1_000_000);
         IO.println(boxing);               // Optional[1000000]
     }
@@ -618,10 +623,14 @@ false
 1000000000
 2.0
 42
+7
+5
+2.5
+0
 Optional[1000000]</code></pre>
     </div>
 
-    <div class="note"><code class="inline">OptionalInt/Long/Double</code> cố tình <strong>không có</strong> <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">filter</code>/<code class="inline">stream</code> để tránh boxing trở lại. Nếu cần chain biến đổi, dùng <code class="inline">Optional&lt;Integer&gt;</code>, hoặc giữ nguyên trong <code class="inline">IntStream</code> rồi <code class="inline">findFirst()</code>/<code class="inline">max()</code> ở cuối. Chúng sinh ra chủ yếu từ các terminal operation của stream số: <code class="inline">IntStream.max()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code> (xem <a href="streams.html">3.8 Stream API</a>).</div>
+    <div class="note"><code class="inline">OptionalInt/Long/Double</code> <strong>không có</strong> <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">filter</code> vì những method này buộc trả về object (boxing trở lại), nhưng chúng <strong>VẪN có <code class="inline">stream()</code> từ Java 9</strong> — trả về <code class="inline">IntStream</code>/<code class="inline">LongStream</code>/<code class="inline">DoubleStream</code> để nối tiếp pipeline primitive (đã chạy thật: <code class="inline">OptionalInt.of(7).stream().sum()</code> = <code class="inline">7</code>, <code class="inline">OptionalInt.empty().stream().count()</code> = <code class="inline">0</code>; xem bốn dòng trước dòng boxing trong ví dụ trên). Nếu cần chain biến đổi phức tạp, dùng <code class="inline">Optional&lt;Integer&gt;</code>, hoặc giữ nguyên trong <code class="inline">IntStream</code> rồi <code class="inline">findFirst()</code>/<code class="inline">max()</code> ở cuối. Chúng sinh ra chủ yếu từ các terminal operation của stream số: <code class="inline">IntStream.max()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code> (xem <a href="streams.html">3.8 Stream API</a>).</div>
 
     <h2 id="thuc-te">7. Ví dụ thực tế: thoát null-hell</h2>
 
@@ -869,6 +878,28 @@ public class KhachHang {
       <li><strong>Đừng lạm dụng:</strong> local variable, private method trong nội bộ class, hay trạng thái "đã set/đã gán" không cần Optional. Optional sinh ra cho <em>ranh giới API công khai</em>, nơi hai phía không biết nhau.</li>
     </ul>
 
+    <h3>Allocation &amp; hiệu năng — Optional có "đắt" không?</h3>
+
+    <p><code class="inline">Optional</code> là một object nhỏ: <code class="inline">Optional.empty()</code> là singleton dùng chung (đã kiểm ở mục 3), còn <code class="inline">Optional.of(v)</code> cấp phát một object gồm header + một reference tới giá trị bên trong. Với <code class="inline">Optional&lt;Integer&gt;</code> bạn còn tốn thêm một lần boxing. Trong hot loop hoặc collection, mỗi phần tử thêm một object là chi phí thật, không còn là "cho vui".</p>
+
+    <ul>
+      <li><strong>Escape analysis:</strong> JIT (C2) có thể loại bỏ allocation của Optional khi nó không "thoát" khỏi method/scope (scalar replacement). Nhờ vậy chain ngắn trong method thường không tốn gì <em>sau khi JIT vào việc</em> — nhưng đây là tối ưu của JVM, <strong>không phải bảo đảm</strong>, phụ thuộc phiên bản JVM và hình dạng code. Đừng dựa vào nó để viết hot loop.</li>
+      <li><strong>Hot loop / dữ liệu lớn:</strong> tránh tạo Optional cho từng phần tử khi tính toán số học — dùng primitive/mảng, hoặc chỉ trả <code class="inline">OptionalInt/Long/Double</code> ở kết quả cuối. <code class="inline">List&lt;Optional&lt;T&gt;&gt;</code> vừa tốn bộ nhớ vừa rối (xem anti-pattern 2).</li>
+      <li><strong>Record component cũng là field:</strong> <code class="inline">record KhachHang(String ten, Optional&lt;String&gt; email) {}</code> lưu thẳng Optional trong field y như khai báo field thường — cùng khuyến nghị "không nên". Muốn API trả Optional, để component là kiểu thường rồi thêm accessor:</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">// Khong nen: record component Optional -&gt; luu Optional trong field
+record KhachHang(String ten, Optional&lt;String&gt; email) {}
+
+// Nen: component kieu thuong + accessor tra Optional khi can
+record KhachHang(String ten, String email) {
+    Optional&lt;String&gt; emailOptional() {
+        return Optional.ofNullable(email);
+    }
+}</code></pre>
+    </div>
+
     <h3>Anti-pattern 3 — serialize &amp; framework</h3>
 
     <ul>
@@ -1108,7 +1139,7 @@ console.log(guiMail(k));   // KHONG-CO@EXAMPLE.COM</code></pre>
 
     <details class="qa">
       <summary>Câu 10. Vì sao có <code class="inline">OptionalInt</code>/<code class="inline">OptionalLong</code>/<code class="inline">OptionalDouble</code>?</summary>
-      <div class="answer">Để tránh autoboxing khi làm việc với primitive: <code class="inline">Optional&lt;Integer&gt;</code> bọc một object <code class="inline">Integer</code>, còn <code class="inline">OptionalInt</code> lưu trực tiếp <code class="inline">int</code>, có <code class="inline">getAsInt()</code>, <code class="inline">orElse(int)</code>. Chúng sinh ra từ các terminal operation của IntStream/LongStream/DoubleStream: <code class="inline">max()</code>, <code class="inline">min()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code>. Đổi lại chúng không có <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">stream</code>.</div>
+      <div class="answer">Để tránh autoboxing khi làm việc với primitive: <code class="inline">Optional&lt;Integer&gt;</code> bọc một object <code class="inline">Integer</code>, còn <code class="inline">OptionalInt</code> lưu trực tiếp <code class="inline">int</code>, có <code class="inline">getAsInt()</code>, <code class="inline">orElse(int)</code>. Chúng sinh ra từ các terminal operation của IntStream/LongStream/DoubleStream: <code class="inline">max()</code>, <code class="inline">min()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code>. Đổi lại chúng thiếu <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">filter</code> (các method này sẽ boxing trở lại), nhưng <strong>vẫn có <code class="inline">stream()</code> từ Java 9</strong> trả về <code class="inline">IntStream</code>/<code class="inline">LongStream</code>/<code class="inline">DoubleStream</code> — ví dụ <code class="inline">OptionalInt.of(7).stream().sum()</code> cho <code class="inline">7</code>.</div>
     </details>
 
     <h3>Nâng cao (Junior+)</h3>

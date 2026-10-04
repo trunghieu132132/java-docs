@@ -163,7 +163,7 @@ method ref: JAVA</code></pre>
       </thead>
       <tbody>
         <tr><td>Cú pháp</td><td><code class="inline">new ChuyenDoi() { public String ap(String s) { ... } }</code></td><td><code class="inline">s -&gt; s.trim().toUpperCase()</code></td><td><code class="inline">BaCachDemo::chuanHoa</code></td></tr>
-        <tr><td><code class="inline">this</code></td><td>Là object vô danh — muốn outer phải viết <code class="inline">BaCachDemo.this</code></td><td>Là object bao ngoài (lexical)</td><td>Là object bao ngoài</td></tr>
+        <tr><td><code class="inline">this</code></td><td>Là object vô danh — muốn outer phải viết <code class="inline">BaCachDemo.this</code></td><td>Là object bao ngoài (lexical)</td><td>Không tạo object mới; <code class="inline">this</code> (nếu có) vẫn là object bao ngoài, method <code class="inline">static</code> thì không có <code class="inline">this</code>; unbound <code class="inline">TenClass::instanceMethod</code> nhận receiver là tham số đầu</td></tr>
         <tr><td>State riêng (field)</td><td>Có</td><td>Không</td><td>Không</td></tr>
         <tr><td>Triển khai</td><td>Sinh class thật lúc compile</td><td><code class="inline">invokedynamic</code>, class sinh lúc runtime</td><td><code class="inline">invokedynamic</code> (thường chỉ là method handle)</td></tr>
         <tr><td>Dùng khi</td><td>Cần nhiều method/state riêng, hoặc implement abstract class</td><td>Logic ngắn, tự viết body</td><td>Body chỉ gọi đúng một method có sẵn</td></tr>
@@ -245,7 +245,7 @@ public class FunctionalChildDemo {
         <tr><td><code class="inline">Function&lt;T,R&gt;</code></td><td><code class="inline">R apply(T t)</code></td><td>Biến đổi T thành R</td></tr>
         <tr><td><code class="inline">BiFunction&lt;T,U,R&gt;</code></td><td><code class="inline">R apply(T t, U u)</code></td><td>Biến đổi hai giá trị thành R</td></tr>
         <tr><td><code class="inline">UnaryOperator&lt;T&gt;</code></td><td><code class="inline">T apply(T t)</code> (kế thừa)</td><td>Function vào/ra cùng kiểu: <code class="inline">extends Function&lt;T,T&gt;</code></td></tr>
-        <tr><td><code class="inline">BinaryOperator&lt;T&gt;</code></td><td><code class="inline">T apply(T t, U u)</code> (kế thừa)</td><td><code class="inline">extends BiFunction&lt;T,T,T&gt;</code> — như phép cộng hai số</td></tr>
+        <tr><td><code class="inline">BinaryOperator&lt;T&gt;</code></td><td><code class="inline">T apply(T t, T u)</code> (kế thừa)</td><td><code class="inline">extends BiFunction&lt;T,T,T&gt;</code> — như phép cộng hai số</td></tr>
         <tr><td><code class="inline">Predicate&lt;T&gt;</code></td><td><code class="inline">boolean test(T t)</code></td><td>Điều kiện đúng/sai</td></tr>
         <tr><td><code class="inline">BiPredicate&lt;T,U&gt;</code></td><td><code class="inline">boolean test(T t, U u)</code></td><td>Điều kiện trên hai giá trị</td></tr>
         <tr><td><code class="inline">Consumer&lt;T&gt;</code></td><td><code class="inline">void accept(T t)</code></td><td>Nhận vào, xử lý, không trả về</td></tr>
@@ -300,11 +300,17 @@ true</code></pre>
     <p><code class="inline">Callable</code> khác <code class="inline">Runnable</code> ở chỗ trả kết quả và được phép ném checked exception — vì thế nó là lựa chọn cho <code class="inline">ExecutorService.submit</code>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">Callable&lt;String&gt; c = () -&gt; "ket qua";
-IO.println(c.call());   // ket qua</code></pre>
+      <pre><code class="java">void main() throws Exception {
+    Callable&lt;String&gt; c = () -&gt; "ket qua";
+    IO.println(c.call());   // ket qua
+}</code></pre>
     </div>
+    <div class="codeblock error">
+      <pre><code>ket qua</code></pre>
+    </div>
+    <p>Chú ý <code class="inline">main</code> phải khai báo <code class="inline">throws Exception</code>: <code class="inline">Callable.call()</code> khai báo checked exception, khác <code class="inline">Runnable.run()</code>. Đây chính là ví dụ cho luật "lambda chỉ ném checked exception nếu SAM cho phép".</p>
 
-    <h3>Primitive specialization — tránh boxing</h3>
+    <h3>4.1 Primitive specialization — tránh boxing</h3>
 
     <p>Generic chỉ chứa reference type, nên <code class="inline">Predicate&lt;Integer&gt;</code> phải boxing/unboxing mỗi lần gọi. Với vòng lặp nóng hoặc <code class="inline">IntStream</code>, JDK có sẵn các biến thể primitive:</p>
 
@@ -347,7 +353,53 @@ public class PrimitiveFunctionDemo {
 42</code></pre>
     </div>
 
-    <div class="note">Đừng lạm dụng primitive interface cho mọi thứ: chúng chỉ có cho <code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">double</code> (và boolean cho Supplier), không compose được với nhau như <code class="inline">Function</code>. Chỉ chuyển sang khi đo thấy boxing là điểm nóng, hoặc khi làm việc với <code class="inline">IntStream</code>/<code class="inline">OptionalInt</code>.</div>
+    <div class="note">Đừng lạm dụng primitive interface cho mọi thứ: chúng chỉ có cho <code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">double</code> (và boolean cho Supplier), và <strong>không trộn được hai họ</strong> — <code class="inline">IntPredicate.and(...)</code> chỉ nhận <code class="inline">IntPredicate</code>, không nhận <code class="inline">Predicate&lt;Integer&gt;</code>; <code class="inline">ToIntFunction</code> không nối được với <code class="inline">Function</code>. Nhưng <em>trong cùng họ</em> thì vẫn compose tốt: <code class="inline">IntPredicate</code> có <code class="inline">and/or/negate</code>, <code class="inline">IntUnaryOperator</code> có <code class="inline">andThen/compose</code>. Chỉ chuyển sang khi đo thấy boxing là điểm nóng, hoặc khi làm việc với <code class="inline">IntStream</code>/<code class="inline">OptionalInt</code>.</div>
+
+    <h3>4.2 Biến checked exception thành unchecked</h3>
+
+    <p>Vì <code class="inline">Supplier</code>/<code class="inline">Function</code>/<code class="inline">Consumer</code> không khai báo checked exception, lambda có gọi <code class="inline">IOException</code>… sẽ không compile. Helper "unchecked" bọc lại thành <code class="inline">RuntimeException</code> (giữ nguyên cause) là mẫu rất phổ biến khi làm việc với file/IO trong pipeline:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.IOException;
+import java.util.function.Supplier;
+
+@FunctionalInterface
+interface Thunk&lt;T&gt; {
+    T get() throws Exception;
+}
+
+static &lt;T&gt; Supplier&lt;T&gt; unchecked(Thunk&lt;T&gt; thunk) {
+    return () -&gt; {
+        try {
+            return thunk.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    };
+}
+
+void main() {
+    Supplier&lt;String&gt; ok = unchecked(() -&gt; "gia tri");
+    IO.println(ok.get());
+
+    Supplier&lt;String&gt; loi = unchecked(() -&gt; {
+        throw new IOException("mat ket noi");
+    });
+    try {
+        loi.get();
+    } catch (RuntimeException e) {
+        IO.println(e.getClass().getSimpleName() + " &lt;- "
+                + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>gia tri
+RuntimeException &lt;- IOException: mat ket noi</code></pre>
+    </div>
+
+    <div class="note warn">Chỉ dùng <code class="inline">unchecked</code> ở biên hệ thống (đọc file, gọi API) nơi bạn kiểm soát ngữ cảnh; nó làm mất kiểm tra checked ở compile nên đừng lạm dụng. Ngược lại, chọn <code class="inline">Callable</code> khi SAM có khai báo checked exception — như snippet phía trên.</div>
 
     <h2 id="cu-phap">5. Cú pháp lambda &amp; target typing <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
 
@@ -400,21 +452,29 @@ JAVA
 17</code></pre>
     </div>
 
-    <h3>Target typing — lambda không có kiểu độc lập</h3>
+    <h3>5.1 Target typing — lambda không có kiểu độc lập</h3>
 
     <p>Cùng một lambda có thể mang nhiều nghĩa khác nhau tuỳ ngữ cảnh. Trình biên dịch nhìn <strong>target type</strong> (kiểu bên trái phép gán, kiểu tham số method, kiểu trả về) để quyết định SAM nào được implement — cơ chế này gọi là <em>target typing</em>:</p>
 
     <div class="codeblock">
-      <pre><code class="java">import java.util.function.IntUnaryOperator;
-import java.util.function.Supplier;
+      <pre><code class="java">import java.util.function.Function;
+import java.util.function.IntUnaryOperator;
 
-// Cung mot than lambda, hai target type khac nhau
-IntUnaryOperator tang = x -&gt; x + 1;          // int -&gt; int
-Supplier&lt;String&gt; chao = () -&gt; "xin chao";   // () -&gt; String
-
-IO.println(tang.applyAsInt(4));   // 5
-IO.println(chao.get());           // xin chao</code></pre>
+void main() {
+    // Hai lambda giong het nhau ve chu, chi khac target type
+    IntUnaryOperator u = x -&gt; x + 1;              // int -&gt; int
+    Function&lt;Integer, Integer&gt; f = x -&gt; x + 1;    // Integer -&gt; Integer
+    IO.println(u.applyAsInt(4));                  // 5
+    IO.println(f.apply(4));                       // 5
+    IO.println(u.getClass() == f.getClass());     // false
+}</code></pre>
     </div>
+    <div class="codeblock error">
+      <pre><code>5
+5
+false</code></pre>
+    </div>
+    <p>Cùng một thân <code class="inline">x -&gt; x + 1</code> nhưng <code class="inline">u</code> là implementation của <code class="inline">IntUnaryOperator</code> (không boxing), còn <code class="inline">f</code> là của <code class="inline">Function&lt;Integer,Integer&gt;</code> (có boxing) — hai class runtime khác nhau. Lambda không có kiểu riêng, "nghĩa" của nó do target type quyết định.</p>
 
     <p>Vì cần target type, <code class="inline">var</code> một mình không đủ ngữ cảnh — đây là lỗi rất hay gặp khi viết nhanh:</p>
 
@@ -466,7 +526,7 @@ Handler chay</code></pre>
 
     <div class="note">Trong code thật, cách tốt hơn cast là <strong>tránh overload chỉ khác functional interface</strong>, hoặc đặt tên method khác nhau (<code class="inline">dangKyCallback</code> / <code class="inline">dangKyHandler</code>). Cast chỉ nên là phương án chữa cháy, vì nó làm call site rối và dễ vỡ khi thêm overload mới.</div>
 
-    <h3>Lambda không tạo scope mới — và <code class="inline">this</code> trỏ object bao ngoài</h3>
+    <h3>5.2 Lambda không tạo scope mới — và <code class="inline">this</code> trỏ object bao ngoài</h3>
 
     <p>Thân lambda <strong>không phải</strong> một scope mới cho tên biến: tham số lambda dùng chung "không gian tên" với method bao ngoài, nên không được trùng tên với biến local/parameter ở ngoài:</p>
 
@@ -562,7 +622,7 @@ public class CaptureSemanticsDemo {
 
     <p>Kết quả trên chốt hai điều: <code class="inline">base</code> được capture giá trị <strong>10</strong> (nên ra 11); <code class="inline">heSo</code> là static field nên lambda đọc giá trị <strong>lúc gọi</strong> (đã đổi thành 10, ra 50). Gán lại <code class="inline">heSo</code> không vi phạm gì vì field không bị luật effectively final.</p>
 
-    <h3>Muốn "biến đổi" trong lambda thì làm sao?</h3>
+    <h3>6.1 Muốn "biến đổi" trong lambda thì làm sao?</h3>
 
     <p>Ba cách thực dụng, xếp theo mức độ khuyến khích:</p>
     <ol>
@@ -623,6 +683,31 @@ Xin chao Binh</code></pre>
     </div>
 
     <div class="note warn"><strong>Cảnh báo memory leak:</strong> lambda capture <code class="inline">this</code> (dù chỉ đọc một field) sẽ giữ object bao ngoài sống mãi nếu lambda được đăng ký vào nơi có vòng đời dài — ví dụ listener trong list static. Trong Spring/Android hay gặp lỗi này; hãy gỡ đăng ký khi không dùng nữa, hoặc tách hành vi ra khỏi object.</div>
+
+    <h3>6.2 Lambda đệ quy qua holder</h3>
+
+    <p>Lambda không có tên nên không thể gọi chính nó. Nhưng holder — mảng một phần tử đã nhắc ở mục 6.1 — lại cho phép đệ quy: khai báo mảng trước, gán lambda sau, thân lambda gọi <code class="inline">holder[0]</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.IntUnaryOperator;
+
+void main() {
+    IntUnaryOperator[] giaiThua = new IntUnaryOperator[1];
+    giaiThua[0] = n -&gt; n &lt;= 1 ? 1 : n * giaiThua[0].applyAsInt(n - 1);
+    IO.println(giaiThua[0].applyAsInt(5));
+
+    IntUnaryOperator[] fib = new IntUnaryOperator[1];
+    fib[0] = n -&gt; n &lt; 2 ? n : fib[0].applyAsInt(n - 1) + fib[0].applyAsInt(n - 2);
+    IO.println(fib[0].applyAsInt(10));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>120
+55</code></pre>
+    </div>
+
+    <div class="note">Holder phải là <code class="inline">final</code>/effectively final (mảng không gán lại) nhưng nội dung mảng đổi được — đúng như cơ chế ở 6.1. Đệ quy này vẫn chịu giới hạn stack (<code class="inline">StackOverflowError</code> với input lớn); cần đệ quy sâu/DFS hãy dùng vòng lặp hoặc method có tên. Mẹo tương tự áp dụng cho callback lồng nhau, không riêng số học.</div>
 
     <h2 id="method-reference">7. Method reference — 4 loại <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
 
@@ -713,11 +798,62 @@ true</code></pre>
 
     <div class="note">Chọn lambda hay method reference? Nếu body <strong>chỉ</strong> gọi một method và không thêm logic → method reference rõ ý hơn. Nếu cần thêm xử lý, biến đổi, hoặc phải cast target type để hết mơ hồ → lambda. Với overload, target type quyết định overload nào được chọn; nếu không đủ thông tin, javac báo lỗi ngay tại method reference.</div>
 
+    <h3>7.1 Method reference nâng cao: generic, this, super</h3>
+
+    <p>Method reference tới <strong>generic method</strong> không cần ghi type argument — compiler suy từ target type. Còn <code class="inline">this::method</code> trỏ về instance hiện tại và <code class="inline">super::method</code> chọn implementation của lớp cha (hữu ích khi override muốn gọi lại bản cha):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+class Util {
+    static &lt;T&gt; T dauTien(List&lt;T&gt; ds) {
+        return ds.get(0);
+    }
+}
+
+class Cha {
+    String gioiThieu() { return "Cha"; }
+}
+
+class Con extends Cha {
+    String gioiThieu() { return "Con"; }
+    Supplier&lt;String&gt; cuaCha() { return super::gioiThieu; }
+    Supplier&lt;String&gt; cuaCon() { return this::gioiThieu; }
+}
+
+record Nguoi(String ten) {
+    String chao() { return "Xin chao " + ten; }
+    Supplier&lt;String&gt; loiChao() { return this::chao; }
+}
+
+void main() {
+    Function&lt;List&lt;String&gt;, String&gt; chuoi = Util::dauTien;
+    Function&lt;List&lt;Integer&gt;, Integer&gt; so = Util::dauTien;
+    IO.println(chuoi.apply(List.of("a", "b")));
+    IO.println(so.apply(List.of(42, 7)));
+    IO.println(new Con().cuaCon().get());
+    IO.println(new Con().cuaCha().get());
+    IO.println(new Nguoi("An").loiChao().get());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a
+42
+Con
+Cha
+Xin chao An</code></pre>
+    </div>
+
+    <div class="note">Trong method <code class="inline">static</code> không có <code class="inline">this</code> lẫn <code class="inline">super</code> — chỉ dùng được <code class="inline">TenClass::method</code>. Với unbound <code class="inline">TenClass::instanceMethod</code>, receiver chính là tham số đầu tiên của lambda (ví dụ <code class="inline">String::length</code>). <code class="inline">this::</code> là bound reference: nó giữ luôn instance hiện tại — cùng cảnh báo memory leak như lambda capture <code class="inline">this</code>.</div>
+
     <h2 id="composition">8. Composition — ghép hàm &amp; predicate <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
 
     <p>Functional interface có sẵn default method để ghép các hàm nhỏ thành pipeline. Đây là lý do chúng vẫn là functional interface dù có nhiều method: default method <strong>không tính</strong> vào SAM.</p>
 
-    <h3><code class="inline">Predicate</code>: and / or / negate / isEqual / not</h3>
+    <h3>8.1 <code class="inline">Predicate</code>: and / or / negate / isEqual / not</h3>
 
     <div class="codeblock">
       <pre><code class="java">import java.util.function.Predicate;
@@ -754,6 +890,23 @@ negate      : false
 isEqual     : true</code></pre>
     </div>
 
+    <p><code class="inline">Predicate.not</code> (Java 11) là cách viết gọn cho phủ định, đặc biệt khi muốn đảo một method reference — dễ đọc hơn cast:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.Predicate;
+
+void main() {
+    Predicate&lt;String&gt; khongTrong = Predicate.not(String::isBlank);
+    IO.println(khongTrong.test("x"));
+    IO.println(khongTrong.test("  "));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+false</code></pre>
+    </div>
+
     <p><code class="inline">and</code>/<code class="inline">or</code> short-circuit y như <code class="inline">&amp;&amp;</code>/<code class="inline">||</code>: vế phải không chạy nếu vế trái đã quyết định kết quả. Kiểm chứng bằng side-effect:</p>
 
     <div class="codeblock">
@@ -784,7 +937,7 @@ p2 duoc goi
 ket qua: true</code></pre>
     </div>
 
-    <h3><code class="inline">Function</code>: andThen / compose / identity</h3>
+    <h3>8.2 <code class="inline">Function</code>: andThen / compose / identity</h3>
 
     <p><code class="inline">f.andThen(g)</code> chạy <code class="inline">f</code> trước rồi <code class="inline">g</code>; <code class="inline">f.compose(g)</code> chạy <code class="inline">g</code> trước rồi <code class="inline">f</code> — kết quả ngược nhau:</p>
 
@@ -821,9 +974,31 @@ identity: abc</code></pre>
 
     <div class="note"><code class="inline">Function.identity()</code> trả về chính tham số — hữu ích khi API cần một <code class="inline">Function</code> nhưng bạn muốn giữ nguyên giá trị (ví dụ key của <code class="inline">Collectors.toMap</code> trong <a href="streams.html">Stream API</a>). Còn <code class="inline">Predicate.isEqual(x)</code> tương đương <code class="inline">Objects.equals(x, t)</code> — an toàn với <code class="inline">null</code>.</div>
 
+    <h3>8.3 Currying / partial application</h3>
+
+    <p>Java không có cú pháp "hàm nhiều tham số rồi khoá dần", nhưng <code class="inline">Function&lt;A, Function&lt;B, C&gt;&gt;</code> cho phép currying: gọi lần đầu để cố định tham số, lần sau nhận tham số còn lại. Rất hợp khi tái sử dụng cấu hình:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.Function;
+
+void main() {
+    Function&lt;Integer, Function&lt;Integer, Integer&gt;&gt; cong = a -&gt; b -&gt; a + b;
+    Function&lt;Integer, Integer&gt; cong10 = cong.apply(10);
+    IO.println(cong10.apply(5));
+    IO.println(cong.apply(3).apply(4));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>15
+7</code></pre>
+    </div>
+
+    <div class="note">Currying đánh đổi độ đọc: chỉ dùng khi thật sự cần tái sử dụng một phần tham số (dependency injection kiểu hàm, nhà máy cấu hình). Với hai tham số đơn giản, <code class="inline">BiFunction</code> dễ đọc hơn. Đây cũng là nền tảng tư duy cho <code class="inline">Optional.map</code> nối tiếp và Stream.</div>
+
     <h2 id="production">9. Ứng dụng production <span class="badge b-prod">Production</span></h2>
 
-    <h3>Strategy bằng lambda — thay cả một class</h3>
+    <h3>9.1 Strategy bằng lambda — thay cả một class</h3>
 
     <p>Strategy là pattern đổi thuật toán lúc chạy. Nếu interface chỉ một method, mỗi "chiến lược" chỉ là một lambda — không cần class con, không cần factory phức tạp (xem <a href="polymorphism.html#production">2.4 Polymorphism — mục 8</a> và <a href="solid-patterns.html#strategy-observer">2.8 SOLID &amp; Patterns — mục 10</a>):</p>
 
@@ -863,7 +1038,7 @@ hoa toc   : 450000</code></pre>
 
     <p>Khi nào vẫn nên viết class? Khi chiến lược cần <strong>state riêng</strong>, nhiều method, tài nguyên (connection, config), hoặc cần một cái tên để DI/Spring quản lý. Lambda hợp cho hành vi ngắn, không trạng thái; class hợp cho "đối tượng" thật.</p>
 
-    <h3>Comparator chaining — sort đa tiêu chí</h3>
+    <h3>9.2 Comparator chaining — sort đa tiêu chí</h3>
 
     <p><code class="inline">Comparator</code> là functional interface, nên có thể viết bằng lambda; nhưng bộ builder <code class="inline">comparing/thenComparing/reversed/nullsFirst</code> thường đọc rõ hơn (chi tiết ở <a href="collections.html#comparator">3.3 Collections — mục 8</a>):</p>
 
@@ -901,7 +1076,7 @@ DH-3 200000</code></pre>
 
     <div class="note warn">Đừng viết <code class="inline">(a, b) -&gt; (int) (a.tongTien() - b.tongTien())</code>: hiệu hai <code class="inline">long</code> có thể tràn khi ép về <code class="inline">int</code>, comparator sai dấu. Luôn dùng <code class="inline">comparingLong</code>/<code class="inline">comparingInt</code> hoặc <code class="inline">Long.compare</code>.</div>
 
-    <h3>Callback / event listener</h3>
+    <h3>9.3 Callback / event listener</h3>
 
     <p>Callback chỉ là một functional interface được gọi lại sau này; danh sách listener chỉ là <code class="inline">List&lt;Consumer&lt;T&gt;&gt;</code>. Nhờ lambda, đăng ký listener gọn hơn hẳn anonymous class:</p>
 
@@ -939,7 +1114,7 @@ sms  : da gui DH-01</code></pre>
 
     <p>Ba lưu ý production: (1) phải có cách <strong>hủy đăng ký</strong> nếu không sẽ leak; (2) một listener ném exception có thể chặn các listener sau — hãy bọc try/catch từng callback; (3) nếu sự kiện có thể phát từ nhiều thread, dùng collection an toàn (CopyOnWriteArrayList) hoặc sao chép danh sách trước khi duyệt.</p>
 
-    <h3>Factory / lazy value với <code class="inline">Supplier</code></h3>
+    <h3>9.4 Factory / lazy value với <code class="inline">Supplier</code></h3>
 
     <p><code class="inline">Supplier</code> hoãn việc tạo giá trị tới khi cần — nền tảng của <code class="inline">orElseGet</code> (xem <a href="optional.html#or-else">3.7 Optional — mục 5</a>) và các factory nhẹ:</p>
 
@@ -973,7 +1148,7 @@ BaoCao[tieuDe=Bao cao nam, nam=2025]
 BaoCao[tieuDe=Bao cao quy, nam=Q1/2026]</code></pre>
     </div>
 
-    <h3>invokedynamic &amp; hiệu năng — lambda có chậm không?</h3>
+    <h3>9.5 invokedynamic &amp; hiệu năng — lambda có chậm không?</h3>
 
     <p>javac không sinh một class cho mỗi lambda. Nó "desugar" thân lambda thành một private method, rồi phát câu lệnh <code class="inline">invokedynamic</code> trỏ tới <code class="inline">LambdaMetafactory</code> (JSR 292, dùng từ Java 7; lambda dùng từ Java 8 — JEP 126). Chạy <code class="inline">javac InvokeDemo.java &amp;&amp; javap -c -p InvokeDemo</code> — source rồi bytecode (đã lược phần constructor) như sau:</p>
 
@@ -1009,7 +1184,7 @@ BaoCao[tieuDe=Bao cao quy, nam=Q1/2026]</code></pre>
       <li>Đừng dựa vào <code class="inline">==</code> giữa hai lambda (spec không đảm bảo cùng object); chỉ xem lambda là giá trị hành vi.</li>
     </ul>
 
-    <h3>Serializable lambda — dùng cẩn thận</h3>
+    <h3>9.6 Serializable lambda — dùng cẩn thận</h3>
 
     <p>Lambda chỉ serializable khi <strong>target type</strong> kế thừa <code class="inline">Serializable</code> (hoặc cast giao <code class="inline">(Runnable &amp; Serializable)</code>). Ngay cả khi đó, đây là tính năng hiếm dùng vì tên class sinh ra không ổn định giữa các lần build:</p>
 
@@ -1035,7 +1210,36 @@ public class SerializableLambdaDemo {
 JAVA</code></pre>
     </div>
 
-    <div class="note warn"><strong>Cảnh báo:</strong> giá trị được capture phải serializable, nếu không sẽ nổ <code class="inline">NotSerializableException</code> lúc chạy (không phải lúc compile). Tên class vô danh của lambda khác nhau giữa các build, nên <strong>đừng lưu lambda vào DB/cache/session lâu dài</strong>; hãy dùng class có tên hoặc enum làm chiến lược.</div>
+    <div class="note warn"><strong>Cảnh báo:</strong> giá trị được capture phải serializable, nếu không sẽ nổ <code class="inline">NotSerializableException</code> lúc chạy (không phải lúc compile). Từ Java 15, class của lambda là <strong>hidden class</strong> tên dạng <code class="inline">Foo$$Lambda$14/0x...</code>, không ổn định và không xuất hiện trên classpath — nên <strong>đừng lưu lambda vào DB/cache/session lâu dài</strong>; hãy dùng class có tên hoặc enum làm chiến lược.</div>
+
+    <h3>9.7 Debug lambda — hidden class &amp; stack trace</h3>
+
+    <p>Vì class lambda là hidden class (không load được bằng tên, biến mất khi hết tham chiếu), stack trace chỉ hiện method private <code class="inline">lambda$main$0</code> — rất khó biết lambda nào. Kiểm tra nhanh bằng <code class="inline">Class.isHidden()</code> (Java 15+) và tên chứa <code class="inline">$$Lambda</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class LambdaDebugDemo {
+    public static void main() {
+        Runnable r = () -&gt; {
+            throw new IllegalStateException("loi trong lambda");
+        };
+        try {
+            r.run();
+        } catch (RuntimeException e) {
+            IO.println("hidden      : " + r.getClass().isHidden());
+            IO.println("co $$Lambda : " + r.getClass().getName().contains("$$Lambda"));
+            IO.println("method frame: " + e.getStackTrace()[0].getMethodName());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>hidden      : true
+co $$Lambda : true
+method frame: lambda$main$0</code></pre>
+    </div>
+
+    <div class="note"><strong>Mẹo debug:</strong> tách thân lambda thành method có tên rồi dùng method reference (<code class="inline">this::tinhPhi</code>) — stack trace hiện tên method thật, dễ tìm trong log. Trong production, log kèm tên nghiệp vụ thay vì chỉ <code class="inline">printStackTrace</code>; khi đọc trace thấy <code class="inline">lambda$...</code> hãy lần theo class chứa nó. Đừng dựa vào tên hay <code class="inline">getClass()</code> của lambda cho logic nghiệp vụ.</div>
 
     <h2 id="goc-nodejs">10. Góc Node.js — arrow function, this, closure, callback <span class="badge b-junior">Junior+</span></h2>
 
@@ -1188,7 +1392,17 @@ sms   DH-01</code></pre>
 
     <details class="qa">
       <summary>Câu 15. Có serialize lambda được không? Cần cảnh báo gì?</summary>
-      <div class="answer">Được, nếu target type kế thừa <code class="inline">Serializable</code> (hoặc cast giao <code class="inline">(Runnable &amp; Serializable)</code>). Nhưng: captured value phải serializable, nếu không sẽ <code class="inline">NotSerializableException</code> lúc chạy; tên class sinh ra (chứa <code class="inline">$Lambda$...</code>) không ổn định giữa các build nên deserialize có thể thất bại; code không portable. Vì vậy đừng lưu lambda vào DB/session lâu dài — dùng class có tên hoặc enum cho chiến lược cần bền vững.</div>
+      <div class="answer">Được, nếu target type kế thừa <code class="inline">Serializable</code> (hoặc cast giao <code class="inline">(Runnable &amp; Serializable)</code>). Nhưng: captured value phải serializable, nếu không sẽ <code class="inline">NotSerializableException</code> lúc chạy; class sinh ra là <strong>hidden class</strong> (từ Java 15) tên dạng <code class="inline">Foo$$Lambda$14/0x...</code> — không ổn định giữa các lần chạy/build, không xuất hiện trên classpath nên deserialize có thể thất bại; code không portable. Vì vậy đừng lưu lambda vào DB/session lâu dài — dùng class có tên hoặc enum cho chiến lược cần bền vững.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Lambda tự gọi chính nó (đệ quy) được không? Làm sao gọi code ném checked exception trong <code class="inline">Supplier</code>?</summary>
+      <div class="answer">Đệ quy được nhờ holder mảng một phần tử: <code class="inline">IntUnaryOperator[] f = new IntUnaryOperator[1]; f[0] = n -&gt; ... f[0].applyAsInt(n - 1) ...</code> — mảng effectively final nhưng phần tử gán được. Vẫn chịu giới hạn stack. Với checked exception: <code class="inline">Supplier</code>/<code class="inline">Function</code> không khai báo checked nên phải bọc bằng helper <code class="inline">unchecked(() -&gt; ...)</code> trả <code class="inline">RuntimeException</code> giữ cause; nếu muốn ném thẳng checked hãy dùng <code class="inline">Callable</code> (SAM có <code class="inline">throws Exception</code>).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Class sinh ra cho lambda tên gì? Vì sao stack trace khó đọc và cách khắc phục?</summary>
+      <div class="answer">Từ Java 15 nó là <strong>hidden class</strong>, tên dạng <code class="inline">TenClass$$Lambda$14/0x...</code>: không load được bằng tên, không có trên classpath, không ổn định giữa các lần chạy. Stack trace hiện frame private <code class="inline">lambda$main$0</code> thay vì code bạn viết. Khắc phục: tách thân lambda thành method có tên rồi dùng method reference (<code class="inline">this::tinhPhi</code>), log kèm tên nghiệp vụ; kiểm tra bằng <code class="inline">getClass().isHidden()</code> và <code class="inline">getName().contains("$$Lambda")</code>. Không dùng tên class lambda cho logic.</div>
     </details>
 
     <h2 id="bai-tap">12. Bài tập đoán output</h2>
@@ -1319,6 +1533,24 @@ IO.println(ds);</code></pre>
       <div class="answer">In ra <code class="inline">[a, b]</code>. Constructor reference <code class="inline">ArrayList::new</code> khớp <code class="inline">Supplier</code> nhờ target type generic — compiler suy ra <code class="inline">new ArrayList&lt;String&gt;()</code>.</div>
     </details>
 
+    <details class="qa exercise">
+      <summary>Bài 9 — Đệ quy lambda &amp; currying</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.function.Function;
+import java.util.function.IntUnaryOperator;
+
+void main() {
+    IntUnaryOperator[] fib = new IntUnaryOperator[1];
+    fib[0] = n -&gt; n &lt; 2 ? n : fib[0].applyAsInt(n - 1) + fib[0].applyAsInt(n - 2);
+    IO.println(fib[0].applyAsInt(7));
+
+    Function&lt;Integer, Function&lt;Integer, Integer&gt;&gt; tru = a -&gt; b -&gt; a - b;
+    IO.println(tru.apply(10).apply(4));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">13</code> rồi <code class="inline">6</code>. Fibonacci: 0,1,1,2,3,5,8,13 — phần tử thứ 7 (0-based) là 13. Currying: <code class="inline">tru.apply(10)</code> trả hàm trừ 10, gọi tiếp với 4 ra 6. Lưu ý holder mảng cho phép lambda gọi lại chính nó dù lambda không có tên.</div>
+    </details>
+
     <h2 id="cheat-sheet">13. Cheat sheet &amp; checklist</h2>
 
     <h3>Cheat sheet</h3>
@@ -1340,6 +1572,10 @@ IO.println(ds);</code></pre>
         <tr><td>Comparator chaining</td><td><code class="inline">Comparator.comparingLong(DH::tien).reversed().thenComparing(DH::ma)</code>; tránh <code class="inline">(a, b) -&gt; (int)(a - b)</code></td></tr>
         <tr><td>Callback</td><td><code class="inline">List&lt;Consumer&lt;T&gt;&gt;</code>; nhớ hủy đăng ký &amp; bọc try/catch từng callback</td></tr>
         <tr><td>Lazy value / factory</td><td><code class="inline">Supplier&lt;T&gt;</code> + constructor reference; dùng với <code class="inline">orElseGet</code></td></tr>
+        <tr><td>Đệ quy lambda</td><td><code class="inline">IntUnaryOperator[] f = new IntUnaryOperator[1];</code> rồi gán <code class="inline">f[0] = n -&gt; ... f[0].applyAsInt(...)</code></td></tr>
+        <tr><td>Checked exception trong lambda</td><td>Bọc helper <code class="inline">unchecked(() -&gt; ...)</code> trả <code class="inline">RuntimeException</code> giữ cause; hoặc dùng <code class="inline">Callable</code> nếu SAM cho phép</td></tr>
+        <tr><td>Currying</td><td><code class="inline">Function&lt;A, Function&lt;B, C&gt;&gt; f = a -&gt; b -&gt; ...</code>; <code class="inline">f.apply(a).apply(b)</code></td></tr>
+        <tr><td>Debug lambda</td><td>Tách method có tên + method reference; class là hidden class <code class="inline">$$Lambda</code>, frame <code class="inline">lambda$...</code></td></tr>
       </tbody>
     </table>
 
@@ -1372,7 +1608,9 @@ IO.println(ds);</code></pre>
       <li>Dùng đúng <code class="inline">andThen</code> vs <code class="inline">compose</code>, <code class="inline">and/or/negate</code> và biết short-circuit.</li>
       <li>Kể tên được 6 interface lõi và nói khi nào dùng bản primitive.</li>
       <li>Giải thích <code class="inline">invokedynamic</code> ở mức phỏng vấn: link một lần, cache, capture tạo object.</li>
-      <li>Nêu được cảnh báo serializable lambda (captured value + tên class không ổn định).</li>
+      <li>Nêu được cảnh báo serializable lambda (captured value + hidden class <code class="inline">$$Lambda</code> không ổn định).</li>
+      <li>Viết được lambda đệ quy qua holder và helper <code class="inline">unchecked</code> cho checked exception.</li>
+      <li>Biết debug lambda: hidden class, frame <code class="inline">lambda$...</code>, mẹo tách method có tên.</li>
       <li>Đọc được 6 thông báo lỗi trong bảng phía trên và biết cách sửa từng lỗi.</li>
     </ul>
 

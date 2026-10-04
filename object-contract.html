@@ -892,7 +892,7 @@ set.size() : 5
 set        : [Product[sku=SKU-0], Product[sku=SKU-1], Product[sku=SKU-2], Product[sku=SKU-3], Product[sku=SKU-4]]</code></pre>
     </div>
 
-    <p>Năm object cùng hash nhưng vẫn nằm đủ 5 phần tử vì <code class="inline">equals</code> khác nhau. Trong OpenJDK hiện tại, khi một bucket có từ 8 phần tử trở lên <strong>và</strong> capacity của map đạt tối thiểu 64 (<code class="inline">MIN_TREEIFY_CAPACITY</code>), bucket chuyển từ danh sách liên kết sang cây đỏ-đen để tra cứu vẫn nhanh (khoảng O(log n) thay vì O(n) cho bucket đó); nếu capacity còn nhỏ hơn 64 thì map <strong>resize</strong> (tăng gấp đôi) thay vì treeify.</p>
+    <p>Năm object cùng hash nhưng vẫn nằm đủ 5 phần tử vì <code class="inline">equals</code> khác nhau. Trong OpenJDK hiện tại, bucket <strong>8 phần tử vẫn là danh sách liên kết</strong>; chỉ khi <strong>thêm phần tử thứ 9</strong> vào bucket đang có ≥ 8 node <strong>và</strong> capacity của map đạt tối thiểu 64 (<code class="inline">MIN_TREEIFY_CAPACITY</code>) thì bucket mới chuyển từ danh sách liên kết sang cây đỏ-đen để tra cứu nhanh hơn (khoảng O(log n) thay vì O(n) cho bucket đó); nếu capacity còn nhỏ hơn 64 thì map <strong>resize</strong> (tăng gấp đôi) thay vì treeify. Chi tiết đầy đủ (kể cả untreeify khi xóa) ở <a href="collections.html#map">Collections — mục 5</a>.</p>
 
     <h3>put trùng key và thứ tự in</h3>
 
@@ -928,7 +928,7 @@ sau put lai "mot": {hai=2, mot=100, ba=3}
 get("mot") : 100</code></pre>
     </div>
 
-    <p><code class="inline">HashSet.add</code> dùng hash + equals để dedupe; <code class="inline">HashMap.put</code> với key đã tồn tại (equals) chỉ <strong>ghi đè value</strong>, không thêm entry mới. Lưu ý: thứ tự in của <code class="inline">HashMap</code>/<code class="inline">HashSet</code> phụ thuộc hash, capacity và <strong>không được đảm bảo</strong> — output trên là một lần chạy thật với JDK 25, đừng viết code dựa vào thứ tự đó. Cần thứ tự ổn định thì dùng <code class="inline">LinkedHashMap</code> (theo thứ tự chèn) hoặc <code class="inline">TreeMap</code> (theo khoá) — sẽ học ở GĐ3 Collections (3.3, chưa có doc trong site này).</p>
+    <p><code class="inline">HashSet.add</code> dùng hash + equals để dedupe; <code class="inline">HashMap.put</code> với key đã tồn tại (equals) chỉ <strong>ghi đè value</strong>, không thêm entry mới. Lưu ý: thứ tự in của <code class="inline">HashMap</code>/<code class="inline">HashSet</code> phụ thuộc hash, capacity và <strong>không được đảm bảo</strong> — output trên là một lần chạy thật với JDK 25, đừng viết code dựa vào thứ tự đó. Cần thứ tự ổn định thì dùng <code class="inline">LinkedHashMap</code> (theo thứ tự chèn) hoặc <code class="inline">TreeMap</code> (theo khoá) — xem <a href="collections.html">3.3 Collections</a>.</p>
 
     <div class="note">Capacity mặc định 16, load factor 0.75: khi số entry vượt <code class="inline">16 × 0.75 = 12</code>, map nhân đôi số bucket và phân bố lại. Chi phí trung bình của <code class="inline">get/put</code> là O(1). Đây là kiến thức nền; phần tối ưu sâu (capacity, load factor, va chạm hash) thuộc GĐ3.</div>
 
