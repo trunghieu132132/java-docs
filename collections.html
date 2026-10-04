@@ -84,7 +84,7 @@
     <ul>
       <li><strong>Phải làm được</strong> — chọn đúng collection cho từng nhu cầu; dùng <code class="inline">List</code>, <code class="inline">Set</code>, <code class="inline">Map</code>, <code class="inline">Deque</code> thành thạo; duyệt và xóa an toàn bằng iterator/<code class="inline">removeIf</code>; sort bằng <code class="inline">Comparable</code>/<code class="inline">Comparator</code>; dùng các method hiện đại <code class="inline">getOrDefault</code>, <code class="inline">computeIfAbsent</code>, <code class="inline">merge</code>.</li>
       <li><strong>Phải hiểu</strong> — vì sao <code class="inline">ArrayList.get</code> là O(1) còn <code class="inline">LinkedList.get</code> là O(n); HashMap dùng hash + equals thế nào, load factor 0.75 và treeify là gì; vì sao <code class="inline">ConcurrentModificationException</code> xảy ra; vì sao <code class="inline">compareTo</code> nên nhất quán với <code class="inline">equals</code>; view vs copy (<code class="inline">subList</code>, <code class="inline">unmodifiableList</code>).</li>
-      <li><strong>Nhận biết</strong> — concurrent collections (<code class="inline">ConcurrentHashMap</code>, <code class="inline">CopyOnWriteArrayList</code>, <code class="inline">BlockingQueue</code>) sẽ dùng ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Concurrency</a>; <code class="inline">SequencedCollection</code> (JDK 21+); Stream API thay thế nhiều vòng lặp (học ở <a href="streams.html">3.8 Stream API</a>).</li>
+      <li><strong>Nhận biết</strong> — concurrent collections (<code class="inline">ConcurrentHashMap</code>, <code class="inline">CopyOnWriteArrayList</code>, <code class="inline">BlockingQueue</code>) sẽ dùng ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Production essentials</a>; <code class="inline">SequencedCollection</code> (JDK 21+); Stream API thay thế nhiều vòng lặp (học ở <a href="streams.html">3.8 Stream API</a>).</li>
     </ul>
 
     <p>Cách học hiệu quả nhất:</p>
@@ -1306,7 +1306,7 @@ max-heap   : c b a</code></pre>
 
     <h3>BlockingQueue — nhận biết cho Giai đoạn 4</h3>
 
-    <p>Khi producer và consumer chạy trên các thread khác nhau, <code class="inline">BlockingQueue</code> là công cụ chuẩn: <code class="inline">put(e)</code> block khi queue đầy, <code class="inline">take()</code> block khi queue rỗng. Các implementation cần biết tên: <code class="inline">ArrayBlockingQueue</code> (bounded), <code class="inline">LinkedBlockingQueue</code> (tùy chọn bounded), <code class="inline">PriorityBlockingQueue</code>, <code class="inline">SynchronousQueue</code> (bắt tay trực tiếp), <code class="inline">DelayQueue</code>. Chi tiết ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Concurrency</a>.</p>
+    <p>Khi producer và consumer chạy trên các thread khác nhau, <code class="inline">BlockingQueue</code> là công cụ chuẩn: <code class="inline">put(e)</code> block khi queue đầy, <code class="inline">take()</code> block khi queue rỗng. Các implementation cần biết tên: <code class="inline">ArrayBlockingQueue</code> (bounded), <code class="inline">LinkedBlockingQueue</code> (tùy chọn bounded), <code class="inline">PriorityBlockingQueue</code>, <code class="inline">SynchronousQueue</code> (bắt tay trực tiếp), <code class="inline">DelayQueue</code>. Chi tiết ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Production essentials</a>.</p>
 
     <h2 id="iterator">7. Iterator &amp; fail-fast <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
 
@@ -2257,7 +2257,28 @@ for (String s : list) {
 }
 IO.println(list);</code></pre>
       </div>
-      <div class="answer">Ném <code class="inline">ConcurrentModificationException</code> — dòng <code class="inline">IO.println(list)</code> không chạy. Xóa trực tiếp trong for-each làm modCount lệch; lần <code class="inline">next()</code> kế tiếp phát hiện. Sửa: dùng <code class="inline">removeIf</code> hoặc <code class="inline">Iterator.remove()</code>.</div>
+      <div class="answer">
+        <p>In ra <code class="inline">[a, c]</code> — <strong>không</strong> ném <code class="inline">ConcurrentModificationException</code>, dòng <code class="inline">IO.println(list)</code> vẫn chạy. Lý do: <code class="inline">"b"</code> là phần tử <strong>áp chót</strong>. Sau khi <code class="inline">next()</code> trả <code class="inline">"b"</code>, <code class="inline">cursor = 2</code>; xóa <code class="inline">"b"</code> làm <code class="inline">size</code> từ 3 xuống 2, nên <code class="inline">hasNext()</code> — chỉ kiểm tra <code class="inline">cursor != size</code> — trả <code class="inline">false</code> và vòng lặp kết thúc. <code class="inline">next()</code>, nơi gọi <code class="inline">checkForComodification()</code>, không bao giờ chạy nữa, nên <code class="inline">modCount</code> lệch không bị phát hiện.</p>
+        <p>Chỉ cần còn ít nhất một phần tử phía sau phần bị xóa là lộ ngay: với <code class="inline">[a, b, c, d]</code>, xóa <code class="inline">"b"</code> xong <code class="inline">size = 3 &gt; cursor = 2</code> → <code class="inline">hasNext()</code> trả <code class="inline">true</code> → lần <code class="inline">next()</code> kế tiếp phát hiện lệch và ném CME:</p>
+        <div class="codeblock">
+          <pre><code class="java">List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("a", "b", "c", "d"));
+try {
+    for (String s : list) {
+        if (s.equals("b")) {
+            list.remove(s);
+        }
+    }
+} catch (ConcurrentModificationException e) {
+    IO.println("-&gt; ConcurrentModificationException");
+}
+IO.println(list);</code></pre>
+        </div>
+        <div class="codeblock error">
+          <pre><code>-&gt; ConcurrentModificationException
+[a, c, d]</code></pre>
+        </div>
+        <p>Vì vậy đừng kết luận "xóa trực tiếp trong for-each an toàn" chỉ vì một lần chạy không thấy lỗi. Cách đúng vẫn là <code class="inline">removeIf</code> hoặc <code class="inline">Iterator.remove()</code>.</p>
+      </div>
     </details>
 
     <details class="qa exercise">

@@ -74,7 +74,7 @@
     <p>Mức độ bắt buộc của chủ đề 3.5 (phỏng vấn: cao · production: bắt buộc):</p>
     <ul>
       <li><strong>Phải làm được</strong> — tạo và biến đổi <code class="inline">LocalDate</code>/<code class="inline">LocalDateTime</code>; chuyển đổi qua lại giữa <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>, <code class="inline">OffsetDateTime</code>; tính khoảng thời gian bằng <code class="inline">Duration</code>/<code class="inline">Period</code>; format/parse với pattern và <code class="inline">Locale</code> tiếng Việt; viết được <code class="inline">Clock</code> để test code phụ thuộc "bây giờ".</li>
-      <li><strong>Phải hiểu</strong> — <em>instant</em> (mốc tuyệt đối) khác <em>local date-time</em> (giờ trên lịch treo tường) thế nào; vì sao lưu DB là UTC; DST gap/overlap được <code class="inline">java.time</code> xử lý ra sao; vì sao các <strong>value class</strong> của java.time (<code class="inline">LocalDate</code>, <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>…) là bất biến (immutable) và thread-safe — còn <code class="inline">Date</code> vẫn mutable và <code class="inline">DateTimeFormatterBuilder</code> là builder mutable.</li>
+      <li><strong>Phải hiểu</strong> — <em>instant</em> (mốc tuyệt đối) khác <em>local date-time</em> (giờ trên lịch treo tường) thế nào; vì sao lưu DB là UTC; DST gap/overlap được <code class="inline">java.time</code> xử lý ra sao; vì sao các <strong>value-based class</strong> của java.time (<code class="inline">LocalDate</code>, <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>…) là bất biến (immutable) và thread-safe — còn <code class="inline">Date</code> vẫn mutable và <code class="inline">DateTimeFormatterBuilder</code> là builder mutable.</li>
       <li><strong>Nhận biết</strong> — <code class="inline">ZoneRules</code> và lịch sử múi giờ; <code class="inline">ResolverStyle</code> SMART/STRICT khi parse; JSON serialization (<code class="inline">Instant</code> mặc định thành số giây thập phân nếu quên cấu hình); Temporal trong JavaScript/Node.</li>
     </ul>
     <p>Cách học hiệu quả nhất:</p>
@@ -166,7 +166,7 @@ Wed Jan 01 00:00:00 GMT+07:00 2025
         <tr><td>Tính bất biến</td><td>Mutable — <code class="inline">set</code> sửa tại chỗ</td><td>Immutable — mọi phép biến đổi trả object mới</td></tr>
         <tr><td>Tháng</td><td>0-based (<code class="inline">Calendar.JANUARY == 0</code>)</td><td>1-based (<code class="inline">Month.JANUARY.getValue() == 1</code>)</td></tr>
         <tr><td>Năm trong constructor cũ</td><td>Trừ 1900 (<code class="inline">125</code> = 2025)</td><td>Ghi thẳng (<code class="inline">LocalDate.of(2025, 1, 1)</code>)</td></tr>
-        <tr><td>Thread-safe</td><td><code class="inline">Date</code> vẫn <strong>mutable</strong> (<code class="inline">setTime</code> sửa tại chỗ) — chỉ an toàn khi chỉ đọc hoặc được công bố an toàn (final field/safe-publish); <code class="inline">Calendar</code>/<code class="inline">SimpleDateFormat</code> không</td><td>Các <strong>value class</strong> java.time (<code class="inline">LocalDate</code>, <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>…) immutable, dùng chung an toàn; <code class="inline">DateTimeFormatterBuilder</code> là builder mutable — chỉ object <code class="inline">DateTimeFormatter</code> sinh ra từ <code class="inline">toFormatter()</code> mới immutable (mục 8)</td></tr>
+        <tr><td>Thread-safe</td><td><code class="inline">Date</code> vẫn <strong>mutable</strong> (<code class="inline">setTime</code> sửa tại chỗ) — chỉ an toàn khi chỉ đọc hoặc được công bố an toàn (final field/safe-publish); <code class="inline">Calendar</code>/<code class="inline">SimpleDateFormat</code> không</td><td>Các <strong>value-based class</strong> java.time (<code class="inline">LocalDate</code>, <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>…) immutable, dùng chung an toàn; <code class="inline">DateTimeFormatterBuilder</code> là builder mutable — chỉ object <code class="inline">DateTimeFormatter</code> sinh ra từ <code class="inline">toFormatter()</code> mới immutable (mục 8)</td></tr>
         <tr><td>Ngữ nghĩa</td><td>Một class gánh mọi thứ</td><td>Tách rõ: Local*, Instant, Zoned, Offset, Duration, Period</td></tr>
         <tr><td>Parse mặc định</td><td><code class="inline">SimpleDateFormat</code> lenient: <code class="inline">2025-02-31</code> thành 3/3</td><td>SMART clamp hoặc STRICT báo lỗi (mục 8)</td></tr>
       </tbody>
@@ -413,6 +413,37 @@ void main() {
 2026-01-30</code></pre>
     </div>
     <p>15/01/2026 là thứ Năm: <code class="inline">next(MONDAY)</code> nhảy tới thứ Hai 19/01; <code class="inline">nextOrSame(THURSDAY)</code> trả chính nó; thứ Hai đầu tiên của tháng 1/2026 là 05/01; thứ Sáu cuối cùng là 30/01.</p>
+    <p><code class="inline">TemporalAdjuster</code> là functional interface (SAM <code class="inline">adjustInto(Temporal)</code>), nên bạn tự viết được adjuster bằng lambda. Nhưng tham số của lambda là <code class="inline">Temporal</code> — không phải <code class="inline">LocalDate</code> — nên <code class="inline">d.with(x -&gt; x.plusDays(3))</code> <strong>không compile</strong>:</p>
+    <div class="errblock">
+      <pre>TemporalAdjusterErr.java:6: error: cannot find symbol
+    IO.println(d.with(x -&gt; x.plusDays(3)));
+                            ^
+  symbol:   method plusDays(int)
+  location: variable x of type Temporal
+1 error</pre>
+    </div>
+    <p>Muốn dùng API của <code class="inline">LocalDate</code> trong lambda, hãy gọi <code class="inline">plus(3, ChronoUnit.DAYS)</code> trên <code class="inline">Temporal</code>, hoặc bọc qua <code class="inline">TemporalAdjusters.ofDateAdjuster(...)</code> (nhận <code class="inline">UnaryOperator&lt;LocalDate&gt;</code>):</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+import java.time.temporal.*;
+
+void main() {
+    LocalDate d = LocalDate.of(2026, 1, 15);
+
+    // Tu viet TemporalAdjuster bang lambda: tham so la Temporal
+    TemporalAdjuster them3Ngay = t -&gt; t.plus(3, ChronoUnit.DAYS);
+    IO.println(d.with(them3Ngay));
+
+    // ofDateAdjuster: lambda nhan LocalDate nen dung duoc plusDays
+    TemporalAdjuster cung3Ngay = TemporalAdjusters.ofDateAdjuster(x -&gt; x.plusDays(3));
+    IO.println(d.with(cung3Ngay));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-18
+2026-01-18</code></pre>
+    </div>
+    <p>Đây cũng là minh hoạ "hành vi là dữ liệu": interface một abstract method gắn được lambda — xem thêm <a href="lambda-functional.html#method-reference">3.6 Lambda &amp; Functional interfaces — Method reference</a>.</p>
     <h3>3.5 Ví dụ: tính tuổi</h3>
     <div class="codeblock">
       <pre><code class="java">import java.time.*;
@@ -920,7 +951,7 @@ void main() {
 2026-09-06T00:00+07:00[Asia/Ho_Chi_Minh]
 2026-09-05T23:59-04:00[America/Santiago]
 cach nhau: 1 phut
-2026-09-06T12:00-03:00[America/Santiago]</code></pre>
+trua: 2026-09-06T12:00-03:00[America/Santiago]</code></pre>
     </div>
     <div class="note warn"><code class="inline">LocalDate.atStartOfDay()</code> (không tham số) trả <code class="inline">LocalDateTime 00:00</code> — nếu bạn tự gắn zone cho nó ở ngày gap, kết quả cũng bị đẩy thành 01:00 nhưng code che mất sự thật rằng 00:00 không tồn tại. Với scheduler, hãy lưu giờ chạy theo UTC (hoặc dùng <code class="inline">atStartOfDay(zone)</code> rồi <code class="inline">toInstant()</code>) và tính lại mỗi ngày, đừng cache một mốc <code class="inline">LocalDateTime</code>.</div>
     <h2 id="format-parse">8. Format &amp; parse <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
@@ -1025,6 +1056,7 @@ ISO: Text '2026-13-01' could not be parsed: Invalid value for MonthOfYear (valid
 	at java.base/java.time.format.DateTimeFormatter.parseResolved0(DateTimeFormatter.java:2108)
 	at java.base/java.time.format.DateTimeFormatter.parse(DateTimeFormatter.java:2010)
 	at java.base/java.time.LocalDate.parse(LocalDate.java:437)
+	at java.base/java.time.LocalDate.parse(LocalDate.java:422)
 	at ParseUncaughtErr.main(ParseUncaughtErr.java:2)</pre>
     </div>
     <p>Các hằng ISO sẵn có — ưu tiên dùng thay vì tự chế pattern cho dữ liệu máy đọc:</p>
@@ -1399,7 +1431,7 @@ console.log(lunch.add({ hours: 24 }).toString());</code></pre>
     </details>
     <details class="qa">
       <summary>Câu 13. So sánh hai <code class="inline">LocalDate</code> bằng gì: <code class="inline">equals</code>, <code class="inline">isEqual</code> hay <code class="inline">compareTo</code>?</summary>
-      <div class="answer"><code class="inline">equals</code> so cả kiểu và giá trị (dùng cho <code class="inline">Map</code>/<code class="inline">Set</code>); <code class="inline">isEqual</code> chỉ so mốc ngày, cho phép khác chronology (ví dụ HijrahDate); <code class="inline">compareTo</code> cho thứ tự sắp xếp tự nhiên — dùng <code class="inline">Collections.sort(list)</code> hoặc <code class="inline">list.sort(Comparator.naturalOrder())</code> (xem <a href="collections.html">3.3 Collections</a>). Cả ba class đều implements <code class="inline">Comparable</code> nên sort được.</div>
+      <div class="answer"><code class="inline">equals</code> so cả kiểu và giá trị (dùng cho <code class="inline">Map</code>/<code class="inline">Set</code>); <code class="inline">isEqual</code> chỉ so mốc ngày, cho phép khác chronology (ví dụ HijrahDate); <code class="inline">compareTo</code> cho thứ tự sắp xếp tự nhiên — dùng <code class="inline">Collections.sort(list)</code> hoặc <code class="inline">list.sort(Comparator.naturalOrder())</code> (xem <a href="collections.html">3.3 Collections</a>). <code class="inline">LocalDate</code>/<code class="inline">LocalDateTime</code>/<code class="inline">LocalTime</code> đều implements <code class="inline">Comparable</code> nên sort được.</div>
     </details>
     <details class="qa">
       <summary>Câu 14. Chuyển đổi giữa API cũ và java.time thế nào?</summary>

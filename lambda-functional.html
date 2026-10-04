@@ -163,7 +163,7 @@ method ref: JAVA</code></pre>
       </thead>
       <tbody>
         <tr><td>Cú pháp</td><td><code class="inline">new ChuyenDoi() { public String ap(String s) { ... } }</code></td><td><code class="inline">s -&gt; s.trim().toUpperCase()</code></td><td><code class="inline">BaCachDemo::chuanHoa</code></td></tr>
-        <tr><td><code class="inline">this</code></td><td>Là object vô danh — muốn outer phải viết <code class="inline">BaCachDemo.this</code></td><td>Là object bao ngoài (lexical)</td><td>Không tạo object mới; <code class="inline">this</code> (nếu có) vẫn là object bao ngoài, method <code class="inline">static</code> thì không có <code class="inline">this</code>; unbound <code class="inline">TenClass::instanceMethod</code> nhận receiver là tham số đầu</td></tr>
+        <tr><td><code class="inline">this</code></td><td>Là object vô danh — muốn outer phải viết <code class="inline">BaCachDemo.this</code></td><td>Là object bao ngoài (lexical); lambda không tạo scope mới</td><td><code class="inline">static</code> không có <code class="inline">this</code>; bound <code class="inline">obj::method</code> giữ receiver <code class="inline">obj</code> làm <code class="inline">this</code> (không nhất thiết là object bao ngoài); unbound <code class="inline">TenClass::instanceMethod</code> nhận receiver là tham số đầu; chỉ <code class="inline">this::</code>/<code class="inline">super::</code> mới gắn object bao ngoài</td></tr>
         <tr><td>State riêng (field)</td><td>Có</td><td>Không</td><td>Không</td></tr>
         <tr><td>Triển khai</td><td>Sinh class thật lúc compile</td><td><code class="inline">invokedynamic</code>, class sinh lúc runtime</td><td><code class="inline">invokedynamic</code> (thường chỉ là method handle)</td></tr>
         <tr><td>Dùng khi</td><td>Cần nhiều method/state riêng, hoặc implement abstract class</td><td>Logic ngắn, tự viết body</td><td>Body chỉ gọi đúng một method có sẵn</td></tr>
@@ -172,7 +172,7 @@ method ref: JAVA</code></pre>
 
     <p><strong>Lambda là gì?</strong> Là biểu thức <code class="inline">(thamSo) -&gt; than</code> đại diện cho implementation của một functional interface. Nó không phải "function pointer" hay "hàm tự do": Java vẫn là ngôn ngữ nominal — muốn truyền hành vi, phải có một interface làm hợp đồng. Vì vậy mỗi lambda luôn gắn với một <strong>target type</strong> (mục <a href="#cu-phap">5</a>).</p>
 
-    <div class="note">Method reference không phải "cú pháp thứ ba của lambda" mà là dạng viết tắt khi thân lambda chỉ chuyển tiếp tham số cho một method. Ba cách trên là ba cách tạo implementation — không có cách nào tạo ra method mới ngoài class.</div>
+    <div class="note">Method reference không phải "cú pháp thứ ba của lambda" mà là dạng viết tắt khi thân lambda chỉ chuyển tiếp tham số cho một method. Ba cách trên là ba cách tạo implementation — không có cách nào tạo ra method mới ngoài class.<br>Về instance: lambda <strong>có capture</strong> (dùng biến ngoài hoặc <code class="inline">this</code>) tạo object mỗi lần đi qua biểu thức; lambda <strong>không capture</strong> thường được JVM cache lại. Bound reference <code class="inline">obj::method</code> cũng là dạng capture (giữ <code class="inline">obj</code>), còn <code class="inline">TenClass::staticMethod</code> và unbound <code class="inline">TenClass::instanceMethod</code> không giữ object nào.</div>
 
     <h2 id="functional-interface">3. Functional interface &amp; <code class="inline">@FunctionalInterface</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
 
@@ -974,6 +974,30 @@ identity: abc</code></pre>
 
     <div class="note"><code class="inline">Function.identity()</code> trả về chính tham số — hữu ích khi API cần một <code class="inline">Function</code> nhưng bạn muốn giữ nguyên giá trị (ví dụ key của <code class="inline">Collectors.toMap</code> trong <a href="streams.html">Stream API</a>). Còn <code class="inline">Predicate.isEqual(x)</code> tương đương <code class="inline">Objects.equals(x, t)</code> — an toàn với <code class="inline">null</code>.</div>
 
+    <p>Còn <code class="inline">Consumer.andThen(after)</code> ghép hai consumer chạy tuần tự trên cùng một giá trị (không trả kết quả), và <code class="inline">UnaryOperator.identity()</code> là bản <code class="inline">UnaryOperator</code> của <code class="inline">Function.identity()</code> — chạy thử:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.function.*;
+
+void main() {
+    Consumer&lt;String&gt; in = s -&gt; IO.println("in : " + s);
+    Consumer&lt;String&gt; log = s -&gt; IO.println("log: " + s);
+
+    // andThen: chay in truoc, roi den log, cung nhan mot gia tri
+    in.andThen(log).accept("java");
+
+    // UnaryOperator.identity: tra ve chinh tham so
+    UnaryOperator&lt;String&gt; giuNguyen = UnaryOperator.identity();
+    IO.println("identity: " + giuNguyen.apply("abc"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>in : java
+log: java
+identity: abc</code></pre>
+    </div>
+
     <h3>8.3 Currying / partial application</h3>
 
     <p>Java không có cú pháp "hàm nhiều tham số rồi khoá dần", nhưng <code class="inline">Function&lt;A, Function&lt;B, C&gt;&gt;</code> cho phép currying: gọi lần đầu để cố định tham số, lần sau nhận tham số còn lại. Rất hợp khi tái sử dụng cấu hình:</p>
@@ -1210,7 +1234,7 @@ public class SerializableLambdaDemo {
 JAVA</code></pre>
     </div>
 
-    <div class="note warn"><strong>Cảnh báo:</strong> giá trị được capture phải serializable, nếu không sẽ nổ <code class="inline">NotSerializableException</code> lúc chạy (không phải lúc compile). Từ Java 15, class của lambda là <strong>hidden class</strong> tên dạng <code class="inline">Foo$$Lambda$14/0x...</code>, không ổn định và không xuất hiện trên classpath — nên <strong>đừng lưu lambda vào DB/cache/session lâu dài</strong>; hãy dùng class có tên hoặc enum làm chiến lược.</div>
+    <div class="note warn"><strong>Cảnh báo:</strong> giá trị được capture phải serializable, nếu không sẽ nổ <code class="inline">NotSerializableException</code> lúc chạy (không phải lúc compile). Từ Java 15, class của lambda là <strong>hidden class</strong> tên dạng <code class="inline">Foo$$Lambda/0x...</code> (các JDK 15–22 từng in thêm số thứ tự <code class="inline">$N</code>, ví dụ <code class="inline">Foo$$Lambda$14/0x...</code>; JDK 25 không còn số này), không ổn định và không xuất hiện trên classpath — nên <strong>đừng lưu lambda vào DB/cache/session lâu dài</strong>; hãy dùng class có tên hoặc enum làm chiến lược.</div>
 
     <h3>9.7 Debug lambda — hidden class &amp; stack trace</h3>
 
@@ -1392,7 +1416,7 @@ sms   DH-01</code></pre>
 
     <details class="qa">
       <summary>Câu 15. Có serialize lambda được không? Cần cảnh báo gì?</summary>
-      <div class="answer">Được, nếu target type kế thừa <code class="inline">Serializable</code> (hoặc cast giao <code class="inline">(Runnable &amp; Serializable)</code>). Nhưng: captured value phải serializable, nếu không sẽ <code class="inline">NotSerializableException</code> lúc chạy; class sinh ra là <strong>hidden class</strong> (từ Java 15) tên dạng <code class="inline">Foo$$Lambda$14/0x...</code> — không ổn định giữa các lần chạy/build, không xuất hiện trên classpath nên deserialize có thể thất bại; code không portable. Vì vậy đừng lưu lambda vào DB/session lâu dài — dùng class có tên hoặc enum cho chiến lược cần bền vững.</div>
+      <div class="answer">Được, nếu target type kế thừa <code class="inline">Serializable</code> (hoặc cast giao <code class="inline">(Runnable &amp; Serializable)</code>). Nhưng: captured value phải serializable, nếu không sẽ <code class="inline">NotSerializableException</code> lúc chạy; class sinh ra là <strong>hidden class</strong> (từ Java 15) tên dạng <code class="inline">Foo$$Lambda/0x...</code> — không ổn định giữa các lần chạy/build, không xuất hiện trên classpath nên deserialize có thể thất bại; code không portable. Vì vậy đừng lưu lambda vào DB/session lâu dài — dùng class có tên hoặc enum cho chiến lược cần bền vững.</div>
     </details>
 
     <details class="qa">
@@ -1402,7 +1426,7 @@ sms   DH-01</code></pre>
 
     <details class="qa">
       <summary>Câu 17. Class sinh ra cho lambda tên gì? Vì sao stack trace khó đọc và cách khắc phục?</summary>
-      <div class="answer">Từ Java 15 nó là <strong>hidden class</strong>, tên dạng <code class="inline">TenClass$$Lambda$14/0x...</code>: không load được bằng tên, không có trên classpath, không ổn định giữa các lần chạy. Stack trace hiện frame private <code class="inline">lambda$main$0</code> thay vì code bạn viết. Khắc phục: tách thân lambda thành method có tên rồi dùng method reference (<code class="inline">this::tinhPhi</code>), log kèm tên nghiệp vụ; kiểm tra bằng <code class="inline">getClass().isHidden()</code> và <code class="inline">getName().contains("$$Lambda")</code>. Không dùng tên class lambda cho logic.</div>
+      <div class="answer">Từ Java 15 nó là <strong>hidden class</strong>, tên dạng <code class="inline">TenClass$$Lambda/0x...</code> (các JDK 15–22 từng in thêm số thứ tự <code class="inline">$N</code>): không load được bằng tên, không có trên classpath, không ổn định giữa các lần chạy. Stack trace hiện frame private <code class="inline">lambda$main$0</code> thay vì code bạn viết. Khắc phục: tách thân lambda thành method có tên rồi dùng method reference (<code class="inline">this::tinhPhi</code>), log kèm tên nghiệp vụ; kiểm tra bằng <code class="inline">getClass().isHidden()</code> và <code class="inline">getName().contains("$$Lambda")</code>. Không dùng tên class lambda cho logic.</div>
     </details>
 
     <h2 id="bai-tap">12. Bài tập đoán output</h2>

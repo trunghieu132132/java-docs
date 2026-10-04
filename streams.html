@@ -198,7 +198,7 @@ public class OneShotDemo {
 IllegalStateException: stream has already been operated upon or closed</code></pre>
     </div>
 
-    <p>Nếu không bắt lỗi, chương trình chết với stack trace:</p>
+    <p>Nếu không bắt lỗi, chương trình vẫn in <code class="inline">lan 1: 2</code> ra stdout trước, rồi mới chết với stack trace (khối dưới chỉ trích stderr):</p>
 
     <div class="errblock">
       <pre>Exception in thread "main" java.lang.IllegalStateException: stream has already been operated upon or closed
@@ -355,6 +355,35 @@ public class FilesLinesDemo {
     </div>
 
     <p>Lưu ý: <code class="inline">main</code> ở đây khai báo <code class="inline">throws IOException</code> vì <code class="inline">createTempFile</code>/<code class="inline">writeString</code>/<code class="inline">deleteIfExists</code> đều là checked exception. Đọc/ghi file chi tiết ở <a href="io-files.html">I/O &amp; Files</a>; các nguồn tương tự gồm <code class="inline">Files.list</code> (liệt kê thư mục) và <code class="inline">BufferedReader.lines</code>.</p>
+
+    <p>Hai nguồn stream hữu ích khác của <code class="inline">java.nio.file</code> là <code class="inline">Files.walk(dir)</code> (duyệt đệ quy cả cây thư mục) và <code class="inline">Files.find(dir, maxDepth, matcher)</code> (duyệt có giới hạn độ sâu kèm lọc theo thuộc tính file). Cả hai trả <code class="inline">Stream&lt;Path&gt;</code>, cũng <strong>phải đóng</strong> bằng try-with-resources; chi tiết về <code class="inline">Path</code>/attribute xem <a href="io-files.html">I/O &amp; Files</a>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class FilesWalkDemo {
+    public static void main() throws IOException {
+        Path dir = Files.createTempDirectory("walk-demo-");
+        Files.writeString(dir.resolve("a.txt"), "a");
+        Files.createDirectory(dir.resolve("sub"));
+        Files.writeString(dir.resolve("sub/b.txt"), "b");
+
+        try (var walk = Files.walk(dir)) {
+            IO.println("walk: " + walk.count());   // gom ca thu muc goc + a.txt + sub + b.txt
+        }
+        try (var find = Files.find(dir, 2, (p, a) -&gt; a.isRegularFile())) {
+            IO.println("find regular: " + find.count());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>walk: 4
+find regular: 2</code></pre>
+    </div>
 
     <h3>2.4 Stream vô hạn: generate &amp; iterate</h3>
 
@@ -1176,6 +1205,8 @@ public class GroupingByDemo {
 
     <div class="note"><strong>Thứ tự Map:</strong> <code class="inline">groupingBy</code> mặc định trả <code class="inline">HashMap</code> — thứ tự khóa <em>không được bảo đảm</em>, đừng viết test/so sánh chuỗi dựa vào nó. Khi cần thứ tự ổn định, truyền <code class="inline">LinkedHashMap::new</code> (theo lần xuất hiện đầu tiên) hoặc <code class="inline">TreeMap::new</code> (theo khóa). Ví dụ trên in ra <code class="inline">{IT=..., HR=...}</code> vì "IT" xuất hiện trước trong danh sách.</div>
 
+    <div class="note warn"><strong>Bẫy classifier trả <code class="inline">null</code>:</strong> <code class="inline">Collectors.groupingBy</code> ném <code class="inline">NullPointerException</code> với message đã kiểm trên JDK 25: <code class="inline">element cannot be mapped to a null key</code> — kể cả khi map đích là <code class="inline">HashMap</code> (vốn cho phép key null). Hãy lọc <code class="inline">filter(Objects::nonNull)</code> trước khi gom nhóm, hoặc trả khóa mặc định kiểu <code class="inline">"(khong xac dinh)"</code>.</div>
+
     <h3>5.3 partitioningBy — chia đôi true/false</h3>
 
     <div class="codeblock">
@@ -1468,7 +1499,6 @@ toUnmodifiableList -&gt; NullPointerException
     <ul>
       <li><code class="inline">Stream.toList()</code> (Java 16) cho phép phần tử null; <code class="inline">Collectors.toUnmodifiableList()</code> (Java 10) ném <code class="inline">NullPointerException</code> khi gặp null (tương tự <code class="inline">toUnmodifiableMap</code>, <code class="inline">List.copyOf</code>).</li>
       <li><code class="inline">Stream.ofNullable(t)</code> (Java 9) trả stream 0 phần tử nếu <code class="inline">t</code> null, 1 phần tử nếu không — còn <code class="inline">Stream.of(t)</code> (bản một tham số) <strong>vẫn bọc null thành 1 phần tử</strong> (đã kiểm: <code class="inline">Stream.of((Object) null).count()</code> = <code class="inline">1</code>), nên đừng nhầm nó tự lọc null.</li>
-      <li>Chiến lược sạch hơn: loại null ngay từ nguồn bằng <code class="inline">filter(Objects::nonNull)</code>, hoặc để hàm tìm kiếm trả <code class="inline">Optional</code> rồi <code class="inline">flatMap(Optional::stream)</code> như mục 6.</li>
     </ul>
 
     <h2 id="parallel">7. Parallel stream <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
@@ -1909,7 +1939,7 @@ An, Cuong, Dung</code></pre>
 
     <p>Vài điểm đáng chú ý trong project:</p>
     <ul>
-      <li>Kết quả đầu ra <strong>ổn định</strong>: phần 2 dùng <code class="inline">TreeMap</code> (khách theo alphabet), phần 3 dùng <code class="inline">LinkedHashMap</code> (trạng thái theo lần gặp). Riêng phần 4, <code class="inline">groupingBy</code> vẫn trả <code class="inline">HashMap</code> mặc định — thứ tự ổn định đến từ comparator có <strong>tie-break</strong> <code class="inline">thenComparing(Map.Entry.comparingByKey())</code>, không phải từ map factory: nếu chỉ sort theo value mà bỏ tie-break, các sản phẩm cùng số lượng có thể đổi thứ tự theo HashMap.</li>
+      <li>Kết quả đầu ra <strong>ổn định</strong>: phần 2 dùng <code class="inline">TreeMap</code> (khách theo alphabet), phần 3 dùng <code class="inline">LinkedHashMap</code> (trạng thái theo lần gặp). Riêng phần 4, <code class="inline">groupingBy</code> vẫn trả <code class="inline">HashMap</code> mặc định — comparator có <strong>tie-break</strong> <code class="inline">thenComparing(Map.Entry.comparingByKey())</code> nên sort tất định theo cả value lẫn key kể cả khi có tie; dataset mẫu không có tie nên chưa thể hiện điều đó.</li>
       <li>Phần 3 kết hợp <code class="inline">teeing</code> để vừa đếm vừa tính tổng trong một lượt gom nhóm.</li>
       <li>Phần 4 là pipeline hai tầng: <code class="inline">groupingBy</code> + <code class="inline">summingInt</code> trước, rồi mở stream trên <code class="inline">entrySet()</code> để sort/limit/joining. Khi so sánh value trong Map.Entry, phải chỉ định kiểu generic cho <code class="inline">comparingByValue()</code>.</li>
       <li>Phần 6 dùng <code class="inline">sorted(Comparator.comparing(DonHang::ma))</code> để thứ tự báo cáo không phụ thuộc dữ liệu đầu vào; sau đó mới <code class="inline">map</code> và <code class="inline">joining</code>.</li>

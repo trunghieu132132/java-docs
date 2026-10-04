@@ -182,7 +182,7 @@ IOException | Error=false | Exception=true | RuntimeException=false</code></pre>
         <tr><td>Ghi nhớ</td><td><code class="inline">StackOverflowError</code> là <code class="inline">Error</code>, đừng bắt</td><td>Đối tượng chính của trang này</td></tr>
       </tbody>
     </table>
-    <p><code class="inline">StackOverflowError</code> quen thuộc từ <a href="methods.html#recursion">Methods — mục 7</a>; <code class="inline">OutOfMemoryError</code> nên được điều tra bằng heap dump, không phải by <code class="inline">catch</code>.</p>
+    <p><code class="inline">StackOverflowError</code> quen thuộc từ <a href="methods.html#recursion">Methods — mục 7</a>; <code class="inline">OutOfMemoryError</code> nên được điều tra bằng heap dump, không phải bằng cách <code class="inline">catch</code>.</p>
 
     <h3>2.2 Checked exception — compiler ép xử lý</h3>
     <p>Checked exception là mọi lớp con của <code class="inline">Exception</code> <strong>trừ</strong> <code class="inline">RuntimeException</code> và các lớp con của nó. Đặc điểm nhận dạng: nếu một method có thể ném checked exception, code gọi nó phải nằm trong <code class="inline">try/catch</code> hoặc method gọi phải khai báo <code class="inline">throws</code>. Đây là kiểm tra lúc <em>biên dịch</em>, không phải lúc chạy (JLS §11.2).</p>
@@ -315,6 +315,37 @@ tiep tuc chay</code></pre>
       </tbody>
     </table>
     <div class="note">Mẹo nhớ: <code class="inline">ClassNotFoundException</code> là <em>bạn</em> chủ động yêu cầu load class và nhận thông báo; <code class="inline">NoClassDefFoundError</code> là <em>JVM</em> nổ khi đang chạy code tham chiếu tới class đó. Cùng một class có thể ném <code class="inline">NoClassDefFoundError</code> vì lần load đầu tiên static initializer của nó đã ném lỗi — nguyên nhân production rất hay bị bỏ sót khi đọc log.</div>
+    <div class="note"><strong>ExceptionInInitializerError — mắt xích còn thiếu:</strong> nếu static initializer (static block hoặc static field) ném exception ngay lần đầu class được dùng, JVM gói exception đó vào <code class="inline">ExceptionInInitializerError</code>. Class bị đánh dấu lỗi vĩnh viễn, nên mọi lần dùng lại sau đó JVM ném thẳng <code class="inline">NoClassDefFoundError</code> với cause chính là <code class="inline">ExceptionInInitializerError</code> của lần đầu. Cả hai đều là <code class="inline">LinkageError</code>, nên log production có thể chỉ hiện <code class="inline">NoClassDefFoundError</code> trong khi nguyên nhân gốc nằm ở lần init hỏng trước đó.</div>
+    <div class="codeblock">
+      <pre><code class="java">public class InitErrorDemo {
+    static class CauHinh {
+        static int giaTri;
+
+        static {
+            giaTri = docCauHinh();
+        }
+
+        static int docCauHinh() {
+            throw new IllegalStateException("thieu file cau hinh");
+        }
+    }
+
+    public static void main() {
+        for (int lan = 1; lan &lt;= 2; lan++) {
+            try {
+                IO.println("lan " + lan + ": " + CauHinh.giaTri);
+            } catch (LinkageError e) {
+                IO.println("lan " + lan + ": " + e.getClass().getSimpleName()
+                        + " (cause: " + e.getCause().getClass().getSimpleName() + ")");
+            }
+        }
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>lan 1: ExceptionInInitializerError (cause: IllegalStateException)
+lan 2: NoClassDefFoundError (cause: ExceptionInInitializerError)</code></pre>
+    </div>
     <h2 id="try-catch-finally">3. try / catch / finally <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
     <div class="signature">
       <span class="sig-muted">try</span> <span class="sig-muted">{</span> <span class="sig-muted">... code co the nem exception ...</span> <span class="sig-muted">}</span> <span class="sig-muted">catch</span> <span class="sig-muted">(</span><span class="tok-typ">KieuLoi</span> <span class="sig-var">e</span><span class="sig-muted">)</span> <span class="sig-muted">{</span> <span class="sig-muted">... xu ly ...</span> <span class="sig-muted">}</span> <span class="sig-muted">finally</span> <span class="sig-muted">{</span> <span class="sig-muted">... luon chay ...</span> <span class="sig-muted">}</span>

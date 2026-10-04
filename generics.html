@@ -478,14 +478,19 @@ xoai
     <p>Hai kiểu bound quan trọng:</p>
     <ul>
       <li><code class="inline">&lt;T extends Number&gt;</code> — chỉ nhận <code class="inline">Integer</code>, <code class="inline">Double</code>, <code class="inline">BigDecimal</code>... và nhờ vậy gọi được <code class="inline">doubleValue()</code>.</li>
-      <li><code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code> — bound "tự tham chiếu" (self-referential), đảm bảo mọi <code class="inline">T</code> so sánh được với chính kiểu <code class="inline">T</code>. Đây là bản giản hoá dễ hiểu của bound thật trong JDK: <code class="inline">Collections.sort</code> và <code class="inline">Collections.max</code> dùng dạng PECS rộng hơn <code class="inline">&lt;T extends Comparable&lt;? super T&gt;&gt;</code> (riêng <code class="inline">max</code> còn thêm <code class="inline">Object &amp;</code>). Kiểm chứng bằng javap:</li>
+      <li><code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code> — bound "tự tham chiếu" (self-referential), đảm bảo mọi <code class="inline">T</code> so sánh được với chính kiểu <code class="inline">T</code>. Đây là bản giản hoá dễ hiểu của bound thật trong JDK: <code class="inline">Collections.sort</code> và <code class="inline">Collections.max</code> dùng dạng PECS rộng hơn <code class="inline">&lt;T extends Comparable&lt;? super T&gt;&gt;</code>. Riêng <code class="inline">max</code> (và <code class="inline">min</code>) còn thêm bound <code class="inline">java.lang.Object &amp;</code> nữa, nhưng bound này <strong>chỉ thấy trong attribute <code class="inline">Signature</code> khi chạy <code class="inline">javap -v</code></strong> — giữ tương thích nhị phân vì erasure của <code class="inline">T</code> vẫn là <code class="inline">Object</code> đúng như chữ ký thời tiền generics. Kiểm chứng bằng javap:</li>
     </ul>
     <div class="codeblock">
       <pre><code>$ javap -p java.util.Collections | grep -E "sort\(|max\("
   public static &lt;T extends java.lang.Comparable&lt;? super T&gt;&gt; void sort(java.util.List&lt;T&gt;);
   public static &lt;T&gt; void sort(java.util.List&lt;T&gt;, java.util.Comparator&lt;? super T&gt;);
-  public static &lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt; T max(java.util.Collection&lt;? extends T&gt;);
+  public static &lt;T extends java.lang.Comparable&lt;? super T&gt;&gt; T max(java.util.Collection&lt;? extends T&gt;);
   public static &lt;T&gt; T max(java.util.Collection&lt;? extends T&gt;, java.util.Comparator&lt;? super T&gt;);</code></pre>
+    </div>
+    <p>Chạy <code class="inline">javap -v</code> mới thấy bound <code class="inline">Object &amp;</code> của <code class="inline">max</code> (dòng khai báo in ra từ Signature attribute):</p>
+    <div class="codeblock">
+      <pre><code>$ javap -v java.util.Collections | grep '&gt;&gt; T max'
+  public static &lt;T extends java.lang.Object &amp; java.lang.Comparable&lt;? super T&gt;&gt; T max(java.util.Collection&lt;? extends T&gt;);</code></pre>
     </div>
     <p>Vì sao <code class="inline">? super T</code> quan trọng: nó cho phép so sánh danh sách kiểu con bằng <code class="inline">compareTo</code> của kiểu cha. Với bound đơn giản <code class="inline">&lt;T extends Comparable&lt;T&gt;&gt;</code>, đoạn dưới đây không compile vì <code class="inline">Cho</code> chỉ là <code class="inline">Comparable&lt;DongVat&gt;</code>; JDK chấp nhận nhờ <code class="inline">Comparable&lt;? super Cho&gt;</code>:</p>
     <div class="codeblock">
@@ -526,6 +531,27 @@ public class PecsBoundDemo {
     <div class="codeblock error">
       <pre><code>[Becgie, Milu]</code></pre>
     </div>
+
+    <p>Dạng self-referential kinh điển nhất là <code class="inline">Enum&lt;E extends Enum&lt;E&gt;&gt;</code>: mỗi hằng enum thuộc một kiểu enum cụ thể, nên JDK buộc type parameter phải là chính kiểu enum đó. Nhờ vậy <code class="inline">EnumSet.allOf(Class&lt;E&gt;)</code> trả về <code class="inline">EnumSet&lt;E&gt;</code> đúng kiểu con thay vì <code class="inline">Enum&lt;?&gt;</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.util.EnumSet;
+
+public class SelfBoundDemo {
+    enum TrangThai { MOI, DANG_XU_LY, XONG }
+
+    static &lt;E extends Enum&lt;E&gt;&gt; void lietKe(Class&lt;E&gt; type) {
+        IO.println(EnumSet.allOf(type));
+    }
+
+    public static void main() {
+        lietKe(TrangThai.class);
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[MOI, DANG_XU_LY, XONG]</code></pre>
+    </div>
+    <p>Bound tự tham chiếu cũng là cách khai báo method trả về đúng kiểu con, ví dụ <code class="inline">static &lt;E extends Enum&lt;E&gt;&gt; E cuoi(Class&lt;E&gt; type)</code> giữ được kiểu <code class="inline">TrangThai</code> thay vì bị erasure về <code class="inline">Enum</code>. Chi tiết về enum xem <a href="enum-nested.html#enum-co-ban">2.7 Enum, nested &amp; sealed classes</a>.</p>
 
     <h3>Multiple bounds</h3>
 
@@ -1089,9 +1115,16 @@ class OverrideBridgeDemo$Con extends OverrideBridgeDemo$Cha&lt;java.lang.String&
 $ javap -v 'OverrideBridgeDemo$Con'   (trích)
   java.lang.Object tao();
     descriptor: ()Ljava/lang/Object;
-    flags: (0x1040) ACC_BRIDGE, ACC_SYNTHETIC</code></pre>
+    flags: (0x1040) ACC_BRIDGE, ACC_SYNTHETIC
+
+$ javap -c -p 'OverrideBridgeDemo$Con'   (trích)
+  java.lang.Object tao();
+    Code:
+         0: aload_0
+         1: invokevirtual #9                  // Method tao:()Ljava/lang/String;
+         4: areturn</code></pre>
     </div>
-    <p>Nhờ bridge, lời gọi qua kiểu cha (<code class="inline">c.tao()</code>, descriptor trả <code class="inline">Object</code>) vẫn dispatch vào method override của <code class="inline">Con</code> thay vì rơi về method của <code class="inline">Cha</code>; bridge cast kết quả về <code class="inline">String</code> rồi gọi method thật.</p>
+    <p>Nhờ bridge, lời gọi qua kiểu cha (<code class="inline">c.tao()</code>, descriptor trả <code class="inline">Object</code>) vẫn dispatch vào method override của <code class="inline">Con</code> thay vì rơi về method của <code class="inline">Cha</code>. Bytecode thật cho thấy bridge <strong>không cast kết quả</strong>: nó chỉ <code class="inline">invokevirtual tao:()Ljava/lang/String;</code> rồi <code class="inline">areturn</code> — trả <code class="inline">String</code> cho nơi nhận <code class="inline">Object</code> là upcast nên không cần kiểm tra. Chỉ bridge kiểu <em>tham số</em> mới phải <code class="inline">checkcast</code> argument: bridge <code class="inline">compareTo(Object)</code> của class <code class="inline">implements Comparable&lt;TenClass&gt;</code> ép <code class="inline">Object</code> về <code class="inline">TenClass</code> trước khi gọi <code class="inline">compareTo(TenClass)</code>.</p>
 
     <h2 id="bay">8. Bẫy thường gặp tổng hợp <span class="badge b-prod">Production</span></h2>
 
@@ -1171,7 +1204,7 @@ ClassCastException: Cannot cast java.lang.String to java.lang.Integer</code></pr
     <p>Hai luật của ngôn ngữ hay bị bỏ qua:</p>
     <ul>
       <li><strong>Generic class không được kế thừa <code class="inline">Throwable</code></strong> (JLS §8.1.2): <code class="inline">class MyEx&lt;T&gt; extends Exception</code> là lỗi compile, vì catch/rethrow cần kiểu exception xác định sau erasure còn type parameter thì không đảm bảo được.</li>
-      <li><strong>Không catch type variable hay parameterized type</strong> (JLS §8.5 và luật catch §14.20): kiểu catch phải là class type là con của <code class="inline">Throwable</code>; <code class="inline">catch (T e)</code> và <code class="inline">catch (Hop&lt;String&gt; e)</code> đều bị chặn ngay khi compile.</li>
+      <li><strong>Không catch type variable hay parameterized type</strong> (JLS §14.20): kiểu catch phải là class type là con của <code class="inline">Throwable</code>; <code class="inline">catch (T e)</code> và <code class="inline">catch (Hop&lt;String&gt; e)</code> đều bị chặn ngay khi compile.</li>
     </ul>
     <div class="errblock">
       <pre>GenericExExtendsErr.java:1: error: a generic class may not extend java.lang.Throwable
@@ -1208,6 +1241,7 @@ public class SuppressUncheckedDemo {
     }
 
     static List&lt;String&gt; nhanTuApiCu() {
+        // API legacy: da kiem soat kieu khi goi
         @SuppressWarnings("unchecked")
         List&lt;String&gt; ketQua = (List&lt;String&gt;) apiCu();
         return ketQua;
