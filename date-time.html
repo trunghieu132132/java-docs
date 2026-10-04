@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>java.time — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item active" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+    </nav>
+  </aside>
+  <main class="content" id="top">
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+    <h1 id="date-time">java.time — xử lý ngày giờ hiện đại</h1>
+    <p class="lead">Ngày giờ là loại dữ liệu mà backend nào cũng gặp: thời điểm tạo đơn, hạn giao hàng, lịch họp, thống kê theo ngày. Trang này học bộ API <strong>java.time</strong> (JSR-310, Java 8+) từ con số 0 tới production: <code class="inline">Instant</code>, <code class="inline">LocalDate</code>, <code class="inline">ZonedDateTime</code>, <code class="inline">Duration</code>/<code class="inline">Period</code>, <code class="inline">DateTimeFormatter</code>, cùng các bẫy <strong>múi giờ, DST, epoch</strong> và cách tương thích với <code class="inline">Date</code>/<code class="inline">Calendar</code> cũ. Mọi ví dụ chạy được ngay bằng <code class="inline">java TenFile.java</code> trên JDK 25.</p>
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+    <p>Mức độ bắt buộc của chủ đề 3.5 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — tạo và biến đổi <code class="inline">LocalDate</code>/<code class="inline">LocalDateTime</code>; chuyển đổi qua lại giữa <code class="inline">Instant</code>, <code class="inline">ZonedDateTime</code>, <code class="inline">OffsetDateTime</code>; tính khoảng thời gian bằng <code class="inline">Duration</code>/<code class="inline">Period</code>; format/parse với pattern và <code class="inline">Locale</code> tiếng Việt; viết được <code class="inline">Clock</code> để test code phụ thuộc "bây giờ".</li>
+      <li><strong>Phải hiểu</strong> — <em>instant</em> (mốc tuyệt đối) khác <em>local date-time</em> (giờ trên lịch treo tường) thế nào; vì sao lưu DB là UTC; DST gap/overlap được <code class="inline">java.time</code> xử lý ra sao; vì sao mọi class java.time là bất biến (immutable) và thread-safe.</li>
+      <li><strong>Nhận biết</strong> — <code class="inline">ZoneRules</code> và lịch sử múi giờ; <code class="inline">ResolverStyle</code> SMART/STRICT khi parse; JSON serialization (<code class="inline">Instant</code> mặc định thành số giây thập phân nếu quên cấu hình); Temporal trong JavaScript/Node.</li>
+    </ul>
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả — nhất là các ví dụ liên quan múi giờ.</li>
+      <li>Tự gõ lại ví dụ rồi đổi zone sang <code class="inline">Asia/Ho_Chi_Minh</code>, <code class="inline">Europe/Paris</code>, <code class="inline">America/New_York</code> để thấy kết quả đổi.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+    </ol>
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Đa số ví dụ là <strong>compact source file</strong>: không cần khai báo class bao ngoài, chỉ cần <code class="inline">void main()</code>; compact file tự import các package của <code class="inline">java.base</code> (java.time nằm trong đó) nên không cần dòng <code class="inline">import</code>, trừ khi dùng thêm package khác như <code class="inline">java.sql</code>.</div>
+    <p>Bảng chọn class theo việc cần làm — học thuộc bảng này trước khi học chi tiết:</p>
+    <table>
+      <thead>
+        <tr><th>Việc cần làm / ngữ nghĩa dữ liệu</th><th>Class nên dùng</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ngày sinh, ngày lễ, ngày deadline (không giờ, không tz)</td><td><code class="inline">LocalDate</code></td><td>Chỉ ngày: 2026-01-15</td></tr>
+        <tr><td>Giờ mở/đóng cửa, giờ hẹn buổi tối (không ngày, không tz)</td><td><code class="inline">LocalTime</code></td><td>Chỉ giờ: 09:30, không có ngày để so sánh</td></tr>
+        <tr><td>Ngày + giờ "trên lịch treo tường", không tz</td><td><code class="inline">LocalDateTime</code></td><td>Giờ họp nội bộ, giờ mở bán <em>theo giờ địa phương</em></td></tr>
+        <tr><td>Mốc thời gian tuyệt đối toàn cầu (log, lưu DB, API)</td><td><code class="inline">Instant</code></td><td>Epoch UTC, không tz, không lịch</td></tr>
+        <tr><td>Mốc tuyệt đối + múi giờ để hiển thị/tính lịch</td><td><code class="inline">ZonedDateTime</code></td><td>Biết DST, quy tắc lịch sử của zone</td></tr>
+        <tr><td>Mốc + offset cố định (gửi/nhận API ISO-8601)</td><td><code class="inline">OffsetDateTime</code></td><td>Không biết DST; phù hợp dữ liệu wire</td></tr>
+        <tr><td>Khoảng thời gian theo giây/phút/giờ trên đồng hồ</td><td><code class="inline">Duration</code></td><td><code class="inline">PT8H45M</code>; dùng cho elapsed time</td></tr>
+        <tr><td>Khoảng theo ngày/tuần/tháng/năm trên lịch</td><td><code class="inline">Period</code></td><td><code class="inline">P2M14D</code>; dùng cho tuổi, hạn hợp đồng</td></tr>
+        <tr><td>Định danh múi giờ</td><td><code class="inline">ZoneId</code> / <code class="inline">ZoneOffset</code></td><td><code class="inline">Asia/Ho_Chi_Minh</code> / <code class="inline">+07:00</code></td></tr>
+        <tr><td>Lấy "bây giờ" theo cách test được</td><td><code class="inline">Clock</code></td><td>Tiêm (inject) clock thay vì gọi <code class="inline">now()</code></td></tr>
+      </tbody>
+    </table>
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#vi-sao-bo-date">Vì sao bỏ Date &amp; Calendar</a></li>
+        <li><a href="#local-date-time">LocalDate, LocalTime, LocalDateTime</a></li>
+        <li><a href="#instant-epoch">Instant &amp; epoch</a></li>
+        <li><a href="#duration-period">Duration vs Period</a></li>
+        <li><a href="#zone">ZonedDateTime, OffsetDateTime, ZoneId</a></li>
+        <li><a href="#dst">Timezone &amp; DST chuyên sâu</a></li>
+        <li><a href="#format-parse">Format &amp; parse</a></li>
+        <li><a href="#legacy">Tương thích Date/Calendar/Timestamp</a></li>
+        <li><a href="#production">Production &amp; project đơn hàng</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+    <h2 id="vi-sao-bo-date">2. Vì sao bỏ <code class="inline">Date</code> &amp; <code class="inline">Calendar</code> <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+    <p>Trước Java 8, lập trình viên dùng <code class="inline">java.util.Date</code>, <code class="inline">java.util.Calendar</code> và <code class="inline">SimpleDateFormat</code>. Bốn vấn đề chí mạng khiến bộ API này bị thay thế:</p>
+    <ol>
+      <li><strong>Mutable</strong> — ai giữ tham chiếu cũng sửa được object, tạo bug khó lần. <code class="inline">Date.setTime(...)</code>, <code class="inline">Calendar.set(...)</code> đổi nội dung tại chỗ, không trả object mới.</li>
+      <li><strong>Tháng 0-based, năm 1900-based</strong> — <code class="inline">getMonth()</code> trả 0 cho tháng 1; constructor <code class="inline">new Date(125, 0, 1)</code> nghĩa là năm 2025. Đây là lỗi kinh điển khiến hạn giao hàng lệch 1 tháng.</li>
+      <li><strong><code class="inline">SimpleDateFormat</code> không thread-safe</strong> — bên trong nó giữ một <code class="inline">Calendar</code> mutable làm vùng đệm. Dùng chung một formatter cho nhiều thread có thể cho kết quả sai hoặc ném exception.</li>
+      <li><strong>Trộn lẫn múi giờ</strong> — <code class="inline">Date</code> là một instant nhưng <code class="inline">toString()</code> và các getter in theo default timezone; <code class="inline">Calendar</code> vừa có ngày giờ vừa có tz, vừa có setters. Muốn "chỉ ngày" hay "chỉ giờ" đều phải nhồi vào một class.</li>
+    </ol>
+    <p>Ví dụ dưới chạy thật. Chú ý <code class="inline">125</code> và <code class="inline">0</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+void main() {
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    Date date = new Date(125, 0, 1);
+    IO.println(date);
+    IO.println(date.getYear());
+    IO.println(date.getMonth());
+    IO.println(date.getDate());
+    Calendar cal = Calendar.getInstance();
+    cal.clear();
+    cal.set(2025, 0, 1);
+    IO.println(cal.getTime());
+    IO.println(cal.get(Calendar.MONTH));
+    IO.println(Calendar.JANUARY);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Wed Jan 01 00:00:00 GMT+07:00 2025
+125
+0
+1
+Wed Jan 01 00:00:00 GMT+07:00 2025
+0
+0</code></pre>
+    </div>
+    <div class="note">Ví dụ trên cố tình cố định <code class="inline">TimeZone.setDefault(...)</code> để output ổn định giữa các máy; trong code thật gần như không bao giờ nên đổi default timezone của cả JVM.<br><strong>javac có cảnh báo deprecation</strong> khi dùng <code class="inline">new Date(int,int,int)</code> và các getter cũ: <code class="inline">warning: [deprecation] Date(int,int,int) in Date has been deprecated</code> — một tín hiệu nữa cho thấy API này đã bị khai tử từ Java 8.</div>
+    <table>
+      <thead>
+        <tr><th></th><th>Date / Calendar</th><th>java.time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tính bất biến</td><td>Mutable — <code class="inline">set</code> sửa tại chỗ</td><td>Immutable — mọi phép biến đổi trả object mới</td></tr>
+        <tr><td>Tháng</td><td>0-based (<code class="inline">Calendar.JANUARY == 0</code>)</td><td>1-based (<code class="inline">Month.JANUARY.getValue() == 1</code>)</td></tr>
+        <tr><td>Năm trong constructor cũ</td><td>Trừ 1900 (<code class="inline">125</code> = 2025)</td><td>Ghi thẳng (<code class="inline">LocalDate.of(2025, 1, 1)</code>)</td></tr>
+        <tr><td>Thread-safe</td><td><code class="inline">Date</code> tạm ổn, <code class="inline">Calendar</code>/<code class="inline">SimpleDateFormat</code> không</td><td>Tất cả class java.time đều immutable, dùng chung an toàn</td></tr>
+        <tr><td>Ngữ nghĩa</td><td>Một class gánh mọi thứ</td><td>Tách rõ: Local*, Instant, Zoned, Offset, Duration, Period</td></tr>
+        <tr><td>Parse mặc định</td><td><code class="inline">SimpleDateFormat</code> lenient: <code class="inline">2025-02-31</code> thành 3/3</td><td>SMART clamp hoặc STRICT báo lỗi (mục 8)</td></tr>
+      </tbody>
+    </table>
+    <p>Về parse lenient — thử cả hai thế hệ trong cùng một chương trình:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() throws Exception {
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    Date legacy = new SimpleDateFormat("yyyy-MM-dd").parse("2025-02-31");
+    IO.println(legacy);
+    DateTimeFormatter pattern = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    IO.println(LocalDate.parse("2025-02-31", pattern));
+    try {
+        LocalDate.parse("2025-02-31", DateTimeFormatter.ISO_LOCAL_DATE);
+    } catch (DateTimeParseException e) {
+        IO.println("ISO strict: " + e.getMessage());
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Mon Mar 03 00:00:00 GMT+07:00 2025
+2025-02-28
+ISO strict: Text '2025-02-31' could not be parsed: Invalid date 'FEBRUARY 31'</code></pre>
+    </div>
+    <p><code class="inline">SimpleDateFormat</code> "sửa" ngày 31/02 thành 3/3 mà không báo; <code class="inline">DateTimeFormatter.ofPattern</code> mặc định SMART clamp về 28/02; còn <code class="inline">ISO_LOCAL_DATE</code> là STRICT nên ném <code class="inline">DateTimeParseException</code>. Với dữ liệu người dùng nhập, luôn cân nhắc STRICT.</p>
+    <p>Về thread-safety, <code class="inline">SimpleDateFormat</code> có state mutable: cùng một object, đổi timezone là đổi luôn kết quả các lần gọi sau. <code class="inline">DateTimeFormatter</code> thì trả object mới từ <code class="inline">withZone</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.text.*;
+void main() {
+    Instant instant = Instant.parse("2026-01-15T02:30:00Z");
+    Date date = Date.from(instant);
+    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    sdf.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    IO.println(sdf.format(date));
+    sdf.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+    IO.println(sdf.format(date));
+    DateTimeFormatter hcm = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            .withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+    DateTimeFormatter paris = hcm.withZone(ZoneId.of("Europe/Paris"));
+    IO.println(hcm.format(instant));
+    IO.println(paris.format(instant));
+    IO.println(hcm.format(instant));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>15/01/2026 09:30
+15/01/2026 03:30
+15/01/2026 09:30
+15/01/2026 03:30
+15/01/2026 09:30</code></pre>
+    </div>
+    <p>Ba dòng cuối cho thấy <code class="inline">withZone</code> không sửa <code class="inline">hcm</code>: formatter là bất biến. Vì vậy chỉ cần tạo <strong>một</strong> <code class="inline">DateTimeFormatter</code> dùng chung cho mọi thread:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() throws Exception {
+    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    List&lt;LocalDate&gt; dates = List.of(
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 6, 15),
+            LocalDate.of(2026, 12, 31));
+    ExecutorService pool = Executors.newFixedThreadPool(3);
+    List&lt;Callable&lt;String&gt;&gt; tasks = new ArrayList&lt;&gt;();
+    for (LocalDate d : dates) {
+        tasks.add(() -&gt; fmt.format(d));
+    }
+    List&lt;String&gt; out = new ArrayList&lt;&gt;();
+    for (Future&lt;String&gt; f : pool.invokeAll(tasks)) {
+        out.add(f.get());
+    }
+    out.sort(null);
+    IO.println(out);
+    pool.shutdown();
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[01/01/2026, 15/06/2026, 31/12/2026]</code></pre>
+    </div>
+    <h3>Tính bất biến của java.time</h3>
+    <p>Mọi phép <code class="inline">plus</code>/<code class="inline">minus</code>/<code class="inline">with</code> trả về object <strong>mới</strong>, object gốc không đổi. Đây là lý do java.time an toàn khi chia sẻ giữa các thread và làm key của <code class="inline">Map</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate goc = LocalDate.of(2026, 1, 31);
+    LocalDate themNgay = goc.plusDays(1);
+    LocalDate themThang = goc.plusMonths(1);
+    IO.println(goc);
+    IO.println(themNgay);
+    IO.println(themThang);
+    IO.println(goc == themNgay);
+    IO.println(goc.equals(themNgay));
+    IO.println(themThang.equals(goc.withMonth(2)));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-31
+2026-02-01
+2026-02-28
+false
+false
+true</code></pre>
+    </div>
+    <p>Chú ý <code class="inline">plusMonths(1)</code> trên 31/01 cho 28/02: java.time <strong>clamp</strong> ngày cuối tháng thay vì tràn sang tháng sau. Đây là hành vi có chủ đích, khác hẳn lenient parse ở trên.</p>
+    <p>Thử gọi setter kiểu cũ trên <code class="inline">LocalDate</code> sẽ không compile vì class này không có setter:</p>
+    <div class="errblock">
+      <pre>LocalDateSetErr.java:3: error: cannot find symbol
+    d.setYear(2026);
+     ^
+  symbol:   method setYear(int)
+  location: variable d of type LocalDate
+1 error
+error: compilation failed</pre>
+    </div>
+    <h2 id="local-date-time">3. LocalDate, LocalTime, LocalDateTime <span class="badge b-junior">Junior+</span></h2>
+    <p>Ba class "local" biểu diễn ngày/giờ <strong>không kèm múi giờ</strong> — đúng nghĩa "trên lịch treo tường". Chúng không biết DST, không biết offset, nên chỉ nên dùng cho dữ liệu mà múi giờ không quan trọng (ngày sinh, giờ mở cửa, lịch nội bộ một vùng).</p>
+    <table>
+      <thead>
+        <tr><th>Class</th><th>Chứa</th><th>Ví dụ</th><th>Dùng cho</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">LocalDate</code></td><td>year-month-day</td><td><code class="inline">2026-01-15</code></td><td>Ngày sinh, deadline, ngày lễ</td></tr>
+        <tr><td><code class="inline">LocalTime</code></td><td>hour-minute-second-nano</td><td><code class="inline">09:30</code></td><td>Giờ mở cửa, giờ hẹn trong ngày</td></tr>
+        <tr><td><code class="inline">LocalDateTime</code></td><td>Cả hai</td><td><code class="inline">2026-01-15T09:30</code></td><td>Giờ họp theo giờ địa phương</td></tr>
+      </tbody>
+    </table>
+    <h3>Tạo giá trị: now / of / parse</h3>
+    <p><code class="inline">now()</code> lấy giờ hệ thống — muốn test được hãy truyền <code class="inline">Clock</code> (mục 4):</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    Clock clock = Clock.fixed(Instant.parse("2026-01-15T02:30:00Z"),
+            ZoneId.of("Asia/Ho_Chi_Minh"));
+    IO.println(LocalDate.now(clock));
+    IO.println(LocalTime.now(clock));
+    IO.println(LocalDateTime.now(clock));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-15
+09:30
+2026-01-15T09:30</code></pre>
+    </div>
+    <p>Các cách tạo còn lại:</p>
+    <div class="signature">
+      <span class="sig-var">LocalDate</span><span class="sig-muted">.of(</span>2026<span class="sig-muted">, </span>1<span class="sig-muted">, </span>15<span class="sig-muted">)</span> · <span class="sig-var">LocalDate</span><span class="sig-muted">.parse(</span>"2026-01-15"<span class="sig-muted">)</span> · <span class="sig-var">LocalTime</span><span class="sig-muted">.of(</span>9<span class="sig-muted">, </span>30<span class="sig-muted">)</span> · <span class="sig-var">LocalDateTime</span><span class="sig-muted">.of(date, time)</span>
+    </div>
+    <h3>Đọc thành phần: getters</h3>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate d = LocalDate.parse("2026-03-08");
+    IO.println(d);
+    IO.println(d.getYear());
+    IO.println(d.getMonthValue());
+    IO.println(d.getMonth());
+    IO.println(d.getDayOfMonth());
+    IO.println(d.getDayOfWeek());
+    IO.println(d.getDayOfYear());
+    IO.println(d.lengthOfMonth());
+    IO.println(d.lengthOfYear());
+    IO.println(d.isLeapYear());
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-03-08
+2026
+3
+MARCH
+8
+SUNDAY
+67
+31
+365
+false</code></pre>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Getter</th><th>Trả về</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">getYear()</code>, <code class="inline">getMonthValue()</code>, <code class="inline">getDayOfMonth()</code></td><td><code class="inline">int</code></td><td>Month 1-based — khác <code class="inline">Date.getMonth()</code></td></tr>
+        <tr><td><code class="inline">getMonth()</code></td><td><code class="inline">Month</code> enum</td><td><code class="inline">MARCH</code>; có <code class="inline">getValue()</code>, <code class="inline">length(leap)</code></td></tr>
+        <tr><td><code class="inline">getDayOfWeek()</code></td><td><code class="inline">DayOfWeek</code> enum</td><td>1 = MONDAY … 7 = SUNDAY qua <code class="inline">getValue()</code></td></tr>
+        <tr><td><code class="inline">getDayOfYear()</code></td><td><code class="inline">int</code></td><td>1..366</td></tr>
+        <tr><td><code class="inline">lengthOfMonth()</code></td><td><code class="inline">int</code></td><td>Tự hiểu tháng 2 năm nhuận</td></tr>
+        <tr><td><code class="inline">isLeapYear()</code></td><td><code class="inline">boolean</code></td><td>Quy tắc chia hết cho 4, 100, 400</td></tr>
+      </tbody>
+    </table>
+    <h3>Biến đổi: plus / minus / with / truncatedTo</h3>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDateTime x = LocalDateTime.of(2026, 1, 31, 23, 45, 30, 123_456_789);
+    IO.println(x);
+    IO.println(x.plusMonths(1));
+    IO.println(x.minusDays(1));
+    IO.println(x.withYear(2027));
+    IO.println(x.withHour(0));
+    IO.println(x.withDayOfMonth(1));
+    IO.println(x.truncatedTo(ChronoUnit.SECONDS));
+    IO.println(x.truncatedTo(ChronoUnit.DAYS));
+    IO.println(x.plus(3, ChronoUnit.WEEKS));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-31T23:45:30.123456789
+2026-02-28T23:45:30.123456789
+2026-01-30T23:45:30.123456789
+2027-01-31T23:45:30.123456789
+2026-01-31T00:45:30.123456789
+2026-01-01T23:45:30.123456789
+2026-01-31T23:45:30
+2026-01-31T00:00
+2026-02-21T23:45:30.123456789</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">plusXxx/minusXxx</code> — cộng trừ đơn vị lịch: ngày, tuần, tháng, năm, giờ, phút…</li>
+      <li><code class="inline">withXxx</code> — thay một thành phần (luôn là "set" theo kiểu hàm, trả object mới).</li>
+      <li><code class="inline">truncatedTo(unit)</code> — cắt nhỏ hơn đơn vị chỉ định: <code class="inline">SECONDS</code> bỏ nano, <code class="inline">DAYS</code> đưa về 00:00.</li>
+      <li><code class="inline">plus(3, ChronoUnit.WEEKS)</code> — dạng tổng quát khi đơn vị là biến.</li>
+    </ul>
+    <h3>TemporalAdjusters — điều chỉnh "thông minh"</h3>
+    <p><code class="inline">TemporalAdjusters</code> là thư viện hàm tìm ngày theo quy tắc lịch: thứ Hai tới, ngày đầu/cuối tháng, thứ Sáu cuối cùng của tháng…</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate d = LocalDate.of(2026, 1, 15);
+    IO.println(d);
+    IO.println(d.with(TemporalAdjusters.next(DayOfWeek.MONDAY)));
+    IO.println(d.with(TemporalAdjusters.nextOrSame(DayOfWeek.THURSDAY)));
+    IO.println(d.with(TemporalAdjusters.firstDayOfMonth()));
+    IO.println(d.with(TemporalAdjusters.lastDayOfMonth()));
+    IO.println(d.with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY)));
+    IO.println(d.with(TemporalAdjusters.lastInMonth(DayOfWeek.FRIDAY)));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-15
+2026-01-19
+2026-01-15
+2026-01-01
+2026-01-31
+2026-01-05
+2026-01-30</code></pre>
+    </div>
+    <p>15/01/2026 là thứ Năm: <code class="inline">next(MONDAY)</code> nhảy tới thứ Hai 19/01; <code class="inline">nextOrSame(THURSDAY)</code> trả chính nó; thứ Hai đầu tiên của tháng 1/2026 là 05/01; thứ Sáu cuối cùng là 30/01.</p>
+    <h3>Ví dụ: tính tuổi</h3>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate birth = LocalDate.of(2000, 2, 29);
+    LocalDate today = LocalDate.of(2026, 3, 1);
+    Period age = Period.between(birth, today);
+    IO.println(age);
+    IO.println(age.getYears() + " tuoi " + age.getMonths() + " thang "
+            + age.getDays() + " ngay");
+    IO.println(ChronoUnit.DAYS.between(birth, today));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>P26Y1D
+26 tuoi 0 thang 1 ngay
+9497</code></pre>
+    </div>
+    <div class="note">Người sinh 29/02/2000 được tính đủ 26 tuổi từ 28/02/2026 (java.time clamp ngày 29/02 về 28/02 ở năm không nhuận) rồi cộng thêm 1 ngày tới 01/03. Kết quả hiển thị <code class="inline">P26Y1D</code> — cẩn thận với ngày sinh 29/02 trong nghiệp vụ bảo hiểm/tuổi tác.</div>
+    <h3>Ví dụ: đếm ngày làm việc</h3>
+    <p>Kết hợp <code class="inline">datesUntil</code> (trả <code class="inline">Stream&lt;LocalDate&gt;</code>, Java 9+) với <code class="inline">filter</code> — xem thêm <a href="streams.html">3.8 Stream API</a>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate from = LocalDate.of(2026, 4, 24);
+    LocalDate to = LocalDate.of(2026, 5, 4);
+    long working = from.datesUntil(to)
+            .filter(d -&gt; d.getDayOfWeek() != DayOfWeek.SATURDAY)
+            .filter(d -&gt; d.getDayOfWeek() != DayOfWeek.SUNDAY)
+            .count();
+    IO.println(from + " -&gt; " + to + ": " + working + " ngay lam viec");
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-04-24 -> 2026-05-04: 6 ngay lam viec</code></pre>
+    </div>
+    <p>Khoảng 24/04 → 03/05/2026 có 10 ngày, trừ 4 ngày cuối tuần (25–26/04, 02–03/05) còn 6 ngày làm việc. Cách này không biết ngày lễ quốc gia — production phải có bảng holiday riêng.</p>
+    <p>Nếu tạo ngày không hợp lệ, java.time ném ngay thay vì âm thầm sửa:</p>
+    <div class="errblock">
+      <pre>Exception in thread "main" java.time.DateTimeException: Invalid value for MonthOfYear (valid values 1 - 12): 13
+	at java.base/java.time.temporal.ValueRange.checkValidValue(ValueRange.java:319)
+	at java.base/java.time.temporal.ChronoField.checkValidValue(ChronoField.java:721)
+	at java.base/java.time.LocalDate.of(LocalDate.java:275)
+	at BadMonthErr.main(BadMonthErr.java:2)</pre>
+    </div>
+    <h2 id="instant-epoch">4. Instant &amp; epoch <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+    <p><strong>Epoch</strong> là mốc 1970-01-01T00:00:00Z (Unix epoch). <strong>Instant</strong> là một điểm trên trục thời gian tuyệt đối, lưu số giây kể từ epoch (kiểu <code class="inline">long</code>) cộng nano giây (kiểu <code class="inline">int</code>). Instant <em>không</em> có múi giờ, <em>không</em> có lịch — cùng một instant hiển thị khác nhau ở mỗi zone nhưng luôn là cùng một thời điểm.</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    Instant i1 = Instant.ofEpochSecond(1_767_225_600L);
+    Instant i2 = Instant.ofEpochMilli(1_767_225_600_000L);
+    IO.println(i1);
+    IO.println(i2);
+    IO.println(i1.equals(i2));
+    IO.println(i1.toEpochMilli());
+    IO.println(i1.getEpochSecond());
+    IO.println(Instant.EPOCH);
+    IO.println(i1.isAfter(Instant.EPOCH));
+    IO.println(Instant.MAX);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-01T00:00:00Z
+2026-01-01T00:00:00Z
+true
+1767225600000
+1767225600
+1970-01-01T00:00:00Z
+true
++1000000000-12-31T23:59:59.999999999Z</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">Instant.now()</code> — thời điểm hiện tại (UTC); <code class="inline">Instant.parse("...Z")</code> — parse ISO-8601 UTC.</li>
+      <li><code class="inline">toEpochMilli()</code> — số milli giây, tương thích với <code class="inline">Date.getTime()</code> và JavaScript <code class="inline">Date.now()</code>.</li>
+      <li><code class="inline">Instant.MAX</code> in ra có dấu <code class="inline">+</code> đằng trước năm: <code class="inline">+1000000000-12-31T23:59:59.999999999Z</code> — ISO-8601 yêu cầu dấu cho năm &gt; 9999. <code class="inline">Instant.MIN</code> tương tự với năm âm.</li>
+      <li>Giới hạn: khoảng ±1 tỷ năm, không lo "year 2038 problem" — vấn đề 2038 chỉ đúng với nơi lưu epoch bằng <code class="inline">int</code> 32-bit (ví dụ cột <code class="inline">INT</code> trong DB, hoặc <code class="inline">time_t</code> trên hệ điều hành 32-bit cũ).</li>
+    </ul>
+    <h3>Clock — "bây giờ" như một dependency</h3>
+    <p>Code gọi thẳng <code class="inline">LocalDate.now()</code> rất khó test: ngày mai chạy lại là output đổi. <strong>Clock</strong> là dependency đại diện cho đồng hồ hệ thống; tiêm (inject) nó vào service và thay bằng <code class="inline">Clock.fixed(...)</code> trong test:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    Instant fixed = Instant.parse("2026-01-15T02:30:00Z");
+    Clock utc = Clock.systemUTC();
+    Clock paris = Clock.system(ZoneId.of("Europe/Paris"));
+    Clock paused = Clock.fixed(fixed, ZoneId.of("Europe/Paris"));
+    IO.println(utc.getZone());
+    IO.println(paris.getZone());
+    IO.println(utc.instant().getEpochSecond() &gt; 0);
+    IO.println(paused.instant());
+    IO.println(LocalDateTime.now(paused));
+    IO.println(Instant.now(paused).equals(fixed));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Z
+Europe/Paris
+true
+2026-01-15T02:30:00Z
+2026-01-15T03:30
+true</code></pre>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Clock</th><th>Ý nghĩa</th><th>Dùng khi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Clock.systemUTC()</code></td><td>Đồng hồ thật theo UTC (zone <code class="inline">Z</code>)</td><td>Service cần thời điểm hiện tại toàn cầu</td></tr>
+        <tr><td><code class="inline">Clock.system(zone)</code></td><td>Đồng hồ thật theo zone</td><td>Cần ngày/giờ địa phương hiện tại</td></tr>
+        <tr><td><code class="inline">Clock.fixed(instant, zone)</code></td><td>Đứng yên mãi một thời điểm</td><td>Unit test — output tất định</td></tr>
+        <tr><td><code class="inline">Clock.offset(base, duration)</code></td><td>Đồng hồ dịch đi một khoảng</td><td>Giả lập nhanh (nhanh hơn/chậm hơn)</td></tr>
+        <tr><td><code class="inline">Clock.tick(base, duration)</code></td><td>Đồng hồ chỉ nhảy từng khoảng</td><td>Code chỉ cần độ chính xác phút/giây</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><strong>Tuyệt đối tránh</strong> <code class="inline">System.currentTimeMillis()</code> rải rác trong code nghiệp vụ. Service nên nhận <code class="inline">Clock</code> qua constructor (dependency injection): production truyền <code class="inline">Clock.systemUTC()</code>, test truyền <code class="inline">Clock.fixed(...)</code>. Đây là câu hỏi thiết kế production rất hay gặp khi phỏng vấn.</div>
+    <h2 id="duration-period">5. Duration vs Period <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+    <p>Cả hai đo "khoảng cách thời gian" nhưng khác bản chất:</p>
+    <table>
+      <thead>
+        <tr><th></th><th>Duration</th><th>Period</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đo theo</td><td>Giây và nano giây — <strong>thời gian vật lý</strong></td><td>Năm, tháng, ngày — <strong>thời gian lịch</strong></td></tr>
+        <tr><td>Đơn vị</td><td><code class="inline">ofSeconds/ofMinutes/ofHours/ofDays</code></td><td><code class="inline">ofDays/ofWeeks/ofMonths/ofYears</code></td></tr>
+        <tr><td>Between</td><td><code class="inline">Duration.between(Instant, Instant)</code>, <code class="inline">LocalTime</code></td><td><code class="inline">Period.between(LocalDate, LocalDate)</code></td></tr>
+        <tr><td>Cộng vào</td><td>Mọi temporal (kể cả Instant, ZonedDateTime)</td><td>Chỉ <code class="inline">LocalDate</code>/<code class="inline">ZonedDateTime</code>/<code class="inline">LocalDateTime</code></td></tr>
+        <tr><td>Ví dụ toString</td><td><code class="inline">PT8H45M</code>, <code class="inline">P1D</code></td><td><code class="inline">P2M14D</code>, <code class="inline">P1Y</code></td></tr>
+        <tr><td>Dùng cho</td><td>Đo hiệu năng, timeout, "còn 2 giờ 30 phút"</td><td>Tuổi, hạn hợp đồng, "sau 3 tháng"</td></tr>
+      </tbody>
+    </table>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate d1 = LocalDate.of(2026, 1, 1);
+    LocalDate d2 = LocalDate.of(2026, 3, 15);
+    Period p = Period.between(d1, d2);
+    IO.println(p);
+    IO.println(p.getYears() + " nam " + p.getMonths() + " thang " + p.getDays() + " ngay");
+    LocalTime t1 = LocalTime.of(9, 0);
+    LocalTime t2 = LocalTime.of(17, 45);
+    Duration d = Duration.between(t1, t2);
+    IO.println(d);
+    IO.println(d.toMinutes());
+    IO.println(d.toHours());
+    IO.println(d.toHoursPart() + " gio " + d.toMinutesPart() + " phut");
+    IO.println(Period.ofDays(1));
+    IO.println(Duration.ofDays(1));
+    IO.println(Duration.ofDays(1).toHours());
+    IO.println(Period.ofMonths(25));
+    IO.println(Period.ofMonths(25).normalized());
+    IO.println(Period.of(1, 0, 30).normalized());
+    IO.println(Duration.ofHours(25).toDaysPart() + " ngay "
+            + Duration.ofHours(25).toHoursPart() + " gio");
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>P2M14D
+0 nam 2 thang 14 ngay
+PT8H45M
+525
+8
+8 gio 45 phut
+P1D
+PT24H
+24
+P25M
+P2Y1M
+P1Y30D
+1 ngay 1 gio</code></pre>
+    </div>
+    <div class="note"><strong>Bẫy truncation:</strong> <code class="inline">toMinutes()</code> của <code class="inline">PT8H45M</code> là 525 (tổng), còn <code class="inline">toHours()</code> là 8 (làm tròn xuống). Muốn lấy phần lẻ dùng <code class="inline">toHoursPart()</code>/<code class="inline">toMinutesPart()</code>. <code class="inline">Period.normalized()</code> chỉ gộp tháng thành năm (<code class="inline">P25M → P2Y1M</code>), <strong>không</strong> đụng tới ngày (<code class="inline">P1Y30D</code> giữ nguyên 30 ngày).</div>
+    <h3>Bẫy DST: Duration và Period không giống nhau</h3>
+    <p>Ở America/New_York, 02:00 ngày 08/03/2026 đồng hồ nhảy từ EST (-05:00) sang EDT (-04:00) — ngày hôm đó chỉ có 23 giờ. Cùng cộng "1 ngày", <code class="inline">Period</code> giữ giờ trên lịch, <code class="inline">Duration</code> giữ đúng 24 giờ vật lý:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    ZoneId ny = ZoneId.of("America/New_York");
+    ZonedDateTime lunch = ZonedDateTime.of(2026, 3, 7, 12, 0, 0, 0, ny);
+    ZonedDateTime plusPeriod = lunch.plus(Period.ofDays(1));
+    ZonedDateTime plusDuration = lunch.plus(Duration.ofDays(1));
+    IO.println(lunch);
+    IO.println(plusPeriod);
+    IO.println(plusDuration);
+    IO.println(Duration.between(lunch, plusPeriod).toHours());
+    IO.println(Duration.between(lunch, plusDuration).toHours());
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-03-07T12:00-05:00[America/New_York]
+2026-03-08T12:00-04:00[America/New_York]
+2026-03-08T13:00-04:00[America/New_York]
+23
+24</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">plus(Period.ofDays(1))</code> — "cùng giờ ngày mai" (12:00 → 12:00), thực tế chỉ trôi 23 giờ vật lý.</li>
+      <li><code class="inline">plus(Duration.ofDays(1))</code> — đúng 24 giờ vật lý nên thành 13:00 theo giờ địa phương.</li>
+    </ul>
+    <p>Quy tắc thực dụng: nghiệp vụ nói "sau 1 ngày/1 tháng" theo lịch → <strong>Period</strong>; nói "sau 24 giờ/sau 30 phút" theo đồng hồ → <strong>Duration</strong>.</p>
+    <h2 id="zone">6. ZonedDateTime, OffsetDateTime, ZoneId <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+    <p>Ba khái niệm cần phân biệt rạch ròi:</p>
+    <ul>
+      <li><code class="inline">ZoneId</code> — <em>định danh</em> vùng: <code class="inline">Asia/Ho_Chi_Minh</code>, <code class="inline">Europe/Paris</code>. Mỗi zone có bộ quy tắc (<code class="inline">ZoneRules</code>) biết lịch sử offset và các lần chuyển DST.</li>
+      <li><code class="inline">ZoneOffset</code> — chỉ là <em>khoảng lệch cố định</em> so với UTC: <code class="inline">+07:00</code>, <code class="inline">Z</code>. Không biết DST, không biết lịch sử.</li>
+      <li><code class="inline">ZonedDateTime</code> = <code class="inline">LocalDateTime</code> + <code class="inline">ZoneId</code> + offset tại thời điểm đó. <code class="inline">OffsetDateTime</code> = <code class="inline">LocalDateTime</code> + <code class="inline">ZoneOffset</code>.</li>
+    </ul>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    Instant instant = Instant.parse("2026-01-15T02:30:00Z");
+    ZoneId hanoi = ZoneId.of("Asia/Ho_Chi_Minh");
+    ZoneId paris = ZoneId.of("Europe/Paris");
+    ZonedDateTime h = instant.atZone(hanoi);
+    ZonedDateTime p = instant.atZone(paris);
+    IO.println(instant);
+    IO.println(h);
+    IO.println(p);
+    IO.println(h.withZoneSameInstant(paris));
+    IO.println(h.withZoneSameLocal(paris));
+    IO.println(h.toOffsetDateTime());
+    IO.println(ZoneOffset.ofHours(7));
+    IO.println(OffsetDateTime.of(2026, 1, 15, 9, 30, 0, 0, ZoneOffset.ofHours(7)));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-15T02:30:00Z
+2026-01-15T09:30+07:00[Asia/Ho_Chi_Minh]
+2026-01-15T03:30+01:00[Europe/Paris]
+2026-01-15T03:30+01:00[Europe/Paris]
+2026-01-15T09:30+01:00[Europe/Paris]
+2026-01-15T09:30+07:00
++07:00
+2026-01-15T09:30+07:00</code></pre>
+    </div>
+    <p>Hai dòng giữa là cặp API gây nhầm lẫn nhất, khác nhau ở chỗ <strong>giữ cái gì</strong>:</p>
+    <table>
+      <thead>
+        <tr><th>Phép biến đổi</th><th>Giữ nguyên</th><th>Kết quả từ 09:30 +07:00</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">withZoneSameInstant(paris)</code></td><td>Thời điểm tuyệt đối (instant)</td><td><code class="inline">03:30+01:00</code> — vẫn đúng 02:30Z</td></tr>
+        <tr><td><code class="inline">withZoneSameLocal(paris)</code></td><td>Giờ trên lịch (local time)</td><td><code class="inline">09:30+01:00</code> — thành 08:30Z, <strong>khác instant gốc</strong></td></tr>
+      </tbody>
+    </table>
+    <p>Hiển thị giờ cho người dùng ở múi giờ khác dùng <code class="inline">withZoneSameInstant</code>. <code class="inline">withZoneSameLocal</code> chỉ dùng khi bạn có "giờ treo tường" ở một nơi và muốn gắn nhãn zone mới — ví dụ đổi lịch họp từ giờ Hà Nội sang giờ Paris nhưng vẫn muốn mọi người vào lúc 09:30 <em>theo đồng hồ của họ</em>.</p>
+    <p>Danh sách zone lấy từ cơ sở dữ liệu IANA (tzdata) đi kèm JDK. JDK 25 dùng tzdata cập nhật, có hơn 600 định danh gồm cả alias:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    var zones = ZoneId.getAvailableZoneIds();
+    IO.println(zones.size() &gt; 500);
+    IO.println(zones.contains("Asia/Ho_Chi_Minh"));
+    IO.println(zones.contains("Europe/Paris"));
+    IO.println(zones.contains("America/New_York"));
+    ZoneId hcm = ZoneId.of("Asia/Ho_Chi_Minh");
+    ZoneId saigon = ZoneId.of("Asia/Saigon");
+    IO.println(hcm.equals(saigon));
+    IO.println(saigon.getRules().equals(hcm.getRules()));
+    IO.println(hcm.getRules().getOffset(Instant.parse("2026-01-15T02:30:00Z")));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>true
+true
+true
+true
+false
+true
++07:00</code></pre>
+    </div>
+    <div class="note"><code class="inline">Asia/Saigon</code> là alias của <code class="inline">Asia/Ho_Chi_Minh</code>: hai <code class="inline">ZoneId</code> khác nhau (<code class="inline">equals</code> theo id là <code class="inline">false</code>) nhưng dùng chung một bộ <code class="inline">ZoneRules</code>. Đừng so sánh zone bằng <code class="inline">equals</code> để kiểm tra "cùng múi giờ" — hãy so offset hoặc rules. Lưu tên zone vào DB nên chuẩn hoá về id chính tắc.</div>
+    <h2 id="dst">7. Timezone &amp; DST chuyên sâu <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+    <p><strong>DST (Daylight Saving Time)</strong> là quy ước dịch đồng hồ 1 giờ vào mùa hè ở nhiều nước. Hệ quả với lập trình:</p>
+    <ul>
+      <li><strong>Gap</strong> — mùa xuân, đồng hồ nhảy qua một khoảng: giờ đó <em>không tồn tại</em> trong ngày. Ví dụ Paris 02:00 → 03:00 ngày 29/03/2026; bạn gọi một API lúc 02:30 sẽ không bao giờ xảy ra.</li>
+      <li><strong>Overlap</strong> — mùa thu, đồng hồ lùi lại: một giờ <em>xảy ra hai lần</em> với hai offset khác nhau. Paris 03:00 → 02:00 ngày 25/10/2026.</li>
+      <li>Một ngày có thể dài 23, 24 hoặc 25 giờ. Cộng "1 ngày" theo lịch khác cộng "24 giờ" (mục 5).</li>
+    </ul>
+    <p>java.time xử lý gap bằng cách <strong>đẩy về phía trước</strong> và overlap bằng cách <strong>chọn offset sớm hơn</strong>; cả hai đều có API để chọn lại:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    ZoneId paris = ZoneId.of("Europe/Paris");
+    ZonedDateTime gap = ZonedDateTime.of(2026, 3, 29, 2, 30, 0, 0, paris);
+    IO.println(gap);
+    IO.println(gap.getOffset());
+    ZonedDateTime overlap = ZonedDateTime.of(2026, 10, 25, 2, 30, 0, 0, paris);
+    IO.println(overlap);
+    IO.println(overlap.getOffset());
+    IO.println(overlap.withLaterOffsetAtOverlap());
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-03-29T03:30+02:00[Europe/Paris]
++02:00
+2026-10-25T02:30+02:00[Europe/Paris]
++02:00
+2026-10-25T02:30+01:00[Europe/Paris]</code></pre>
+    </div>
+    <p>America/New_York có lịch DST riêng (chủ nhật thứ hai của tháng 3 và chủ nhật đầu tiên của tháng 11):</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    ZoneId ny = ZoneId.of("America/New_York");
+    ZonedDateTime gap = ZonedDateTime.of(2026, 3, 8, 2, 30, 0, 0, ny);
+    IO.println(gap);
+    ZonedDateTime overlap = ZonedDateTime.of(2026, 11, 1, 1, 30, 0, 0, ny);
+    IO.println(overlap);
+    IO.println(overlap.withEarlierOffsetAtOverlap());
+    IO.println(overlap.withLaterOffsetAtOverlap());
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-03-08T03:30-04:00[America/New_York]
+2026-11-01T01:30-04:00[America/New_York]
+2026-11-01T01:30-04:00[America/New_York]
+2026-11-01T01:30-05:00[America/New_York]</code></pre>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Zone</th><th>Gap 2026</th><th>Overlap 2026</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Europe/Paris</code></td><td>29/03 02:00 → 03:00</td><td>25/10 03:00 → 02:00</td><td>CET/CEST, lệch UTC +1/+2</td></tr>
+        <tr><td><code class="inline">America/New_York</code></td><td>08/03 02:00 → 03:00</td><td>01/11 02:00 → 01:00</td><td>EST/EDT, lệch UTC -5/-4</td></tr>
+        <tr><td><code class="inline">Asia/Ho_Chi_Minh</code></td><td>Không có</td><td>Không có</td><td>+07:00 cố định từ 1975</td></tr>
+      </tbody>
+    </table>
+    <p>Nếu cần biết trước sự tồn tại của một giờ local, hỏi trực tiếp <code class="inline">ZoneRules</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    ZoneId paris = ZoneId.of("Europe/Paris");
+    ZoneRules rules = paris.getRules();
+    LocalDateTime inGap = LocalDateTime.of(2026, 3, 29, 2, 30);
+    LocalDateTime inOverlap = LocalDateTime.of(2026, 10, 25, 2, 30);
+    IO.println(rules.getValidOffsets(inGap));
+    IO.println(rules.getValidOffsets(inOverlap));
+    IO.println(rules.isDaylightSavings(Instant.parse("2026-07-01T00:00:00Z")));
+    IO.println(rules.getStandardOffset(Instant.parse("2026-07-01T00:00:00Z")));
+    IO.println(rules.nextTransition(Instant.parse("2026-01-01T00:00:00Z")));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[]
+[+02:00, +01:00]
+true
++01:00
+Transition[Gap at 2026-03-29T02:00+01:00 to +02:00]</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">getValidOffsets(local)</code> trả <strong>danh sách rỗng</strong> cho gap (giờ không tồn tại), <strong>hai offset</strong> cho overlap.</li>
+      <li><code class="inline">nextTransition(instant)</code> cho biết lần đổi giờ kế tiếp — hữu ích để cảnh báo lịch.</li>
+    </ul>
+    <div class="note warn"><strong>Múi giờ là dữ liệu chính trị, không phải hằng số toán học.</strong> Cùng zone <code class="inline">Asia/Ho_Chi_Minh</code> nhưng tại epoch 1970, JDK trả về <code class="inline">+08:00</code> chứ không phải <code class="inline">+07:00</code> — Việt Nam từng đổi múi giờ trong lịch sử. Vì vậy: luôn cập nhật tzdata khi deploy, không hard-code offset, và không suy luận "VIỆT NAM = +7" cho mốc thời gian quá khứ.</div>
+    <p>Ảnh hưởng production cụ thể:</p>
+    <ul>
+      <li><strong>Lịch họp</strong> — lưu <code class="inline">ZonedDateTime</code> hoặc cặp (instant, zone). Nếu người dùng chọn 02:30 ngày gap, ứng dụng phải cảnh báo/chọn giờ khác thay vì âm thầm đẩy thành 03:30.</li>
+      <li><strong>Hạn giao hàng</strong> — nói "giao sau 48 giờ" nghĩa là <code class="inline">duration</code> (Instant cộng giờ); nói "giao trong 3 ngày làm việc" nghĩa là cộng trên <code class="inline">LocalDate</code> của zone vận hành.</li>
+      <li><strong>Batch chạy lúc 00:00 mỗi ngày</strong> — ở ngày DST, job có thể chạy trước/sau 1 giờ nếu scheduler hiểu sai zone; nên lên lịch theo UTC rồi quy đổi.</li>
+    </ul>
+    <h2 id="format-parse">8. Format &amp; parse <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
+    <p><code class="inline">DateTimeFormatter</code> thay thế <code class="inline">SimpleDateFormat</code>: bất biến, thread-safe, tách rõ format (object → chuỗi) và parse (chuỗi → object):</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    LocalDateTime dt = LocalDateTime.of(2026, 1, 15, 9, 30, 45);
+    DateTimeFormatter vn = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    DateTimeFormatter dateOnly = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    IO.println(dt.format(vn));
+    IO.println(vn.format(dt));
+    IO.println(dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    IO.println(dt.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+    IO.println(dt.toLocalDate().format(DateTimeFormatter.ISO_WEEK_DATE));
+    IO.println(LocalDate.parse("15/01/2026", dateOnly));
+    IO.println(LocalDate.parse("2026-01-15", DateTimeFormatter.ISO_LOCAL_DATE));
+    IO.println(dt.format(dateOnly).equals("15/01/2026"));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>15/01/2026 09:30
+15/01/2026 09:30
+2026-01-15T09:30:45
+2026-01-15
+2026-W03-4
+2026-01-15
+2026-01-15
+true</code></pre>
+    </div>
+    <p>Pattern hay dùng:</p>
+    <table>
+      <thead>
+        <tr><th>Ký hiệu</th><th>Nghĩa</th><th>Ví dụ với 15/01/2026 09:30:45</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">dd</code> / <code class="inline">d</code></td><td>Ngày trong tháng, 2 chữ số / không đệm</td><td>15 / 15</td></tr>
+        <tr><td><code class="inline">MM</code> / <code class="inline">MMM</code> / <code class="inline">MMMM</code></td><td>Tháng số / tên ngắn / tên đầy đủ (theo Locale)</td><td>01 / thg 1 / tháng 1</td></tr>
+        <tr><td><code class="inline">yyyy</code> / <code class="inline">uuuu</code></td><td>Year-of-era / proleptic year</td><td>2026 — dùng <code class="inline">uuuu</code> khi STRICT</td></tr>
+        <tr><td><code class="inline">HH</code> / <code class="inline">hh</code></td><td>Giờ 00–23 / 01–12</td><td>09 / 09</td></tr>
+        <tr><td><code class="inline">mm</code> / <code class="inline">ss</code></td><td>Phút / giây</td><td>30 / 45</td></tr>
+        <tr><td><code class="inline">EEEE</code></td><td>Tên thứ đầy đủ theo Locale</td><td>Thứ Năm</td></tr>
+        <tr><td><code class="inline">VV</code></td><td>Zone id</td><td>Asia/Ho_Chi_Minh</td></tr>
+        <tr><td><code class="inline">XXX</code></td><td>Offset dạng <code class="inline">+07:00</code></td><td>+07:00</td></tr>
+        <tr><td><code class="inline">'...'</code></td><td>Text literal, không diễn giải</td><td><code class="inline">'Ngay' dd 'thang' MM</code></td></tr>
+      </tbody>
+    </table>
+    <p>Muốn tên thứ/tháng tiếng Việt, truyền <code class="inline">Locale</code> vào formatter (hoặc dùng <code class="inline">withLocale</code>):</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    Locale vi = Locale.of("vi", "VN");
+    LocalDate d = LocalDate.of(2026, 1, 1);
+    IO.println(d.format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", vi)));
+    IO.println(d.format(DateTimeFormatter.ofPattern("'Ngay' dd 'thang' MM 'nam' yyyy", vi)));
+    IO.println(d.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(vi)));
+    IO.println(d.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(vi)));
+    IO.println(d.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(vi)));
+    IO.println(d.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(vi)));
+    ZonedDateTime z = d.atTime(20, 0).atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+    IO.println(z.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy HH:mm VV", vi)));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Thứ Năm, 1 tháng 1 2026
+Ngay 01 thang 01 nam 2026
+1/1/26
+1 thg 1, 2026
+1 tháng 1, 2026
+Thứ Năm, 1 tháng 1, 2026
+Thứ Năm, 01/01/2026 20:00 Asia/Ho_Chi_Minh</code></pre>
+    </div>
+    <div class="note"><code class="inline">FormatStyle.SHORT/MEDIUM/LONG/FULL</code> chọn mẫu theo Locale — hữu ích khi không muốn tự bịa pattern. Lưu ý <code class="inline">Locale.of("vi", "VN")</code> mới từ Java 19; trước đó dùng <code class="inline">new Locale("vi", "VN")</code> (deprecated).</div>
+    <p>Parse thất bại sẽ ném <code class="inline">DateTimeParseException</code>. Với pattern, java.time còn có thêm khái niệm <strong>ResolverStyle</strong>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    DateTimeFormatter vn = DateTimeFormatter.ofPattern("dd/MM/uuuu");
+    IO.println("SMART: " + LocalDate.parse("31/02/2026", vn));
+    DateTimeFormatter strict = vn.withResolverStyle(ResolverStyle.STRICT);
+    try {
+        LocalDate.parse("31/02/2026", strict);
+    } catch (DateTimeParseException e) {
+        IO.println("STRICT: " + e.getMessage());
+    }
+    try {
+        LocalDate.parse("2026-13-01", DateTimeFormatter.ISO_LOCAL_DATE);
+    } catch (DateTimeParseException e) {
+        IO.println("ISO: " + e.getMessage());
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>SMART: 2026-02-28
+STRICT: Text '31/02/2026' could not be parsed: Invalid date 'FEBRUARY 31'
+ISO: Text '2026-13-01' could not be parsed: Invalid value for MonthOfYear (valid values 1 - 12): 13</code></pre>
+    </div>
+    <div class="note warn"><strong>Bẫy <code class="inline">yyyy</code> + STRICT:</strong> pattern <code class="inline">yyyy</code> là "year-of-era" — thiếu era (AD/BC) nên STRICT sẽ ném lỗi khó hiểu. Muốn STRICT hãy dùng <code class="inline">uuuu</code> (proleptic year). Đây là câu hỏi phỏng vấn Junior+ khá phổ biến.</div>
+    <p>Không bắt exception, lỗi sẽ làm chết chương trình với stack trace chỉ rõ vị trí:</p>
+    <div class="errblock">
+      <pre>Exception in thread "main" java.time.format.DateTimeParseException: Text '15-01-2026' could not be parsed at index 0
+	at java.base/java.time.format.DateTimeFormatter.parseResolved0(DateTimeFormatter.java:2108)
+	at java.base/java.time.format.DateTimeFormatter.parse(DateTimeFormatter.java:2010)
+	at java.base/java.time.LocalDate.parse(LocalDate.java:437)
+	at ParseUncaughtErr.main(ParseUncaughtErr.java:2)</pre>
+    </div>
+    <p>Các hằng ISO sẵn có — ưu tiên dùng thay vì tự chế pattern cho dữ liệu máy đọc:</p>
+    <table>
+      <thead>
+        <tr><th>Hằng</th><th>Dùng cho</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">ISO_LOCAL_DATE</code></td><td><code class="inline">LocalDate</code></td><td><code class="inline">2026-01-15</code></td></tr>
+        <tr><td><code class="inline">ISO_LOCAL_TIME</code></td><td><code class="inline">LocalTime</code></td><td><code class="inline">09:30:45</code></td></tr>
+        <tr><td><code class="inline">ISO_LOCAL_DATE_TIME</code></td><td><code class="inline">LocalDateTime</code></td><td><code class="inline">2026-01-15T09:30:45</code></td></tr>
+        <tr><td><code class="inline">ISO_INSTANT</code></td><td><code class="inline">Instant</code></td><td><code class="inline">2026-01-15T02:30:00Z</code></td></tr>
+        <tr><td><code class="inline">ISO_OFFSET_DATE_TIME</code></td><td><code class="inline">OffsetDateTime</code></td><td><code class="inline">2026-01-15T09:30:00+07:00</code></td></tr>
+        <tr><td><code class="inline">ISO_ZONED_DATE_TIME</code></td><td><code class="inline">ZonedDateTime</code></td><td><code class="inline">2026-01-15T09:30+07:00[Asia/Ho_Chi_Minh]</code></td></tr>
+        <tr><td><code class="inline">ISO_DATE</code></td><td>Date có/kèm offset tuỳ chọn</td><td><code class="inline">2026-01-15+07:00</code></td></tr>
+      </tbody>
+    </table>
+    <h2 id="legacy">9. Tương thích Date/Calendar/Timestamp <span class="badge b-junior">Junior+</span></h2>
+    <p>Code cũ (legacy) và thư viện cũ vẫn có thể xuất hiện trong dự án thật. Cầu nối chuẩn nằm ở <code class="inline">Instant</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+import java.sql.Timestamp;
+void main() {
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    Instant instant = Instant.parse("2026-01-15T02:30:00Z");
+    Date legacy = Date.from(instant);
+    IO.println(legacy.toInstant().equals(instant));
+    IO.println(legacy);
+    GregorianCalendar cal = GregorianCalendar.from(instant.atZone(ZoneId.of("Europe/Paris")));
+    ZonedDateTime back = cal.toZonedDateTime();
+    IO.println(back);
+    IO.println(back.toInstant().equals(instant));
+    Timestamp ts = Timestamp.from(instant);
+    IO.println(ts.toInstant().equals(instant));
+    IO.println(ts.getTime() == instant.toEpochMilli());
+    IO.println(ts);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>true
+Thu Jan 15 09:30:00 GMT+07:00 2026
+2026-01-15T03:30+01:00[Europe/Paris]
+true
+true
+true
+2026-01-15 09:30:00.0</code></pre>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Legacy</th><th>Sang java.time</th><th>Ngược lại</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">java.util.Date</code></td><td><code class="inline">date.toInstant()</code></td><td><code class="inline">Date.from(instant)</code></td></tr>
+        <tr><td><code class="inline">Calendar</code></td><td><code class="inline">((GregorianCalendar) cal).toZonedDateTime()</code></td><td><code class="inline">GregorianCalendar.from(zonedDateTime)</code></td></tr>
+        <tr><td><code class="inline">java.sql.Timestamp</code></td><td><code class="inline">ts.toInstant()</code>, <code class="inline">ts.toLocalDateTime()</code></td><td><code class="inline">Timestamp.from(instant)</code>, <code class="inline">Timestamp.valueOf(localDateTime)</code></td></tr>
+        <tr><td><code class="inline">java.sql.Date</code></td><td><code class="inline">sqlDate.toLocalDate()</code></td><td><code class="inline">java.sql.Date.valueOf(localDate)</code></td></tr>
+        <tr><td><code class="inline">java.util.TimeZone</code></td><td><code class="inline">tz.toZoneId()</code></td><td><code class="inline">TimeZone.getTimeZone(zoneId)</code></td></tr>
+      </tbody>
+    </table>
+    <div class="note"><strong><code class="inline">java.sql.Timestamp</code> là cái bẫy kinh điển:</strong> chính <code class="inline">Timestamp</code> kế thừa <code class="inline">Date</code> nhưng cộng thêm nano giây, khiến <code class="inline">equals</code> giữa <code class="inline">Timestamp</code> và <code class="inline">Date</code> vi phạm tính đối xứng và <code class="inline">toString</code> in theo default timezone. Chi tiết về hợp đồng equals/hashCode và lý do <code class="inline">Timestamp.equals(Date)</code> có thể là <code class="inline">false</code> nằm ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>. Khuyến nghị: chuyển ngay sang <code class="inline">Instant</code> khi nhận dữ liệu từ JDBC, không mang <code class="inline">Timestamp</code> vào tầng nghiệp vụ.</div>
+    <p>Ba lưu ý khi sống chung với legacy:</p>
+    <ul>
+      <li><code class="inline">Date.toString()</code> và các getter dùng <strong>default timezone của JVM</strong> — không bao giờ suy ra instant từ chuỗi in ra. Muốn chắc chắn hãy in <code class="inline">toInstant()</code>.</li>
+      <li><code class="inline">Calendar</code> phải là <code class="inline">GregorianCalendar</code> mới có <code class="inline">toZonedDateTime()</code>; biến static type là <code class="inline">Calendar</code> sẽ không compile.</li>
+      <li>JDBC 4.2+ hỗ trợ trực tiếp: <code class="inline">rs.getObject("created_at", Instant.class)</code> hoặc <code class="inline">OffsetDateTime.class</code> — ưu tiên cách này thay vì <code class="inline">getTimestamp</code>. Xem thêm cách xử lý dữ liệu I/O tại <a href="io-files.html">3.4 I/O &amp; Files</a>.</li>
+    </ul>
+    <h2 id="production">10. Production &amp; project đơn hàng <span class="badge b-prod">Production</span></h2>
+    <p>Bộ quy tắc sống còn khi làm hệ thống thật:</p>
+    <table>
+      <thead>
+        <tr><th>Tầng</th><th>Nguyên tắc</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Database</td><td>Lưu cột <code class="inline">timestamptz</code> (PostgreSQL) hoặc epoch/UTC; tên cột hậu tố <code class="inline">_at</code></td><td>Server đổi múi giờ hay DST không làm sai dữ liệu</td></tr>
+        <tr><td>Domain</td><td>Dùng <code class="inline">Instant</code> cho mọi mốc thời gian sự kiện: <code class="inline">createdAt</code>, <code class="inline">paidAt</code>, <code class="inline">shippedAt</code></td><td>Mốc tuyệt đối, immutable, so sánh/sắp xếp an toàn (xem <a href="collections.html">3.3 Collections</a>)</td></tr>
+        <tr><td>API</td><td>Trả ISO-8601 UTC (<code class="inline">Instant.toString()</code> hoặc <code class="inline">OffsetDateTime</code>); nhận linh hoạt <code class="inline">OffsetDateTime.parse</code></td><td>Mọi client đều hiểu, không phụ thuộc locale</td></tr>
+        <tr><td>Hiển thị</td><td><code class="inline">instant.atZone(zoneCuaNguoiDung)</code> rồi format theo <code class="inline">Locale</code> người dùng</td><td>Cùng một mốc, mỗi người thấy giờ của mình</td></tr>
+        <tr><td>Sự kiện toàn cầu</td><td><strong>Không</strong> dùng <code class="inline">LocalDateTime</code></td><td>Nó không có zone: 09:30 ở Hà Nội hay Paris? Dữ liệu mất thông tin ngay khi rời máy chủ</td></tr>
+        <tr><td>Test</td><td>Tiêm <code class="inline">Clock</code>; không gọi <code class="inline">now()</code> trực tiếp</td><td>Output tất định, test không "flaky"</td></tr>
+      </tbody>
+    </table>
+    <p>Ví dụ đơn hàng: lưu UTC, tính hạn 48 giờ, hiển thị theo múi giờ khách:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+record Order(String id, Instant createdAt, String customerZone) {}
+void main() {
+    Order order = new Order("DH-1001", Instant.parse("2026-01-10T17:30:00Z"), "Europe/Paris");
+    ZoneId hanoi = ZoneId.of("Asia/Ho_Chi_Minh");
+    ZoneId customer = ZoneId.of(order.customerZone());
+    ZonedDateTime created = order.createdAt().atZone(hanoi);
+    ZonedDateTime deadline = created.plusHours(48);
+    IO.println("id: " + order.id());
+    IO.println("tao don (UTC): " + order.createdAt());
+    IO.println("tao don (Ha Noi): " + created);
+    IO.println("han 48h (Ha Noi): " + deadline);
+    IO.println("han 48h (gio khach Paris): " + deadline.withZoneSameInstant(customer));
+    IO.println("ngay giao du kien: " + created.toLocalDate().plusDays(3));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>id: DH-1001
+tao don (UTC): 2026-01-10T17:30:00Z
+tao don (Ha Noi): 2026-01-11T00:30+07:00[Asia/Ho_Chi_Minh]
+han 48h (Ha Noi): 2026-01-13T00:30+07:00[Asia/Ho_Chi_Minh]
+han 48h (gio khach Paris): 2026-01-12T18:30+01:00[Europe/Paris]
+ngay giao du kien: 2026-01-14</code></pre>
+    </div>
+    <p>Chú ý đơn tạo 00:30 ngày 11/01 giờ Hà Nội nhưng vẫn là <strong>10/01 theo UTC</strong>. Thống kê "đơn theo ngày" phải chọn zone tường minh — cùng dữ liệu, Hà Nội và Paris cho biểu đồ khác nhau:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+record Order(String id, Instant createdAt) {}
+void main() {
+    ZoneId hanoi = ZoneId.of("Asia/Ho_Chi_Minh");
+    ZoneId paris = ZoneId.of("Europe/Paris");
+    List&lt;Order&gt; orders = List.of(
+            new Order("DH-1", Instant.parse("2026-01-10T15:00:00Z")),
+            new Order("DH-2", Instant.parse("2026-01-10T17:30:00Z")),
+            new Order("DH-3", Instant.parse("2026-01-10T23:30:00Z")),
+            new Order("DH-4", Instant.parse("2026-01-11T01:00:00Z")));
+    IO.println("Theo ngay Ha Noi:");
+    orders.stream()
+            .collect(Collectors.groupingBy(
+                    o -&gt; o.createdAt().atZone(hanoi).toLocalDate(),
+                    TreeMap::new,
+                    Collectors.counting()))
+            .forEach((ngay, soDon) -&gt; IO.println("  " + ngay + ": " + soDon + " don"));
+    IO.println("Theo ngay Paris:");
+    orders.stream()
+            .collect(Collectors.groupingBy(
+                    o -&gt; o.createdAt().atZone(paris).toLocalDate(),
+                    TreeMap::new,
+                    Collectors.counting()))
+            .forEach((ngay, soDon) -&gt; IO.println("  " + ngay + ": " + soDon + " don"));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Theo ngay Ha Noi:
+  2026-01-10: 1 don
+  2026-01-11: 3 don
+Theo ngay Paris:
+  2026-01-10: 2 don
+  2026-01-11: 2 don</code></pre>
+    </div>
+    <p>Cùng 4 đơn, Hà Nội ghi nhận 1 đơn ngày 10 còn Paris ghi nhận 2 — nếu dashboard không nêu rõ timezone, số liệu sẽ bị tranh cãi. Cách gom nhóm theo <code class="inline">groupingBy</code> và <code class="inline">TreeMap</code> học sâu ở <a href="streams.html">3.8 Stream API</a> và <a href="collections.html">3.3 Collections</a>.</p>
+    <h3>Nhận dữ liệu thời gian từ API</h3>
+    <p>Client có thể gửi quá nhiều định dạng — chốt một hợp đồng ISO-8601 với offset, validate, rồi quy về <code class="inline">Instant</code>:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+static Instant nhanThoiDiem(String iso) {
+    try {
+        return Instant.parse(iso);
+    } catch (DateTimeParseException e) {
+        throw new IllegalArgumentException("Thoi diem phai theo ISO-8601 UTC: " + iso, e);
+    }
+}
+void main() {
+    IO.println(nhanThoiDiem("2026-01-15T02:30:00Z"));
+    try {
+        nhanThoiDiem("15/01/2026");
+    } catch (IllegalArgumentException e) {
+        IO.println(e.getMessage());
+        IO.println(e.getCause().getClass().getSimpleName());
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-15T02:30:00Z
+Thoi diem phai theo ISO-8601 UTC: 15/01/2026
+DateTimeParseException</code></pre>
+    </div>
+    <p>Nếu API cho phép client gửi kèm offset (ví dụ <code class="inline">+07:00</code>), parse bằng <code class="inline">OffsetDateTime</code> rồi quy về <code class="inline">Instant</code> — nhiều chuỗi khác nhau, cùng một thời điểm:</p>
+    <div class="codeblock">
+      <pre><code class="java">import java.time.*;
+void main() {
+    OffsetDateTime a = OffsetDateTime.parse("2026-01-15T09:30:00+07:00");
+    OffsetDateTime b = OffsetDateTime.parse("2026-01-15T03:30:00+01:00");
+    IO.println(a.toInstant().equals(b.toInstant()));
+    IO.println(a);
+    IO.println(b);
+    IO.println(a.toInstant());
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>true
+2026-01-15T09:30+07:00
+2026-01-15T03:30+01:00
+2026-01-15T02:30:00Z</code></pre>
+    </div>
+    <div class="note warn"><strong>JSON serialization:</strong> nhiều framework (Jackson/Spring Boot) mặc định ghi ngày giờ dạng số epoch thay vì chuỗi ISO-8601 (<code class="inline">WRITE_DATES_AS_TIMESTAMPS</code>). Hãy đăng ký <code class="inline">JavaTimeModule</code> và tắt cờ này để API trả chuỗi ISO-8601 dễ đọc — đây là lỗi "API trả số lạ" rất hay gặp khi mới lên Spring Boot.</div>
+    <h2 id="goc-nodejs">11. Góc Node.js — Date, Temporal &amp; thư viện</h2>
+    <p>JavaScript cũng có "cơn đau Date" y hệt Java cũ: mutable, tháng 0-based, getter phụ thuộc timezone, parse chuỗi mơ hồ. So sánh nhanh:</p>
+    <table>
+      <thead>
+        <tr><th></th><th>JavaScript / Node.js</th><th>Java (java.time)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kiểu "instant"</td><td><code class="inline">Date</code> (thực chất là epoch ms) — mutable</td><td><code class="inline">Instant</code> — immutable</td></tr>
+        <tr><td>Tháng</td><td><code class="inline">getMonth()</code> 0-based</td><td><code class="inline">getMonthValue()</code> 1-based</td></tr>
+        <tr><td>Ngày/giờ local</td><td>Getter theo default TZ của process</td><td><code class="inline">LocalDate</code>/<code class="inline">ZonedDateTime</code> tường minh</td></tr>
+        <tr><td>Format theo locale</td><td><code class="inline">Intl.DateTimeFormat</code></td><td><code class="inline">DateTimeFormatter</code> + <code class="inline">Locale</code></td></tr>
+        <tr><td>Múi giờ</td><td>Chỉ qua thư viện/<code class="inline">Intl</code>; <code class="inline">Date</code> không giữ zone</td><td>Zone/Rules là first-class</td></tr>
+        <tr><td>API thế hệ mới</td><td>Temporal (stage 3, Node 22 cần <code class="inline">--harmony-temporal</code>)</td><td>java.time từ Java 8, ổn định</td></tr>
+      </tbody>
+    </table>
+    <p>Ví dụ Node chạy thật (Node v22.23.2). Dòng đầu cố định TZ để output ổn định:</p>
+    <div class="codeblock">
+      <pre><code>process.env.TZ = "Asia/Ho_Chi_Minh";
+const d = new Date(2025, 0, 1);
+console.log(d.toString());
+console.log(d.getFullYear(), d.getMonth(), d.getDate());
+const iso = new Date("2026-01-15T02:30:00Z");
+console.log(iso.toISOString());
+console.log(iso.getHours());
+console.log(Date.parse("01/02/2026"));
+console.log(Date.parse("2026-02-01"));
+console.log(new Date(1_767_225_600_000).toISOString());</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Wed Jan 01 2025 00:00:00 GMT+0700 (Indochina Time)
+2025 0 1
+2026-01-15T02:30:00.000Z
+9
+1767286800000
+1769904000000
+2026-01-01T00:00:00.000Z</code></pre>
+    </div>
+    <div class="note"><code class="inline">Date.parse("01/02/2026")</code> hiểu theo <em>giờ local</em> (nửa đêm ngày 2/1 giờ Việt Nam), còn <code class="inline">Date.parse("2026-02-01")</code> — dạng ISO date-only — lại hiểu là <em>UTC</em>. Hai chuỗi nhìn na ná nhau nhưng lệch 7 tiếng. Quy tắc an toàn: luôn gửi/nhận ISO-8601 kèm <code class="inline">Z</code> hoặc offset, như Java.</div>
+    <p><code class="inline">Intl.DateTimeFormat</code> format theo timezone/locale không cần thư viện — tương đương <code class="inline">DateTimeFormatter.withLocale + withZone</code>:</p>
+    <div class="codeblock">
+      <pre><code>process.env.TZ = "Asia/Ho_Chi_Minh";
+const d = new Date("2026-01-15T02:30:00Z");
+const paris = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "full",
+  timeStyle: "short",
+  timeZone: "Europe/Paris",
+});
+const hcm = new Intl.DateTimeFormat("vi-VN", {
+  dateStyle: "full",
+  timeStyle: "short",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+console.log(paris.format(d));
+console.log(hcm.format(d));</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>lúc 03:30 Thứ Năm, 15 tháng 1, 2026
+lúc 09:30 Thứ Năm, 15 tháng 1, 2026</code></pre>
+    </div>
+    <p><strong>Temporal</strong> là API thế hệ mới của JavaScript (stage 3): tách rõ <code class="inline">Temporal.Instant</code>, <code class="inline">PlainDate</code>, <code class="inline">ZonedDateTime</code> — đúng triết lý java.time. Node 22 chưa bật mặc định (<code class="inline">typeof Temporal === "undefined"</code>), phải chạy <code class="inline">node --harmony-temporal</code>:</p>
+    <div class="codeblock">
+      <pre><code>const plain = Temporal.PlainDate.from("2026-01-15");
+console.log(plain.toString(), plain.dayOfWeek);
+const instant = Temporal.Instant.from("2026-01-15T02:30:00Z");
+console.log(instant.toString());
+console.log(instant.toZonedDateTimeISO("Europe/Paris").toString());
+const lunch = Temporal.ZonedDateTime.from("2026-03-07T12:00[America/New_York]");
+console.log(lunch.add({ days: 1 }).toString());
+console.log(lunch.add({ hours: 24 }).toString());</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-15 4
+2026-01-15T02:30:00Z
+2026-01-15T03:30:00+01:00[Europe/Paris]
+2026-03-08T12:00:00-04:00[America/New_York]
+2026-03-08T13:00:00-04:00[America/New_York]</code></pre>
+    </div>
+    <p>Kết quả Temporal y hệt Java: <code class="inline">dayOfWeek</code> 1–7 (thứ Năm = 4), cộng 1 ngày lịch khác cộng 24 giờ qua DST. Khi chưa dùng được Temporal, các thư viện phổ biến:</p>
+    <table>
+      <thead>
+        <tr><th>Thư viện</th><th>Đặc điểm</th><th>Tương đương java.time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">luxon</code></td><td>Dựa trên Intl, API giống java.time nhất; có <code class="inline">DateTime</code>, <code class="inline">Duration</code>, <code class="inline">Interval</code></td><td>ZonedDateTime + Duration</td></tr>
+        <tr><td><code class="inline">date-fns</code></td><td>Hàm thuần, immutable, tree-shakable; xử lý theo local time của máy</td><td>LocalDate + TemporalAdjusters</td></tr>
+        <tr><td><code class="inline">dayjs</code></td><td>Nhỏ (~2KB), API kiểu moment; cần plugin <code class="inline">utc</code>/<code class="inline">timezone</code></td><td>LocalDateTime + plugin Zoned</td></tr>
+        <tr><td><code class="inline">moment</code></td><td>Di sản, mutable, đội maintain khuyến nghị không dùng cho dự án mới</td><td>Chính là "Date &amp; Calendar" của JS</td></tr>
+      </tbody>
+    </table>
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+    <details class="qa">
+      <summary>Câu 1. Vì sao Java 8 thay <code class="inline">Date</code>/<code class="inline">Calendar</code> bằng java.time?</summary>
+      <div class="answer">Bốn lý do: mutable (sửa tại chỗ gây bug chia sẻ), tháng 0-based và năm 1900-based dễ nhầm, <code class="inline">SimpleDateFormat</code> không thread-safe do giữ <code class="inline">Calendar</code> nội bộ, và trộn lẫn ngày/giờ/múi giờ trong một class. java.time tách rõ từng khái niệm và bất biến.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 2. Phân biệt <code class="inline">Instant</code>, <code class="inline">LocalDateTime</code>, <code class="inline">ZonedDateTime</code>, <code class="inline">OffsetDateTime</code>?</summary>
+      <div class="answer"><code class="inline">Instant</code> = điểm tuyệt đối trên trục thời gian (UTC, không lịch/zone). <code class="inline">LocalDateTime</code> = ngày giờ treo tường, không zone. <code class="inline">ZonedDateTime</code> = LocalDateTime + ZoneId (biết DST, lịch sử zone). <code class="inline">OffsetDateTime</code> = LocalDateTime + offset cố định (không biết DST, phù hợp dữ liệu wire).</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 3. <code class="inline">new Date(125, 0, 1)</code> là ngày nào? Vì sao?</summary>
+      <div class="answer">01/01/2025. Năm trong constructor cũ là "năm trừ 1900" (125 + 1900 = 2025), tháng 0-based (0 = tháng 1). Đây là nguồn của vô số bug lệch tháng; java.time bỏ hoàn toàn quy ước này.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 4. <code class="inline">SimpleDateFormat</code> có thread-safe không? java.time khắc phục thế nào?</summary>
+      <div class="answer">Không — nó giữ một <code class="inline">Calendar</code> mutable làm bộ đệm, hai thread dùng chung có thể ra kết quả sai. <code class="inline">DateTimeFormatter</code> là immutable; mọi method như <code class="inline">withZone</code>/<code class="inline">withLocale</code> trả object mới, nên chia sẻ một instance cho toàn bộ thread là an toàn.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 5. DST gap và overlap là gì? java.time resolve ra sao?</summary>
+      <div class="answer">Gap: giờ local không tồn tại khi đồng hồ nhảy tới (Paris 29/03/2026 02:30). Overlap: một giờ local xảy ra hai lần khi đồng hồ lùi (Paris 25/10/2026 02:30). java.time đẩy gap về phía trước (02:30 → 03:30) và chọn offset sớm hơn cho overlap; có <code class="inline">withEarlierOffsetAtOverlap()</code>/<code class="inline">withLaterOffsetAtOverlap()</code>. Kiểm tra bằng <code class="inline">ZoneRules.getValidOffsets(local)</code>: rỗng = gap, 2 phần tử = overlap.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">withZoneSameInstant</code> khác <code class="inline">withZoneSameLocal</code> thế nào?</summary>
+      <div class="answer">Cái đầu giữ nguyên thời điểm tuyệt đối, chỉ đổi cách hiển thị (09:30+07:00 → 03:30+01:00, cùng một instant). Cái sau giữ nguyên giờ trên lịch nhưng gắn zone mới (09:30+07:00 → 09:30+01:00, instant đổi). Hiển thị cho người dùng luôn dùng bản SameInstant.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">Duration</code> và <code class="inline">Period</code> khác nhau chỗ nào?</summary>
+      <div class="answer"><code class="inline">Duration</code> đo thời gian vật lý (giây/nano) — dùng cho timeout, elapsed. <code class="inline">Period</code> đo theo đơn vị lịch (ngày/tháng/năm) — dùng cho tuổi, hạn hợp đồng. Qua DST, <code class="inline">plus(Period.ofDays(1))</code> giữ giờ local (23 giờ vật lý), còn <code class="inline">plus(Duration.ofDays(1))</code> luôn đúng 24 giờ.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">Clock</code> dùng để làm gì trong production?</summary>
+      <div class="answer">Lấy "bây giờ" qua dependency để test được: service nhận <code class="inline">Clock</code>, production truyền <code class="inline">Clock.systemUTC()</code>, test truyền <code class="inline">Clock.fixed(instant, zone)</code> → output tất định, không còn test flaky. Nó cũng tránh việc gọi <code class="inline">System.currentTimeMillis()</code> rải rác.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 9. Lưu thời gian vào database thế nào cho đúng?</summary>
+      <div class="answer">Lưu UTC: cột <code class="inline">timestamptz</code> (PostgreSQL) hoặc epoch; tầng domain dùng <code class="inline">Instant</code>. Nếu cần cả zone nghiệp vụ (ví dụ giờ vận hành), lưu thêm cột <code class="inline">zone_id</code> dạng chuỗi. Không lưu chuỗi ngày giờ local thiếu offset.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 10. Vì sao không nên dùng <code class="inline">LocalDateTime</code> cho sự kiện toàn cầu?</summary>
+      <div class="answer">Vì nó không mang zone/offset — "09:30" không nói được là giờ ở đâu, và DST có thể làm mốc đó không tồn tại. Dùng <code class="inline">Instant</code> (hoặc <code class="inline">ZonedDateTime</code> khi cần lịch). <code class="inline">LocalDateTime</code> chỉ hợp lệ cho ngữ nghĩa "giờ địa phương" thật sự, ví dụ giờ mở cửa của chi nhánh.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 11. Format tên thứ/tháng tiếng Việt thế nào?</summary>
+      <div class="answer"><code class="inline">DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.of("vi", "VN"))</code>. Kết quả: <code class="inline">Thứ Năm, 1 tháng 1 2026</code>. Có thể dùng <code class="inline">DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(vi)</code> nếu không muốn tự viết pattern.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 12. <code class="inline">yyyy</code> khác <code class="inline">uuuu</code> thế nào? SMART khác STRICT?</summary>
+      <div class="answer"><code class="inline">yyyy</code> là year-of-era (cần thêm era khi parse STRICT), <code class="inline">uuuu</code> là proleptic year — muốn STRICT hãy dùng <code class="inline">uuuu</code>. SMART (mặc định) sửa ngày bất khả thi (31/02 → 28/02), STRICT ném <code class="inline">DateTimeParseException</code>. Với dữ liệu người dùng nhập, cân nhắc STRICT.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 13. So sánh hai <code class="inline">LocalDate</code> bằng gì: <code class="inline">equals</code>, <code class="inline">isEqual</code> hay <code class="inline">compareTo</code>?</summary>
+      <div class="answer"><code class="inline">equals</code> so cả kiểu và giá trị (dùng cho <code class="inline">Map</code>/<code class="inline">Set</code>); <code class="inline">isEqual</code> chỉ so mốc ngày, cho phép khác chronology (ví dụ HijrahDate); <code class="inline">compareTo</code> cho thứ tự sắp xếp tự nhiên — dùng <code class="inline">Collections.sort(list)</code> hoặc <code class="inline">list.sort(Comparator.naturalOrder())</code> (xem <a href="collections.html">3.3 Collections</a>). Cả ba class đều implements <code class="inline">Comparable</code> nên sort được.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 14. Chuyển đổi giữa API cũ và java.time thế nào?</summary>
+      <div class="answer"><code class="inline">Date.from(instant)</code> / <code class="inline">date.toInstant()</code>; <code class="inline">GregorianCalendar.from(zdt)</code> / <code class="inline">cal.toZonedDateTime()</code>; <code class="inline">Timestamp.from(instant)</code> / <code class="inline">ts.toInstant()</code>; <code class="inline">TimeZone.getTimeZone(zoneId)</code> / <code class="inline">tz.toZoneId()</code>. Điểm neo luôn là <code class="inline">Instant</code>. Cẩn thận <code class="inline">Timestamp</code> vì hợp đồng <code class="inline">equals</code> bất đối xứng (đọc ở <a href="object-contract.html">2.6</a>).</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 15. Tại sao <code class="inline">Instant.MAX</code> in ra <code class="inline">+1000000000-12-31T23:59:59.999999999Z</code>?</summary>
+      <div class="answer">ISO-8601 bắt buộc dấu <code class="inline">+</code> cho năm lớn hơn 9999. Instant lưu giây bằng <code class="inline">long</code> nên giới hạn khoảng ±1 tỷ năm, không dính "year 2038" — vấn đề 2038 chỉ xảy ra khi epoch bị lưu bằng số nguyên 32-bit (cột DB, <code class="inline">time_t</code> 32-bit).</div>
+    </details>
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+    <details class="qa exercise">
+      <summary>Bài 1 — API cũ</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.*;
+void main() {
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    Date d = new Date(100, 0, 1);
+    IO.println(d.getYear());
+    IO.println(d.getMonth());
+    Calendar c = Calendar.getInstance();
+    c.clear();
+    c.set(2026, 11, 31);
+    IO.println(c.get(Calendar.MONTH));
+    IO.println(c.getTime());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">100</code>, <code class="inline">0</code>, <code class="inline">11</code>, <code class="inline">Thu Dec 31 00:00:00 GMT+07:00 2026</code>. Năm 100 nghĩa là 2000; tháng 0 và 11 lần lượt là tháng 1 và tháng 12 — đúng kiểu 0-based của API cũ.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 2 — Clamp ngày cuối tháng</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    IO.println(LocalDate.of(2026, 1, 31).plusMonths(1));
+    IO.println(LocalDate.of(2024, 2, 29).plusYears(1));
+    IO.println(Period.between(LocalDate.of(2024, 2, 29), LocalDate.of(2025, 2, 28)));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2026-02-28</code>, <code class="inline">2025-02-28</code>, <code class="inline">P11M30D</code>. <code class="inline">plusMonths/plusYears</code> clamp ngày cuối tháng. Điểm cuối: <code class="inline">Period.between</code> KHÔNG tự gộp thành 1 năm — từ 29/02/2024 cộng 11 tháng là 29/01/2025, rồi 30 ngày nữa tới 28/02/2025, nên là <code class="inline">P11M30D</code>, không phải <code class="inline">P1Y</code>.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 3 — Epoch &amp; múi giờ lịch sử</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    IO.println(Instant.ofEpochSecond(0).atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
+    IO.println(Instant.parse("2026-01-15T02:30:00Z").toEpochMilli());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1970-01-01T08:00+08:00[Asia/Ho_Chi_Minh]</code> rồi <code class="inline">1768444200000</code>. Số đầu là epoch 0 UTC — tại thời điểm 1970 tzdata ghi nhận Việt Nam là +08:00 (không phải +07:00 hiện nay). Số sau là epoch milli của 02:30Z ngày 15/01/2026: 1768444200 giây × 1000.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 4 — Gap ở New York</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    ZoneId ny = ZoneId.of("America/New_York");
+    ZonedDateTime z = ZonedDateTime.of(2026, 3, 8, 2, 30, 0, 0, ny);
+    IO.println(z);
+    IO.println(z.minusHours(1));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2026-03-08T03:30-04:00[America/New_York]</code> (02:30 không tồn tại, bị đẩy thành 03:30) và <code class="inline">2026-03-08T01:30-05:00[America/New_York]</code> (lùi 1 giờ vật lý vượt qua gap trở về offset EST).</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 5 — Parse SMART</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    DateTimeFormatter vn = DateTimeFormatter.ofPattern("dd/MM/uuuu");
+    IO.println(LocalDate.parse("29/02/2025", vn));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2025-02-28</code>. 2025 không nhuận, SMART clamp 29/02 về ngày cuối tháng. Nếu thêm <code class="inline">.withResolverStyle(ResolverStyle.STRICT)</code> sẽ ném <code class="inline">DateTimeParseException</code>.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 6 — SameInstant vs SameLocal</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    ZonedDateTime h = ZonedDateTime.of(2026, 1, 15, 9, 30, 0, 0, ZoneId.of("Asia/Ho_Chi_Minh"));
+    IO.println(h.withZoneSameInstant(ZoneId.of("Europe/Paris")));
+    IO.println(h.withZoneSameLocal(ZoneId.of("Europe/Paris")));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2026-01-15T03:30+01:00[Europe/Paris]</code> (giữ instant: 09:30+07 = 02:30Z = 03:30+01) và <code class="inline">2026-01-15T09:30+01:00[Europe/Paris]</code> (giữ giờ local 09:30, instant thành 08:30Z).</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 7 — Đếm ngày làm việc</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate from = LocalDate.of(2026, 1, 1);
+    LocalDate to = LocalDate.of(2026, 2, 1);
+    long working = from.datesUntil(to)
+            .filter(d -&gt; d.getDayOfWeek().getValue() &lt;= 5)
+            .count();
+    IO.println(working);
+    IO.println(from.with(java.time.temporal.TemporalAdjusters.next(DayOfWeek.MONDAY)));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">22</code> rồi <code class="inline">2026-01-05</code>. Tháng 1/2026 có 31 ngày, trong đó 9 ngày cuối tuần (3–4, 10–11, 17–18, 24–25, 31) nên còn 22 ngày làm việc; 01/01/2026 là thứ Năm nên thứ Hai kế tiếp là 05/01 (bỏ qua cuối tuần 03–04).</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 8 — Tuần ISO &amp; truncate</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.time.*;
+void main() {
+    LocalDate d = LocalDate.of(2026, 1, 15);
+    IO.println(d.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
+    IO.println(d.get(IsoFields.WEEK_BASED_YEAR));
+    IO.println(Instant.parse("2026-01-15T02:30:00Z").truncatedTo(ChronoUnit.HOURS));
+    IO.println(DateTimeFormatter.ISO_INSTANT.format(Instant.parse("2026-01-15T02:30:00Z")));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">3</code>, <code class="inline">2026</code>, <code class="inline">2026-01-15T02:00:00Z</code>, <code class="inline">2026-01-15T02:30:00Z</code>. 15/01/2026 là thứ Năm của tuần ISO thứ 3 năm 2026; <code class="inline">truncatedTo(HOURS)</code> cắt phút/giây/nano; <code class="inline">ISO_INSTANT</code> luôn in theo UTC với hậu tố <code class="inline">Z</code>.</div>
+    </details>
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+    <h3>Cheat sheet</h3>
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bây giờ (testable)</td><td><code class="inline">Instant.now(clock)</code> — production <code class="inline">Clock.systemUTC()</code>, test <code class="inline">Clock.fixed(...)</code></td></tr>
+        <tr><td>Chỉ ngày / giờ / ngày+giờ</td><td><code class="inline">LocalDate.of(2026,1,15)</code>, <code class="inline">LocalTime.of(9,30)</code>, <code class="inline">LocalDateTime.of(d, t)</code></td></tr>
+        <tr><td>Gắn múi giờ</td><td><code class="inline">LocalDateTime.atZone(zone)</code> hoặc <code class="inline">instant.atZone(zone)</code></td></tr>
+        <tr><td>Về instant / UTC</td><td><code class="inline">zdt.toInstant()</code>, <code class="inline">instant.toString()</code></td></tr>
+        <tr><td>Đổi zone giữ instant</td><td><code class="inline">zdt.withZoneSameInstant(zone)</code></td></tr>
+        <tr><td>Khoảng vật lý</td><td><code class="inline">Duration.between(start, end)</code>; <code class="inline">toMinutes()</code>, <code class="inline">toHoursPart()</code></td></tr>
+        <tr><td>Khoảng lịch</td><td><code class="inline">Period.between(d1, d2)</code>; <code class="inline">normalized()</code>, <code class="inline">getYears/Months/Days()</code></td></tr>
+        <tr><td>Biến đổi ngày</td><td><code class="inline">plusDays/Months/Years</code>, <code class="inline">with</code>, <code class="inline">truncatedTo</code>, <code class="inline">TemporalAdjusters.next(...)</code></td></tr>
+        <tr><td>Format</td><td><code class="inline">DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.of("vi","VN")).format(x)</code></td></tr>
+        <tr><td>Parse an toàn</td><td>Dùng <code class="inline">uuuu</code> + <code class="inline">withResolverStyle(STRICT)</code>; bắt <code class="inline">DateTimeParseException</code></td></tr>
+        <tr><td>ISO cho API</td><td><code class="inline">DateTimeFormatter.ISO_INSTANT</code>, <code class="inline">OffsetDateTime.parse</code>, <code class="inline">Instant.parse</code></td></tr>
+        <tr><td>Date ↔ Instant</td><td><code class="inline">Date.from(instant)</code> / <code class="inline">date.toInstant()</code></td></tr>
+        <tr><td>Calendar ↔ Zoned</td><td><code class="inline">GregorianCalendar.from(zdt)</code> / <code class="inline">cal.toZonedDateTime()</code></td></tr>
+        <tr><td>Timestamp → Instant</td><td><code class="inline">ts.toInstant()</code> / <code class="inline">Timestamp.from(instant)</code> (xem <a href="object-contract.html">2.6</a>)</td></tr>
+        <tr><td>Sắp xếp danh sách ngày</td><td><code class="inline">list.sort(Comparator.naturalOrder())</code> — xem <a href="collections.html">3.3</a></td></tr>
+      </tbody>
+    </table>
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+    <ul class="checklist">
+      <li>Giải thích được vì sao bỏ <code class="inline">Date</code>/<code class="inline">Calendar</code> bằng 4 lý do và demo bẫy tháng 0-based.</li>
+      <li>Chọn đúng class cho từng ngữ cảnh: LocalDate, Instant, ZonedDateTime, OffsetDateTime, Duration, Period.</li>
+      <li>Chuyển đổi thành thạo Instant ↔ ZonedDateTime ↔ LocalDateTime ↔ epoch milli.</li>
+      <li>Phân biệt <code class="inline">withZoneSameInstant</code> và <code class="inline">withZoneSameLocal</code> và nói được khi nào dùng cái nào.</li>
+      <li>Giải thích được DST gap/overlap kèm ví dụ Paris hoặc New York, và cách java.time resolve.</li>
+      <li>Biết dùng <code class="inline">ZoneRules.getValidOffsets</code> và <code class="inline">nextTransition</code>.</li>
+      <li>Viết được format tiếng Việt với <code class="inline">Locale.of("vi","VN")</code> và xử lý <code class="inline">DateTimeParseException</code>.</li>
+      <li>Nhớ bẫy <code class="inline">yyyy</code> vs <code class="inline">uuuu</code> khi dùng STRICT.</li>
+      <li>Trả lời được vì sao lưu DB là UTC và vì sao không dùng <code class="inline">LocalDateTime</code> cho sự kiện toàn cầu.</li>
+      <li>Biết tiêm <code class="inline">Clock</code> để test thay vì gọi <code class="inline">now()</code> trực tiếp.</li>
+      <li>Chuyển đổi được dữ liệu legacy (<code class="inline">Date</code>, <code class="inline">Calendar</code>, <code class="inline">Timestamp</code>) mà không làm mất instant.</li>
+      <li>Không so sánh/định dạng ngày giờ bằng <code class="inline">==</code>, chuỗi thủ công hay offset hard-code.</li>
+    </ul>
+    <h2 id="nguon">15. Nguồn tham khảo</h2>
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/time/package-summary.html" target="_blank" rel="noreferrer">Javadoc — Package java.time (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/time/Instant.html" target="_blank" rel="noreferrer">Javadoc — Instant, LocalDate, ZonedDateTime, Duration, Period</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/time/format/DateTimeFormatter.html" target="_blank" rel="noreferrer">Javadoc — DateTimeFormatter</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/datetime/index.html" target="_blank" rel="noreferrer">Oracle Tutorial — Date Time Trail (JSR-310)</a></li>
+      <li><a href="https://jcp.org/en/jsr/detail?id=310" target="_blank" rel="noreferrer">JSR-310 — Date and Time API</a></li>
+      <li><a href="https://www.iana.org/time-zones" target="_blank" rel="noreferrer">IANA — Time Zone Database (tzdata)</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal" target="_blank" rel="noreferrer">MDN — Temporal (JavaScript)</a></li>
+      <li><a href="https://nodejs.org/api/intl.html" target="_blank" rel="noreferrer">Node.js — Intl / ICU</a></li>
+    </ul>
+    <p class="footer">Java Docs · java.time · JDK 25 · Cập nhật 04/10/2026</p>
+  </main>
+</div>
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

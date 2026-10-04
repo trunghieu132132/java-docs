@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stream API — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item active" href="streams.html">Stream API</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="streams">Stream API — xử lý dữ liệu dạng dòng chảy</h1>
+
+    <p class="lead">Stream API (Java 8+) biến việc xử lý tập dữ liệu thành một <strong>dây chuyền</strong>: khai báo nguồn, nối các bước biến đổi, rồi kết thúc bằng một thao tác cho ra kết quả. Bạn mô tả <em>làm gì</em>, Java lo <em>làm thế nào</em>. Đây là chủ đề phỏng vấn nặng thứ hai sau Collections — và cũng là nơi nhiều người viết code chạy được nhưng sai (one-shot, duplicate key, dùng <code class="inline">peek</code> làm logic).</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 3.8 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — tạo stream từ Collection/mảng/file; dùng filter/map/flatMap/sorted/distinct/limit; kết thúc bằng collect/reduce/count/findFirst; viết groupingBy có downstream; sửa bẫy <code class="inline">toMap</code> duplicate key; biết khi nào quay về vòng lặp.</li>
+      <li><strong>Phải hiểu</strong> — stream không lưu dữ liệu và chỉ dùng một lần; lazy evaluation; intermediate vs terminal; stateless vs stateful; short-circuit; vì sao lambda không ném checked exception trực tiếp; parallel stream dùng chung common ForkJoinPool.</li>
+      <li><strong>Nhận biết</strong> — <code class="inline">takeWhile</code>/<code class="inline">dropWhile</code>/<code class="inline">Optional.stream</code> (Java 9), <code class="inline">toUnmodifiableList</code> (Java 10), <code class="inline">teeing</code> (Java 12), <code class="inline">Stream.toList</code> (Java 16); quan hệ với <a href="lambda-functional.html">Lambda &amp; Functional</a> và <a href="optional.html">Optional</a>.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả. Stream rất dễ đoán sai vì thứ tự chạy không như bạn tưởng.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Code trong trang cũng dùng <code class="inline">record</code>, lambda và method reference; nếu chưa quen, xem trước <a href="enum-nested.html">Enum, Nested &amp; Sealed</a> và <a href="lambda-functional.html">Lambda &amp; Functional</a>.</div>
+
+    <h3>1.1 Stream là gì</h3>
+
+    <p>Stream là một <strong>view tính toán</strong> (view = góc nhìn) trên một nguồn dữ liệu: nó không phải cấu trúc lưu trữ, không chứa phần tử, không sửa nguồn. Hãy hình dung băng chuyền trong nhà máy: nguyên liệu nằm ở kho (Collection/mảng/file), băng chuyền (stream) chở từng món qua các trạm (filter, map, sorted), cuối băng chuyền có thùng hứng kết quả (collect/reduce/count).</p>
+
+    <ul>
+      <li><strong>Không lưu dữ liệu:</strong> stream chỉ giữ con trỏ tới nguồn và mô tả các bước xử lý.</li>
+      <li><strong>Không sửa nguồn:</strong> <code class="inline">list.stream().map(...)</code> trả về dữ liệu mới; <code class="inline">list</code> vẫn nguyên vẹn. Muốn thay đổi nguồn, bạn tự gán kết quả trở lại.</li>
+      <li><strong>Chỉ chạy một lần:</strong> mỗi stream gắn với đúng một lần duyệt; gọi terminal lần thứ hai ném <code class="inline">IllegalStateException</code> (mục 1.4).</li>
+      <li><strong>Lazy:</strong> chưa gọi thao tác kết thúc thì chưa có gì chạy — kể cả khi bạn đã viết 10 bước biến đổi.</li>
+      <li><strong>Duyệt nội bộ:</strong> bạn không tự viết <code class="inline">i++</code>; thư viện quyết định thứ tự và cách chia việc (điều kiện tiên quyết để chạy song song).</li>
+    </ul>
+
+    <h3>1.2 Collection vs Stream</h3>
+
+    <p>Hai khái niệm hay bị nhập nhằng trong phỏng vấn. Câu chốt: <strong>Collection là nơi lưu dữ liệu, Stream là cách xử lý dữ liệu.</strong></p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Collection (List, Set, Map...)</th><th>Stream</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mục đích</td><td>Lưu trữ và truy cập phần tử</td><td>Tính toán/biến đổi trên phần tử</td></tr>
+        <tr><td>Có chứa dữ liệu?</td><td>Có — bộ nhớ thật</td><td>Không — chỉ là pipeline trên nguồn</td></tr>
+        <tr><td>Thời điểm chạy</td><td>Eager: thêm/xóa là thay đổi ngay</td><td>Lazy: chưa có terminal thì chưa chạy</td></tr>
+        <tr><td>Số lần duyệt</td><td>Không giới hạn, duyệt lại thoải mái</td><td>Đúng một lần rồi "cháy"</td></tr>
+        <tr><td>Thêm/xóa phần tử</td><td>Có (<code class="inline">add</code>, <code class="inline">remove</code>)</td><td>Không — stream bất biến về cấu trúc</td></tr>
+        <tr><td>Kích thước</td><td>Hữu hạn</td><td>Có thể vô hạn (<code class="inline">generate</code>, <code class="inline">iterate</code>)</td></tr>
+        <tr><td>Vòng lặp</td><td>External iteration — bạn viết vòng lặp</td><td>Internal iteration — thư viện duyệt hộ</td></tr>
+        <tr><td>Chạy song song</td><td>Phải tự dùng thread/executor</td><td><code class="inline">parallelStream()</code>/<code class="inline">parallel()</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Hệ quả thực dụng:</strong> đừng "lưu stream để dùng lại" — hãy lưu <em>nguồn</em> (List/Set/mảng/file), mỗi lần cần xử lý lại mở một stream mới. Stream cũng không phải để thay thế field trong class.</div>
+
+    <h3>1.3 Pipeline 3 phần: source → intermediate → terminal</h3>
+
+    <p>Mọi stream pipeline có đúng ba phần, theo thứ tự:</p>
+    <ol>
+      <li><strong>Source</strong> — nguồn tạo stream: <code class="inline">list.stream()</code>, <code class="inline">Arrays.stream(arr)</code>, <code class="inline">Stream.of(...)</code>, <code class="inline">Files.lines(path)</code>, <code class="inline">IntStream.range(...)</code>.</li>
+      <li><strong>Intermediate operations</strong> — các bước biến đổi, trả về <em>stream mới</em> nên nối chuỗi được: <code class="inline">filter</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">sorted</code>, <code class="inline">distinct</code>, <code class="inline">limit</code>, <code class="inline">peek</code>... Tất cả đều lười (lazy).</li>
+      <li><strong>Terminal operation</strong> — thao tác kết thúc, "bấm nút chạy" pipeline và cho kết quả hoặc side effect: <code class="inline">collect</code>, <code class="inline">reduce</code>, <code class="inline">count</code>, <code class="inline">forEach</code>, <code class="inline">findFirst</code>, <code class="inline">anyMatch</code>... Sau terminal, stream đã dùng hết.</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.Stream;
+
+public class LazyDemo {
+    public static void main() {
+        Stream&lt;String&gt; s = Stream.of("an", "binh", "cuong")
+                .filter(x -&gt; {
+                    IO.println("filter chay voi " + x);
+                    return x.length() &gt; 2;
+                });
+        IO.println("Da tao pipeline, chua co terminal nen chua in gi");
+        long n = s.count();
+        IO.println("count = " + n);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Da tao pipeline, chua co terminal nen chua in gi
+filter chay voi an
+filter chay voi binh
+filter chay voi cuong
+count = 2</code></pre>
+    </div>
+
+    <p>Ba điều rút ra từ output trên:</p>
+    <ul>
+      <li>Dòng "chưa in gi" chạy trước cả khi filter chạy — pipeline chưa hoạt động vì thiếu terminal.</li>
+      <li>Filter chạy qua <strong>từng phần tử</strong> theo thứ tự nguồn, không chạy "cả danh sách một lượt".</li>
+      <li>Kết quả <code class="inline">count = 2</code> vì "an" dài 2 không thỏa <code class="inline">length() &gt; 2</code>; "binh" và "cuong" thì thỏa.</li>
+    </ul>
+
+    <h3>1.4 Lazy evaluation &amp; stream chỉ chạy một lần</h3>
+
+    <p>Vì intermediate lười, không có terminal thì pipeline <strong>không chạy gì cả</strong>. Đây là lỗi im lặng hay gặp: viết một pipeline đẹp rồi quên <code class="inline">collect</code>/<code class="inline">forEach</code>/<code class="inline">count</code> — chương trình không báo lỗi, chỉ đơn giản là không làm gì. Ngược lại, terminal "đốt" stream: không thể tái sử dụng.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.stream.Stream;
+
+public class OneShotDemo {
+    public static void main() {
+        Stream&lt;String&gt; s = List.of("an", "binh").stream();
+        IO.println("lan 1: " + s.count());
+        try {
+            IO.println("lan 2: " + s.count());
+        } catch (IllegalStateException e) {
+            IO.println("IllegalStateException: " + e.getMessage());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>lan 1: 2
+IllegalStateException: stream has already been operated upon or closed</code></pre>
+    </div>
+
+    <p>Nếu không bắt lỗi, chương trình chết với stack trace:</p>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.IllegalStateException: stream has already been operated upon or closed
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:260)
+	at java.base/java.util.stream.ReferencePipeline.count(ReferencePipeline.java:750)
+	at OneShotUncaught.main(OneShotUncaught.java:8)</pre>
+    </div>
+
+    <div class="note">Muốn "dùng lại", hãy dùng lại <strong>nguồn</strong>: gọi <code class="inline">list.stream()</code> hai lần là hai stream độc lập. Stream sinh ra để mô tả một lượt tính toán, giống <code class="inline">Iterator</code> hơn là <code class="inline">List</code>.</div>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#tao-stream">Tạo Stream</a></li>
+        <li><a href="#intermediate">Intermediate operations</a></li>
+        <li><a href="#terminal">Terminal operations</a></li>
+        <li><a href="#collectors">Collectors chuyên sâu</a></li>
+        <li><a href="#optional-flatmap">Optional &amp; flatMap trong pipeline</a></li>
+        <li><a href="#parallel">Parallel stream</a></li>
+        <li><a href="#vong-lap-vs-stream">Vòng lặp vs Stream</a></li>
+        <li><a href="#bay">Bẫy tổng hợp</a></li>
+        <li><a href="#project">Project: quản lý đơn hàng</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tao-stream">2. Tạo Stream <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Stream có thể sinh ra từ hầu hết nguồn dữ liệu trong JDK. Nắm chắc các cách tạo để không phải viết vòng lặp trung gian vô ích.</p>
+
+    <h3>2.1 Từ Collection, mảng, giá trị — và builder/empty/concat</h3>
+
+    <p>Ví dụ dưới đi qua các nguồn phổ biến nhất: <code class="inline">Collection.stream()</code>, <code class="inline">Arrays.stream</code>, <code class="inline">Stream.of</code>, <code class="inline">IntStream.range/rangeClosed</code>, <code class="inline">Stream.builder</code>, <code class="inline">Stream.empty</code>, <code class="inline">Stream.concat</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+public class StreamSourcesDemo {
+    public static void main() {
+        List&lt;String&gt; list = List.of("a", "b", "c");
+        IO.println(list.stream().collect(Collectors.joining("-")));
+
+        int[] nums = {3, 1, 2};
+        IO.println(Arrays.stream(nums).sum());
+
+        IO.println(Stream.of("x", "y").count());
+
+        IO.println(IntStream.range(1, 4).boxed().toList());
+        IO.println(IntStream.rangeClosed(1, 4).boxed().toList());
+
+        Stream.Builder&lt;String&gt; b = Stream.builder();
+        b.add("m");
+        b.add("n");
+        IO.println(b.build().collect(Collectors.joining(",")));
+
+        IO.println(Stream.empty().count());
+        IO.println(Stream.concat(Stream.of("1"), Stream.of("2")).collect(Collectors.joining("+")));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a-b-c
+6
+2
+[1, 2, 3]
+[1, 2, 3, 4]
+m,n
+0
+1+2</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">Collection</code> nào cũng có <code class="inline">.stream()</code>: List, Set, Queue, kể cả <code class="inline">Map.entrySet().stream()</code> (xem <a href="collections.html">Collections</a>).</li>
+      <li><code class="inline">IntStream.range(1, 4)</code> là <strong>nửa mở</strong> — chứa 1, 2, 3; <code class="inline">rangeClosed(1, 4)</code> chứa 1, 2, 3, 4.</li>
+      <li><code class="inline">Arrays.stream(nums)</code> với mảng <code class="inline">int[]</code> cho <code class="inline">IntStream</code>; với <code class="inline">String[]</code> cho <code class="inline">Stream&lt;String&gt;</code>.</li>
+      <li><code class="inline">boxed()</code> đổi <code class="inline">IntStream</code> thành <code class="inline">Stream&lt;Integer&gt;</code> — cần khi muốn dùng <code class="inline">toList()</code> trả <code class="inline">List&lt;Integer&gt;</code>.</li>
+      <li><code class="inline">Stream.builder()</code> hữu ích khi số lượng phần tử biết lúc chạy; <code class="inline">Stream.concat</code> nối đúng hai stream.</li>
+    </ul>
+
+    <h3>2.2 Primitive streams &amp; boxing</h3>
+
+    <p>Ngoài <code class="inline">Stream&lt;T&gt;</code>, JDK có ba stream chuyên cho kiểu nguyên thủy: <code class="inline">IntStream</code>, <code class="inline">LongStream</code>, <code class="inline">DoubleStream</code>. Chúng có sẵn <code class="inline">sum()</code>, <code class="inline">average()</code>, <code class="inline">min()</code>, <code class="inline">max()</code>, <code class="inline">summaryStatistics()</code> mà không cần boxing.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.stream.IntStream;
+
+public class PrimitiveVsBoxedDemo {
+    public static void main() {
+        IO.println(IntStream.rangeClosed(1, 5).sum());
+        IO.println(IntStream.rangeClosed(1, 5).average().orElse(0));
+        IO.println(IntStream.range(1, 5).mapToObj(i -&gt; i * i).toList());
+
+        List&lt;Integer&gt; boxed = List.of(1, 2, 3);
+        IO.println(boxed.stream().mapToInt(Integer::intValue).sum());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>15
+3.0
+[1, 4, 9, 16]
+6</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stream&lt;T&gt; → IntStream</td><td><code class="inline">stream.mapToInt(Integer::intValue)</code> / <code class="inline">mapToLong</code> / <code class="inline">mapToDouble</code></td></tr>
+        <tr><td>IntStream → Stream&lt;T&gt;</td><td><code class="inline">intStream.boxed()</code> hoặc <code class="inline">intStream.mapToObj(i -&gt; ...)</code></td></tr>
+        <tr><td>IntStream → LongStream</td><td><code class="inline">asLongStream()</code></td></tr>
+        <tr><td>Tính tổng/trung bình</td><td><code class="inline">sum()</code>, <code class="inline">average()</code> (trả <code class="inline">OptionalDouble</code>)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Vì sao cần primitive stream? Vì <code class="inline">Stream&lt;Integer&gt;</code> phải <strong>boxing</strong> mỗi phần tử (<code class="inline">int</code> → object <code class="inline">Integer</code>) — tốn bộ nhớ và CPU khi dữ liệu lớn. Với hàng triệu số, chọn <code class="inline">IntStream</code>/<code class="inline">LongStream</code>. Chi tiết boxing và cache xem <a href="index.html#wrapper">Biến trong Java — mục 12</a>.</p>
+
+    <h3>2.3 Files.lines — đọc file theo dòng</h3>
+
+    <p><code class="inline">Files.lines(path)</code> trả về <code class="inline">Stream&lt;String&gt;</code>, mỗi dòng là một phần tử — cực hợp cho xử lý log/CSV. Stream này giữ tài nguyên file nên <strong>phải đóng</strong> bằng try-with-resources:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Collectors;
+
+public class FilesLinesDemo {
+    public static void main() throws IOException {
+        Path p = Files.createTempFile("stream-demo-", ".txt");
+        Files.writeString(p, "cam\nxoai\nchuoi\n");
+        try (var lines = Files.lines(p)) {
+            IO.println(lines.filter(s -&gt; s.length() &gt; 3).collect(Collectors.joining(", ")));
+        }
+        Files.deleteIfExists(p);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>xoai, chuoi</code></pre>
+    </div>
+
+    <p>Lưu ý: <code class="inline">main</code> ở đây khai báo <code class="inline">throws IOException</code> vì <code class="inline">createTempFile</code>/<code class="inline">writeString</code>/<code class="inline">deleteIfExists</code> đều là checked exception. Đọc/ghi file chi tiết ở <a href="io-files.html">I/O &amp; Files</a>; các nguồn tương tự gồm <code class="inline">Files.list</code> (liệt kê thư mục) và <code class="inline">BufferedReader.lines</code>.</p>
+
+    <h3>2.4 Stream vô hạn: generate &amp; iterate</h3>
+
+    <p><code class="inline">Stream.generate</code> và <code class="inline">Stream.iterate</code> tạo stream <strong>vô hạn</strong>; bắt buộc ghép với <code class="inline">limit</code>, <code class="inline">takeWhile</code> hoặc một terminal có short-circuit, nếu không chương trình sẽ chạy mãi.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class InfiniteStreamDemo {
+    public static void main() {
+        IO.println(Stream.generate(() -&gt; "x").limit(3).collect(Collectors.joining()));
+        IO.println(Stream.iterate(1, n -&gt; n * 2).limit(5).collect(Collectors.toList()));
+        IO.println(Stream.iterate(1, n -&gt; n &lt;= 100, n -&gt; n * 3).collect(Collectors.toList()));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>xxx
+[1, 2, 4, 8, 16]
+[1, 3, 9, 27, 81]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">generate(Supplier)</code> — mỗi lần gọi supplier lấy một giá trị mới; không đảm bảo ổn định/khác nhau.</li>
+      <li><code class="inline">iterate(seed, next)</code> — seed rồi áp <code class="inline">next</code> liên tiếp (Java 8).</li>
+      <li><code class="inline">iterate(seed, hasNext, next)</code> (Java 9) — có điều kiện dừng, giống vòng <code class="inline">for</code> ba phần.</li>
+    </ul>
+
+    <div class="note warn"><strong>Bẫy chết người:</strong> <code class="inline">Stream.iterate(1, n -&gt; n + 1).collect(Collectors.toList())</code> sẽ treo/chết với <code class="inline">OutOfMemoryError</code> — không bao giờ kết thúc. Luôn tự hỏi: "cái gì chặn stream này lại?" trước khi gọi terminal.</div>
+
+    <h3>2.5 Bẫy nguồn dữ liệu: Stream.of(mảng nguyên thủy)</h3>
+
+    <p><code class="inline">Stream.of</code> nhận varargs <code class="inline">T...</code>. Khi truyền một mảng <code class="inline">int[]</code>, Java <em>không</em> bung mảng ra thành các phần tử mà coi cả mảng là <strong>một</strong> phần tử duy nhất. Đây là bẫy kinh điển:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Arrays;
+import java.util.stream.Stream;
+
+public class SourceTrapDemo {
+    public static void main() {
+        int[] arr = {1, 2, 3};
+        IO.println("Stream.of(arr).count() = " + Stream.of(arr).count());
+        IO.println("Arrays.stream(arr).count() = " + Arrays.stream(arr).count());
+
+        var l = Stream.of("a", "b").toList();
+        try {
+            l.add("c");
+        } catch (UnsupportedOperationException e) {
+            IO.println("toList() khong sua duoc");
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Stream.of(arr).count() = 1
+Arrays.stream(arr).count() = 3
+toList() khong sua duoc</code></pre>
+    </div>
+
+    <p>Với mảng <code class="inline">String[]</code> thì <code class="inline">Stream.of(arr)</code> lại hoạt động đúng (vì <code class="inline">String[]</code> là <code class="inline">T[]</code>), nhưng để thống nhất và an toàn, hãy luôn dùng <code class="inline">Arrays.stream(arr)</code> khi nguồn là mảng. So sánh thêm cách tạo mảng ở <a href="arrays.html">Arrays</a>. Còn <code class="inline">Stream.toList()</code> (Java 16) trả về list <strong>bất biến</strong> — thao tác <code class="inline">add</code> ném <code class="inline">UnsupportedOperationException</code>.</p>
+
+    <h2 id="intermediate">3. Intermediate operations <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Intermediate operation nhận một stream, trả về một stream mới nên nối chuỗi được. Tất cả đều <strong>lười</strong>: chỉ mô tả công việc, chưa chạy. Có thể chia thành hai nhóm — nhóm <em>không trạng thái</em> (stateless) xử lý từng phần tử độc lập, và nhóm <em>có trạng thái</em> (stateful) phải nhớ dữ liệu để làm việc (chi tiết ở 3.7).</p>
+
+    <h3>3.1 filter &amp; map</h3>
+
+    <p><code class="inline">filter(Predicate)</code> giữ phần tử trả về <code class="inline">true</code>; <code class="inline">map(Function)</code> biến đổi mỗi phần tử thành một giá trị mới (có thể khác kiểu). Hai thao tác này là xương sống của gần như mọi pipeline.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class FilterMapDemo {
+    public static void main() {
+        List&lt;String&gt; names = List.of("an", "binh", "cuong", "dung");
+        List&lt;String&gt; kq = names.stream()
+                .filter(s -&gt; s.length() &gt;= 4)
+                .map(String::toUpperCase)
+                .toList();
+        IO.println(kq);
+
+        List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5);
+        int tongBinhPhuong = nums.stream().mapToInt(n -&gt; n * n).sum();
+        IO.println(tongBinhPhuong);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[BINH, CUONG, DUNG]
+55</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">map</code> là ánh xạ 1-1; không được trả về nhiều hơn một giá trị cho mỗi phần tử → muốn "một thành nhiều" hãy dùng <code class="inline">flatMap</code> (3.2).</li>
+      <li>Thứ tự đề xuất: <code class="inline">filter</code> trước <code class="inline">map</code> khi có thể, để biến đổi ít phần tử hơn. Nhưng nếu biến đổi là điều kiện để lọc (ví dụ <code class="inline">trim</code> rồi mới xét rỗng) thì phải <code class="inline">map</code> trước.</li>
+      <li><code class="inline">Integer::intValue</code>, <code class="inline">String::toUpperCase</code>... là method reference — cú pháp gọn của lambda, học ở <a href="lambda-functional.html">Lambda &amp; Functional</a>.</li>
+    </ul>
+
+    <h3>3.2 flatMap — làm phẳng cấu trúc lồng nhau</h3>
+
+    <p><code class="inline">map</code> biến mỗi phần tử thành <em>một</em> giá trị; <code class="inline">flatMap</code> biến mỗi phần tử thành <em>một stream</em> rồi nối tất cả lại. Dùng để làm phẳng <code class="inline">List&lt;List&lt;T&gt;&gt;</code> hoặc tách chuỗi.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Arrays;
+import java.util.List;
+
+public class FlatMapDemo {
+    public static void main() {
+        List&lt;List&lt;String&gt;&gt; lop = List.of(
+                List.of("an", "binh"),
+                List.of("cuong"),
+                List.of("dung", "em", "giang"));
+
+        List&lt;String&gt; tatCa = lop.stream()
+                .flatMap(List::stream)
+                .toList();
+        IO.println(tatCa);
+
+        List&lt;String&gt; cau = List.of("xin chao", "java stream");
+        IO.println(cau.stream()
+                .flatMap(s -&gt; Arrays.stream(s.split(" ")))
+                .toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[an, binh, cuong, dung, em, giang]
+[xin, chao, java, stream]</code></pre>
+    </div>
+
+    <p>Hình dung dễ nhớ: <code class="inline">map(list -&gt; list)</code> cho <code class="inline">Stream&lt;List&lt;String&gt;&gt;</code>; <code class="inline">flatMap(List::stream)</code> "xả" mỗi list bên trong thành các phần tử rời rồi gộp lại thành <code class="inline">Stream&lt;String&gt;</code>. Biến thể primitive là <code class="inline">flatMapToInt</code>, <code class="inline">flatMapToLong</code>, <code class="inline">flatMapToDouble</code>.</p>
+
+    <h3>3.3 distinct &amp; sorted</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Comparator;
+import java.util.List;
+
+public class DistinctSortedDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(3, 1, 4, 1, 5, 9, 2, 6, 5, 3);
+        IO.println(nums.stream().distinct().toList());
+        IO.println(nums.stream().distinct().sorted().toList());
+        IO.println(nums.stream().distinct().sorted(Comparator.reverseOrder()).toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[3, 1, 4, 5, 9, 2, 6]
+[1, 2, 3, 4, 5, 6, 9]
+[9, 6, 5, 4, 3, 2, 1]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">distinct()</code> dùng <code class="inline">equals</code>/<code class="inline">hashCode</code> — với object tự định nghĩa, phải override đúng (xem <a href="object-contract.html">equals / hashCode / toString</a>).</li>
+      <li><code class="inline">sorted()</code> sắp theo <code class="inline">Comparable</code> tự nhiên; <code class="inline">sorted(Comparator)</code> sắp tùy ý. Comparator học ở <a href="collections.html#comparator">Collections — mục 8</a>.</li>
+      <li>Cả hai giữ <strong>phần tử đầu tiên</strong> gặp của các giá trị trùng (với <code class="inline">distinct</code>) và ổn định (với <code class="inline">sorted</code> — stable sort).</li>
+    </ul>
+
+    <h3>3.4 peek — chỉ để debug</h3>
+
+    <p><code class="inline">peek(Consumer)</code> chạy một hành động lên từng phần tử khi nó đi qua và trả về chính stream đó. Công dụng duy nhất đúng đắn: <strong>quan sát đường đi của dữ liệu</strong>. Đừng dùng <code class="inline">peek</code> để thay đổi state nghiệp vụ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class PeekDemo {
+    public static void main() {
+        List&lt;Integer&gt; kq = List.of(1, 2, 3, 4)
+                .stream()
+                .filter(n -&gt; n % 2 == 0)
+                .peek(n -&gt; IO.println("qua filter: " + n))
+                .map(n -&gt; n * 10)
+                .peek(n -&gt; IO.println("sau map: " + n))
+                .toList();
+        IO.println(kq);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>qua filter: 2
+sau map: 20
+qua filter: 4
+sau map: 40
+[20, 40]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao <code class="inline">peek</code> nguy hiểm?</strong> Nó là intermediate lười nên có thể <em>không chạy</em> (mục 9) hoặc chạy lại khi nguồn bị duyệt lại tùy ví dụ; JDK cũng không bảo đảm thứ tự/khả năng thực thi. Logic chỉ nằm trong <code class="inline">peek</code> là bug chờ ngày nổ. Muốn side effect thật, dùng terminal <code class="inline">forEach</code>.</div>
+
+    <h3>3.5 limit &amp; skip</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.IntStream;
+
+public class LimitSkipDemo {
+    public static void main() {
+        IO.println(IntStream.rangeClosed(1, 10).skip(3).limit(4).boxed().toList());
+        IO.println(IntStream.iterate(1, n -&gt; n + 1)
+                .filter(n -&gt; n % 3 == 0)
+                .limit(3)
+                .boxed()
+                .toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[4, 5, 6, 7]
+[3, 6, 9]</code></pre>
+    </div>
+
+    <p><code class="inline">skip(3)</code> bỏ 3 phần tử đầu; <code class="inline">limit(4)</code> lấy tối đa 4 phần tử. Ví dụ thứ hai ghép <code class="inline">limit</code> với stream vô hạn <code class="inline">iterate</code> — <code class="inline">limit</code> chính là điều kiện dừng. Đây là cách viết "top N" rất tự nhiên khi ghép với <code class="inline">sorted</code>.</p>
+
+    <h3>3.6 takeWhile &amp; dropWhile (Java 9)</h3>
+
+    <p>Khác <code class="inline">filter</code> (duyệt hết và giữ mọi phần tử thỏa điều kiện rải rác), <code class="inline">takeWhile</code>/<code class="inline">dropWhile</code> hành xử theo <strong>tiền tố</strong> và dừng ngay khi điều kiện đổi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class TakeDropWhileDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(2, 4, 6, 7, 8, 10);
+        IO.println(nums.stream().takeWhile(n -&gt; n % 2 == 0).toList());
+        IO.println(nums.stream().dropWhile(n -&gt; n % 2 == 0).toList());
+        IO.println(nums.stream().filter(n -&gt; n % 2 == 0).toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[2, 4, 6]
+[7, 8, 10]
+[2, 4, 6, 8, 10]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">takeWhile</code> lấy tiền tố dài nhất thỏa điều kiện, gặp 7 là dừng — dù 8, 10 vẫn chẵn.</li>
+      <li><code class="inline">dropWhile</code> bỏ tiền tố đó, giữ phần còn lại nguyên vẹn (8, 10 vẫn nằm trong).</li>
+      <li>Trên stream song song, hai thao tác này chỉ nên dùng khi thứ tự gặp (encounter order) có ý nghĩa — nhớ điều này khi đọc code người khác.</li>
+    </ul>
+
+    <h3>3.7 Stateless vs stateful — thao tác nào tốn bộ nhớ</h3>
+
+    <table>
+      <thead>
+        <tr><th>Nhóm</th><th>Thao tác</th><th>Đặc điểm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stateless</td><td><code class="inline">filter</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">peek</code>, <code class="inline">mapToInt</code>...</td><td>Xử lý từng phần tử độc lập; có thể gộp một lượt duyệt, tốn O(1) bộ nhớ</td></tr>
+        <tr><td>Stateful</td><td><code class="inline">distinct</code>, <code class="inline">sorted</code>, <code class="inline">limit</code>, <code class="inline">skip</code>, <code class="inline">takeWhile</code>, <code class="inline">dropWhile</code></td><td>Phải nhớ dữ liệu/trạng thái: <code class="inline">sorted</code> gom hết phần tử rồi mới sắp (O(n) bộ nhớ); <code class="inline">distinct</code> giữ set đã gặp</td></tr>
+      </tbody>
+    </table>
+
+    <p>Vì nhóm stateful phải "chặn" dữ liệu, thứ tự gọi ảnh hưởng hiệu năng rõ rệt. Ví dụ: <code class="inline">map(parse)</code> trước <code class="inline">filter</code> sẽ parse cả triệu dòng rồi mới bỏ; <code class="inline">filter</code> trước thì parse ít hơn. Với <code class="inline">sorted</code>, hãy <code class="inline">filter</code>/<code class="inline">map</code> xong mới sắp xếp.</p>
+
+    <h3>3.8 Short-circuit — dừng sớm khi đã đủ</h3>
+
+    <p>Một số thao tác không cần xử lý hết dữ liệu: gặp điều kiện là kết thúc luôn. Đây là cơ chế giúp <code class="inline">limit</code> + stream vô hạn chạy được, và giúp <code class="inline">findFirst</code>/<code class="inline">anyMatch</code> dừng sớm:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.Stream;
+
+public class ShortCircuitDemo {
+    public static void main() {
+        int kq = Stream.iterate(1, n -&gt; n + 1)
+                .map(n -&gt; {
+                    IO.println("map " + n);
+                    return n * n;
+                })
+                .filter(n -&gt; n &gt; 10)
+                .findFirst()
+                .orElse(0);
+        IO.println(kq);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>map 1
+map 2
+map 3
+map 4
+16</code></pre>
+    </div>
+
+    <p><code class="inline">map</code> chỉ chạy 4 lần rồi dừng: 1<sup>2</sup>=1, 2<sup>2</sup>=4, 3<sup>2</sup>=9 đều không &gt; 10, còn 4<sup>2</sup>=16 thỏa nên <code class="inline">findFirst</code> trả về ngay. Stream vô hạn + terminal short-circuit = chương trình hữu hạn.</p>
+
+    <table>
+      <thead>
+        <tr><th>Intermediate</th><th>Mục đích</th><th>Nhóm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">filter(Predicate)</code></td><td>Giữ phần tử thỏa điều kiện</td><td>Stateless</td></tr>
+        <tr><td><code class="inline">map(Function)</code>, <code class="inline">mapToInt</code>, <code class="inline">mapToLong</code>, <code class="inline">mapToDouble</code></td><td>Biến đổi 1-1 (đổi kiểu được)</td><td>Stateless</td></tr>
+        <tr><td><code class="inline">flatMap(Function)</code></td><td>Biến đổi 1-n rồi làm phẳng</td><td>Stateless</td></tr>
+        <tr><td><code class="inline">distinct()</code></td><td>Loại trùng theo <code class="inline">equals</code></td><td>Stateful</td></tr>
+        <tr><td><code class="inline">sorted()</code>, <code class="inline">sorted(Comparator)</code></td><td>Sắp xếp</td><td>Stateful</td></tr>
+        <tr><td><code class="inline">peek(Consumer)</code></td><td>Quan sát/debug, <strong>không dùng làm logic</strong></td><td>Stateless</td></tr>
+        <tr><td><code class="inline">limit(n)</code>, <code class="inline">skip(n)</code></td><td>Giới hạn/bỏ qua số phần tử</td><td>Stateful</td></tr>
+        <tr><td><code class="inline">takeWhile(P)</code>, <code class="inline">dropWhile(P)</code></td><td>Lấy/bỏ tiền tố theo điều kiện (Java 9)</td><td>Stateful</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="terminal">4. Terminal operations <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Terminal operation kích hoạt pipeline và "đốt" stream. Không có terminal, mọi bước phía trước vô nghĩa. Terminal đa số trả về dữ liệu (<code class="inline">List</code>, số, <code class="inline">Optional</code>, boolean...), hoặc <code class="inline">void</code> với <code class="inline">forEach</code>.</p>
+
+    <h3>4.1 forEach &amp; forEachOrdered</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.IntStream;
+
+public class ForEachOrderedDemo {
+    public static void main() {
+        IO.println("forEach tren parallel (thu tu KHONG dam bao):");
+        IntStream.rangeClosed(1, 12).parallel().forEach(n -&gt; IO.print(n + " "));
+        IO.println();
+        IO.println("forEachOrdered tren parallel (luon dung thu tu):");
+        IntStream.rangeClosed(1, 12).parallel().forEachOrdered(n -&gt; IO.print(n + " "));
+        IO.println();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>forEach tren parallel (thu tu KHONG dam bao):
+8 9 7 11 12 10 1 5 3 4 6 2 
+forEachOrdered tren parallel (luon dung thu tu):
+1 2 3 4 5 6 7 8 9 10 11 12 </code></pre>
+    </div>
+
+    <div class="note warn">Output dòng <code class="inline">forEach</code> là <strong>một lần chạy thật</strong> và sẽ khác nhau giữa các lần chạy/máy — đúng như thiết kế: <code class="inline">forEach</code> không cam kết thứ tự khi stream song song. <code class="inline">forEachOrdered</code> thì luôn theo thứ tự gặp (encounter order) nhưng có thể triệt tiêu lợi ích song song vì phải đồng bộ thứ tự.</div>
+
+    <h3>4.2 toArray</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class ToArrayDemo {
+    public static void main() {
+        Object[] objects = List.of("a", "b").stream().toArray();
+        IO.println(objects.length);
+
+        String[] arr = List.of("a", "b", "c").stream().toArray(String[]::new);
+        IO.println(java.util.Arrays.toString(arr));
+
+        int[] nums = List.of(3, 1, 2).stream().mapToInt(Integer::intValue).toArray();
+        IO.println(java.util.Arrays.toString(nums));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>2
+[a, b, c]
+[3, 1, 2]</code></pre>
+    </div>
+
+    <p>Bản không tham số trả <code class="inline">Object[]</code>; bản nhận generator <code class="inline">T[]::new</code> trả đúng kiểu. Với primitive stream, <code class="inline">toArray()</code> trả thẳng <code class="inline">int[]</code>/<code class="inline">long[]</code>/<code class="inline">double[]</code> — tiện khi cần làm việc với API cũ. Chi tiết mảng ở <a href="arrays.html">Arrays</a>.</p>
+
+    <h3>4.3 collect — tổng hợp kết quả</h3>
+
+    <p><code class="inline">collect</code> là terminal mạnh nhất: biến stream thành <code class="inline">List</code>, <code class="inline">Set</code>, <code class="inline">Map</code>, chuỗi, số liệu... nhờ một <code class="inline">Collector</code>. Toàn bộ mục <a href="#collectors">5</a> dành cho nó. Hai dạng hay dùng ngay:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.stream.Collectors;
+
+public class CollectIntroDemo {
+    public static void main() {
+        List&lt;String&gt; names = List.of("an", "binh", "cuong");
+        IO.println(names.stream().collect(Collectors.toList()));
+        IO.println(names.stream().toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[an, binh, cuong]
+[an, binh, cuong]</code></pre>
+    </div>
+
+    <p><code class="inline">stream.toList()</code> (Java 16) là cách viết ngắn gọn và cho <strong>list bất biến</strong>; <code class="inline">collect(Collectors.toList())</code> truyền thống trả list có thể sửa (thường là <code class="inline">ArrayList</code>). Trong code mới, ưu tiên <code class="inline">toList()</code> nếu không cần sửa kết quả.</p>
+
+    <h3>4.4 reduce — gộp dữ liệu thành một giá trị</h3>
+
+    <p><code class="inline">reduce</code> lần lượt gộp các phần tử bằng một phép toán hai ngôi. Có hai biến thể quan trọng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Optional;
+
+public class ReduceDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(3, 5, 7);
+        IO.println(nums.stream().reduce(0, Integer::sum));
+
+        Optional&lt;Integer&gt; max = nums.stream().reduce(Integer::max);
+        IO.println(max.orElse(-1));
+
+        List&lt;String&gt; tu = List.of("java", "stream", "api");
+        IO.println(tu.stream().reduce("", (a, b) -&gt; a + "|" + b));
+
+        IO.println(nums.parallelStream().reduce(0, Integer::sum, Integer::sum));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>15
+7
+|java|stream|api
+15</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">reduce(identity, accumulator)</code> — có giá trị khởi tạo nên luôn trả về giá trị; stream rỗng cho <code class="inline">identity</code>.</li>
+      <li><code class="inline">reduce(accumulator)</code> — không có identity nên phải trả <code class="inline">Optional&lt;T&gt;</code>: stream rỗng thì không có kết quả. Đây là lý do JDK thiết kế trả <code class="inline">Optional</code>, xem thêm <a href="optional.html">Optional</a>.</li>
+      <li><code class="inline">reduce(identity, accumulator, combiner)</code> — dùng cho song song: mỗi mảnh gộp bằng accumulator, rồi các mảnh gộp với nhau bằng combiner. Cả hai phép toán phải <strong>kết hợp</strong> (associative) thì song song mới cho kết quả đúng.</li>
+      <li>Cẩn thận với identity: <code class="inline">reduce(0, Integer::sum)</code> ổn, nhưng <code class="inline">reduce("", (a,b) -&gt; a + "-" + b)</code> có thêm dấu ở đầu — dấu hiệu identity không hẳn trung tính.</li>
+    </ul>
+
+    <h3>4.5 count, min, max</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Comparator;
+import java.util.List;
+
+record SanPham(String ten, long gia) {}
+
+public class MinMaxDemo {
+    public static void main() {
+        List&lt;SanPham&gt; ds = List.of(
+                new SanPham("Chuot", 150_000),
+                new SanPham("Man hinh", 2_400_000),
+                new SanPham("Ban phim", 350_000));
+        IO.println(ds.stream().max(Comparator.comparingLong(SanPham::gia)).orElseThrow().ten());
+        IO.println(ds.stream().min(Comparator.comparingLong(SanPham::gia)).orElseThrow().ten());
+        IO.println(ds.stream().map(SanPham::gia).reduce(Long::max).orElse(0L));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Man hinh
+Chuot
+2400000</code></pre>
+    </div>
+
+    <p><code class="inline">count()</code> trả <code class="inline">long</code>; <code class="inline">min</code>/<code class="inline">max</code> nhận <code class="inline">Comparator</code> (hoặc dùng bản sẵn có trên primitive stream) và trả <code class="inline">Optional</code> vì stream có thể rỗng. Với record, có thể viết <code class="inline">Comparator.comparingLong(SanPham::gia)</code> rất gọn.</p>
+
+    <h3>4.6 Match &amp; find</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class MatchFindDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(4, 8, 15, 16, 23, 42);
+        IO.println(nums.stream().anyMatch(n -&gt; n &gt; 40));
+        IO.println(nums.stream().allMatch(n -&gt; n &gt; 0));
+        IO.println(nums.stream().noneMatch(n -&gt; n &lt; 0));
+        IO.println(nums.stream().filter(n -&gt; n % 2 == 1).findFirst().orElse(-1));
+        IO.println(nums.stream().filter(n -&gt; n % 2 == 0).findAny().orElse(-1));
+        IO.println(nums.stream().findFirst().orElse(-1));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+true
+true
+15
+4
+4</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Thao tác</th><th>Trả về</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">anyMatch(P)</code></td><td>boolean</td><td>Chỉ cần một phần tử thỏa — short-circuit</td></tr>
+        <tr><td><code class="inline">allMatch(P)</code></td><td>boolean</td><td>Phải tất cả thỏa; stream rỗng trả <code class="inline">true</code></td></tr>
+        <tr><td><code class="inline">noneMatch(P)</code></td><td>boolean</td><td>Không phần tử nào thỏa; stream rỗng trả <code class="inline">true</code></td></tr>
+        <tr><td><code class="inline">findFirst()</code></td><td>Optional&lt;T&gt;</td><td>Luôn lấy phần tử đầu theo encounter order</td></tr>
+        <tr><td><code class="inline">findAny()</code></td><td>Optional&lt;T&gt;</td><td>Được phép trả bất kỳ phần tử nào — trên stream song song kết quả không xác định</td></tr>
+      </tbody>
+    </table>
+
+    <p>Trên stream tuần tự, <code class="inline">findAny</code> thực tế thường trả kết quả giống <code class="inline">findFirst</code> (như ví dụ trên trả 4), nhưng đừng dựa vào điều đó: hợp đồng API nói kết quả là bất kỳ. Khi cần ổn định/kiểm thử, dùng <code class="inline">findFirst</code>.</p>
+
+    <h3>4.7 sum, average, summaryStatistics</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.IntSummaryStatistics;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class StatsDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(4, 8, 15, 16, 23, 42);
+        IO.println(nums.stream().mapToInt(Integer::intValue).sum());
+        IO.println(nums.stream().mapToInt(Integer::intValue).average().orElse(0));
+
+        IntSummaryStatistics stats = nums.stream()
+                .collect(Collectors.summarizingInt(Integer::intValue));
+        IO.println(stats);
+        IO.println("min=" + stats.getMin() + " max=" + stats.getMax()
+                + " count=" + stats.getCount());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>108
+18.0
+IntSummaryStatistics{count=6, sum=108, min=4, average=18.000000, max=42}
+min=4 max=42 count=6</code></pre>
+    </div>
+
+    <p><code class="inline">IntStream</code>/<code class="inline">LongStream</code>/<code class="inline">DoubleStream</code> có <code class="inline">sum()</code>, <code class="inline">average()</code> (trả <code class="inline">OptionalDouble</code>) và <code class="inline">summaryStatistics()</code>; trên <code class="inline">Stream&lt;T&gt;</code> dùng <code class="inline">Collectors.summarizingInt/Long/Double</code>. Một lượt tính ra cả count/sum/min/average/max — hiệu quả hơn gọi 5 lần duyệt.</p>
+
+    <h3>4.8 Bảng tra terminal operations</h3>
+
+    <table>
+      <thead>
+        <tr><th>Terminal</th><th>Trả về</th><th>Dùng khi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">forEach(Consumer)</code></td><td>void</td><td>Side effect; không quan tâm thứ tự khi song song</td></tr>
+        <tr><td><code class="inline">forEachOrdered(Consumer)</code></td><td>void</td><td>Side effect cần đúng thứ tự, kể cả song song</td></tr>
+        <tr><td><code class="inline">toArray(...)</code></td><td>Object[] / T[] / int[]...</td><td>Cần mảng cho API cũ</td></tr>
+        <tr><td><code class="inline">collect(Collector)</code></td><td>Tùy collector</td><td>List/Set/Map/chuỗi/số liệu — xem mục 5</td></tr>
+        <tr><td><code class="inline">toList()</code></td><td>List&lt;T&gt; (bất biến)</td><td>Gom nhanh kết quả (Java 16+)</td></tr>
+        <tr><td><code class="inline">reduce(...)</code></td><td>T / Optional&lt;T&gt;</td><td>Gộp thành một giá trị (sum, max, concat...)</td></tr>
+        <tr><td><code class="inline">count()</code></td><td>long</td><td>Đếm số phần tử</td></tr>
+        <tr><td><code class="inline">min(Cmp)</code> / <code class="inline">max(Cmp)</code></td><td>Optional&lt;T&gt;</td><td>Phần tử nhỏ/lớn nhất</td></tr>
+        <tr><td><code class="inline">any/all/noneMatch(P)</code></td><td>boolean</td><td>Kiểm tra điều kiện (short-circuit)</td></tr>
+        <tr><td><code class="inline">findFirst()</code> / <code class="inline">findAny()</code></td><td>Optional&lt;T&gt;</td><td>Lấy một phần tử (short-circuit)</td></tr>
+        <tr><td><code class="inline">sum/average/summaryStatistics</code></td><td>số / OptionalDouble / thống kê</td><td>Chỉ có trên primitive stream</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="collectors">5. Collectors chuyên sâu <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">Collectors</code> là lớp tiện ích chứa sẵn các "bộ thu" cho <code class="inline">collect</code>. Nắm khoảng một chục collector phổ biến là đủ xử lý 95% bài toán gom nhóm trong production.</p>
+
+    <h3>5.1 Gom thành collection</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+public class CollectBasicsDemo {
+    public static void main() {
+        List&lt;String&gt; names = List.of("an", "binh", "an", "cuong");
+        IO.println(names.stream().collect(Collectors.toList()));
+        IO.println(names.stream().collect(Collectors.toSet()).size());
+        IO.println(names.stream().collect(Collectors.toCollection(TreeSet::new)));
+        IO.println(names.stream().collect(Collectors.joining()));
+        IO.println(names.stream().collect(Collectors.joining(", ")));
+        IO.println(names.stream().collect(Collectors.joining(", ", "[", "]")));
+
+        List&lt;String&gt; khongSuaDuoc = names.stream().collect(Collectors.toUnmodifiableList());
+        try {
+            khongSuaDuoc.add("em");
+        } catch (UnsupportedOperationException e) {
+            IO.println("khong the sua: " + e.getClass().getSimpleName());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[an, binh, an, cuong]
+3
+[an, binh, cuong]
+anbinhancuong
+an, binh, an, cuong
+[an, binh, an, cuong]
+khong the sua: UnsupportedOperationException</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">toList()</code> giữ nguyên thứ tự gặp và giữ cả trùng lặp; <code class="inline">toSet()</code> loại trùng nhưng <strong>thứ tự không xác định</strong> — chỉ in <code class="inline">size()</code> cho an toàn.</li>
+      <li><code class="inline">toCollection(TreeSet::new)</code> cho bạn chọn đúng cài đặt; muốn giữ thứ tự chèn dùng <code class="inline">LinkedHashSet::new</code>, xem <a href="collections.html#set">Collections — mục 4</a>.</li>
+      <li><code class="inline">toUnmodifiableList()</code> (Java 10) trả list bất biến; tương tự có <code class="inline">toUnmodifiableSet</code>, <code class="inline">toUnmodifiableMap</code>.</li>
+      <li><code class="inline">joining</code> chỉ dùng cho <code class="inline">Stream&lt;CharSequence&gt;</code> (thường là String).</li>
+    </ul>
+
+    <h3>5.2 groupingBy — gom nhóm</h3>
+
+    <p><code class="inline">groupingBy(classifier)</code> trả <code class="inline">Map&lt;K, List&lt;T&gt;&gt;</code>. Bản 2 tham số nhận <em>downstream collector</em> để xử lý từng nhóm (đếm, tính tổng...), bản 3 tham số còn cho chọn loại Map. Ví dụ dùng record <code class="inline">NhanVien</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Comparator;
+import java.util.IntSummaryStatistics;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+record NhanVien(String ten, String phong, int tuoi) {}
+
+public class GroupingByDemo {
+    public static void main() {
+        List&lt;NhanVien&gt; ds = List.of(
+                new NhanVien("An", "IT", 25),
+                new NhanVien("Binh", "HR", 30),
+                new NhanVien("Cuong", "IT", 28),
+                new NhanVien("Dung", "HR", 35),
+                new NhanVien("Em", "IT", 32));
+
+        Map&lt;String, List&lt;String&gt;&gt; macDinh = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong,
+                        Collectors.mapping(NhanVien::ten, Collectors.toList())));
+        IO.println("kieu map mac dinh: " + macDinh.getClass().getSimpleName());
+
+        Map&lt;String, List&lt;String&gt;&gt; theoPhong = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong, LinkedHashMap::new,
+                        Collectors.mapping(NhanVien::ten, Collectors.toList())));
+        IO.println(theoPhong);
+
+        Map&lt;String, Long&gt; dem = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong, LinkedHashMap::new,
+                        Collectors.counting()));
+        IO.println(dem);
+
+        Map&lt;String, Double&gt; tuoiTb = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong, LinkedHashMap::new,
+                        Collectors.averagingInt(NhanVien::tuoi)));
+        IO.println(tuoiTb);
+
+        Map&lt;String, IntSummaryStatistics&gt; thongKe = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong, LinkedHashMap::new,
+                        Collectors.summarizingInt(NhanVien::tuoi)));
+        IO.println(thongKe);
+
+        Map&lt;String, NhanVien&gt; lonNhat = ds.stream()
+                .collect(Collectors.groupingBy(NhanVien::phong, LinkedHashMap::new,
+                        Collectors.collectingAndThen(
+                                Collectors.maxBy(Comparator.comparingInt(NhanVien::tuoi)),
+                                Optional::orElseThrow)));
+        IO.println(lonNhat);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>kieu map mac dinh: HashMap
+{IT=[An, Cuong, Em], HR=[Binh, Dung]}
+{IT=3, HR=2}
+{IT=28.333333333333332, HR=32.5}
+{IT=IntSummaryStatistics{count=3, sum=85, min=25, average=28.333333, max=32}, HR=IntSummaryStatistics{count=2, sum=65, min=30, average=32.500000, max=35}}
+{IT=NhanVien[ten=Em, phong=IT, tuoi=32], HR=NhanVien[ten=Dung, phong=HR, tuoi=35]}</code></pre>
+    </div>
+
+    <div class="note"><strong>Thứ tự Map:</strong> <code class="inline">groupingBy</code> mặc định trả <code class="inline">HashMap</code> — thứ tự khóa <em>không được bảo đảm</em>, đừng viết test/so sánh chuỗi dựa vào nó. Khi cần thứ tự ổn định, truyền <code class="inline">LinkedHashMap::new</code> (theo lần xuất hiện đầu tiên) hoặc <code class="inline">TreeMap::new</code> (theo khóa). Ví dụ trên in ra <code class="inline">{IT=..., HR=...}</code> vì "IT" xuất hiện trước trong danh sách.</div>
+
+    <h3>5.3 partitioningBy — chia đôi true/false</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class PartitioningByDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5, 6);
+        Map&lt;Boolean, List&lt;Integer&gt;&gt; chanLe = nums.stream()
+                .collect(Collectors.partitioningBy(n -&gt; n % 2 == 0));
+        IO.println(chanLe);
+        IO.println(chanLe.get(true));
+        IO.println(chanLe.get(false));
+
+        Map&lt;Boolean, Long&gt; dem = nums.stream()
+                .collect(Collectors.partitioningBy(n -&gt; n &gt; 3, Collectors.counting()));
+        IO.println(dem);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>{false=[1, 3, 5], true=[2, 4, 6]}
+[2, 4, 6]
+[1, 3, 5]
+{false=3, true=3}</code></pre>
+    </div>
+
+    <p>Khác <code class="inline">groupingBy</code>, <code class="inline">partitioningBy</code> <strong>luôn có đủ hai khóa</strong> <code class="inline">true</code>/<code class="inline">false</code> (kể cả nhóm rỗng), nên <code class="inline">map.get(true)</code> không bao giờ trả về <code class="inline">null</code> vì thiếu khóa. Hợp cho chia “đạt/không đạt”, “còn hàng/hết hàng”.</p>
+
+    <h3>5.4 toMap &amp; bẫy duplicate key</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+record NhanVien(String ten, String phong, int tuoi) {}
+
+public class ToMapDuplicateDemo {
+    public static void main() {
+        List&lt;NhanVien&gt; ds = List.of(
+                new NhanVien("An", "IT", 25),
+                new NhanVien("Binh", "HR", 30),
+                new NhanVien("Cuong", "IT", 28));
+
+        try {
+            Map&lt;String, Integer&gt; m = ds.stream()
+                    .collect(Collectors.toMap(NhanVien::phong, NhanVien::tuoi));
+            IO.println(m);
+        } catch (IllegalStateException e) {
+            IO.println("IllegalStateException: " + e.getMessage());
+        }
+
+        Map&lt;String, Integer&gt; gop = ds.stream()
+                .collect(Collectors.toMap(NhanVien::phong, NhanVien::tuoi, Integer::sum));
+        IO.println("co merge function: " + gop);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>IllegalStateException: Duplicate key IT (attempted merging values 25 and 28)
+co merge function: {HR=30, IT=53}</code></pre>
+    </div>
+
+    <p>Không bắt lỗi, chương trình chết ngay tại phần tử gây trùng khóa:</p>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.IllegalStateException: Duplicate key IT (attempted merging values 25 and 28)
+	at java.base/java.util.stream.Collectors.duplicateKeyException(Collectors.java:135)
+	at java.base/java.util.stream.Collectors.lambda$uniqKeysMapAccumulator$0(Collectors.java:182)
+	at java.base/java.util.stream.ReduceOps$3ReducingSink.accept(ReduceOps.java:169)
+	at ToMapUncaught.main(ToMapUncaught.java:14)</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">toMap(keyMapper, valueMapper)</code> ném <code class="inline">IllegalStateException</code> khi trùng khóa — cố ý "fail fast" vì dữ liệu nguồn không đúng kỳ vọng.</li>
+      <li>Cách sửa chuẩn: thêm <strong>merge function</strong> <code class="inline">toMap(key, value, (a, b) -&gt; ...)</code> quyết định giữ giá trị nào/cộng gộp thế nào.</li>
+      <li>Bản 4 tham số <code class="inline">toMap(key, value, merge, TreeMap::new)</code> cho phép chọn loại Map.</li>
+      <li>Muốn lấy phần tử đại diện mà không merge theo số, có thể dùng <code class="inline">(a, b) -&gt; a</code> để giữ giá trị gặp trước (hoặc <code class="inline">b</code> để lấy sau).</li>
+    </ul>
+
+    <h3>5.5 Downstream collector phổ biến</h3>
+
+    <table>
+      <thead>
+        <tr><th>Collector</th><th>Kết quả</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">counting()</code></td><td><code class="inline">Long</code></td><td>Đếm phần tử mỗi nhóm</td></tr>
+        <tr><td><code class="inline">mapping(fn, downstream)</code></td><td>tùy downstream</td><td>Biến đổi trước khi gom: <code class="inline">mapping(NhanVien::ten, toList())</code></td></tr>
+        <tr><td><code class="inline">summingInt/Long/Double(fn)</code></td><td>số</td><td>Tổng doanh thu theo khách</td></tr>
+        <tr><td><code class="inline">averagingInt/Long/Double(fn)</code></td><td>Double</td><td>Tuổi trung bình theo phòng</td></tr>
+        <tr><td><code class="inline">summarizingInt/Long/Double(fn)</code></td><td>SummaryStatistics</td><td>Một lượt ra count/sum/min/avg/max</td></tr>
+        <tr><td><code class="inline">maxBy/minBy(comparator)</code></td><td>Optional&lt;T&gt;</td><td>Phần tử lớn/nhỏ nhất mỗi nhóm</td></tr>
+        <tr><td><code class="inline">reducing(...)</code></td><td>tùy</td><td>Gộp tổng quát (ít dùng, thường có collector chuyên dụng)</td></tr>
+        <tr><td><code class="inline">collectingAndThen(c, fn)</code></td><td>tùy fn</td><td>Bọc kết quả: bỏ Optional, đóng gói bất biến</td></tr>
+        <tr><td><code class="inline">filtering(P, downstream)</code> (Java 9)</td><td>tùy</td><td>Lọc bên trong downstream</td></tr>
+        <tr><td><code class="inline">flatMapping(fn, downstream)</code> (Java 9)</td><td>tùy</td><td>flatMap bên trong downstream</td></tr>
+      </tbody>
+    </table>
+
+    <h3>5.6 teeing — hai collector, một lượt duyệt (Java 12)</h3>
+
+    <p><code class="inline">teeing</code> chạy hai collector song song trên cùng stream rồi gộp hai kết quả bằng hàm thứ ba. Dùng khi cần hai thống kê khác loại mà không muốn duyệt dữ liệu hai lần:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.stream.Collectors;
+
+record ThongKe(int tong, long soPhanTu) {}
+
+public class TeeingDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5);
+        ThongKe tk = nums.stream().collect(Collectors.teeing(
+                Collectors.summingInt(Integer::intValue),
+                Collectors.counting(),
+                (tong, dem) -&gt; new ThongKe(tong, dem)));
+        IO.println("tong=" + tk.tong() + " soPhanTu=" + tk.soPhanTu());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tong=15 soPhanTu=5</code></pre>
+    </div>
+
+    <p>Nhận biết là đủ cho phỏng vấn; trong code thật, <code class="inline">summarizing*</code> đã gộp sẵn nhiều thống kê cùng loại nên <code class="inline">teeing</code> thường dành cho hai kết quả <em>khác kiểu</em> (ví dụ vừa lấy danh sách tên vừa đếm tổng).</p>
+
+    <h3>5.7 Ví dụ đơn hàng: doanh thu &amp; top sản phẩm</h3>
+
+    <p>Áp dụng vào bài toán thực tế với record <code class="inline">DonHang</code>. Đây là phiên bản thu gọn của project ở <a href="#project">mục 10</a>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+record DonHang(String ma, String khach, String trangThai, String sanPham, int soLuong, long donGia) {
+    long thanhTien() {
+        return soLuong * donGia;
+    }
+}
+
+public class DonHangCollectorsDemo {
+    public static void main() {
+        List&lt;DonHang&gt; ds = List.of(
+                new DonHang("DH-001", "An", "HOAN_THANH", "Ban phim", 2, 350_000),
+                new DonHang("DH-002", "Binh", "HOAN_THANH", "Chuot", 3, 150_000),
+                new DonHang("DH-003", "An", "CHO_XU_LY", "Man hinh", 1, 2_400_000),
+                new DonHang("DH-004", "Cuong", "HOAN_THANH", "Ban phim", 1, 350_000),
+                new DonHang("DH-005", "Binh", "DA_HUY", "Tai nghe", 2, 550_000),
+                new DonHang("DH-006", "Dung", "CHO_XU_LY", "Chuot", 5, 150_000),
+                new DonHang("DH-007", "An", "HOAN_THANH", "Tai nghe", 1, 550_000),
+                new DonHang("DH-008", "Cuong", "HOAN_THANH", "Man hinh", 1, 2_400_000));
+
+        Map&lt;String, Long&gt; doanhThuTheoTrangThai = ds.stream()
+                .collect(Collectors.groupingBy(DonHang::trangThai, LinkedHashMap::new,
+                        Collectors.summingLong(DonHang::thanhTien)));
+        IO.println("doanh thu theo trang thai: " + doanhThuTheoTrangThai);
+
+        Map&lt;String, Long&gt; doanhThuTheoKhach = ds.stream()
+                .collect(Collectors.groupingBy(DonHang::khach, TreeMap::new,
+                        Collectors.summingLong(DonHang::thanhTien)));
+        IO.println("doanh thu theo khach: " + doanhThuTheoKhach);
+
+        Map&lt;String, Integer&gt; soLuongTheoSanPham = ds.stream()
+                .collect(Collectors.groupingBy(DonHang::sanPham, TreeMap::new,
+                        Collectors.summingInt(DonHang::soLuong)));
+        String topSanPham = soLuongTheoSanPham.entrySet().stream()
+                .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed())
+                .limit(3)
+                .map(e -&gt; e.getKey() + " (" + e.getValue() + ")")
+                .collect(Collectors.joining(", "));
+        IO.println("top san pham: " + topSanPham);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>doanh thu theo trang thai: {HOAN_THANH=4450000, CHO_XU_LY=3150000, DA_HUY=1100000}
+doanh thu theo khach: {An=3650000, Binh=1550000, Cuong=2750000, Dung=750000}
+top san pham: Chuot (8), Ban phim (3), Tai nghe (3)</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">LinkedHashMap</code> giữ thứ tự trạng thái theo lần gặp đầu; <code class="inline">TreeMap</code> xếp khách theo alphabet — output ổn định, test được.</li>
+      <li>Chuỗi xử lý "top sản phẩm": gom nhóm → sort Map.Entry theo value giảm dần → <code class="inline">limit(3)</code> → <code class="inline">map</code> thành chuỗi → <code class="inline">joining</code>. Khi so sánh bằng value, cần chỉ rõ kiểu: <code class="inline">Map.Entry.&lt;String, Integer&gt;comparingByValue()</code>.</li>
+      <li>Tổng doanh thu theo khách ở đây gồm cả đơn đã hủy — trong nghiệp vụ thật phải <code class="inline">filter(DonHang::daHoanThanh)</code> trước, như project mục 10.</li>
+    </ul>
+
+    <h2 id="optional-flatmap">6. Optional &amp; flatMap trong pipeline <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Dữ liệu thật thường có <code class="inline">null</code> (email chưa nhập, mã giảm giá không có...). Nếu <code class="inline">map</code> trả về <code class="inline">Optional</code>, pipeline sẽ thành <code class="inline">Stream&lt;Optional&lt;T&gt;&gt;</code> — gom lại sẽ đầy <code class="inline">Optional.empty()</code>. Cách xử lý gọn nhất từ Java 9 là <code class="inline">flatMap(Optional::stream)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Optional;
+
+record Khach(String ten, String email) {}
+
+public class OptionalStreamDemo {
+    public static void main() {
+        List&lt;Khach&gt; ds = List.of(
+                new Khach("An", "an@x.com"),
+                new Khach("Binh", null),
+                new Khach("Cuong", "cuong@x.com"));
+
+        List&lt;String&gt; emails = ds.stream()
+                .map(k -&gt; Optional.ofNullable(k.email()))
+                .flatMap(Optional::stream)
+                .toList();
+        IO.println(emails);
+
+        String dauTien = ds.stream()
+                .map(Khach::email)
+                .filter(e -&gt; e != null)
+                .findFirst()
+                .orElse("khong co");
+        IO.println(dauTien);
+
+        Optional&lt;String&gt; tenNgan = ds.stream()
+                .map(Khach::ten)
+                .filter(t -&gt; t.length() &lt;= 2)
+                .findFirst();
+        IO.println(tenNgan.orElse("khong co"));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[an@x.com, cuong@x.com]
+an@x.com
+An</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">Optional.stream()</code> (Java 9): <code class="inline">Optional</code> có giá trị → stream 1 phần tử; rỗng → stream 0 phần tử. Nhờ vậy <code class="inline">flatMap(Optional::stream)</code> vừa biến đổi vừa "lọc bỏ null" trong một bước.</li>
+      <li><code class="inline">findFirst</code>/<code class="inline">findAny</code>/<code class="inline">min</code>/<code class="inline">max</code>/<code class="inline">reduce</code> đều trả <code class="inline">Optional</code> — hãy xử lý bằng <code class="inline">orElse</code>, <code class="inline">orElseThrow</code>, <code class="inline">ifPresent</code> thay vì <code class="inline">.get()</code> trần (bẫy <code class="inline">NoSuchElementException</code>).</li>
+      <li>Nếu nguồn có thể chứa phần tử <code class="inline">null</code>, <code class="inline">Stream.of(t)</code> với <code class="inline">t == null</code> sẽ ném NPE; dùng <code class="inline">Stream.ofNullable(t)</code> (Java 9) để an toàn.</li>
+      <li>Chiến lược sạch hơn cho dữ liệu production: loại <code class="inline">null</code> ngay từ nguồn (<code class="inline">filter(Objects::nonNull)</code>) hoặc dùng <code class="inline">Optional</code> xuyên suốt. Đọc thêm <a href="optional.html">Optional</a>.</li>
+    </ul>
+
+    <div class="note"><strong>Đừng lạm dụng Optional trong pipeline:</strong> nếu chỉ cần bỏ qua null, <code class="inline">filter(Objects::nonNull)</code> đơn giản hơn. <code class="inline">Optional::stream</code> phát huy tác dụng khi hàm biến đổi <em>tự nó</em> trả <code class="inline">Optional</code> (tra cứu Map, parse, tìm kiếm)...</div>
+
+    <h2 id="parallel">7. Parallel stream <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">collection.parallelStream()</code> hoặc <code class="inline">stream.parallel()</code> chia dữ liệu thành nhiều mảnh và xử lý trên nhiều thread. Nghe hấp dẫn, nhưng đây là công cụ dễ dùng sai nhất của Stream API.</p>
+
+    <h3>7.1 Khi nào nên dùng — khi nào tránh</h3>
+
+    <table>
+      <thead>
+        <tr><th>Nên dùng</th><th>Tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dữ liệu lớn (hàng trăm nghìn phần tử trở lên), cấu trúc chia được rẻ: ArrayList, mảng, <code class="inline">IntStream.range</code></td><td>Dữ liệu nhỏ — chi phí chia việc/ghép kết quả lớn hơn lợi ích</td></tr>
+        <tr><td>Công việc CPU-bound thuần túy, độc lập từng phần tử (tính toán, biến đổi số)</td><td>I/O (gọi API, đọc file/DB) — thread bận chờ, lại chiếm common pool</td></tr>
+        <tr><td>Phép toán kết hợp và không phụ thuộc thứ tự (sum, count, max)</td><td>Phép toán stateful dựa trên thứ tự (<code class="inline">limit</code>, <code class="inline">findFirst</code>, <code class="inline">takeWhile</code>) hoặc sửa shared state</td></tr>
+        <tr><td>Nguồn chia rẻ và đều (array, ArrayList, range)</td><td>Nguồn chia đắt: <code class="inline">LinkedList</code>, <code class="inline">Files.lines</code>, <code class="inline">BufferedReader.lines</code>, iterator</td></tr>
+        <tr><td>Bạn kiểm soát được thread/transaction bên trong</td><td>Code có synchronized, ghi DB, cập nhật biến ngoài trong lambda</td></tr>
+      </tbody>
+    </table>
+
+    <p>Sai lầm kinh điển: dùng <code class="inline">parallelStream</code> để cộng dồn vào biến ngoài hoặc ghi vào <code class="inline">ArrayList</code> dùng chung — đó là race condition. Mọi hàm truyền vào parallel stream phải <strong>stateless, không side effect, không chạm tài nguyên chia sẻ</strong>.</p>
+
+    <h3>7.2 Common ForkJoinPool</h3>
+
+    <p>Parallel stream không tự tạo thread pool; nó dùng <code class="inline">ForkJoinPool.commonPool()</code> — pool <strong>dùng chung toàn tiến trình</strong> cho cả parallel stream, <code class="inline">CompletableFuture</code>, <code class="inline">parallel()</code>...</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.ForkJoinPool;
+
+public class CommonPoolDemo {
+    public static void main() {
+        ForkJoinPool pool = ForkJoinPool.commonPool();
+        IO.println("parallelism: " + pool.getParallelism());
+        IO.println("so core: " + Runtime.getRuntime().availableProcessors());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>parallelism: 9
+so core: 10</code></pre>
+    </div>
+
+    <p>Mặc định độ song song thường là <em>số core − 1</em> (máy soạn tài liệu 10 core nên ra 9; tối thiểu là 1), có thể đổi bằng system property <code class="inline">java.util.concurrent.ForkJoinPool.common.parallelism</code>. Vì là pool chung, một tác vụ block (chờ I/O, khóa) sẽ <strong>chiếm mất một slot của tất cả mọi người</strong> trong JVM — đó là lý do tác vụ I/O không nên dùng parallel stream. Cần pool riêng thì tạo <code class="inline">ForkJoinPool</code> và gọi <code class="inline">pool.submit(() -&gt; stream.parallel()...).get()</code>, nhưng đó là chủ đề concurrency nâng cao.</p>
+
+    <h3>7.3 Đo thử hiệu năng (không phải JMH)</h3>
+
+    <p>Đo nhanh một phép tính CPU-bound trên 20 triệu phần tử, có warmup trước:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.LongStream;
+
+public class ParallelBasicsDemo {
+    public static void main() {
+        long n = 20_000_000L;
+        LongStream.rangeClosed(1, n).map(x -&gt; x * 2).sum();
+        LongStream.rangeClosed(1, n).parallel().map(x -&gt; x * 2).sum();
+
+        long t1 = System.nanoTime();
+        long s1 = LongStream.rangeClosed(1, n).map(x -&gt; x * 2).sum();
+        long t2 = System.nanoTime();
+        long s2 = LongStream.rangeClosed(1, n).parallel().map(x -&gt; x * 2).sum();
+        long t3 = System.nanoTime();
+
+        IO.println("sum bang nhau: " + (s1 == s2));
+        IO.println("tuan tu: " + (t2 - t1) / 1_000_000 + " ms");
+        IO.println("song song: " + (t3 - t2) / 1_000_000 + " ms");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sum bang nhau: true
+tuan tu: 58 ms
+song song: 11 ms</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đọc số liệu cho đúng:</strong> đây là <strong>một lần chạy thật</strong> trên máy 10 core của người soạn — <em>không phải benchmark JMH</em>. Thời gian phụ thuộc máy, tải hệ thống, JIT. Điều đáng tin duy nhất là <code class="inline">sum bằng nhau: true</code>: với phép toán kết hợp như <code class="inline">sum</code>, kết quả song song luôn khớp tuần tự. Muốn số liệu nghiêm túc phải dùng JMH (sẽ gặp ở giai đoạn testing/benchmark).</div>
+
+    <h3>7.4 Thứ tự khi song song</h3>
+
+    <p>Như demo ở <a href="#terminal">mục 4.1</a>: <code class="inline">forEach</code> trên parallel in ra thứ tự lộn xộn (<code class="inline">8 9 7 11 12 10 1 5 3 4 6 2</code> — khác nhau mỗi lần chạy), còn <code class="inline">forEachOrdered</code> luôn <code class="inline">1 2 3 ... 12</code>. Tương tự, <code class="inline">findAny</code> có thể trả bất kỳ phần tử nào; <code class="inline">sorted</code>/<code class="inline">distinct</code> vẫn đúng nhưng phải đồng bộ ghép mảnh; <code class="inline">limit</code>/<code class="inline">skip</code>/<code class="inline">takeWhile</code> cần gặp đúng thứ tự nên hiệu quả song song giảm.</p>
+
+    <p>Quy tắc thực dụng: <strong>nếu kết quả phụ thuộc thứ tự, hãy để stream tuần tự</strong>. Nếu buộc phải song song mà cần in theo thứ tự, dùng <code class="inline">forEachOrdered</code>. Phép gộp 3 tham số <code class="inline">reduce(identity, accumulator, combiner)</code> (mục 4.4) là cách tự viết phép gộp song song an toàn — cả hai hàm phải có tính kết hợp.</p>
+
+    <h2 id="vong-lap-vs-stream">8. Vòng lặp vs Stream <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Cùng một bài toán, viết bằng vòng lặp và bằng stream:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class LoopVsStreamDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = List.of(1, 2, 3, 4, 5, 6, 7, 8);
+
+        List&lt;Integer&gt; vongLap = new ArrayList&lt;&gt;();
+        for (int n : nums) {
+            if (n % 2 == 0) {
+                vongLap.add(n * 10);
+            }
+        }
+        IO.println(vongLap);
+
+        IO.println(nums.stream()
+                .filter(n -&gt; n % 2 == 0)
+                .map(n -&gt; n * 10)
+                .toList());
+
+        IO.println(nums.stream().takeWhile(n -&gt; n &lt; 6).toList());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[20, 40, 60, 80]
+[20, 40, 60, 80]
+[1, 2, 3, 4, 5]</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Vòng lặp <code class="inline">for</code></th><th>Stream</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Độ dễ đọc với biến đổi/lọc</td><td>Trung bình — logic trộn trong thân vòng lặp</td><td>Cao — đọc như mô tả nghiệp vụ từ trên xuống</td></tr>
+        <tr><td>Hiệu năng</td><td>Thường nhỉnh hơn chút với dữ liệu nhỏ; ít overhead</td><td>Overhead pipeline/lambda không đáng kể khi được JIT tối ưu; parallel thắng với dữ liệu lớn CPU-bound</td></tr>
+        <tr><td>Debug</td><td>Breakpoint từng dòng, xem biến trực tiếp</td><td>Khó đặt breakpoint giữa lambda; dùng <code class="inline">peek</code> để quan sát (rồi bỏ)</td></tr>
+        <tr><td><code class="inline">break</code>/<code class="inline">continue</code></td><td>Có trực tiếp</td><td>Không có; thay bằng <code class="inline">takeWhile</code>/<code class="inline">filter</code>/<code class="inline">findFirst</code>/<code class="inline">anyMatch</code> (short-circuit)</td></tr>
+        <tr><td>Cần index</td><td><code class="inline">for (int i = 0; ...)</code> tự nhiên</td><td>Không có index; phải <code class="inline">IntStream.range</code> hoặc gom lại rồi duyệt</td></tr>
+        <tr><td>Checked exception</td><td>Thoải mái <code class="inline">try/catch</code> quanh vòng lặp</td><td>Lambda không khai báo checked exception — phải wrap (mục 9.3)</td></tr>
+        <tr><td>Sửa nhiều biến ngoài</td><td>Bình thường</td><td>Không nên; stream khuyến khích biến đổi thuần túy</td></tr>
+        <tr><td>Song song</td><td>Tự viết thread — dễ sai</td><td><code class="inline">parallel()</code> một dòng (nhưng đọc kỹ mục 7)</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Khi nào KHÔNG nên dùng stream:</strong></p>
+    <ul>
+      <li><strong>Logic phức tạp, nhiều nhánh, nhiều biến trung gian</strong> — pipeline sẽ dài, khó đọc hơn <code class="inline">for</code> + <code class="inline">if</code>.</li>
+      <li><strong>Cần index hoặc truy cập phần tử lân cận</strong> (<code class="inline">nums.get(i - 1)</code>) — vòng lặp tự nhiên hơn hẳn.</li>
+      <li><strong>Cần break giữa vòng lặp phức tạp</strong> (break khỏi 2 vòng lồng nhau) — stream không diễn đạt được.</li>
+      <li><strong>Thân vòng lặp có checked exception hoặc side effect phức tạp</strong> (ghi DB từng bản ghi, transaction) — dùng vòng lặp cho minh bạch.</li>
+      <li><strong>Hiệu năng cực nhạy với mảng primitive nhỏ</strong> — vòng lặp thắng về overhead.</li>
+    </ul>
+
+    <div class="note">Tiêu chí chọn nhanh: nếu viết được pipeline <strong>3–5 bước, không side effect, không cần index</strong> → stream đẹp hơn. Còn lại cứ dùng vòng lặp — không ai bị trừ điểm vì <code class="inline">for</code> đúng đắn.</div>
+
+    <h2 id="bay">9. Bẫy tổng hợp <span class="badge b-prod">Production</span></h2>
+
+    <h3>9.1 Bảng bẫy &amp; cách xử lý</h3>
+
+    <table>
+      <thead>
+        <tr><th>Bẫy</th><th>Triệu chứng</th><th>Cách xử lý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dùng lại stream (one-shot)</td><td><code class="inline">IllegalStateException: stream has already been operated upon or closed</code></td><td>Lưu nguồn, mỗi lần cần thì mở stream mới (<a href="#tong-quan">1.4</a>)</td></tr>
+        <tr><td>Quên terminal</td><td>Không có gì xảy ra, không lỗi</td><td>Thêm <code class="inline">collect</code>/<code class="inline">forEach</code>/<code class="inline">count</code>; bật cảnh báo của IDE cho kết quả stream bị bỏ quên</td></tr>
+        <tr><td>Stream vô hạn thiếu limit</td><td>Chạy mãi hoặc <code class="inline">OutOfMemoryError</code></td><td><code class="inline">limit</code>, <code class="inline">takeWhile</code>, terminal short-circuit (<a href="#tao-stream">2.4</a>)</td></tr>
+        <tr><td><code class="inline">peek</code> side effect làm logic</td><td>Lúc chạy lúc không; <code class="inline">count()</code> có thể bỏ qua cả pipeline</td><td>Chỉ dùng <code class="inline">peek</code> để debug; logic để trong <code class="inline">map</code>/<code class="inline">forEach</code> có chủ đích</td></tr>
+        <tr><td><code class="inline">Stream.of(int[])</code></td><td><code class="inline">count() == 1</code> thay vì số phần tử (boxing cả mảng)</td><td>Dùng <code class="inline">Arrays.stream(arr)</code> (<a href="#tao-stream">2.5</a>)</td></tr>
+        <tr><td>Trộn boxed/primitive</td><td>Chậm và tốn bộ nhớ với dữ liệu lớn; nhầm kiểu trả về</td><td><code class="inline">mapToInt</code>/<code class="inline">mapToObj</code>/<code class="inline">boxed</code> có ý thức (<a href="#tao-stream">2.2</a>)</td></tr>
+        <tr><td><code class="inline">toMap</code> trùng khóa</td><td><code class="inline">IllegalStateException: Duplicate key ...</code></td><td>Thêm merge function hoặc dùng <code class="inline">groupingBy</code> (<a href="#collectors">5.4</a>)</td></tr>
+        <tr><td>Dựa vào thứ tự <code class="inline">groupingBy</code>/<code class="inline">toSet</code></td><td>Test lúc pass lúc fail, output đổi giữa các JVM</td><td><code class="inline">LinkedHashMap</code>/<code class="inline">TreeMap</code>/<code class="inline">LinkedHashSet</code> (<a href="#collectors">5.2</a>)</td></tr>
+        <tr><td><code class="inline">sorted</code> trên dữ liệu khổng lồ</td><td>O(n) bộ nhớ, có thể <code class="inline">OutOfMemoryError</code></td><td>Lọc trước khi sort; cân nhắc cấu trúc dữ liệu sẵn thứ tự</td></tr>
+        <tr><td>Checked exception trong lambda</td><td>Lỗi compile <code class="inline">unreported exception</code></td><td>Wrap <code class="inline">UncheckedIOException</code>/<code class="inline">RuntimeException</code> (<a href="#bay">9.3</a>)</td></tr>
+        <tr><td>Sửa nguồn khi đang duyệt</td><td><code class="inline">ConcurrentModificationException</code> hoặc kết quả sai</td><td>Không sửa source trong lambda; gom kết quả rồi mới sửa</td></tr>
+        <tr><td><code class="inline">Stream.toList()</code> rồi <code class="inline">add</code></td><td><code class="inline">UnsupportedOperationException</code></td><td>Muốn sửa: <code class="inline">new ArrayList&lt;&gt;(stream.toList())</code></td></tr>
+        <tr><td>Side effect trong parallel</td><td>Kết quả sai ngẫu nhiên, race condition</td><td>Hàm thuần túy, dùng collector/reduce thay vì biến chung (<a href="#parallel">7.1</a>)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>9.2 count() có thể "nuốt" cả pipeline</h3>
+
+    <p>Vì <code class="inline">count()</code> không cần giá trị từng phần tử, JDK có quyền bỏ qua các bước trung gian trên nguồn có kích thước xác định. <code class="inline">peek</code> vì thế có thể không in gì:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.Stream;
+
+public class CountSkipsPeekDemo {
+    public static void main() {
+        long n = Stream.of("a", "bb", "ccc")
+                .peek(x -&gt; IO.println("peek " + x))
+                .count();
+        IO.println("count = " + n);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>count = 3</code></pre>
+    </div>
+
+    <p>Không có dòng <code class="inline">peek ...</code> nào xuất hiện! Đây là biểu hiện rõ nhất của "intermediate có thể không được thực thi": đừng bao giờ đặt logic nghiệp vụ vào <code class="inline">peek</code>, và đừng viết test khẳng định <code class="inline">peek</code> đã chạy.</p>
+
+    <h3>9.3 Checked exception trong lambda</h3>
+
+    <p>Các functional interface của Stream (<code class="inline">Function</code>, <code class="inline">Predicate</code>...) không khai báo checked exception, nên gọi hàm ném <code class="inline">IOException</code> bên trong lambda là lỗi compile:</p>
+
+    <div class="errblock">
+      <pre>CheckedCompileDemo.java:9: error: unreported exception IOException; must be caught or declared to be thrown
+                .map(p -&gt; Files.readString(Path.of(p)))
+                                          ^
+1 error</pre>
+    </div>
+
+    <p>Cách xử lý phổ biến: bọc thành unchecked exception ngay trong lambda:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+public class CheckedExceptionDemo {
+    public static void main() {
+        List&lt;String&gt; paths = List.of("khong-ton-tai.txt");
+        try {
+            List&lt;String&gt; noiDung = paths.stream()
+                    .map(p -&gt; {
+                        try {
+                            return Files.readString(Path.of(p));
+                        } catch (java.io.IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .toList();
+            IO.println(noiDung);
+        } catch (UncheckedIOException e) {
+            IO.println("loi: " + e.getCause().getClass().getSimpleName());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>loi: NoSuchFileException</code></pre>
+    </div>
+
+    <p>Chi tiết checked/unchecked và các cách wrap khác ở <a href="exceptions.html">Exceptions</a>; đọc/ghi file ở <a href="io-files.html">I/O &amp; Files</a>.</p>
+
+    <h3>9.4 Stream vô hạn thiếu điều kiện dừng</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">// KHONG chay doan nay - se treo hoac OutOfMemoryError
+List&lt;Integer&gt; voHan = Stream.iterate(1, n -&gt; n + 1)
+        .collect(Collectors.toList());</code></pre>
+    </div>
+
+    <p>Không có <code class="inline">limit</code>/<code class="inline">takeWhile</code> nào chặn <code class="inline">iterate</code>, nên <code class="inline">collect</code> cố gom vô hạn phần tử vào list. Tương tự, <code class="inline">sorted()</code> trên stream vô hạn cũng không bao giờ ra kết quả vì phải chờ hết dữ liệu. Quy tắc: mọi stream vô hạn phải đi kèm điều kiện dừng hữu hạn.</p>
+
+    <h2 id="project">10. Project: quản lý đơn hàng end-to-end <span class="badge b-prod">Production</span></h2>
+
+    <p>Ghép mọi thứ đã học vào một chương trình self-contained: record <code class="inline">DonHang</code>, danh sách mẫu, thống kê doanh thu, top sản phẩm, lọc + sort + top N và báo cáo dạng chuỗi. Chạy bằng <code class="inline">java QuanLyDonHang.java</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+record DonHang(String ma, String khach, String trangThai, String sanPham, int soLuong, long donGia) {
+    long thanhTien() {
+        return soLuong * donGia;
+    }
+
+    boolean daHoanThanh() {
+        return "HOAN_THANH".equals(trangThai);
+    }
+}
+
+public class QuanLyDonHang {
+    static final List&lt;DonHang&gt; DON_HANG = List.of(
+            new DonHang("DH-001", "An", "HOAN_THANH", "Ban phim", 2, 350_000),
+            new DonHang("DH-002", "Binh", "HOAN_THANH", "Chuot", 3, 150_000),
+            new DonHang("DH-003", "An", "CHO_XU_LY", "Man hinh", 1, 2_400_000),
+            new DonHang("DH-004", "Cuong", "HOAN_THANH", "Ban phim", 1, 350_000),
+            new DonHang("DH-005", "Binh", "DA_HUY", "Tai nghe", 2, 550_000),
+            new DonHang("DH-006", "Dung", "CHO_XU_LY", "Chuot", 5, 150_000),
+            new DonHang("DH-007", "An", "HOAN_THANH", "Tai nghe", 1, 550_000),
+            new DonHang("DH-008", "Cuong", "HOAN_THANH", "Man hinh", 1, 2_400_000),
+            new DonHang("DH-009", "Dung", "HOAN_THANH", "Ban phim", 3, 350_000));
+
+    public static void main() {
+        IO.println("== 1. Tong doanh thu don hoan thanh ==");
+        long tongDoanhThu = DON_HANG.stream()
+                .filter(DonHang::daHoanThanh)
+                .mapToLong(DonHang::thanhTien)
+                .sum();
+        IO.println(tongDoanhThu);
+
+        IO.println("== 2. Doanh thu theo khach (chi hoan thanh) ==");
+        Map&lt;String, Long&gt; theoKhach = DON_HANG.stream()
+                .filter(DonHang::daHoanThanh)
+                .collect(Collectors.groupingBy(DonHang::khach, TreeMap::new,
+                        Collectors.summingLong(DonHang::thanhTien)));
+        theoKhach.forEach((khach, tien) -&gt; IO.println(khach + " -&gt; " + tien));
+
+        IO.println("== 3. So don &amp; doanh thu theo trang thai ==");
+        Map&lt;String, String&gt; theoTrangThai = DON_HANG.stream()
+                .collect(Collectors.groupingBy(DonHang::trangThai, LinkedHashMap::new,
+                        Collectors.teeing(
+                                Collectors.counting(),
+                                Collectors.summingLong(DonHang::thanhTien),
+                                (dem, tien) -&gt; dem + " don, " + tien + " d")));
+        theoTrangThai.forEach((tt, mo) -&gt; IO.println(tt + ": " + mo));
+
+        IO.println("== 4. San pham ban chay (theo so luong, top 3) ==");
+        String top3 = DON_HANG.stream()
+                .collect(Collectors.groupingBy(DonHang::sanPham,
+                        Collectors.summingInt(DonHang::soLuong)))
+                .entrySet().stream()
+                .sorted(Map.Entry.&lt;String, Integer&gt;comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .limit(3)
+                .map(e -&gt; e.getKey() + " x" + e.getValue())
+                .collect(Collectors.joining(", "));
+        IO.println(top3);
+
+        IO.println("== 5. Top 3 don hoan thanh gia tri cao nhat ==");
+        DON_HANG.stream()
+                .filter(DonHang::daHoanThanh)
+                .sorted(Comparator.comparingLong(DonHang::thanhTien).reversed())
+                .limit(3)
+                .forEach(d -&gt; IO.println(d.ma() + " " + d.khach() + " " + d.thanhTien()));
+
+        IO.println("== 6. Bao cao gop chuoi ==");
+        String baoCao = DON_HANG.stream()
+                .filter(DonHang::daHoanThanh)
+                .sorted(Comparator.comparing(DonHang::ma))
+                .map(d -&gt; d.ma() + "(" + d.khach() + ":" + d.thanhTien() + ")")
+                .collect(Collectors.joining(" | "));
+        IO.println(baoCao);
+
+        IO.println("== 7. Khach da mua san pham 'Ban phim' ==");
+        String khachBanPhim = DON_HANG.stream()
+                .filter(d -&gt; d.sanPham().equals("Ban phim"))
+                .map(DonHang::khach)
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+        IO.println(khachBanPhim);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>== 1. Tong doanh thu don hoan thanh ==
+5500000
+== 2. Doanh thu theo khach (chi hoan thanh) ==
+An -&gt; 1250000
+Binh -&gt; 450000
+Cuong -&gt; 2750000
+Dung -&gt; 1050000
+== 3. So don &amp; doanh thu theo trang thai ==
+HOAN_THANH: 6 don, 5500000 d
+CHO_XU_LY: 2 don, 3150000 d
+DA_HUY: 1 don, 1100000 d
+== 4. San pham ban chay (theo so luong, top 3) ==
+Chuot x8, Ban phim x6, Tai nghe x3
+== 5. Top 3 don hoan thanh gia tri cao nhat ==
+DH-008 Cuong 2400000
+DH-009 Dung 1050000
+DH-001 An 700000
+== 6. Bao cao gop chuoi ==
+DH-001(An:700000) | DH-002(Binh:450000) | DH-004(Cuong:350000) | DH-007(An:550000) | DH-008(Cuong:2400000) | DH-009(Dung:1050000)
+== 7. Khach da mua san pham 'Ban phim' ==
+An, Cuong, Dung</code></pre>
+    </div>
+
+    <p>Vài điểm đáng chú ý trong project:</p>
+    <ul>
+      <li>Kết quả đầu ra <strong>ổn định</strong> vì mọi Map đều chỉ định thứ tự (<code class="inline">TreeMap</code> cho khách theo alphabet, <code class="inline">LinkedHashMap</code> cho trạng thái theo lần gặp).</li>
+      <li>Phần 3 kết hợp <code class="inline">teeing</code> để vừa đếm vừa tính tổng trong một lượt gom nhóm.</li>
+      <li>Phần 4 là pipeline hai tầng: <code class="inline">groupingBy</code> + <code class="inline">summingInt</code> trước, rồi mở stream trên <code class="inline">entrySet()</code> để sort/limit/joining. Khi so sánh value trong Map.Entry, phải chỉ định kiểu generic cho <code class="inline">comparingByValue()</code>.</li>
+      <li>Phần 6 dùng <code class="inline">sorted(Comparator.comparing(DonHang::ma))</code> để thứ tự báo cáo không phụ thuộc dữ liệu đầu vào; sau đó mới <code class="inline">map</code> và <code class="inline">joining</code>.</li>
+      <li>Nghiệp vụ "tổng doanh thu" phải lọc <code class="inline">daHoanThanh</code> trước — nếu quên, doanh thu sẽ gồm cả đơn đã hủy.</li>
+    </ul>
+
+    <h2 id="goc-nodejs">11. Góc Node.js — JS Array vs Java Stream</h2>
+
+    <p>Bạn từ Node.js sang sẽ thấy quen thuộc ngay: <code class="inline">map</code>, <code class="inline">filter</code>, <code class="inline">reduce</code> có mặt ở cả hai. Nhưng cơ chế chạy khác nhau về bản chất.</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / Node.js</th><th>Java Stream</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Thời điểm chạy</td><td>Array method chạy <strong>eager</strong>: <code class="inline">.filter()</code> duyệt và tạo mảng mới ngay</td><td><strong>Lazy</strong>: chưa có terminal thì chưa chạy gì</td></tr>
+        <tr><td>Mảng trung gian</td><td>Mỗi bước tạo mảng mới (chaining tốn bộ nhớ)</td><td>Các bước stateless gộp một lượt duyệt, thường không tạo collection trung gian</td></tr>
+        <tr><td>Dùng lại</td><td>Mảng dùng lại bao nhiêu lần cũng được</td><td>Stream one-shot</td></tr>
+        <tr><td>Vô hạn/lười</td><td>Generator <code class="inline">function*</code> + <code class="inline">yield</code></td><td><code class="inline">Stream.generate</code>/<code class="inline">iterate</code> + intermediate lazy</td></tr>
+        <tr><td>Song song</td><td>Không có built-in; <code class="inline">worker_threads</code>/cluster thủ công</td><td><code class="inline">parallelStream()</code> một dòng (dùng common pool — xem mục 7)</td></tr>
+        <tr><td>Chuỗi tiện ích</td><td>Lodash chain (<code class="inline">_.chain(arr).map().filter().value()</code>) mới lười phần nào</td><td>Stream pipeline gốc, lazy thật</td></tr>
+        <tr><td>Vòng lặp</td><td><code class="inline">for...of</code> + <code class="inline">break</code>/<code class="inline">continue</code></td><td><code class="inline">for</code> cổ điển; stream không có break/continue</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code>// JS: array method eager, tạo mảng trung gian ở từng bước
+const nums = [1, 2, 3, 4, 5, 6];
+console.log(nums.filter(n =&gt; n % 2 === 0).map(n =&gt; n * 10).join(", "));
+console.log(nums.reduce((tong, n) =&gt; tong + n, 0));
+
+// Generator: lazy thật - chỉ tính khi next()/duyệt tới
+function* fib() {
+  let a = 0, b = 1;
+  while (true) { yield a; [a, b] = [b, a + b]; }
+}
+const it = fib();
+const baySo = [];
+for (let i = 0; i &lt; 7; i++) baySo.push(it.next().value);
+console.log(baySo.join(", "));
+
+// Tự dựng pipeline generator "lazy" giống Stream
+function* range(start) { let n = start; while (true) yield n++; }
+function* map(iter, f) { for (const x of iter) yield f(x); }
+function* filter(iter, p) { for (const x of iter) if (p(x)) yield x; }
+function* take(iter, n) { let i = 0; for (const x of iter) { if (i++ &gt;= n) return; yield x; } }
+console.log([...take(filter(map(range(1), n =&gt; n * n), n =&gt; n &gt; 10), 3)].join(", "));
+
+// for...of co break/continue - thu Stream khong co
+const ketQua = [];
+for (const n of nums) {
+  if (n &gt; 4) break;
+  if (n % 2 === 1) continue;
+  ketQua.push(n * 100);
+}
+console.log(ketQua.join(", "));</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>20, 40, 60
+21
+0, 1, 1, 2, 3, 5, 8
+16, 25, 36
+200, 400</code></pre>
+    </div>
+
+    <ul>
+      <li>Đoạn generator pipeline cho thấy muốn có laziness trong JS bạn phải tự viết generator; còn Java Stream có sẵn và JIT tối ưu. <code class="inline">take(filter(map(...)))</code> chỉ chạy đúng số bước cần thiết — giống <code class="inline">.map().filter().limit()</code>.</li>
+      <li>JS không có parallel array built-in; muốn song song phải dùng <code class="inline">worker_threads</code> (tốn thiết lập, dữ liệu truyền qua structured clone). Java cho <code class="inline">parallelStream()</code> miễn phí nhưng kèm cạm bẫy mục 7.</li>
+      <li>Lodash chain vẫn tạo trung gian/eager hơn Stream; nếu đã quen <code class="inline">_.chain</code>, hãy coi nó là "bản gần đúng" chứ không phải lazy thật.</li>
+      <li><code class="inline">for...of</code> + <code class="inline">break</code>/<code class="inline">continue</code> là lựa chọn tốt cho logic phức tạp — tương tự lời khuyên "khi nào không nên dùng stream" ở mục 8.</li>
+    </ul>
+
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Stream là gì? Khác Collection ở điểm nào?</summary>
+      <div class="answer">Stream là view tính toán trên một nguồn dữ liệu, không lưu trữ phần tử và không sửa nguồn. Collection là nơi chứa dữ liệu (eager, duyệt lại tùy ý, thêm/xóa được); Stream là cách xử lý dữ liệu (lazy, one-shot, bất biến về cấu trúc, có thể vô hạn, duyệt nội bộ). Câu chốt khi phỏng vấn: "Collection là nơi lưu, Stream là cách xử lý".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Một stream pipeline gồm những phần nào?</summary>
+      <div class="answer">Ba phần: (1) source tạo stream — <code class="inline">stream()</code>, <code class="inline">Arrays.stream</code>, <code class="inline">Stream.of</code>, <code class="inline">Files.lines</code>...; (2) các intermediate operation lười, trả về stream mới — <code class="inline">filter</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">sorted</code>...; (3) terminal operation kích hoạt toàn bộ pipeline và tiêu thụ stream — <code class="inline">collect</code>, <code class="inline">reduce</code>, <code class="inline">count</code>, <code class="inline">forEach</code>, <code class="inline">findFirst</code>...</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Lazy evaluation là gì? Vì sao thiếu terminal thì pipeline không chạy?</summary>
+      <div class="answer">Intermediate operation không thực thi ngay mà chỉ ghi lại "công thức"; chúng chỉ chạy khi terminal bắt đầu duyệt nguồn. Nhờ vậy JDK có thể gộp nhiều bước stateless vào một lượt duyệt, bỏ qua bước không cần (ví dụ <code class="inline">count()</code> có thể không chạy <code class="inline">peek</code>), và dừng sớm với short-circuit. Hệ quả: quên terminal = chương trình không làm gì nhưng cũng không lỗi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Một stream dùng được mấy lần? Gọi terminal lần hai thì sao?</summary>
+      <div class="answer">Đúng một lần. Sau terminal, stream bị đánh dấu đã tiêu thụ; gọi thêm thao tác ném <code class="inline">IllegalStateException: stream has already been operated upon or closed</code>. Muốn xử lý lại, hãy mở stream mới từ nguồn (<code class="inline">list.stream()</code> hai lần). Lưu ý ngay cả intermediate cũng tiêu thụ stream cũ để tạo stream mới.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Intermediate khác terminal thế nào? Kể vài ví dụ mỗi loại.</summary>
+      <div class="answer">Intermediate trả về <code class="inline">Stream</code> nên nối chuỗi được, lười: <code class="inline">filter</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">distinct</code>, <code class="inline">sorted</code>, <code class="inline">limit</code>, <code class="inline">skip</code>, <code class="inline">peek</code>, <code class="inline">takeWhile</code>. Terminal trả về kết quả hoặc void và kết thúc stream: <code class="inline">collect</code>, <code class="inline">reduce</code>, <code class="inline">count</code>, <code class="inline">min/max</code>, <code class="inline">findFirst/findAny</code>, <code class="inline">anyMatch/allMatch/noneMatch</code>, <code class="inline">forEach/forEachOrdered</code>, <code class="inline">toArray</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">filter</code> và <code class="inline">map</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">filter(Predicate)</code> giữ lại phần tử thỏa điều kiện (quyết định giữ/bỏ, không đổi giá trị); <code class="inline">map(Function)</code> biến đổi mỗi phần tử thành giá trị mới (có thể đổi kiểu), luôn giữ nguyên số lượng phần tử. Muốn lọc thì <code class="inline">filter</code>; muốn chuyển đổi thì <code class="inline">map</code>; cả hai thường đi cặp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">flatMap</code> khác <code class="inline">map</code> thế nào? Cho ví dụ.</summary>
+      <div class="answer"><code class="inline">map</code> là ánh xạ 1-1; <code class="inline">flatMap</code> là 1-n: hàm trả về một stream cho mỗi phần tử, rồi tất cả được nối phẳng. Ví dụ <code class="inline">List&lt;List&lt;String&gt;&gt;.stream().flatMap(List::stream)</code> cho <code class="inline">Stream&lt;String&gt;</code>; hoặc tách câu thành từ: <code class="inline">flatMap(s -&gt; Arrays.stream(s.split(" ")))</code>. Nếu dùng <code class="inline">map(List::stream)</code> sẽ ra <code class="inline">Stream&lt;Stream&lt;String&gt;&gt;</code> — sai kiểu mong muốn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">reduce</code> có mấy dạng? Vì sao bản không có identity trả <code class="inline">Optional</code>?</summary>
+      <div class="answer">Ba dạng: <code class="inline">reduce(identity, accumulator)</code> trả về giá trị (stream rỗng → identity); <code class="inline">reduce(accumulator)</code> trả <code class="inline">Optional&lt;T&gt;</code>; <code class="inline">reduce(identity, accumulator, combiner)</code> cho stream song song. Bản không identity trả Optional vì stream rỗng không có phần tử nào để gộp — không có giá trị hợp lệ nào để trả, buộc caller xử lý trường hợp rỗng tường minh.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">findFirst</code> khác <code class="inline">findAny</code> thế nào? Dùng cái nào?</summary>
+      <div class="answer"><code class="inline">findFirst</code> luôn trả phần tử đầu tiên theo encounter order; <code class="inline">findAny</code> được phép trả bất kỳ phần tử nào (trên stream song song thường nhanh hơn vì không cần đồng bộ thứ tự). Trên stream tuần tự kết quả thường giống nhau nhưng không được đảm bảo. Cần ổn định/test được → <code class="inline">findFirst</code>; chỉ cần "một phần tử bất kỳ" và tối ưu song song → <code class="inline">findAny</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">forEach</code> khác <code class="inline">forEachOrdered</code> thế nào?</summary>
+      <div class="answer"><code class="inline">forEach</code> không cam kết thứ tự, đặc biệt trên stream song song (output có thể đảo lộn mỗi lần chạy). <code class="inline">forEachOrdered</code> luôn chạy theo encounter order kể cả khi song song, nhưng phải đồng bộ nên giảm/khử lợi ích song song. Cần side effect đúng thứ tự thì dùng <code class="inline">forEachOrdered</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Stateless và stateful intermediate khác nhau? Ảnh hưởng gì?</summary>
+      <div class="answer">Stateless (<code class="inline">filter</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">peek</code>) xử lý từng phần tử độc lập, tốn O(1) bộ nhớ, gộp một lượt duyệt. Stateful (<code class="inline">distinct</code>, <code class="inline">sorted</code>, <code class="inline">limit</code>, <code class="inline">skip</code>, <code class="inline">takeWhile</code>) phải nhớ trạng thái/dữ liệu: <code class="inline">sorted</code> gom toàn bộ phần tử rồi mới sort (O(n) bộ nhớ), <code class="inline">distinct</code> giữ tập đã gặp. Vì vậy nên filter/map trước rồi mới sorted/distinct.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Short-circuit là gì? Những thao tác nào hỗ trợ?</summary>
+      <div class="answer">Short-circuit là dừng xử lý ngay khi đã đủ kết quả, không cần duyệt hết nguồn. Intermediate hỗ trợ: <code class="inline">limit</code>, <code class="inline">takeWhile</code>. Terminal hỗ trợ: <code class="inline">findFirst</code>, <code class="inline">findAny</code>, <code class="inline">anyMatch</code>, <code class="inline">allMatch</code>, <code class="inline">noneMatch</code>. Nhờ short-circuit mà stream vô hạn + <code class="inline">limit</code>/<code class="inline">findFirst</code> chạy hữu hạn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Bẫy của <code class="inline">Collectors.toMap</code> là gì? Cách sửa?</summary>
+      <div class="answer">Nếu hai phần tử cho cùng khóa, <code class="inline">toMap(keyMapper, valueMapper)</code> ném <code class="inline">IllegalStateException: Duplicate key ... (attempted merging values ...)</code>. Cách sửa: thêm merge function <code class="inline">toMap(key, value, (a, b) -&gt; ...)</code> (cộng gộp, giữ a, giữ b...); hoặc dùng <code class="inline">groupingBy</code> nếu muốn giữ nhiều giá trị mỗi khóa; hoặc thêm map factory <code class="inline">toMap(key, value, merge, TreeMap::new)</code> để ổn định thứ tự.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Vì sao thứ tự Map của <code class="inline">groupingBy</code> không nên tin? Làm sao ổn định?</summary>
+      <div class="answer"><code class="inline">groupingBy</code> mặc định trả <code class="inline">HashMap</code> — thứ tự khóa phụ thuộc hash, không theo thứ tự dữ liệu. Truyền map factory vào bản 3 tham số để kiểm soát: <code class="inline">LinkedHashMap::new</code> giữ thứ tự lần gặp đầu tiên, <code class="inline">TreeMap::new</code> sắp theo khóa. Tương tự với <code class="inline">toSet()</code>/<code class="inline">toMap()</code> — dùng <code class="inline">LinkedHashSet</code>/<code class="inline">TreeMap</code> khi cần thứ tự.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Primitive stream để làm gì? Bẫy <code class="inline">Stream.of(int[])</code> ra sao?</summary>
+      <div class="answer">IntStream/LongStream/DoubleStream tránh boxing, có sẵn <code class="inline">sum</code>/<code class="inline">average</code>/<code class="inline">min</code>/<code class="inline">max</code>/<code class="inline">summaryStatistics</code>, dùng cho dữ liệu số lớn. Đổi qua lại bằng <code class="inline">mapToInt</code>/<code class="inline">boxed</code>/<code class="inline">mapToObj</code>. Bẫy: <code class="inline">Stream.of(arr)</code> với <code class="inline">int[] arr</code> cho <code class="inline">Stream&lt;int[]&gt;</code> 1 phần tử (count = 1) vì varargs không bung mảng nguyên thủy — phải dùng <code class="inline">Arrays.stream(arr)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Khi nào nên và không nên dùng parallel stream? Common ForkJoinPool là gì?</summary>
+      <div class="answer">Nên: dữ liệu lớn, CPU-bound, hàm thuần túy độc lập, nguồn chia rẻ (ArrayList, mảng, <code class="inline">IntStream.range</code>). Tránh: I/O/blocking, dữ liệu nhỏ, thao tác phụ thuộc thứ tự (<code class="inline">limit</code>, <code class="inline">findFirst</code>), sửa shared state, nguồn chia đắt (LinkedList). Parallel stream dùng <code class="inline">ForkJoinPool.commonPool()</code> chung cho cả JVM (mặc định parallelism ≈ số core − 1); tác vụ block sẽ chiếm slot của mọi thành phần khác.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Vì sao lambda trong stream không ném được checked exception? Cách xử lý?</summary>
+      <div class="answer">Vì <code class="inline">Function</code>, <code class="inline">Predicate</code>, <code class="inline">Consumer</code>... không khai báo <code class="inline">throws</code> checked exception, nên lời gọi hàm ném checked exception bên trong lambda là lỗi compile <code class="inline">unreported exception</code>. Cách xử lý: bọc thành <code class="inline">UncheckedIOException</code>/<code class="inline">RuntimeException</code> ngay trong lambda (giữ cause), hoặc viết helper wrap, hoặc chuyển sang vòng lặp nếu logic lỗi phức tạp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Khi nào KHÔNG nên dùng stream thay vòng lặp?</summary>
+      <div class="answer">Khi logic có nhiều nhánh/biến trung gian phức tạp; khi cần index hoặc phần tử lân cận; khi cần break/continue phức tạp; khi thân vòng lặp có checked exception hoặc side effect nghiệp vụ quan trọng; khi làm việc với mảng primitive nhỏ cần hiệu năng tối đa. Stream giúp code <em>khai báo</em> rõ ràng, không phải để thay thế mọi vòng lặp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. <code class="inline">Optional::stream</code> và <code class="inline">Stream.ofNullable</code> dùng khi nào?</summary>
+      <div class="answer"><code class="inline">Optional.stream()</code> (Java 9) biến Optional có giá trị thành stream 1 phần tử, rỗng thành stream 0 phần tử — dùng <code class="inline">flatMap(Optional::stream)</code> để vừa map vừa loại bỏ empty trong một bước. <code class="inline">Stream.ofNullable(t)</code> (Java 9) tạo stream 0/1 phần tử tùy <code class="inline">t</code> có null — tránh NPE của <code class="inline">Stream.of(null)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. <code class="inline">teeing</code> và <code class="inline">summarizingInt</code> khác nhau thế nào?</summary>
+      <div class="answer">Cùng là "một lượt duyệt ra nhiều số liệu". <code class="inline">summarizingInt/Long/Double</code> (Java 8) cho bộ thống kê cố định cùng kiểu: count/sum/min/average/max. <code class="inline">teeing</code> (Java 12) chạy hai collector <em>bất kỳ</em> — có thể khác kiểu, khác kết quả — rồi gộp bằng hàm thứ ba. Dùng summarizing khi đủ 5 chỉ số; dùng teeing khi cần hai kết quả khác loại, ví dụ vừa lấy danh sách vừa đếm.</div>
+    </details>
+
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <p>Các đoạn dưới là thân chương trình của những file đã chạy thật bằng JDK 25. Hãy đoán output trước khi mở đáp án.</p>
+
+    <details class="qa exercise">
+      <summary>Bài 1 — Lazy và thứ tự chạy</summary>
+      <div class="codeblock">
+        <pre><code class="java">import java.util.stream.Stream;
+
+Stream&lt;String&gt; s1 = Stream.of("a", "bb", "ccc")
+        .peek(x -&gt; IO.println("peek " + x));
+IO.println("truoc terminal");
+IO.println(s1.toList());</code></pre>
+      </div>
+      <div class="answer">In ra:
+<pre>truoc terminal
+peek a
+peek bb
+peek ccc
+[a, bb, ccc]</pre>
+<code class="inline">peek</code> là intermediate lười — chỉ chạy khi <code class="inline">toList()</code> (terminal) duyệt nguồn. Vì vậy dòng "truoc terminal" in trước, rồi từng phần tử đi qua peek theo thứ tự.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2 — Dùng lại stream</summary>
+      <div class="codeblock">
+        <pre><code class="java">var s2 = List.of(1, 2, 3).stream();
+IO.println(s2.findFirst().orElse(0));
+IO.println(s2.findFirst().orElse(0));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code> rồi <strong>ném</strong> <code class="inline">IllegalStateException: stream has already been operated upon or closed</code>. <code class="inline">findFirst()</code> là terminal, tiêu thụ stream ngay lần gọi đầu. Muốn lấy lại, phải gọi <code class="inline">List.of(1, 2, 3).stream()</code> lần nữa.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3 — filter rồi map</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(List.of(1, 2, 3, 4, 5, 6).stream()
+        .filter(n -&gt; n % 2 == 0)
+        .map(n -&gt; n / 2)
+        .toList());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[1, 2, 3]</code>. Lọc được 2, 4, 6 rồi chia đôi thành 1, 2, 3. Thứ tự filter trước map giúp map chỉ chạy trên 3 phần tử thay vì 6.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4 — distinct và sorted</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Stream.of("b", "a", "b", "c", "a").distinct().sorted().toList());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[a, b, c]</code>. <code class="inline">distinct</code> còn lại b, a, c (giữ lần gặp đầu) rồi <code class="inline">sorted</code> xếp thành a, b, c.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5 — Ba kiểu reduce</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(List.of("j", "a", "v", "a").stream().reduce("", String::concat));
+IO.println(List.of(1, 2, 3).stream().reduce((a, b) -&gt; a + b).orElse(-1));
+IO.println(List.of(1, 2, 3).stream().reduce(10, Integer::sum));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">java</code>, <code class="inline">6</code>, <code class="inline">16</code>. Dòng 1 ghép chuỗi từ identity "": j+a+v+a = "java". Dòng 2 không identity nên trả Optional, cộng 1+2+3 = 6. Dòng 3 bắt đầu từ 10: 10+1+2+3 = 16.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6 — groupingBy giữ thứ tự</summary>
+      <div class="codeblock">
+        <pre><code class="java">record Don(String khach, long tien) {}
+
+Map&lt;String, Long&gt; m6 = List.of(
+        new Don("Binh", 100), new Don("An", 200), new Don("Binh", 300))
+        .stream()
+        .collect(Collectors.groupingBy(Don::khach, LinkedHashMap::new,
+                Collectors.summingLong(Don::tien)));
+IO.println(m6);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">{Binh=400, An=200}</code>. <code class="inline">LinkedHashMap</code> giữ thứ tự khách xuất hiện lần đầu: Binh rồi An; Binh có hai đơn 100 + 300 = 400. Nếu để mặc định HashMap, thứ tự in có thể khác — đừng dựa vào.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7 — Stream vô hạn + limit</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Stream.iterate(2, n -&gt; n * 3).limit(4).toList());
+IO.println(Stream.iterate(1, n -&gt; n + 1)
+        .filter(n -&gt; n % 10 == 0).limit(2).toList());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[2, 6, 18, 54]</code> rồi <code class="inline">[10, 20]</code>. Dòng đầu lấy 4 số đầu của dãy nhân 3. Dòng sau lọc bội số của 10 rồi lấy 2 số đầu — nếu đổi thành <code class="inline">limit(2).filter(...)</code> kết quả vẫn vậy ở đây, nhưng thứ tự limit trước filter nói chung khác kết quả.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8 — peek và short-circuit</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Stream.of("an", "binh", "cuong")
+        .peek(x -&gt; IO.println("kiem tra " + x))
+        .filter(x -&gt; x.startsWith("c"))
+        .findFirst()
+        .orElse("khong co"));</code></pre>
+      </div>
+      <div class="answer">In ra:
+<pre>kiem tra an
+kiem tra binh
+kiem tra cuong
+cuong</pre>
+<code class="inline">findFirst</code> short-circuit: nó phải chạy peek qua "an", "binh" (không thỏa filter) rồi dừng ngay tại "cuong". Không có dòng nào cho "dung" vì không có phần tử đó.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9 — toMap và merge function</summary>
+      <div class="codeblock">
+        <pre><code class="java">Map&lt;String, Integer&gt; m9 = List.of("a", "b", "a").stream()
+        .collect(Collectors.toMap(s -&gt; s, s -&gt; 1, Integer::sum));
+IO.println(m9);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">{a=2, b=1}</code>. Không có merge function thì khóa "a" trùng sẽ ném <code class="inline">IllegalStateException: Duplicate key a (attempted merging values 1 and 1)</code>. Ở đây merge bằng tổng nên a = 2.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10 — flatMap + mapToInt</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(List.of(List.of(1, 2), List.of(3)).stream()
+        .flatMap(List::stream)
+        .mapToInt(Integer::intValue)
+        .sum());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">6</code>. <code class="inline">flatMap</code> làm phẳng thành 1, 2, 3; <code class="inline">mapToInt</code> tạo IntStream; <code class="inline">sum()</code> = 6. Lưu ý <code class="inline">mapToInt</code> ở đây không bắt buộc (Stream&lt;Integer&gt; cũng sum được nếu qua reduce), nhưng nó là cách "chuẩn" để dùng API primitive.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11 — count có nuốt peek không?</summary>
+      <div class="codeblock">
+        <pre><code class="java">long n = Stream.of("a", "bb", "ccc")
+        .peek(x -&gt; IO.println("peek " + x))
+        .count();
+IO.println("count = " + n);</code></pre>
+      </div>
+      <div class="answer">Chỉ in ra <code class="inline">count = 3</code> — không có dòng <code class="inline">peek</code> nào! Vì nguồn <code class="inline">Stream.of(...)</code> có kích thước xác định (SIZED), JDK bỏ qua toàn bộ intermediate khi chỉ cần đếm. Đây là bằng chứng mạnh nhất cho quy tắc: không bao giờ đặt logic vào <code class="inline">peek</code>.</div>
+    </details>
+
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo stream từ collection</td><td><code class="inline">list.stream()</code> / <code class="inline">set.stream()</code> / <code class="inline">map.entrySet().stream()</code></td></tr>
+        <tr><td>Tạo stream từ mảng</td><td><code class="inline">Arrays.stream(arr)</code> (đừng dùng <code class="inline">Stream.of(arr)</code> với mảng primitive)</td></tr>
+        <tr><td>Tạo stream hữu hạn</td><td><code class="inline">Stream.of(a, b, c)</code>, <code class="inline">IntStream.range(a, b)</code> (nửa mở), <code class="inline">rangeClosed(a, b)</code></td></tr>
+        <tr><td>Tạo stream vô hạn</td><td><code class="inline">Stream.generate(supplier)</code>, <code class="inline">Stream.iterate(seed, next)</code> + <code class="inline">limit</code>/<code class="inline">takeWhile</code></td></tr>
+        <tr><td>Đọc file theo dòng</td><td><code class="inline">try (var lines = Files.lines(path)) { ... }</code></td></tr>
+        <tr><td>Lọc / biến đổi</td><td><code class="inline">filter(predicate)</code> / <code class="inline">map(fn)</code> / <code class="inline">flatMap(fn)</code></td></tr>
+        <tr><td>Đổi sang primitive</td><td><code class="inline">mapToInt</code>, <code class="inline">mapToLong</code>, <code class="inline">mapToDouble</code>; ngược lại <code class="inline">boxed()</code>, <code class="inline">mapToObj</code></td></tr>
+        <tr><td>Loại trùng / sắp xếp</td><td><code class="inline">distinct()</code> / <code class="inline">sorted()</code>, <code class="inline">sorted(Comparator.comparing(...))</code></td></tr>
+        <tr><td>Top N</td><td><code class="inline">sorted(cmp).limit(n)</code>; giảm dần: <code class="inline">Comparator.comparing(...).reversed()</code></td></tr>
+        <tr><td>Dừng sớm thay break</td><td><code class="inline">takeWhile(p)</code>, <code class="inline">findFirst()</code>, <code class="inline">anyMatch(p)</code></td></tr>
+        <tr><td>Gom về List bất biến</td><td><code class="inline">stream.toList()</code> (Java 16+) hoặc <code class="inline">collect(toUnmodifiableList())</code></td></tr>
+        <tr><td>Nối chuỗi</td><td><code class="inline">collect(Collectors.joining(", ", "[", "]"))</code></td></tr>
+        <tr><td>Gom nhóm</td><td><code class="inline">groupingBy(fn, LinkedHashMap::new, downstream)</code></td></tr>
+        <tr><td>Chia đôi</td><td><code class="inline">partitioningBy(predicate)</code> — luôn đủ true/false</td></tr>
+        <tr><td>Sang Map</td><td><code class="inline">toMap(key, value, mergeFn)</code> — nhớ merge function kẻo nổ duplicate key</td></tr>
+        <tr><td>Đếm / tổng / trung bình nhóm</td><td><code class="inline">counting()</code>, <code class="inline">summingLong(fn)</code>, <code class="inline">averagingInt(fn)</code>, <code class="inline">summarizingInt(fn)</code></td></tr>
+        <tr><td>Gộp thành một giá trị</td><td><code class="inline">reduce(identity, acc)</code> hoặc <code class="inline">reduce(acc)</code> → Optional</td></tr>
+        <tr><td>Chạy song song</td><td><code class="inline">parallelStream()</code> / <code class="inline">.parallel()</code> — chỉ với CPU-bound, hàm thuần túy, dữ liệu lớn</td></tr>
+        <tr><td>Bọc checked exception</td><td><code class="inline">throw new UncheckedIOException(e)</code> trong lambda, catch ở ngoài</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được "Collection là nơi lưu, Stream là cách xử lý" kèm bảng so sánh.</li>
+      <li>Vẽ được pipeline 3 phần và chỉ ra đâu là terminal.</li>
+      <li>Giải thích lazy evaluation và vì sao quên terminal thì không có gì chạy.</li>
+      <li>Dự đoán đúng <code class="inline">IllegalStateException</code> khi dùng lại stream.</li>
+      <li>Viết thành thạo pipeline filter → map → sorted → collect mà không cần tra cứu.</li>
+      <li>Phân biệt <code class="inline">map</code> và <code class="inline">flatMap</code>; biết khi nào cần làm phẳng.</li>
+      <li>Kể được 3 terminal short-circuit và giải thích stream vô hạn + limit.</li>
+      <li>Viết <code class="inline">groupingBy</code> có downstream <code class="inline">counting</code>/<code class="inline">summingLong</code>/<code class="inline">mapping</code>.</li>
+      <li>Nhớ truyền <code class="inline">LinkedHashMap::new</code> khi cần thứ tự Map ổn định.</li>
+      <li>Xử lý được bẫy <code class="inline">toMap</code> duplicate key bằng merge function.</li>
+      <li>Phân biệt <code class="inline">reduce</code> có/không identity và lý do có <code class="inline">Optional</code>.</li>
+      <li>Giải thích <code class="inline">findFirst</code> vs <code class="inline">findAny</code>, <code class="inline">forEach</code> vs <code class="inline">forEachOrdered</code>.</li>
+      <li>Nêu 5 tình huống không nên dùng parallel stream và vai trò common ForkJoinPool.</li>
+      <li>Biết wrap checked exception trong lambda bằng <code class="inline">UncheckedIOException</code>.</li>
+      <li>Nhận diện bẫy <code class="inline">Stream.of(int[])</code>, <code class="inline">peek</code> bị bỏ qua, <code class="inline">toList()</code> bất biến.</li>
+      <li>Nói được khi nào nên quay về vòng lặp <code class="inline">for</code> thay vì stream.</li>
+    </ul>
+
+    <h2 id="nguon">15. Nguồn tham khảo</h2>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Stream.html" target="_blank" rel="noreferrer">Javadoc — java.util.stream.Stream (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Collectors.html" target="_blank" rel="noreferrer">Javadoc — java.util.stream.Collectors (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html" target="_blank" rel="noreferrer">Javadoc — package java.util.stream (định nghĩa pipeline, stateless/stateful, non-interference)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/collections/streams/" target="_blank" rel="noreferrer">Oracle Tutorial — Aggregate Operations (Streams)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/collections/streams/reduction.html" target="_blank" rel="noreferrer">Oracle Tutorial — Reduction (reduce &amp; collect)</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Stream API · JDK 25 · Cập nhật 04/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

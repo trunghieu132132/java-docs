@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collections — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item active" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="collections">Collections Framework — bộ sưu tập trong Java</h1>
+
+    <p class="lead">Collections Framework là kiến trúc chuẩn trong <code class="inline">java.util</code> để lưu trữ, tìm kiếm và thao tác <strong>nhóm object</strong>. Đây là chủ đề phỏng vấn số 1 của Java: hầu như buổi phỏng vấn nào cũng hỏi ArrayList vs LinkedList, HashMap hoạt động thế nào, equals/hashCode liên quan gì tới Set, hay phân biệt Comparable và Comparator. Trang này đi từ hierarchy, Big-O, internals của HashMap, iterator fail-fast tới các bẫy production — mọi output đều chạy thật trên JDK 25.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 3.3 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — chọn đúng collection cho từng nhu cầu; dùng <code class="inline">List</code>, <code class="inline">Set</code>, <code class="inline">Map</code>, <code class="inline">Deque</code> thành thạo; duyệt và xóa an toàn bằng iterator/<code class="inline">removeIf</code>; sort bằng <code class="inline">Comparable</code>/<code class="inline">Comparator</code>; dùng các method hiện đại <code class="inline">getOrDefault</code>, <code class="inline">computeIfAbsent</code>, <code class="inline">merge</code>.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">ArrayList.get</code> là O(1) còn <code class="inline">LinkedList.get</code> là O(n); HashMap dùng hash + equals thế nào, load factor 0.75 và treeify là gì; vì sao <code class="inline">ConcurrentModificationException</code> xảy ra; vì sao <code class="inline">compareTo</code> nên nhất quán với <code class="inline">equals</code>; view vs copy (<code class="inline">subList</code>, <code class="inline">unmodifiableList</code>).</li>
+      <li><strong>Nhận biết</strong> — concurrent collections (<code class="inline">ConcurrentHashMap</code>, <code class="inline">CopyOnWriteArrayList</code>, <code class="inline">BlockingQueue</code>) sẽ dùng ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Concurrency</a>; <code class="inline">SequencedCollection</code> (JDK 21+); Stream API thay thế nhiều vòng lặp (học ở <a href="streams.html">3.8 Stream API</a>).</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Nắm <a href="#hierarchy">hierarchy</a> trước — nhìn được bức tranh tổng thể rồi mới đi vào từng loại.</li>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả, đặc biệt các bẫy <code class="inline">remove(int)</code>, fail-fast, LRU.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> và bảng Big-O trước buổi phỏng vấn.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ. Mọi file ví dụ chạy bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <h3>Bảng chọn nhanh theo nhu cầu</h3>
+
+    <p>Gặp yêu cầu thực tế, tra bảng này trước khi viết code:</p>
+
+    <table>
+      <thead>
+        <tr><th>Cần gì</th><th>Dùng gì</th><th>Vì sao / ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Danh sách truy cập theo index, thêm cuối nhiều</td><td><code class="inline">ArrayList</code></td><td>Mặc định cho gần như mọi danh sách; <code class="inline">get(i)</code> O(1)</td></tr>
+        <tr><td>Hàng đợi / ngăn xếp (thêm-xóa hai đầu)</td><td><code class="inline">ArrayDeque</code></td><td>Nhanh hơn <code class="inline">LinkedList</code> và <code class="inline">Stack</code>; không nhận <code class="inline">null</code></td></tr>
+        <tr><td>Luôn lấy phần tử nhỏ/lớn nhất ra trước</td><td><code class="inline">PriorityQueue</code></td><td>Binary heap; <code class="inline">peek</code> O(1), <code class="inline">poll</code> O(log n)</td></tr>
+        <tr><td>Tập hợp không trùng, không cần thứ tự</td><td><code class="inline">HashSet</code></td><td>O(1) trung bình; thứ tự không đảm bảo</td></tr>
+        <tr><td>Tập hợp không trùng, giữ thứ tự chèn</td><td><code class="inline">LinkedHashSet</code></td><td>Duyệt đúng thứ tự bạn thêm vào</td></tr>
+        <tr><td>Tập hợp không trùng, luôn được sort</td><td><code class="inline">TreeSet</code></td><td>O(log n); cần <code class="inline">Comparable</code>/<code class="inline">Comparator</code></td></tr>
+        <tr><td>Tra cứu key → value</td><td><code class="inline">HashMap</code></td><td>Mặc định cho map; <code class="inline">get/put</code> O(1) trung bình</td></tr>
+        <tr><td>Map giữ thứ tự chèn, hoặc làm LRU cache</td><td><code class="inline">LinkedHashMap</code></td><td><code class="inline">accessOrder = true</code> + <code class="inline">removeEldestEntry</code></td></tr>
+        <tr><td>Map luôn sort theo key / truy vấn theo khoảng</td><td><code class="inline">TreeMap</code></td><td><code class="inline">firstKey</code>, <code class="inline">floorKey</code>, <code class="inline">headMap</code>…</td></tr>
+        <tr><td>Map với key là enum</td><td><code class="inline">EnumMap</code></td><td>Nhanh, gọn, duyệt theo thứ tự enum</td></tr>
+        <tr><td>Hằng số danh sách/set/map bất biến</td><td><code class="inline">List.of</code>, <code class="inline">Set.of</code>, <code class="inline">Map.of</code></td><td>Immutable, gọn, an toàn chia sẻ</td></tr>
+        <tr><td>Nhiều thread đọc, ít ghi (list)</td><td><code class="inline">CopyOnWriteArrayList</code></td><td>Ghi thì copy cả mảng — chỉ hợp read-heavy</td></tr>
+        <tr><td>Nhiều thread đọc/ghi map</td><td><code class="inline">ConcurrentHashMap</code></td><td>Không khóa toàn cục, không nhận null</td></tr>
+        <tr><td>Producer–Consumer giữa các thread</td><td><code class="inline">BlockingQueue</code></td><td><code class="inline">put</code>/<code class="inline">take</code> tự block — học ở Giai đoạn 4</td></tr>
+      </tbody>
+    </table>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#hierarchy">Hierarchy: Iterable → Collection → List/Set/Queue</a></li>
+        <li><a href="#list">List — ArrayList, LinkedList, Vector</a></li>
+        <li><a href="#set">Set — HashSet, LinkedHashSet, TreeSet</a></li>
+        <li><a href="#map">Map — HashMap internals &amp; method hiện đại</a></li>
+        <li><a href="#queue-deque">Queue &amp; Deque — ArrayDeque, PriorityQueue</a></li>
+        <li><a href="#iterator">Iterator &amp; fail-fast</a></li>
+        <li><a href="#comparator">Comparable vs Comparator</a></li>
+        <li><a href="#utility">Collections &amp; Arrays utility + immutability</a></li>
+        <li><a href="#big-o">Big-O tổng hợp, chọn theo use case &amp; production</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="hierarchy">2. Hierarchy: Iterable → Collection → List/Set/Queue <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Collections Framework chia làm hai "vũ trụ" tách biệt: <strong>Collection</strong> (một nhóm phần tử) và <strong>Map</strong> (cặp key–value). <code class="inline">Map</code> <strong>không</strong> kế thừa <code class="inline">Collection</code> — câu hỏi bẫy quen thuộc.</p>
+
+    <div class="codeblock">
+      <pre><code>Iterable                        Map  (khong ke thua Collection)
+  └── Collection                  ├── HashMap ── LinkedHashMap
+        ├── List                  ├── SortedMap ── NavigableMap ── TreeMap
+        │     ├── ArrayList       ├── EnumMap
+        │     ├── LinkedList*     └── ConcurrentHashMap
+        │     └── Vector ── Stack
+        ├── Set
+        │     ├── HashSet ── LinkedHashSet
+        │     ├── SortedSet ── NavigableSet ── TreeSet
+        │     └── EnumSet
+        └── Queue
+              ├── ArrayDeque* / LinkedList*
+              └── PriorityQueue
+
+* LinkedList vua la List vua la Deque (ke thua ca hai nhanh)</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">Iterable</code></strong> — hợp đồng duyệt: có <code class="inline">iterator()</code>, nhờ đó dùng được for-each. Mọi collection đều <code class="inline">Iterable</code>.</li>
+      <li><strong><code class="inline">Collection</code></strong> — các thao tác chung: <code class="inline">add</code>, <code class="inline">remove</code>, <code class="inline">contains</code>, <code class="inline">size</code>, <code class="inline">isEmpty</code>, <code class="inline">stream</code>.</li>
+      <li><strong><code class="inline">List</code></strong> — có thứ tự, truy cập theo index, cho phép trùng lặp.</li>
+      <li><strong><code class="inline">Set</code></strong> — không trùng (theo <code class="inline">equals</code>/<code class="inline">hashCode</code>), không index.</li>
+      <li><strong><code class="inline">Queue</code>/<code class="inline">Deque</code></strong> — hàng đợi một đầu/hai đầu, dùng để xử lý theo thứ tự.</li>
+      <li><strong><code class="inline">Map</code></strong> — cặp key–value, key duy nhất; <code class="inline">keySet()</code>, <code class="inline">values()</code>, <code class="inline">entrySet()</code> là các <em>view</em> trên map.</li>
+    </ul>
+
+    <h3>Lập trình theo interface, khởi tạo bằng implementation</h3>
+
+    <p>Quy tắc vàng: <strong>khai báo bằng interface, tạo object bằng class cụ thể</strong>. Đổi implementation không phải sửa code gọi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = new ArrayList&lt;&gt;();
+    Set&lt;String&gt; set = new HashSet&lt;&gt;();
+    Queue&lt;Integer&gt; queue = new ArrayDeque&lt;&gt;();
+    Deque&lt;Integer&gt; deque = new ArrayDeque&lt;&gt;();
+    Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+
+    list.add("a");
+    set.add("a");
+    queue.offer(1);
+    deque.push(2);
+    map.put("a", 1);
+
+    IO.println("List  -&gt; " + list.getClass().getSimpleName());
+    IO.println("Set   -&gt; " + set.getClass().getSimpleName());
+    IO.println("Queue -&gt; " + queue.getClass().getSimpleName());
+    IO.println("Map   -&gt; " + map.getClass().getSimpleName());
+    IO.println("queue instanceof Collection : " + (queue instanceof Collection));
+    IO.println("deque instanceof Queue      : " + (deque instanceof Queue));
+    IO.println("map instanceof Collection   : " + (map instanceof Collection));
+    IO.println("ArrayList  instanceof RandomAccess : " + (list instanceof RandomAccess));
+    IO.println("LinkedList instanceof RandomAccess : " + (new LinkedList&lt;&gt;() instanceof RandomAccess));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>List  -&gt; ArrayList
+Set   -&gt; HashSet
+Queue -&gt; ArrayDeque
+Map   -&gt; HashMap
+queue instanceof Collection : true
+deque instanceof Queue      : true
+map instanceof Collection   : false
+ArrayList  instanceof RandomAccess : true
+LinkedList instanceof RandomAccess : false</code></pre>
+    </div>
+
+    <h3>RandomAccess — marker interface</h3>
+
+    <p><code class="inline">RandomAccess</code> là <strong>marker interface</strong>: không có method nào, chỉ đánh dấu "class này truy cập index trong O(1)". Các thuật toán của <code class="inline">Collections</code> (<code class="inline">binarySearch</code>, <code class="inline">shuffle</code>, <code class="inline">reverse</code>…) kiểm tra <code class="inline">instanceof RandomAccess</code> để chọn cách duyệt: index nhanh cho <code class="inline">ArrayList</code>, iterator cho <code class="inline">LinkedList</code>. Nhờ vậy cùng một API chạy tối ưu cho cả hai.</p>
+
+    <h3>Bảng implementation chính</h3>
+
+    <table>
+      <thead>
+        <tr><th>Interface</th><th>Implementation</th><th>Cấu trúc bên trong</th><th>Thứ tự duyệt</th><th>Thread-safe</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">List</code></td><td><code class="inline">ArrayList</code></td><td>Mảng động</td><td>Thứ tự chèn</td><td>Không</td></tr>
+        <tr><td><code class="inline">List</code></td><td><code class="inline">LinkedList</code></td><td>Danh sách liên kết đôi</td><td>Thứ tự chèn</td><td>Không</td></tr>
+        <tr><td><code class="inline">List</code></td><td><code class="inline">Vector</code> / <code class="inline">Stack</code></td><td>Mảng động, method <code class="inline">synchronized</code></td><td>Thứ tự chèn</td><td>Có (thô)</td></tr>
+        <tr><td><code class="inline">Set</code></td><td><code class="inline">HashSet</code></td><td>Hash table (dùng <code class="inline">HashMap</code>)</td><td>Không đảm bảo</td><td>Không</td></tr>
+        <tr><td><code class="inline">Set</code></td><td><code class="inline">LinkedHashSet</code></td><td>Hash table + linked list</td><td>Thứ tự chèn</td><td>Không</td></tr>
+        <tr><td><code class="inline">Set</code></td><td><code class="inline">TreeSet</code></td><td>Cây đỏ-đen</td><td>Tăng dần theo <code class="inline">compareTo</code></td><td>Không</td></tr>
+        <tr><td><code class="inline">Set</code></td><td><code class="inline">EnumSet</code></td><td>Bit vector theo ordinal</td><td>Thứ tự enum</td><td>Không</td></tr>
+        <tr><td><code class="inline">Queue</code>/<code class="inline">Deque</code></td><td><code class="inline">ArrayDeque</code></td><td>Mảng vòng</td><td>Từ đầu tới cuối</td><td>Không</td></tr>
+        <tr><td><code class="inline">Queue</code></td><td><code class="inline">PriorityQueue</code></td><td>Binary heap trên mảng</td><td>Chỉ đảm bảo phần tử đầu là min/max</td><td>Không</td></tr>
+        <tr><td><code class="inline">Map</code></td><td><code class="inline">HashMap</code></td><td>Hash table + chaining</td><td>Không đảm bảo</td><td>Không</td></tr>
+        <tr><td><code class="inline">Map</code></td><td><code class="inline">LinkedHashMap</code></td><td>Hash table + linked list</td><td>Thứ tự chèn hoặc thứ tự truy cập</td><td>Không</td></tr>
+        <tr><td><code class="inline">Map</code></td><td><code class="inline">TreeMap</code></td><td>Cây đỏ-đen</td><td>Tăng dần theo key</td><td>Không</td></tr>
+        <tr><td><code class="inline">Map</code></td><td><code class="inline">EnumMap</code></td><td>Mảng theo ordinal</td><td>Thứ tự enum</td><td>Không</td></tr>
+        <tr><td><code class="inline">Map</code></td><td><code class="inline">ConcurrentHashMap</code></td><td>Hash table concurrent</td><td>Không đảm bảo</td><td>Có</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>JDK 21+ — SequencedCollection:</strong> <code class="inline">List</code>, <code class="inline">Deque</code>, <code class="inline">LinkedHashSet</code> và <code class="inline">LinkedHashMap</code> giờ có API chung cho hai đầu: <code class="inline">getFirst/getLast</code>, <code class="inline">addFirst/addLast</code>, <code class="inline">removeFirst/removeLast</code>, <code class="inline">reversed()</code>. JDK 25 kế thừa trọn vẹn API này:</div>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("b", "c"));
+    list.addFirst("a");
+    list.addLast("d");
+    IO.println("list         : " + list);
+    IO.println("getFirst/Last: " + list.getFirst() + " / " + list.getLast());
+    IO.println("reversed     : " + list.reversed());
+
+    LinkedHashSet&lt;String&gt; set = new LinkedHashSet&lt;&gt;(List.of("b", "c"));
+    set.addFirst("a");
+    IO.println("set          : " + set);
+    IO.println("set.getLast(): " + set.getLast());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>list         : [a, b, c, d]
+getFirst/Last: a / d
+reversed     : [d, c, b, a]
+set          : [a, b, c]
+set.getLast(): c</code></pre>
+    </div>
+
+    <h2 id="list">3. List — ArrayList, LinkedList, Vector <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><code class="inline">List</code> là collection <strong>có thứ tự</strong>, cho phép <strong>phần tử trùng nhau</strong> và truy cập theo <strong>index</strong> (bắt đầu từ 0). Ba implementation bạn cần nắm:</p>
+
+    <table>
+      <thead>
+        <tr><th>Thao tác</th><th>ArrayList</th><th>LinkedList</th><th>Vector</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">get(i)</code> / <code class="inline">set(i)</code></td><td><strong>O(1)</strong></td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Thêm cuối</td><td>O(1) khấu hao</td><td>O(1)</td><td>O(1) khấu hao</td></tr>
+        <tr><td>Thêm/xóa đầu</td><td>O(n)</td><td><strong>O(1)</strong></td><td>O(n)</td></tr>
+        <tr><td>Thêm/xóa giữa</td><td>O(n) (dịch mảng)</td><td>O(n) (tìm vị trí) rồi O(1)</td><td>O(n)</td></tr>
+        <tr><td><code class="inline">contains</code> / <code class="inline">indexOf</code></td><td>O(n)</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Bộ nhớ mỗi phần tử</td><td>Thấp (mảng reference)</td><td>Cao (node prev/next/item)</td><td>Thấp</td></tr>
+        <tr><td>Thread-safe</td><td>Không</td><td>Không</td><td>Có (khóa từng method)</td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><strong>ArrayList</strong> — mặc định cho hầu hết trường hợp. Bên trong là mảng; mảng đầy thì tự tăng kích thước khoảng 1.5 lần (tạo mảng mới + copy). Vì vậy <em>thêm cuối</em> là O(1) khấu hao, nhưng <em>thêm/xóa đầu hoặc giữa</em> phải dịch phần còn lại nên O(n).</li>
+      <li><strong>LinkedList</strong> — danh sách liên kết đôi, mỗi phần tử là một node giữ <code class="inline">prev</code>/<code class="inline">next</code>. Lấy theo index phải đi bộ từ đầu hoặc cuối nên O(n). Chỉ thắng khi bạn liên tục thêm/xóa ở hai đầu <em>và</em> không cần index — nhưng lúc đó <code class="inline">ArrayDeque</code> mới là lựa chọn đúng (mục 6).</li>
+      <li><strong>Vector</strong> (và <code class="inline">Stack</code> kế thừa nó) — class từ Java 1.0, mọi method <code class="inline">synchronized</code>. Khóa toàn cục khiến chậm; ngày nay không dùng trong code mới: thay bằng <code class="inline">ArrayList</code>, <code class="inline">ArrayDeque</code> hoặc <code class="inline">CopyOnWriteArrayList</code>.</li>
+    </ul>
+
+    <h3>List.of — immutable, gọn và an toàn</h3>
+
+    <p>Từ Java 9, <code class="inline">List.of(...)</code> tạo list bất biến (immutable). Mọi thao tác sửa đổi đều ném <code class="inline">UnsupportedOperationException</code> — kể cả <code class="inline">set</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; immutable = List.of("a", "b");
+    IO.println("class    : " + immutable.getClass().getSimpleName());
+    IO.println("noi dung : " + immutable);
+
+    try {
+        immutable.add("c");
+    } catch (UnsupportedOperationException e) {
+        IO.println("add    -&gt; " + e);
+    }
+    try {
+        immutable.set(0, "z");
+    } catch (UnsupportedOperationException e) {
+        IO.println("set    -&gt; " + e);
+    }
+    try {
+        immutable.remove("a");
+    } catch (UnsupportedOperationException e) {
+        IO.println("remove -&gt; " + e);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>class    : List12
+noi dung : [a, b]
+add    -&gt; java.lang.UnsupportedOperationException
+set    -&gt; java.lang.UnsupportedOperationException
+remove -&gt; java.lang.UnsupportedOperationException</code></pre>
+    </div>
+
+    <p>Nếu không catch, exception ném ra kèm stack trace đúng như JDK 25:</p>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.UnsupportedOperationException
+	at java.base/java.util.ImmutableCollections.uoe(ImmutableCollections.java:159)
+	at java.base/java.util.ImmutableCollections$AbstractImmutableCollection.add(ImmutableCollections.java:164)
+	at E03ImmutableAdd.main(E03ImmutableAdd.java:5)</pre>
+    </div>
+
+    <p><code class="inline">List.of</code> cũng <strong>không nhận null</strong>, và vì là immutable nên có thể chia sẻ an toàn giữa các thread. Ngược lại, generic của nó phải là kiểu reference — viết <code class="inline">List&lt;int&gt;</code> là lỗi compile (chi tiết generic ở <a href="generics.html">3.2 Generics</a>):</p>
+
+    <div class="errblock">
+      <pre>E01ListPrimitive.java:4: error: unexpected type
+    List&lt;int&gt; nums = new ArrayList&lt;&gt;();
+         ^
+  required: reference
+  found:    int
+1 error</pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    try {
+        List.of((String) null);
+    } catch (NullPointerException e) {
+        IO.println("List.of(null) -&gt; NullPointerException");
+    }
+    try {
+        Arrays.asList((String) null);
+        IO.println("Arrays.asList(null) -&gt; chap nhan");
+    } catch (NullPointerException e) {
+        IO.println("Arrays.asList(null) -&gt; NullPointerException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>List.of(null) -&gt; NullPointerException
+Arrays.asList(null) -&gt; chap nhan</code></pre>
+    </div>
+
+    <h3>Arrays.asList — fixed-size, không phải immutable</h3>
+
+    <p><code class="inline">Arrays.asList(array)</code> trả về list có <strong>kích thước cố định</strong> và <strong>dùng chung mảng gốc</strong>. <code class="inline">set</code> được (ghi thẳng vào mảng), nhưng <code class="inline">add</code>/<code class="inline">remove</code> thì không:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    String[] arr = {"a", "b", "c"};
+    List&lt;String&gt; fixed = Arrays.asList(arr);
+
+    fixed.set(0, "A");
+    IO.println("fixed : " + fixed);
+    IO.println("arr[0]: " + arr[0]);
+
+    try {
+        fixed.add("d");
+    } catch (UnsupportedOperationException e) {
+        IO.println("add    -&gt; " + e);
+    }
+    try {
+        fixed.remove(0);
+    } catch (UnsupportedOperationException e) {
+        IO.println("remove -&gt; " + e);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>fixed : [A, b, c]
+arr[0]: A
+add    -&gt; java.lang.UnsupportedOperationException
+remove -&gt; java.lang.UnsupportedOperationException</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy varargs với mảng nguyên thủy:</strong> <code class="inline">Arrays.asList(new int[]{1, 2, 3})</code> trả về <code class="inline">List&lt;int[]&gt;</code> <strong>size 1</strong> (một phần tử là cả mảng), không phải list 3 số. Vì generic không nhận primitive — dùng <code class="inline">IntStream.of(...).boxed().toList()</code> (học ở <a href="streams.html">3.8</a>) hoặc tự thêm từng phần tử.</div>
+
+    <h3>List.copyOf vs Collections.unmodifiableList — copy vs view</h3>
+
+    <p>Hai API này khác nhau về bản chất. <code class="inline">unmodifiableList</code> là <strong>view</strong>: nó chỉ chặn bạn sửa, còn list gốc đổi thì nó đổi theo. <code class="inline">List.copyOf</code> là <strong>bản sao</strong> độc lập (nhưng sao chép nông — phần tử vẫn là cùng object):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("a", "b"));
+    List&lt;String&gt; view = Collections.unmodifiableList(goc);
+    List&lt;String&gt; copy = List.copyOf(goc);
+
+    goc.add("c");
+
+    IO.println("goc  : " + goc);
+    IO.println("view : " + view);
+    IO.println("copy : " + copy);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>goc  : [a, b, c]
+view : [a, b, c]
+copy : [a, b]</code></pre>
+    </div>
+
+    <ul>
+      <li>Muốn <strong>chụp ảnh</strong> dữ liệu tại thời điểm hiện tại (an toàn trước thay đổi sau đó) → <code class="inline">List.copyOf</code>.</li>
+      <li>Muốn <strong>chặn ghi</strong> trên chính list đang sống (ví dụ trả field ra ngoài) → <code class="inline">Collections.unmodifiableList</code>, nhưng nhớ list gốc vẫn sửa được ở nơi khác.</li>
+      <li><code class="inline">List.copyOf</code> từ chối null (NPE nếu phần tử null); <code class="inline">unmodifiableList</code> cho phép null.</li>
+    </ul>
+
+    <h3>subList là view — bẫy kinh điển</h3>
+
+    <p><code class="inline">subList(from, to)</code> trả về <strong>view</strong> của đoạn [from, to). Sửa sublist là sửa list gốc, và ngược lại — thay đổi cấu trúc list gốc sẽ làm sublist "hết hạn":</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(0, 1, 2, 3, 4, 5));
+    List&lt;Integer&gt; sub = nums.subList(1, 4);
+
+    IO.println("sub               : " + sub);
+    sub.set(0, 99);
+    IO.println("nums sau sub.set  : " + nums);
+    sub.clear();
+    IO.println("nums sau sub.clear: " + nums);
+
+    List&lt;Integer&gt; nums2 = new ArrayList&lt;&gt;(List.of(10, 20, 30, 40));
+    List&lt;Integer&gt; sub2 = nums2.subList(1, 3);
+    nums2.add(50);
+    try {
+        sub2.get(0);
+    } catch (ConcurrentModificationException e) {
+        IO.println("sub2.get sau nums2.add -&gt; ConcurrentModificationException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sub               : [1, 2, 3]
+nums sau sub.set  : [0, 99, 2, 3, 4, 5]
+nums sau sub.clear: [0, 4, 5]
+sub2.get sau nums2.add -&gt; ConcurrentModificationException</code></pre>
+    </div>
+
+    <div class="note warn">Muốn cắt một đoạn <strong>độc lập</strong>, hãy copy: <code class="inline">new ArrayList&lt;&gt;(nums.subList(1, 4))</code> hoặc <code class="inline">List.copyOf(nums.subList(1, 4))</code>.</div>
+
+    <h3>remove(int) vs remove(Object) — bẫy overload nổi tiếng</h3>
+
+    <p><code class="inline">List</code> có hai method <code class="inline">remove</code>: xóa theo index trả về phần tử bị xóa, xóa theo giá trị trả về <code class="inline">boolean</code>. Truyền số nguyên vào sẽ luôn chọn bản <code class="inline">remove(int)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(10, 20, 30, 20));
+
+    IO.println("nums                : " + nums);
+    IO.println("remove(1)           = " + nums.remove(1));
+    IO.println("nums                : " + nums);
+    IO.println("remove(Integer(30)) = " + nums.remove(Integer.valueOf(30)));
+    IO.println("nums                : " + nums);
+    IO.println("indexOf(20)         = " + nums.indexOf(20));
+    IO.println("contains(20)        = " + nums.contains(20));
+    IO.println("contains(\"20\")      = " + nums.contains("20"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>nums                : [10, 20, 30, 20]
+remove(1)           = 20
+nums                : [10, 30, 20]
+remove(Integer(30)) = true
+nums                : [10, 20]
+indexOf(20)         = 1
+contains(20)        = true
+contains("20")      = false</code></pre>
+    </div>
+
+    <p>Nhớ quy tắc: <code class="inline">remove(1)</code> là <em>xóa phần tử thứ 1</em>; muốn xóa <em>giá trị 1</em> phải <code class="inline">remove(Integer.valueOf(1))</code>. Bẫy overload này đã gặp ở <a href="methods.html#qa">Methods — Q14</a>; khi làm việc với <code class="inline">List&lt;Integer&gt;</code> hãy luôn tự hỏi "mình muốn index hay value?".</p>
+
+    <p>Hai method tìm kiếm <code class="inline">indexOf</code> và <code class="inline">contains</code> đều dựa trên <code class="inline">equals</code> của phần tử (với <code class="inline">contains</code> thì so <code class="inline">o.equals(elementData[i])</code>), nên object muốn tìm đúng phải override <code class="inline">equals</code> — xem <a href="object-contract.html#equals-contract">Object contract — mục 4</a>. Ví dụ <code class="inline">contains("20")</code> trả <code class="inline">false</code> vì <code class="inline">Integer(20)</code> không equals <code class="inline">String "20"</code>.</p>
+
+    <h2 id="set">4. Set — HashSet, LinkedHashSet, TreeSet <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><code class="inline">Set</code> là tập hợp <strong>không có phần tử trùng</strong>. "Trùng" được quyết định bởi <code class="inline">equals</code> + <code class="inline">hashCode</code> (với <code class="inline">HashSet</code>/<code class="inline">LinkedHashSet</code>) hoặc <code class="inline">compareTo</code> (với <code class="inline">TreeSet</code>) — nền tảng nằm ở <a href="object-contract.html#hashcode-contract">Object contract — mục 7</a>.</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>HashSet</th><th>LinkedHashSet</th><th>TreeSet</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cấu trúc</td><td>Hash table</td><td>Hash table + linked list</td><td>Cây đỏ-đen</td></tr>
+        <tr><td>Thứ tự duyệt</td><td>Không đảm bảo</td><td>Thứ tự chèn</td><td>Tăng dần (sorted)</td></tr>
+        <tr><td><code class="inline">add</code>/<code class="inline">contains</code>/<code class="inline">remove</code></td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(log n)</td></tr>
+        <tr><td>So sánh phần tử</td><td><code class="inline">equals</code>/<code class="inline">hashCode</code></td><td><code class="inline">equals</code>/<code class="inline">hashCode</code></td><td><code class="inline">compareTo</code>/<code class="inline">Comparator</code></td></tr>
+        <tr><td>Null</td><td>1 phần tử null</td><td>1 phần tử null</td><td>Không (natural ordering)</td></tr>
+        <tr><td>Interface đặc biệt</td><td>—</td><td><code class="inline">SequencedSet</code></td><td><code class="inline">NavigableSet</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Ba set cùng dữ liệu, ba thứ tự khác nhau — trong đó chỉ <code class="inline">TreeSet</code> là <strong>đảm bảo</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; nguon = List.of("banana", "apple", "cherry", "date");
+
+    IO.println("HashSet       : " + new HashSet&lt;&gt;(nguon));
+    IO.println("LinkedHashSet : " + new LinkedHashSet&lt;&gt;(nguon));
+    IO.println("TreeSet       : " + new TreeSet&lt;&gt;(nguon));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>HashSet       : [banana, date, apple, cherry]
+LinkedHashSet : [banana, apple, cherry, date]
+TreeSet       : [apple, banana, cherry, date]</code></pre>
+    </div>
+
+    <div class="note">Thứ tự của <code class="inline">HashSet</code> phụ thuộc hash, capacity và có thể thay đổi khi thêm/xóa phần tử — output trên là một lần chạy thật, <strong>đừng bao giờ viết code dựa vào thứ tự đó</strong>. Cần thứ tự ổn định: <code class="inline">LinkedHashSet</code> (theo chèn) hoặc <code class="inline">TreeSet</code> (theo sort).</div>
+
+    <p>Ví dụ dedupe dựa trên <code class="inline">equals</code>/<code class="inline">hashCode</code> — <code class="inline">record</code> tự sinh hai method này, nên hai <code class="inline">Point(1, 2)</code> được coi là một:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+record Point(int x, int y) {}
+
+void main() {
+    Set&lt;Point&gt; set = new HashSet&lt;&gt;();
+    set.add(new Point(1, 2));
+    set.add(new Point(1, 2));
+    set.add(new Point(2, 1));
+
+    IO.println("set  : " + set);
+    IO.println("size : " + set.size());
+    IO.println("contains(new Point(1, 2)) : " + set.contains(new Point(1, 2)));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>set  : [Point[x=1, y=2], Point[x=2, y=1]]
+size : 2
+contains(new Point(1, 2)) : true</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đừng để phần tử Set "đổi hash" sau khi thêm.</strong> Nếu object mutable được sửa field ảnh hưởng tới <code class="inline">hashCode</code>, <code class="inline">contains</code> sẽ trả <code class="inline">false</code> dù phần tử vẫn nằm trong set (demo đầy đủ ở <a href="object-contract.html#vi-pham">Object contract — mục 8</a>). Cùng vấn đề với key của <code class="inline">HashMap</code> (mục 5).</div>
+
+    <p><code class="inline">Set.of(...)</code> tạo set bất biến và <strong>từ chối phần tử trùng ngay lúc tạo</strong> — khác <code class="inline">HashSet</code> vốn âm thầm bỏ qua:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Set.of("a", "b");        // OK
+Set.of("a", "a");        // IllegalArgumentException: duplicate element: a
+Set.of((String) null);   // NullPointerException</code></pre>
+    </div>
+
+    <h3>NavigableSet — truy vấn theo khoảng</h3>
+
+    <p><code class="inline">TreeSet</code> implement <code class="inline">NavigableSet</code> với bộ method tìm "gần nhất": <code class="inline">floor</code> (≤), <code class="inline">ceiling</code> (≥), <code class="inline">lower</code> (&lt;), <code class="inline">higher</code> (&gt;), cùng <code class="inline">headSet</code>/<code class="inline">tailSet</code>/<code class="inline">subSet</code> (cũng là <em>view</em>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    TreeSet&lt;Integer&gt; s = new TreeSet&lt;&gt;(List.of(10, 20, 30, 40, 50));
+
+    IO.println("first()         : " + s.first());
+    IO.println("last()          : " + s.last());
+    IO.println("floor(25)       : " + s.floor(25));
+    IO.println("ceiling(25)     : " + s.ceiling(25));
+    IO.println("lower(30)       : " + s.lower(30));
+    IO.println("higher(30)      : " + s.higher(30));
+    IO.println("headSet(30)     : " + s.headSet(30));
+    IO.println("tailSet(30)     : " + s.tailSet(30));
+    IO.println("subSet(20, 40)  : " + s.subSet(20, 40));
+    IO.println("descendingSet() : " + s.descendingSet());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>first()         : 10
+last()          : 50
+floor(25)       : 20
+ceiling(25)     : 30
+lower(30)       : 20
+higher(30)      : 40
+headSet(30)     : [10, 20]
+tailSet(30)     : [30, 40, 50]
+subSet(20, 40)  : [20, 30]
+descendingSet() : [50, 40, 30, 20, 10]</code></pre>
+    </div>
+
+    <h3>EnumSet — dành riêng cho enum</h3>
+
+    <p><code class="inline">EnumSet</code> lưu enum bằng bit vector, cực nhanh và gọn, duyệt theo thứ tự khai báo enum. Dùng khi tập hợp chỉ chứa các hằng của một enum (ví dụ tập quyền, tập trạng thái):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+enum Grade { A, B, C, D, F }
+
+void main() {
+    EnumSet&lt;Grade&gt; dau = EnumSet.of(Grade.A, Grade.B, Grade.C);
+    IO.println("dau          : " + dau);
+    IO.println("contains(B)  : " + dau.contains(Grade.B));
+    IO.println("complementOf : " + EnumSet.complementOf(dau));
+    IO.println("allOf        : " + EnumSet.allOf(Grade.class));
+    IO.println("range(B, D)  : " + EnumSet.range(Grade.B, Grade.D));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>dau          : [A, B, C]
+contains(B)  : true
+complementOf : [D, F]
+allOf        : [A, B, C, D, F]
+range(B, D)  : [B, C, D]</code></pre>
+    </div>
+
+    <h2 id="map">5. Map — HashMap internals &amp; method hiện đại <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><code class="inline">Map</code> lưu cặp <strong>key → value</strong>, key là duy nhất. Đây là chủ đề bị hỏi sâu nhất trong phỏng vấn Java, nên mục này đi kỹ từ internals tới các method mới của Java 8+.</p>
+
+    <table>
+      <thead>
+        <tr><th>Implementation</th><th>Cấu trúc</th><th>get/put</th><th>Thứ tự</th><th>Null</th><th>Thread-safe</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">HashMap</code></td><td>Hash table</td><td>O(1) trung bình</td><td>Không đảm bảo</td><td>1 null key, nhiều null value</td><td>Không</td></tr>
+        <tr><td><code class="inline">LinkedHashMap</code></td><td>Hash + linked list</td><td>O(1) trung bình</td><td>Chèn / truy cập</td><td>Như HashMap</td><td>Không</td></tr>
+        <tr><td><code class="inline">TreeMap</code></td><td>Cây đỏ-đen</td><td>O(log n)</td><td>Sort theo key</td><td>Không null key (natural)</td><td>Không</td></tr>
+        <tr><td><code class="inline">EnumMap</code></td><td>Mảng theo ordinal</td><td>O(1)</td><td>Thứ tự enum</td><td>Không null key</td><td>Không</td></tr>
+        <tr><td><code class="inline">ConcurrentHashMap</code></td><td>Hash concurrent</td><td>O(1) trung bình</td><td>Không đảm bảo</td><td>Không null</td><td>Có</td></tr>
+        <tr><td><code class="inline">Hashtable</code></td><td>Hash table cũ</td><td>O(1) trung bình</td><td>Không đảm bảo</td><td>Không null</td><td>Có (khóa thô)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>5.1 HashMap hoạt động thế nào</h3>
+
+    <p>Một lần <code class="inline">map.get(key)</code> đi qua 4 bước:</p>
+    <ol>
+      <li>Gọi <code class="inline">key.hashCode()</code>.</li>
+      <li><strong>Trộn bit (spread)</strong>: <code class="inline">h ^ (h &gt;&gt;&gt; 16)</code> để các bit cao tham gia vào index — tránh dồn cục khi capacity nhỏ.</li>
+      <li><strong>Chọn bucket</strong>: <code class="inline">(n - 1) &amp; spread</code> với <code class="inline">n</code> là số bucket (mặc định 16). Vì <code class="inline">n</code> là lũy thừa 2, phép <code class="inline">&amp;</code> tương đương modulo nhưng nhanh hơn.</li>
+      <li>Đi trong bucket, dùng <code class="inline">equals</code> tìm đúng key. Thấy → trả value; không → trả <code class="inline">null</code>.</li>
+    </ol>
+
+    <p>Hai key khác nhau hoàn toàn có thể cùng hash — gọi là <strong>collision</strong> (va chạm), hoàn toàn bình thường. <code class="inline">"Aa"</code> và <code class="inline">"BB"</code> là ví dụ nổi tiếng cùng hash 2112:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    IO.println("\"Aa\".hashCode() = " + "Aa".hashCode());
+    IO.println("\"BB\".hashCode() = " + "BB".hashCode());
+
+    int h = "Aa".hashCode();
+    int spread = h ^ (h &gt;&gt;&gt; 16);
+    IO.println("spread          = " + spread);
+    IO.println("bucket khi n=16 = " + (spread &amp; 15));
+
+    Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+    map.put("Aa", 1);
+    map.put("BB", 2);
+    IO.println("map        : " + map);
+    IO.println("map.size() : " + map.size());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>"Aa".hashCode() = 2112
+"BB".hashCode() = 2112
+spread          = 2112
+bucket khi n=16 = 0
+map        : {Aa=1, BB=2}
+map.size() : 2</code></pre>
+    </div>
+
+    <p>Hai key cùng bucket 0 nhưng <code class="inline">equals</code> là false nên cả hai vẫn được giữ — bucket chứa một chuỗi node (linked list). Phần demo đầy đủ về hash/equals và hậu quả khi vi phạm hợp đồng nằm ở <a href="object-contract.html#hashmap">Object contract — mục 9</a>.</p>
+
+    <h3>5.2 Resize, load factor &amp; treeify</h3>
+
+    <ul>
+      <li><strong>Capacity mặc định 16</strong>, <strong>load factor 0.75</strong>. Khi <code class="inline">size &gt; capacity × 0.75</code> (16 × 0.75 = 12 entry), map <strong>resize</strong>: nhân đôi capacity và phân bố lại toàn bộ entry. Chi phí một lần resize là O(n) nhưng chia đều ra vẫn O(1) khấu hao.</li>
+      <li><strong>Capacity luôn là lũy thừa 2</strong> để dùng mask <code class="inline">(n - 1) &amp; hash</code>. Truyền capacity không phải lũy thừa 2 (ví dụ <code class="inline">new HashMap&lt;&gt;(100)</code>) thì map tự làm tròn lên lũy thừa 2 gần nhất (128).</li>
+      <li><strong>Treeify</strong>: khi một bucket có <strong>≥ 8 node</strong> (TREEIFY_THRESHOLD) <em>và</em> capacity đạt <strong>≥ 64</strong> (MIN_TREEIFY_CAPACITY), bucket chuyển từ linked list sang <strong>cây đỏ-đen</strong>, tra cứu trong bucket còn ~O(log n) thay vì O(n). Nếu capacity còn &lt; 64 thì map ưu tiên <strong>resize</strong> thay vì treeify. Khi bucket co xuống ≤ 6 node (untreeify) nó quay về linked list.</li>
+      <li>Trường hợp xấu nhất khi bị tấn công hash (mọi key cùng hash): O(log n) nhờ cây đỏ-đen (từ Java 8); trước đó là O(n).</li>
+    </ul>
+
+    <div class="note">Vì vậy khi biết trước số phần tử, hãy tạo map đủ lớn để tránh resize: <code class="inline">new HashMap&lt;&gt;(soPhanTu / 0.75 + 1)</code>, hoặc dùng <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+) cho ý nghĩa rõ ràng.</div>
+
+    <h3>5.3 LinkedHashMap — LRU cache trong 10 dòng</h3>
+
+    <p>Constructor <code class="inline">LinkedHashMap(capacity, loadFactor, accessOrder)</code> với <code class="inline">accessOrder = true</code> sẽ đưa phần tử vừa <code class="inline">get</code> hoặc <code class="inline">put</code> xuống cuối. Override <code class="inline">removeEldestEntry</code> để tự loại phần tử cũ nhất — đó chính là LRU (Least Recently Used):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    LinkedHashMap&lt;String, Integer&gt; lru = new LinkedHashMap&lt;&gt;(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry&lt;String, Integer&gt; eldest) {
+            return size() &gt; 3;
+        }
+    };
+
+    lru.put("a", 1);
+    lru.put("b", 2);
+    lru.put("c", 3);
+    IO.println("sau put a,b,c : " + lru.keySet());
+
+    lru.get("a");
+    IO.println("sau get(a)    : " + lru.keySet());
+
+    lru.put("d", 4);
+    IO.println("sau put(d)    : " + lru.keySet());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau put a,b,c : [a, b, c]
+sau get(a)    : [b, c, a]
+sau put(d)    : [c, a, d]</code></pre>
+    </div>
+
+    <p>Đọc output theo trục thời gian: <code class="inline">get("a")</code> đẩy <code class="inline">a</code> ra cuối; <code class="inline">put("d")</code> vượt giới hạn 3 nên phần tử cũ nhất <code class="inline">b</code> bị loại. Trong production, LRU thật thường dùng thư viện cache (Caffeine, Guava) để có thêm TTL, thống kê, concurrency — nhưng cơ chế nền vẫn là LinkedHashMap access-order.</p>
+
+    <h3>5.4 TreeMap &amp; EnumMap</h3>
+
+    <p><code class="inline">TreeMap</code> sort key và implement <code class="inline">NavigableMap</code> — có <code class="inline">firstKey/lastKey</code>, <code class="inline">floorKey/ceilingKey</code>, <code class="inline">headMap/tailMap/subMap</code>. <code class="inline">EnumMap</code> dành cho key enum, lưu bằng mảng theo ordinal nên rất nhanh:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+enum TrangThai { MOI, DANG_XU_LY, XONG }
+
+void main() {
+    TreeMap&lt;String, Integer&gt; tm = new TreeMap&lt;&gt;();
+    tm.put("c", 3);
+    tm.put("a", 1);
+    tm.put("b", 2);
+
+    IO.println("TreeMap            : " + tm);
+    IO.println("firstKey/lastKey   : " + tm.firstKey() + " / " + tm.lastKey());
+    IO.println("headMap(\"c\")        : " + tm.headMap("c"));
+    IO.println("floorEntry(\"bb\")    : " + tm.floorEntry("bb"));
+    IO.println("descendingMap()    : " + tm.descendingMap());
+
+    EnumMap&lt;TrangThai, Integer&gt; em = new EnumMap&lt;&gt;(TrangThai.class);
+    em.put(TrangThai.XONG, 2);
+    em.put(TrangThai.MOI, 5);
+    em.put(TrangThai.DANG_XU_LY, 3);
+    IO.println("EnumMap (theo enum): " + em);
+    IO.println("EnumMap get(MOI)   : " + em.get(TrangThai.MOI));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>TreeMap            : {a=1, b=2, c=3}
+firstKey/lastKey   : a / c
+headMap("c")        : {a=1, b=2}
+floorEntry("bb")    : b=2
+descendingMap()    : {c=3, b=2, a=1}
+EnumMap (theo enum): {MOI=5, DANG_XU_LY=3, XONG=2}
+EnumMap get(MOI)   : 5</code></pre>
+    </div>
+
+    <p>Ứng dụng kinh điển của <code class="inline">TreeMap</code>: tìm "entry lớn nhất không vượt quá X" (<code class="inline">floorEntry</code>), báo cáo theo khoảng ngày, hoặc range query theo key. <code class="inline">EnumMap</code> hợp với đếm trạng thái đơn hàng, cấu hình theo enum, cache theo enum.</p>
+
+    <h3>5.5 Map.of — map bất biến</h3>
+
+    <p><code class="inline">Map.of(...)</code> tạo map immutable tối đa 10 cặp; nhiều hơn thì dùng <code class="inline">Map.ofEntries</code>. Nó không nhận null và báo lỗi ngay khi tạo nếu key trùng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    try {
+        Map.of("a", null);
+    } catch (NullPointerException e) {
+        IO.println("Map.of(\"a\", null)  -&gt; NullPointerException");
+    }
+    try {
+        Map.of("a", 1, "a", 2);
+    } catch (IllegalArgumentException e) {
+        IO.println("Map.of key trung    -&gt; " + e.getMessage());
+    }
+
+    Map&lt;String, Integer&gt; m = Map.of("a", 1);
+    try {
+        m.put("b", 2);
+    } catch (UnsupportedOperationException e) {
+        IO.println("Map.of put(\"b\", 2) -&gt; " + e);
+    }
+    IO.println("m                   : " + m);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Map.of("a", null)  -&gt; NullPointerException
+Map.of key trung    -&gt; duplicate key: a
+Map.of put("b", 2) -&gt; java.lang.UnsupportedOperationException
+m                   : {a=1}</code></pre>
+    </div>
+
+    <div class="note">Thứ tự duyệt của <code class="inline">Map.of</code>/<code class="inline">Set.of</code> <strong>không được đảm bảo</strong> (JDK dùng salt ngẫu nhiên mỗi lần chạy để chống tấn công hash). Đừng viết test phụ thuộc vào thứ tự đó; cần thứ tự thì bọc qua <code class="inline">TreeMap</code>/<code class="inline">LinkedHashMap</code>.</div>
+
+    <h3>5.6 Method hiện đại: getOrDefault → compute → merge</h3>
+
+    <p>Từ Java 8, <code class="inline">Map</code> có các default method giúp code ngắn và tránh null check lặp lại:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Map&lt;String, Integer&gt; cfg = new HashMap&lt;&gt;();
+    cfg.putAll(Map.of("a", 1, "b", 2));
+
+    IO.println("getOrDefault(z, 0)       : " + cfg.getOrDefault("z", 0));
+    cfg.putIfAbsent("a", 99);
+    cfg.putIfAbsent("c", 3);
+    IO.println("sau putIfAbsent(a=99,c=3): " + new TreeMap&lt;&gt;(cfg));
+    IO.println("computeIfPresent(a, +10) : " + cfg.computeIfPresent("a", (k, v) -&gt; v + 10));
+    IO.println("computeIfAbsent(d, 40)   : " + cfg.computeIfAbsent("d", k -&gt; 40));
+    IO.println("computeIfAbsent(d, 50)   : " + cfg.computeIfAbsent("d", k -&gt; 50));
+    IO.println("cfg cuoi                 : " + new TreeMap&lt;&gt;(cfg));
+
+    Map&lt;String, Integer&gt; dem = new HashMap&lt;&gt;();
+    for (String tu : "java la ngon ngu java chay tren jvm".split(" ")) {
+        dem.merge(tu, 1, Integer::sum);
+    }
+    IO.println("dem tu                   : " + new TreeMap&lt;&gt;(dem));
+
+    Map&lt;String, Integer&gt; doanhThu = new HashMap&lt;&gt;();
+    doanhThu.merge("An", 100, Integer::sum);
+    doanhThu.merge("An", 50, Integer::sum);
+    IO.println("doanhThu An              : " + doanhThu.get("An"));
+
+    cfg.remove("b", 999);
+    cfg.remove("b", 2);
+    IO.println("sau remove(b,999) roi remove(b,2) : " + new TreeMap&lt;&gt;(cfg));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>getOrDefault(z, 0)       : 0
+sau putIfAbsent(a=99,c=3): {a=1, b=2, c=3}
+computeIfPresent(a, +10) : 11
+computeIfAbsent(d, 40)   : 40
+computeIfAbsent(d, 50)   : 40
+cfg cuoi                 : {a=11, b=2, c=3, d=40}
+dem tu                   : {chay=1, java=2, jvm=1, la=1, ngon=1, ngu=1, tren=1}
+doanhThu An              : 150
+sau remove(b,999) roi remove(b,2) : {a=11, c=3, d=40}</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Làm gì</th><th>Trả về null thì…</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">getOrDefault(k, def)</code></td><td>Lấy value, thiếu thì trả <code class="inline">def</code></td><td>Không áp dụng</td></tr>
+        <tr><td><code class="inline">putIfAbsent(k, v)</code></td><td>Chỉ put khi key chưa có (hoặc value đang null)</td><td>Không áp dụng</td></tr>
+        <tr><td><code class="inline">computeIfAbsent(k, f)</code></td><td>Tính value mới khi key chưa có</td><td>Không thêm entry</td></tr>
+        <tr><td><code class="inline">computeIfPresent(k, f)</code></td><td>Tính lại value khi key đã có</td><td><strong>Xóa</strong> entry</td></tr>
+        <tr><td><code class="inline">compute(k, f)</code></td><td>Tính value cho cả hai trường hợp</td><td><strong>Xóa</strong> entry (hoặc không thêm nếu chưa có)</td></tr>
+        <tr><td><code class="inline">merge(k, v, f)</code></td><td>Chưa có → đặt v; đã có → gộp <code class="inline">f(old, v)</code></td><td><strong>Xóa</strong> entry</td></tr>
+        <tr><td><code class="inline">remove(k, v)</code></td><td>Xóa chỉ khi value khớp</td><td>Không áp dụng (trả boolean)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ba pattern đáng nhớ: đếm tần suất bằng <code class="inline">merge</code>, khởi tạo danh sách con bằng <code class="inline">computeIfAbsent</code>, và cộng dồn nhóm bằng <code class="inline">merge</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Map&lt;String, List&lt;String&gt;&gt; theoNhom = new HashMap&lt;&gt;();
+for (String sp : List.of("ao", "quan", "ao", "giay")) {
+    theoNhom.computeIfAbsent(sp, k -&gt; new ArrayList&lt;&gt;()).add("SP-" + sp);
+}
+// {ao=[SP-ao, SP-ao], quan=[SP-quan], giay=[SP-giay]}</code></pre>
+    </div>
+
+    <h3>5.7 Bẫy key mutable</h3>
+
+    <p>Key của <code class="inline">HashMap</code> phải ổn định hash trong suốt thời gian nằm trong map. Sửa field ảnh hưởng <code class="inline">hashCode</code> sau khi <code class="inline">put</code> sẽ khiến entry "mất tích" — vẫn nằm trong map nhưng không tra được:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+final class Key {
+    String ten;
+
+    Key(String ten) {
+        this.ten = ten;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Key k &amp;&amp; ten.equals(k.ten);
+    }
+
+    @Override
+    public int hashCode() {
+        return ten.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Key[" + ten + "]";
+    }
+}
+
+void main() {
+    Map&lt;Key, String&gt; map = new HashMap&lt;&gt;();
+    Key k = new Key("a");
+    map.put(k, "gia tri");
+
+    IO.println("truoc khi doi : " + map.get(k));
+    k.ten = "b";
+    IO.println("sau khi doi   : " + map.get(k));
+    IO.println("map van giu entry: " + map.size());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>truoc khi doi : gia tri
+sau khi doi   : null
+map van giu entry: 1</code></pre>
+    </div>
+
+    <p>Quy tắc production: key nên là <strong>immutable</strong> — <code class="inline">String</code>, số wrapper, <code class="inline">enum</code>, <code class="inline">record</code>, <code class="inline">UUID</code>, <code class="inline">LocalDate</code>. Nếu buộc dùng object mutable làm key, hãy copy giá trị tại thời điểm <code class="inline">put</code> hoặc "đóng băng" nó.</p>
+
+    <h2 id="queue-deque">6. Queue &amp; Deque — ArrayDeque, PriorityQueue <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">Queue</code> xử lý phần tử theo thứ tự (FIFO, LIFO hoặc ưu tiên). Điểm dễ nhầm: mỗi thao tác có <strong>hai phiên bản</strong> — một bản ném exception, một bản trả giá trị đặc biệt:</p>
+
+    <table>
+      <thead>
+        <tr><th>Thao tác</th><th>Ném exception</th><th>Trả giá trị đặc biệt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Thêm vào cuối</td><td><code class="inline">add(e)</code> → <code class="inline">IllegalStateException</code> nếu đầy</td><td><code class="inline">offer(e)</code> → <code class="inline">false</code> nếu đầy</td></tr>
+        <tr><td>Lấy &amp; xóa đầu</td><td><code class="inline">remove()</code> → <code class="inline">NoSuchElementException</code> nếu rỗng</td><td><code class="inline">poll()</code> → <code class="inline">null</code> nếu rỗng</td></tr>
+        <tr><td>Xem đầu (không xóa)</td><td><code class="inline">element()</code> → <code class="inline">NoSuchElementException</code></td><td><code class="inline">peek()</code> → <code class="inline">null</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Queue&lt;String&gt; q = new ArrayDeque&lt;&gt;();
+
+    IO.println("offer(\"a\")     : " + q.offer("a"));
+    IO.println("peek()        : " + q.peek());
+    IO.println("poll()        : " + q.poll());
+    IO.println("poll() rong   : " + q.poll());
+    IO.println("peek() rong   : " + q.peek());
+
+    try {
+        q.element();
+    } catch (NoSuchElementException e) {
+        IO.println("element() rong: NoSuchElementException");
+    }
+    try {
+        q.remove();
+    } catch (NoSuchElementException e) {
+        IO.println("remove() rong : NoSuchElementException");
+    }
+    try {
+        q.add(null);
+    } catch (NullPointerException e) {
+        IO.println("add(null)     : NullPointerException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>offer("a")     : true
+peek()        : a
+poll()        : a
+poll() rong   : null
+peek() rong   : null
+element() rong: NoSuchElementException
+remove() rong : NoSuchElementException
+add(null)     : NullPointerException</code></pre>
+    </div>
+
+    <div class="note">Quy ước production: dùng <code class="inline">offer</code>/<code class="inline">poll</code>/<code class="inline">peek</code> trong code bình thường (không muốn exception cho luồng rỗng), chỉ dùng bản ném exception khi rỗng thực sự là bug. <code class="inline">ArrayDeque</code> <strong>không nhận null</strong> — nhờ vậy <code class="inline">null</code> không bao giờ lẫn vào dữ liệu.</div>
+
+    <table>
+      <thead>
+        <tr><th></th><th>ArrayDeque</th><th>LinkedList</th><th>PriorityQueue</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cấu trúc</td><td>Mảng vòng</td><td>Liên kết đôi</td><td>Binary heap</td></tr>
+        <tr><td>Thứ tự lấy ra</td><td>FIFO/LIFO tùy đầu dùng</td><td>FIFO/LIFO tùy đầu dùng</td><td>Nhỏ nhất (hoặc theo comparator)</td></tr>
+        <tr><td><code class="inline">offer</code>/<code class="inline">poll</code> hai đầu</td><td>O(1)</td><td>O(1)</td><td>O(log n) (một đầu)</td></tr>
+        <tr><td><code class="inline">peek</code></td><td>O(1)</td><td>O(1)</td><td>O(1)</td></tr>
+        <tr><td>Null</td><td>Không</td><td>Có</td><td>Không</td></tr>
+        <tr><td>Dùng khi</td><td>Queue/stack mặc định</td><td>Hiếm — thay bằng ArrayDeque</td><td>Scheduler, top-K, Dijkstra</td></tr>
+      </tbody>
+    </table>
+
+    <p><code class="inline">Deque</code> (double-ended queue) cho phép thao tác cả hai đầu; dùng nó làm queue (<code class="inline">offerLast</code>/<code class="inline">pollFirst</code>) hoặc stack (<code class="inline">push</code>/<code class="inline">pop</code>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    Deque&lt;String&gt; d = new ArrayDeque&lt;&gt;();
+    d.addFirst("b");
+    d.addFirst("a");
+    d.addLast("c");
+    IO.println("deque        : " + d);
+    IO.println("peekFirst    : " + d.peekFirst());
+    IO.println("pollFirst   : " + d.pollFirst());
+    IO.println("pollLast    : " + d.pollLast());
+    IO.println("con lai      : " + d);
+
+    Deque&lt;String&gt; stack = new ArrayDeque&lt;&gt;();
+    stack.push("mot");
+    stack.push("hai");
+    IO.println("stack push/pop: " + stack.pop() + " " + stack.pop());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>deque        : [a, b, c]
+peekFirst    : a
+pollFirst   : a
+pollLast    : c
+con lai      : [b]
+stack push/pop: hai mot</code></pre>
+    </div>
+
+    <h3>PriorityQueue — heap, không phải danh sách đã sort</h3>
+
+    <p><code class="inline">PriorityQueue</code> chỉ đảm bảo <strong>phần tử đầu là nhỏ nhất</strong> (theo natural ordering hoặc comparator). <code class="inline">toString()</code> in ra mảng heap bên trong — <strong>không phải</strong> thứ tự đã sort:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    PriorityQueue&lt;Integer&gt; pq = new PriorityQueue&lt;&gt;();
+    pq.addAll(List.of(30, 10, 20, 5));
+
+    IO.println("heap array : " + pq);
+    IO.println("peek()     : " + pq.peek());
+
+    StringBuilder sb = new StringBuilder();
+    while (!pq.isEmpty()) {
+        sb.append(pq.poll()).append(' ');
+    }
+    IO.println("poll()     : " + sb.toString().trim());
+
+    PriorityQueue&lt;String&gt; max = new PriorityQueue&lt;&gt;(Comparator.reverseOrder());
+    max.addAll(List.of("b", "a", "c"));
+    IO.println("max-heap   : " + max.poll() + " " + max.poll() + " " + max.poll());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>heap array : [5, 10, 20, 30]
+peek()     : 5
+poll()     : 5 10 20 30
+max-heap   : c b a</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">add</code>/<code class="inline">offer</code> và <code class="inline">poll</code> là O(log n); <code class="inline">peek</code> là O(1); duyệt toàn bộ bằng for-each là O(n) nhưng <strong>thứ tự không sorted</strong>.</li>
+      <li><code class="inline">PriorityQueue</code> <strong>không stable</strong>: hai phần tử có cùng độ ưu tiên có thể ra theo thứ tự bất kỳ (heap không giữ thứ tự chèn). Cần stable thì thêm tie-breaker vào comparator (ví dụ số thứ tự tăng dần).</li>
+      <li>Không nhận null; không thread-safe. Bản concurrent là <code class="inline">PriorityBlockingQueue</code>.</li>
+      <li>Muốn lấy <strong>top-K</strong> từ dữ liệu lớn: giữ một <code class="inline">PriorityQueue</code> kích thước K (min-heap cho top-K lớn nhất), mỗi phần tử mới so với <code class="inline">peek()</code> — O(n log K) thay vì sort cả mảng.</li>
+    </ul>
+
+    <h3>BlockingQueue — nhận biết cho Giai đoạn 4</h3>
+
+    <p>Khi producer và consumer chạy trên các thread khác nhau, <code class="inline">BlockingQueue</code> là công cụ chuẩn: <code class="inline">put(e)</code> block khi queue đầy, <code class="inline">take()</code> block khi queue rỗng. Các implementation cần biết tên: <code class="inline">ArrayBlockingQueue</code> (bounded), <code class="inline">LinkedBlockingQueue</code> (tùy chọn bounded), <code class="inline">PriorityBlockingQueue</code>, <code class="inline">SynchronousQueue</code> (bắt tay trực tiếp), <code class="inline">DelayQueue</code>. Chi tiết ở <a href="roadmap.html#phase-4">Giai đoạn 4 — Concurrency</a>.</p>
+
+    <h2 id="iterator">7. Iterator &amp; fail-fast <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>for-each thực chất được compiler dịch thành <code class="inline">Iterator</code>:</p>
+
+    <div class="signature">
+      <span class="sig-muted">for (</span><span class="tok-typ">T</span> <span class="sig-var">x</span> <span class="sig-muted">: collection) { ... }</span> &nbsp;≡&nbsp; <span class="tok-typ">Iterator&lt;T&gt;</span> <span class="sig-var">it</span> <span class="sig-muted">= collection.iterator(); while (it.hasNext()) { T x = it.next(); ... }</span>
+    </div>
+
+    <p>Xóa phần tử <strong>an toàn</strong> trong lúc duyệt phải qua chính iterator (<code class="inline">it.remove()</code>), hoặc dùng <code class="inline">removeIf</code> — cả hai đều cập nhật đúng trạng thái nội bộ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("a", "b", "c", "d"));
+
+    Iterator&lt;String&gt; it = list.iterator();
+    while (it.hasNext()) {
+        if (it.next().equals("b")) {
+            it.remove();
+        }
+    }
+    IO.println("sau iterator.remove : " + list);
+
+    list.removeIf(s -&gt; s.equals("d"));
+    IO.println("sau removeIf        : " + list);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>sau iterator.remove : [a, c, d]
+sau removeIf        : [a, c]</code></pre>
+    </div>
+
+    <p>Sửa collection trực tiếp trong for-each (thay vì qua iterator) làm số lần sửa (<code class="inline">modCount</code>) lệch với bản ghi của iterator, lần <code class="inline">next()</code> kế tiếp sẽ ném <code class="inline">ConcurrentModificationException</code> — gọi tắt là <strong>fail-fast</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("a", "b", "c"));
+
+    try {
+        for (String s : list) {
+            IO.println("duyet: " + s);
+            if (s.equals("b")) {
+                list.add("x");
+            }
+        }
+    } catch (ConcurrentModificationException e) {
+        IO.println("-&gt; ConcurrentModificationException");
+    }
+    IO.println("list: " + list);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>duyet: a
+duyet: b
+-&gt; ConcurrentModificationException
+list: [a, b, c, x]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Fail-fast chỉ là "best-effort":</strong> Javadoc ghi rõ nó không đảm bảo phát hiện mọi thay đổi đồng thời — code <em>không được phép</em> dựa vào exception này để đảm bảo đúng đắn. Với dữ liệu chia sẻ giữa thread, phải dùng collection concurrent, không dựa vào fail-fast.</div>
+
+    <h3>Fail-safe: CopyOnWriteArrayList &amp; ConcurrentHashMap</h3>
+
+    <p>Các collection concurrent không ném CME: iterator của <code class="inline">CopyOnWriteArrayList</code> chạy trên <strong>snapshot</strong> (bản chụp tại thời điểm tạo iterator), còn <code class="inline">ConcurrentHashMap</code> dùng iterator <strong>weakly consistent</strong> (có thể thấy hoặc không thấy thay đổi mới, nhưng không ném lỗi):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+import java.util.concurrent.*;
+
+void main() {
+    CopyOnWriteArrayList&lt;String&gt; cow = new CopyOnWriteArrayList&lt;&gt;(List.of("a", "b", "c"));
+    for (String s : cow) {
+        if (s.equals("b")) {
+            cow.add("x");
+        }
+    }
+    IO.println("COW sau vua duyet vua add : " + cow);
+
+    ConcurrentHashMap&lt;String, Integer&gt; chm = new ConcurrentHashMap&lt;&gt;();
+    chm.put("a", 1);
+    for (String k : chm.keySet()) {
+        chm.put("b", 2);
+    }
+    IO.println("CHM size                  : " + chm.size());
+    IO.println("CHM containsKey(b)        : " + chm.containsKey("b"));
+
+    try {
+        new CopyOnWriteArrayList&lt;&gt;(List.of("a")).iterator().remove();
+    } catch (UnsupportedOperationException e) {
+        IO.println("COW iterator.remove       : UnsupportedOperationException");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>COW sau vua duyet vua add : [a, b, c, x]
+CHM size                  : 2
+CHM containsKey(b)        : true
+COW iterator.remove       : UnsupportedOperationException</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th></th><th>CopyOnWriteArrayList</th><th>ConcurrentHashMap</th><th>Collections.synchronizedList</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Iterator</td><td>Snapshot, không CME</td><td>Weakly consistent</td><td>Vẫn fail-fast</td></tr>
+        <tr><td>Chi phí ghi</td><td>Copy toàn bộ mảng — rất đắt</td><td>Khóa từng bucket/CAS</td><td>Khóa từng method</td></tr>
+        <tr><td>Duyệt an toàn</td><td>Có (snapshot)</td><td>Có</td><td>Phải tự <code class="inline">synchronized</code> quanh vòng lặp</td></tr>
+        <tr><td>Hợp với</td><td>Read-heavy: listener, config</td><td>Cache, counter, shared map</td><td>Legacy, ít dùng</td></tr>
+      </tbody>
+    </table>
+
+    <p>Một chi tiết hay bị hỏi: <code class="inline">it.remove()</code> chỉ gọi được <strong>sau</strong> <code class="inline">it.next()</code>; gọi trước đó ném <code class="inline">IllegalStateException</code>. Và <code class="inline">removeIf</code> thường được implementation tối ưu (ví dụ <code class="inline">ArrayList</code> duyệt một lần rồi dịch mảng) nên hiệu quả hơn tự viết vòng lặp iterator.</p>
+
+    <h2 id="comparator">8. Comparable vs Comparator <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><code class="inline">Comparable</code> định nghĩa <strong>thứ tự tự nhiên</strong> của chính class (<code class="inline">compareTo</code>); <code class="inline">Comparator</code> là object so sánh <strong>từ bên ngoài</strong>, cho phép nhiều cách sort khác nhau:</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Comparable</th><th>Comparator</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Package</td><td><code class="inline">java.lang</code></td><td><code class="inline">java.util</code></td></tr>
+        <tr><td>Method</td><td><code class="inline">int compareTo(T other)</code></td><td><code class="inline">int compare(T a, T b)</code></td></tr>
+        <tr><td>Thứ tự</td><td>Natural order — một cách duy nhất</td><td>Nhiều cách, định nghĩa ngoài class</td></tr>
+        <tr><td>Dùng bởi</td><td><code class="inline">TreeSet</code>/<code class="inline">TreeMap</code> mặc định, <code class="inline">Collections.sort</code></td><td><code class="inline">sort(comparator)</code>, constructor của <code class="inline">TreeSet</code>/<code class="inline">TreeMap</code></td></tr>
+        <tr><td>Lambda</td><td>Không (class phải implement)</td><td>Có — functional interface (xem <a href="lambda-functional.html">3.6 Lambda</a>)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+record SinhVien(String ten, double diem) implements Comparable&lt;SinhVien&gt; {
+    @Override
+    public int compareTo(SinhVien other) {
+        return Double.compare(diem, other.diem);
+    }
+}
+
+void main() {
+    List&lt;SinhVien&gt; ds = new ArrayList&lt;&gt;(List.of(
+            new SinhVien("An", 8.5),
+            new SinhVien("Binh", 7.0),
+            new SinhVien("Cuong", 9.0)));
+
+    Collections.sort(ds);
+    IO.println("Collections.sort : " + ds);
+
+    ds.sort(Comparator.reverseOrder());
+    IO.println("dao nguoc        : " + ds);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Collections.sort : [SinhVien[ten=Binh, diem=7.0], SinhVien[ten=An, diem=8.5], SinhVien[ten=Cuong, diem=9.0]]
+dao nguoc        : [SinhVien[ten=Cuong, diem=9.0], SinhVien[ten=An, diem=8.5], SinhVien[ten=Binh, diem=7.0]]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đừng viết <code class="inline">return this.diem - other.diem</code>.</strong> Kiểu <code class="inline">int</code> có thể tràn khi hiệu vượt 2<sup>31</sup>-1 (ví dụ <code class="inline">Integer.MIN_VALUE - 1</code>), làm comparator sai dấu. Luôn dùng <code class="inline">Integer.compare(a, b)</code>, <code class="inline">Long.compare</code>, <code class="inline">Double.compare</code>. Hợp đồng <code class="inline">compareTo</code>: dấu của kết quả quyết định thứ tự, phải phản xứng và bắc cầu; nên <strong>nhất quán với <code class="inline">equals</code></strong> (xem <a href="object-contract.html#hashcode-contract">Object contract — mục 7</a>).</div>
+
+    <h3>Comparator chaining — sort đa tiêu chí</h3>
+
+    <p>Comparator có bộ builder rất mạnh: <code class="inline">comparing</code>, <code class="inline">comparingInt/Double</code>, <code class="inline">thenComparing</code>, <code class="inline">reversed</code>, <code class="inline">nullsFirst/nullsLast</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+record SinhVien(String ten, double diem, int tuoi) {}
+
+void main() {
+    List&lt;SinhVien&gt; ds = new ArrayList&lt;&gt;(List.of(
+            new SinhVien("An", 8.0, 20),
+            new SinhVien("Binh", 9.0, 22),
+            new SinhVien("Cuong", 9.0, 21),
+            new SinhVien("Dung", 7.0, 20)));
+
+    ds.sort(Comparator.comparingDouble(SinhVien::diem)
+            .reversed()
+            .thenComparing(SinhVien::ten));
+    IO.println("diem giam, ten tang:");
+    for (SinhVien sv : ds) {
+        IO.println("  " + sv);
+    }
+
+    List&lt;String&gt; ten = new ArrayList&lt;&gt;(Arrays.asList(null, "An", "Binh"));
+    ten.sort(Comparator.nullsFirst(Comparator.naturalOrder()));
+    IO.println("nullsFirst        : " + ten);
+
+    ds.sort(Comparator.comparingInt(SinhVien::tuoi)
+            .thenComparing(SinhVien::ten));
+    IO.println("tuoi tang, ten tang: " + ds);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>diem giam, ten tang:
+  SinhVien[ten=Binh, diem=9.0, tuoi=22]
+  SinhVien[ten=Cuong, diem=9.0, tuoi=21]
+  SinhVien[ten=An, diem=8.0, tuoi=20]
+  SinhVien[ten=Dung, diem=7.0, tuoi=20]
+nullsFirst        : [null, An, Binh]
+tuoi tang, ten tang: [SinhVien[ten=An, diem=8.0, tuoi=20], SinhVien[ten=Dung, diem=7.0, tuoi=20], SinhVien[ten=Cuong, diem=9.0, tuoi=21], SinhVien[ten=Binh, diem=9.0, tuoi=22]]</code></pre>
+    </div>
+
+    <p>Chú ý <code class="inline">reversed()</code> áp cho <em>toàn bộ comparator phía trước</em>, nên thứ tự viết là "diem giảm, rồi ten tăng" — nếu muốn "diem tăng, ten giảm" thì viết <code class="inline">comparing(SinhVien::diem).thenComparing(SinhVien::ten, Comparator.reverseOrder())</code>.</p>
+
+    <h3>compareTo không nhất quán với equals — bẫy TreeSet</h3>
+
+    <p>Hai sinh viên khác tên nhưng cùng điểm: <code class="inline">equals</code> là false, nhưng <code class="inline">compareTo == 0</code>. <code class="inline">HashSet</code> giữ cả hai, còn <code class="inline">TreeSet</code> coi là "trùng" và <strong>nuốt mất một phần tử</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+record SinhVien(String ten, double diem) implements Comparable&lt;SinhVien&gt; {
+    @Override
+    public int compareTo(SinhVien other) {
+        return Double.compare(diem, other.diem);
+    }
+}
+
+void main() {
+    SinhVien an = new SinhVien("An", 8.0);
+    SinhVien binh = new SinhVien("Binh", 8.0);
+
+    IO.println("equals        : " + an.equals(binh));
+    IO.println("compareTo == 0: " + (an.compareTo(binh) == 0));
+
+    Set&lt;SinhVien&gt; hashSet = new HashSet&lt;&gt;();
+    hashSet.add(an);
+    hashSet.add(binh);
+    IO.println("HashSet size  : " + hashSet.size());
+
+    Set&lt;SinhVien&gt; treeSet = new TreeSet&lt;&gt;();
+    treeSet.add(an);
+    treeSet.add(binh);
+    IO.println("TreeSet size  : " + treeSet.size());
+    IO.println("TreeSet       : " + treeSet);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>equals        : false
+compareTo == 0: true
+HashSet size  : 2
+TreeSet size  : 1
+TreeSet       : [SinhVien[ten=An, diem=8.0]]</code></pre>
+    </div>
+
+    <p>Đây chính là trường hợp <code class="inline">BigDecimal("1.0")</code> vs <code class="inline">BigDecimal("1.00")</code> đã gặp ở <a href="index.html#bigdecimal">Biến trong Java — mục 13.6</a>. Cách tránh: cho <code class="inline">compareTo</code> so thêm tie-breaker để khớp <code class="inline">equals</code>, hoặc không trộn hai tiêu chí so sánh khác nhau cho cùng một class.</p>
+
+    <h3>Sort stability — TimSort</h3>
+
+    <p><code class="inline">Collections.sort</code>/<code class="inline">List.sort</code> cho object dùng <strong>TimSort</strong> — thuật toán <strong>stable</strong>: phần tử "bằng nhau" theo comparator giữ nguyên thứ tự ban đầu. Đây là tính chất production rất quan trọng khi sort nhiều bước:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+record Don(String ma, int tien) {}
+
+void main() {
+    List&lt;Don&gt; ds = new ArrayList&lt;&gt;(List.of(
+            new Don("D1", 100),
+            new Don("D2", 100),
+            new Don("D3", 50)));
+
+    ds.sort(Comparator.comparingInt(Don::tien));
+    IO.println(ds);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[Don[ma=D3, tien=50], Don[ma=D1, tien=100], Don[ma=D2, tien=100]]</code></pre>
+    </div>
+
+    <p>D1 đứng trước D2 dù cùng <code class="inline">tien</code> — vì stable sort giữ thứ tự gốc. Lưu ý: mảng <strong>primitive</strong> (<code class="inline">int[]</code>…) sort bằng dual-pivot quicksort <strong>không stable</strong>; chỉ mảng object mới stable. <code class="inline">List.sort(comparator)</code> và <code class="inline">Collections.sort(list, comparator)</code> tương đương nhau — JDK hiện đại để <code class="inline">Collections.sort</code> gọi xuống <code class="inline">list.sort</code>; dùng <code class="inline">list.sort(...)</code> cho gọn.</p>
+
+    <h2 id="utility">9. Collections &amp; Arrays utility + immutability <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Hai class tiện ích tĩnh: <code class="inline">java.util.Collections</code> (cho collection) và <code class="inline">java.util.Arrays</code> (cho mảng). Bộ method hay dùng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Làm gì</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Collections.sort(list)</code></td><td>Sort theo natural order</td><td>Tương đương <code class="inline">list.sort(null)</code></td></tr>
+        <tr><td><code class="inline">Collections.binarySearch(list, key)</code></td><td>Tìm nhị phân O(log n)</td><td><strong>Bắt buộc list đã sort</strong></td></tr>
+        <tr><td><code class="inline">Collections.reverse(list)</code></td><td>Đảo ngược tại chỗ</td><td>O(n)</td></tr>
+        <tr><td><code class="inline">Collections.swap(list, i, j)</code></td><td>Đổi chỗ 2 vị trí</td><td>O(1)</td></tr>
+        <tr><td><code class="inline">Collections.shuffle(list)</code></td><td>Xáo trộn ngẫu nhiên</td><td>Có bản nhận <code class="inline">Random</code> để tái lập</td></tr>
+        <tr><td><code class="inline">Collections.max/min</code></td><td>Phần tử lớn/nhỏ nhất</td><td>Có bản nhận comparator</td></tr>
+        <tr><td><code class="inline">Collections.frequency(c, o)</code></td><td>Đếm số lần xuất hiện</td><td>Dựa trên <code class="inline">equals</code></td></tr>
+        <tr><td><code class="inline">Collections.unmodifiableXxx</code></td><td>View chỉ đọc</td><td>Gốc đổi thì view đổi theo</td></tr>
+        <tr><td><code class="inline">Collections.emptyXxx/singletonXxx</code></td><td>Collection rỗng / 1 phần tử</td><td>Bất biến</td></tr>
+        <tr><td><code class="inline">Collections.nCopies(n, o)</code></td><td>List n bản sao của o</td><td>Bất biến</td></tr>
+        <tr><td><code class="inline">Arrays.toString / deepToString</code></td><td>In mảng / mảng nhiều chiều</td><td>Mảng lồng nhau cần <code class="inline">deepToString</code></td></tr>
+        <tr><td><code class="inline">Arrays.sort / fill / copyOf</code></td><td>Sort, gán đầy, copy mảng</td><td>Primitive sort không stable</td></tr>
+        <tr><td><code class="inline">Arrays.binarySearch</code></td><td>Tìm nhị phân trên mảng</td><td>Bắt buộc mảng đã sort</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    int[] arr = {5, 2, 9, 1, 7};
+    Arrays.sort(arr);
+    IO.println("Arrays.toString   : " + Arrays.toString(arr));
+    IO.println("binarySearch(7)   : " + Arrays.binarySearch(arr, 7));
+    IO.println("binarySearch(3)   : " + Arrays.binarySearch(arr, 3));
+
+    int[][] matrix = {{1, 2}, {3, 4}};
+    IO.println("deepToString      : " + Arrays.deepToString(matrix));
+
+    int[] copy = Arrays.copyOf(arr, 3);
+    IO.println("copyOf(arr, 3)    : " + Arrays.toString(copy));
+
+    int[] filled = new int[4];
+    Arrays.fill(filled, 9);
+    IO.println("fill              : " + Arrays.toString(filled));
+
+    List&lt;Integer&gt; list = new ArrayList&lt;&gt;(List.of(3, 1, 2));
+    Collections.sort(list);
+    Collections.reverse(list);
+    IO.println("sort + reverse    : " + list);
+    Collections.swap(list, 0, 2);
+    IO.println("swap(0, 2)        : " + list);
+    IO.println("max / min         : " + Collections.max(list) + " / " + Collections.min(list));
+    IO.println("frequency(2)      : " + Collections.frequency(list, 2));
+
+    Collections.shuffle(list, new Random(42));
+    IO.println("shuffle(Random42) : " + list);
+
+    IO.println("nCopies(3, x)     : " + Collections.nCopies(3, "x"));
+    IO.println("emptyList         : " + Collections.emptyList());
+    IO.println("singleton         : " + Collections.singleton("only"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Arrays.toString   : [1, 2, 5, 7, 9]
+binarySearch(7)   : 3
+binarySearch(3)   : -3
+deepToString      : [[1, 2], [3, 4]]
+copyOf(arr, 3)    : [1, 2, 5]
+fill              : [9, 9, 9, 9]
+sort + reverse    : [3, 2, 1]
+swap(0, 2)        : [1, 2, 3]
+max / min         : 3 / 1
+frequency(2)      : 1
+shuffle(Random42) : [2, 1, 3]
+nCopies(3, x)     : [x, x, x]
+emptyList         : []
+singleton         : [only]</code></pre>
+    </div>
+
+    <div class="note">Quy ước đọc kết quả <code class="inline">binarySearch</code>: tìm thấy → trả index; không tìm thấy → trả <code class="inline">-(điểm chèn) - 1</code>. Vì vậy <code class="inline">binarySearch(3)</code> trên <code class="inline">[1, 2, 5, 7, 9]</code> trả <code class="inline">-3</code> (chèn vào index 2). <code class="inline">shuffle</code> với <code class="inline">new Random(42)</code> tái lập được nên output ổn định; không truyền seed thì kết quả khác nhau mỗi lần chạy.</div>
+
+    <p><strong>binarySearch yêu cầu dữ liệu đã sort</strong> — đây là bẫy production vì hàm không kiểm tra giúp bạn. Trên mảng chưa sort, kết quả là "không xác định" (có thể trả về index sai hoặc âm sai):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    int[] arr = {5, 2, 9, 1, 7};
+    IO.println("mang chua sort      : " + Arrays.toString(arr));
+    IO.println("binarySearch(7)     : " + Arrays.binarySearch(arr, 7));
+
+    Arrays.sort(arr);
+    IO.println("mang da sort        : " + Arrays.toString(arr));
+    IO.println("binarySearch(7)     : " + Arrays.binarySearch(arr, 7));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>mang chua sort      : [5, 2, 9, 1, 7]
+binarySearch(7)     : -3
+mang da sort        : [1, 2, 5, 7, 9]
+binarySearch(7)     : 3</code></pre>
+    </div>
+
+    <p>Số 7 <strong>có</strong> trong mảng nhưng binarySearch trả <code class="inline">-3</code> (báo "không tìm thấy") vì mảng chưa sort. Muốn tìm tuyến tính thì dùng <code class="inline">contains</code>/<code class="inline">indexOf</code>; còn đã dùng binary search thì <em>phải</em> sort trước, và sort bằng đúng comparator mà bạn sẽ tìm.</p>
+
+    <h3>Immutable vs unmodifiable</h3>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Immutable</th><th>Unmodifiable (view)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo bằng</td><td><code class="inline">List.of</code>, <code class="inline">Set.of</code>, <code class="inline">Map.of</code>, <code class="inline">List.copyOf</code></td><td><code class="inline">Collections.unmodifiableList/Set/Map</code></td></tr>
+        <tr><td>Sửa qua reference này</td><td>Ném <code class="inline">UnsupportedOperationException</code></td><td>Ném <code class="inline">UnsupportedOperationException</code></td></tr>
+        <tr><td>Dữ liệu gốc đổi</td><td>Không ảnh hưởng (đã copy/không có gốc)</td><td><strong>Thấy thay đổi</strong> (là view)</td></tr>
+        <tr><td>Null</td><td>Từ chối (NPE khi tạo/copy)</td><td>Cho phép</td></tr>
+        <tr><td>Dùng khi</td><td>Hằng số, chia sẻ giữa thread, value object</td><td>Chặn ghi tạm thời trên collection sống</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.*;
+
+void main() {
+    List&lt;String&gt; empty = Collections.emptyList();
+    List&lt;String&gt; one = Collections.singletonList("only");
+    List&lt;String&gt; goc = new ArrayList&lt;&gt;(List.of("a"));
+    List&lt;String&gt; view = Collections.unmodifiableList(goc);
+
+    for (List&lt;String&gt; l : List.of(empty, one, view)) {
+        try {
+            l.add("x");
+        } catch (UnsupportedOperationException e) {
+            IO.println(l + " -&gt; add: UnsupportedOperationException");
+        }
+    }
+
+    goc.add("b");
+    IO.println("view sau khi goc them b : " + view);
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>[] -&gt; add: UnsupportedOperationException
+[only] -&gt; add: UnsupportedOperationException
+[a] -&gt; add: UnsupportedOperationException
+view sau khi goc them b : [a, b]</code></pre>
+    </div>
+
+    <div class="note">Lưu ý "immutable" ở đây là <strong>immutable cấu trúc</strong> (không thêm/xóa/set được), còn <em>phần tử bên trong</em> vẫn có thể mutable. <code class="inline">List.copyOf</code> chỉ là <strong>shallow copy</strong> — nếu phần tử là object mutable, sửa object đó vẫn nhìn thấy từ cả hai list. Muốn immutable thật phải đảm bảo phần tử cũng immutable (xem <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>).</div>
+
+    <p>Chi tiết đầy đủ về <code class="inline">Arrays</code> (copy nông/sâu, <code class="inline">ArrayStoreException</code>, varargs) nằm ở <a href="arrays.html#arrays-class">Arrays — mục 6</a>; so sánh mảng vs List ở <a href="arrays.html#mang-vs-list">Arrays — mục 11</a>.</p>
+
+    <h2 id="big-o">10. Big-O tổng hợp, chọn theo use case &amp; production <span class="badge b-prod">Production</span></h2>
+
+    <h3>Bảng Big-O tổng hợp</h3>
+
+    <table>
+      <thead>
+        <tr><th>Cấu trúc</th><th>Truy cập / get</th><th>Thêm</th><th>Xóa</th><th>contains</th><th>Thứ tự</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">ArrayList</code></td><td>O(1) theo index</td><td>O(1)* cuối, O(n) đầu/giữa</td><td>O(n)</td><td>O(n)</td><td>Chèn</td></tr>
+        <tr><td><code class="inline">LinkedList</code></td><td>O(n)</td><td>O(1) hai đầu</td><td>O(1) hai đầu, O(n) giữa</td><td>O(n)</td><td>Chèn</td></tr>
+        <tr><td><code class="inline">ArrayDeque</code></td><td>O(1) hai đầu</td><td>O(1) hai đầu</td><td>O(1) hai đầu</td><td>O(n)</td><td>Chèn</td></tr>
+        <tr><td><code class="inline">HashSet</code></td><td>—</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>Không đảm bảo</td></tr>
+        <tr><td><code class="inline">LinkedHashSet</code></td><td>—</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>Chèn</td></tr>
+        <tr><td><code class="inline">TreeSet</code></td><td>—</td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>Sort</td></tr>
+        <tr><td><code class="inline">HashMap</code></td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>Không đảm bảo</td></tr>
+        <tr><td><code class="inline">LinkedHashMap</code></td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>O(1) trung bình</td><td>Chèn / truy cập</td></tr>
+        <tr><td><code class="inline">TreeMap</code></td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>Sort theo key</td></tr>
+        <tr><td><code class="inline">PriorityQueue</code></td><td>O(1) cho <code class="inline">peek</code></td><td>O(log n)</td><td>O(log n) cho <code class="inline">poll</code></td><td>O(n)</td><td>Heap (chỉ đầu)</td></tr>
+      </tbody>
+    </table>
+
+    <p>* O(1) khấu hao (amortized): thỉnh thoảng một lần resize O(n) nhưng chia đều vẫn là hằng số.</p>
+
+    <h3>Chọn theo use case</h3>
+
+    <table>
+      <thead>
+        <tr><th>Bài toán</th><th>Lựa chọn</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Danh sách sản phẩm, duyệt + truy cập index</td><td><code class="inline">ArrayList</code></td><td>get O(1), bộ nhớ thấp, cache-friendly</td></tr>
+        <tr><td>Đếm tần suất từ / mã lỗi</td><td><code class="inline">HashMap</code> + <code class="inline">merge</code></td><td>O(1) mỗi lần đếm; <code class="inline">TreeMap</code> bọc ngoài nếu cần in theo thứ tự</td></tr>
+        <tr><td>Tập unique, giữ thứ tự chèn</td><td><code class="inline">LinkedHashSet</code></td><td>Dedupe mà vẫn duyệt đúng thứ tự xuất hiện</td></tr>
+        <tr><td>Range query theo key (ngày, điểm…)</td><td><code class="inline">TreeMap</code></td><td><code class="inline">floorEntry</code>, <code class="inline">subMap</code> — O(log n)</td></tr>
+        <tr><td>LRU cache / map giữ thứ tự chèn</td><td><code class="inline">LinkedHashMap</code></td><td><code class="inline">accessOrder=true</code> + <code class="inline">removeEldestEntry</code></td></tr>
+        <tr><td>Top-K phần tử lớn nhất</td><td><code class="inline">PriorityQueue</code> size K</td><td>O(n log K) thay vì sort cả tập O(n log n)</td></tr>
+        <tr><td>Hàng đợi FIFO / stack</td><td><code class="inline">ArrayDeque</code></td><td>Nhanh nhất cho hai đầu; thay <code class="inline">Stack</code> cũ</td></tr>
+        <tr><td>Hàng đợi ưu tiên / scheduler</td><td><code class="inline">PriorityQueue</code></td><td><code class="inline">poll</code> luôn trả phần tử nhỏ nhất theo comparator</td></tr>
+        <tr><td>Producer–Consumer đa thread</td><td><code class="inline">BlockingQueue</code></td><td><code class="inline">put</code>/<code class="inline">take</code> tự block — Giai đoạn 4</td></tr>
+        <tr><td>List chia sẻ, đọc nhiều ghi ít</td><td><code class="inline">CopyOnWriteArrayList</code></td><td>Iterator snapshot, không CME</td></tr>
+        <tr><td>Map chia sẻ giữa nhiều thread</td><td><code class="inline">ConcurrentHashMap</code></td><td>Không khóa toàn cục; không nhận null</td></tr>
+        <tr><td>Map với key enum</td><td><code class="inline">EnumMap</code></td><td>Nhanh, gọn, đúng thứ tự enum</td></tr>
+        <tr><td>Hằng số nhiều phần tử</td><td><code class="inline">List.of</code> / <code class="inline">Set.of</code> / <code class="inline">Map.of</code></td><td>Immutable, chia sẻ an toàn, ngắn gọn</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Bộ nhớ &amp; hiệu năng</h3>
+
+    <ul>
+      <li><strong>Boxing có giá:</strong> <code class="inline">List&lt;Integer&gt;</code> lưu reference tới object <code class="inline">Integer</code> (~16 byte) cộng slot trong mảng (4–8 byte), trong khi <code class="inline">int[]</code> chỉ 4 byte/ô. Với hàng triệu số, chênh lệch bộ nhớ và cache miss là đáng kể — dùng mảng hoặc <code class="inline">IntStream</code> cho đường nóng (hot path).</li>
+      <li><strong>Pre-size khi biết trước số phần tử:</strong> <code class="inline">new ArrayList&lt;&gt;(10_000)</code> tránh nhiều lần copy mảng; <code class="inline">new HashMap&lt;&gt;(soPhanTu / 0.75 + 1)</code> tránh resize — hoặc <code class="inline">HashMap.newHashMap(soPhanTu)</code> (JDK 19+) cho rõ nghĩa.</li>
+      <li><strong>LinkedList tốn bộ nhớ:</strong> mỗi phần tử là một node với 2 reference + header object. Gần như mọi nhu cầu "chèn/xóa nhanh hai đầu" của LinkedList đều được <code class="inline">ArrayDeque</code> giải quyết tốt hơn (nhanh hơn, ít bộ nhớ hơn).</li>
+      <li><strong>Load factor của HashMap:</strong> 0.75 là điểm cân bằng mặc định. Giảm xuống 0.5 → ít collision hơn nhưng tốn bộ nhớ; tăng lên 0.9 → tiết kiệm bộ nhớ nhưng nhiều collision, chậm hơn. Chỉ chỉnh khi đã đo đạc.</li>
+      <li><strong>List.contains trong vòng lặp</strong> là O(n) mỗi lần, dễ biến thuật toán thành O(n²). Cần membership check nhiều lần → chuyển sang <code class="inline">HashSet</code>.</li>
+      <li><strong>Duyệt LinkedList bằng iterator</strong> (for-each) là O(n); đừng bao giờ <code class="inline">get(i)</code> trong vòng lặp trên <code class="inline">LinkedList</code> — mỗi lần get lại đi bộ từ đầu.</li>
+      <li><strong>Immutable collection</strong> như <code class="inline">List.of</code> có thể chia sẻ giữa các thread mà không cần đồng bộ — lựa chọn rẻ nhất cho dữ liệu chỉ đọc.</li>
+    </ul>
+
+    <h3>Production notes — concurrent collections (nhận biết)</h3>
+
+    <ul>
+      <li><strong><code class="inline">ConcurrentHashMap</code></strong> — map chuẩn cho đa luồng: không khóa toàn cục, <code class="inline">computeIfAbsent</code> chạy atomic (khác <code class="inline">HashMap</code> + tự khóa), iterator weakly consistent. Không cho null key/value. Dùng cho cache, counter, registry.</li>
+      <li><strong><code class="inline">CopyOnWriteArrayList</code></strong> — mỗi lần ghi copy toàn bộ mảng, đổi lại đọc và duyệt không cần khóa. Chỉ dùng khi ghi rất ít (danh sách listener, cấu hình). Ghi nhiều là thảm họa hiệu năng.</li>
+      <li><strong><code class="inline">BlockingQueue</code></strong> — trái tim của producer–consumer: <code class="inline">ArrayBlockingQueue</code> (bounded, chống tràn bộ nhớ), <code class="inline">LinkedBlockingQueue</code>, <code class="inline">PriorityBlockingQueue</code>, <code class="inline">SynchronousQueue</code>. Học sâu ở Giai đoạn 4.</li>
+      <li><strong><code class="inline">Collections.synchronizedXxx</code></strong> — wrapper khóa từng method; duyệt vẫn phải tự <code class="inline">synchronized (list) { ... }</code>. Code mới ưu tiên concurrent collections thay vì wrapper này.</li>
+      <li><strong>Không dùng <code class="inline">Vector</code>, <code class="inline">Stack</code>, <code class="inline">Hashtable</code></strong> trong code mới — legacy, khóa thô, API lỗi thời. Thay bằng <code class="inline">ArrayList</code>/<code class="inline">ArrayDeque</code>/<code class="inline">ConcurrentHashMap</code>.</li>
+      <li><strong>Đừng trả <code class="inline">null</code> cho collection</strong> — trả <code class="inline">List.of()</code> hoặc <code class="inline">Collections.emptyList()</code> để call site không phải null check. Ở biên API, dùng <code class="inline">List.copyOf</code> để phòng thủ (defensive copy).</li>
+      <li><strong>Đóng gói collection nội bộ:</strong> field <code class="inline">private final List&lt;...&gt;</code>, getter trả <code class="inline">List.copyOf</code> hoặc <code class="inline">unmodifiableList</code>; không để lộ reference cho bên ngoài sửa (chi tiết ở <a href="encapsulation.html">2.2 Encapsulation &amp; Immutability</a>).</li>
+    </ul>
+
+    <h2 id="goc-nodejs">11. Góc Node.js — Array/Map/Set của JS vs Java</h2>
+
+    <p>Nếu bạn đến từ JavaScript, đây là những khác biệt phải "reset" phản xạ:</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>JavaScript / Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mảng</td><td>Động, trộn kiểu, <code class="inline">push</code> thoải mái</td><td>Mảng cố định một kiểu; cần động thì <code class="inline">ArrayList</code></td></tr>
+        <tr><td>Set/Map key equality</td><td><strong>SameValueZero</strong>: <code class="inline">NaN</code> bằng <code class="inline">NaN</code>, <code class="inline">+0</code> bằng <code class="inline">-0</code></td><td><code class="inline">equals</code> + <code class="inline">hashCode</code> do class định nghĩa: <code class="inline">Double</code> coi <code class="inline">NaN = NaN</code> nhưng <code class="inline">+0.0 ≠ -0.0</code>; object của bạn tùy override</td></tr>
+        <tr><td>Object làm map</td><td>Key bị ép về string; dính prototype, key <code class="inline">1</code> và <code class="inline">"1"</code> là một</td><td><code class="inline">HashMap</code> có kiểu; không ép kiểu, không prototype</td></tr>
+        <tr><td>Thứ tự Map</td><td><code class="inline">Map</code> giữ thứ tự chèn (đảm bảo)</td><td><code class="inline">HashMap</code> không đảm bảo; <code class="inline">LinkedHashMap</code> mới giữ</td></tr>
+        <tr><td>LRU</td><td><code class="inline">Map</code> + <code class="inline">delete</code>/<code class="inline">set</code> lại key</td><td><code class="inline">LinkedHashMap</code> access-order có sẵn</td></tr>
+        <tr><td>Duyệt &amp; xóa</td><td><code class="inline">forEach</code> trên snapshot hoặc tự quản lý</td><td>Iterator/<code class="inline">removeIf</code>; sửa trực tiếp → CME</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code>const arr = [1, 2, 3];
+arr.push(4);
+console.log(arr.length, arr);          // 4 [ 1, 2, 3, 4 ]
+
+const sparse = [];
+sparse[5] = "x";
+console.log(sparse.length, sparse);    // 6 [ &lt;5 empty items&gt;, 'x' ]</code></pre>
+    </div>
+
+    <p>JS Set/Map dùng SameValueZero — <code class="inline">NaN</code> bằng chính nó, nhưng object so theo <strong>reference</strong> nên hai object giống nhau vẫn là hai key:</p>
+
+    <div class="codeblock">
+      <pre><code>const s = new Set([NaN, NaN, 0, -0]);
+console.log(s.size);                   // 2
+console.log(s.has(NaN));               // true
+
+const m = new Map();
+m.set({}, "object key");
+console.log(m.get({}));                // undefined - object khac reference</code></pre>
+    </div>
+
+    <p>Và bẫy "object làm map" của JS — key bị ép về string, cộng thêm prototype:</p>
+
+    <div class="codeblock">
+      <pre><code>const obj = {};
+obj[1] = "a";
+obj["1"] = "b";
+console.log(obj);                      // { '1': 'b' }
+console.log(Object.keys(obj));         // [ '1' ]
+
+console.log("toString" in obj);        // true - key ke thua tu prototype!</code></pre>
+    </div>
+
+    <p>LRU bằng <code class="inline">Map</code> của JS — ý tưởng y hệt LinkedHashMap access-order: xóa rồi set lại để đẩy key xuống cuối, key cũ nhất nằm ở đầu:</p>
+
+    <div class="codeblock">
+      <pre><code>class LRU {
+  constructor(limit) {
+    this.limit = limit;
+    this.map = new Map();
+  }
+  get(key) {
+    if (!this.map.has(key)) return undefined;
+    const value = this.map.get(key);
+    this.map.delete(key);
+    this.map.set(key, value);
+    return value;
+  }
+  set(key, value) {
+    if (this.map.has(key)) this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size &gt; this.limit) {
+      this.map.delete(this.map.keys().next().value);
+    }
+  }
+}
+
+const lru = new LRU(3);
+lru.set("a", 1);
+lru.set("b", 2);
+lru.set("c", 3);
+lru.get("a");
+lru.set("d", 4);
+console.log([...lru.map.keys()]);      // [ 'c', 'a', 'd' ]</code></pre>
+    </div>
+
+    <p>Chốt: Java tách bạch "cấu trúc dữ liệu" (List/Set/Map/Deque) với "chiến lược bên trong" (hash, cây, heap). JS gộp nhiều thứ vào Array/Object/Map — tiện cho script nhỏ, nhưng dễ sai ngầm khi dữ liệu lớn (ép key, trùng reference, O(n) tìm kiếm).</p>
+
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Collections Framework là gì? Kể hierarchy chính.</summary>
+      <div class="answer">Là kiến trúc chuẩn trong <code class="inline">java.util</code> gồm interface + implementation + thuật toán để lưu và xử lý nhóm object. Hai nhánh chính: <strong>Collection</strong> (<code class="inline">List</code>, <code class="inline">Set</code>, <code class="inline">Queue</code>/<code class="inline">Deque</code>) và <strong>Map</strong> (key–value). <code class="inline">Map</code> <strong>không</strong> kế thừa <code class="inline">Collection</code>. <code class="inline">Iterable</code> là gốc của Collection, cho phép for-each.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. ArrayList vs LinkedList — chọn cái nào?</summary>
+      <div class="answer">Mặc định chọn <code class="inline">ArrayList</code>: <code class="inline">get(i)</code> O(1), bộ nhớ thấp, cache-friendly, thêm cuối O(1) khấu hao. <code class="inline">LinkedList</code> chỉ hơn ở thêm/xóa hai đầu O(1) nhưng lấy theo index O(n) và tốn bộ nhớ mỗi node. Khi cần thao tác hai đầu, <code class="inline">ArrayDeque</code> nhanh hơn cả LinkedList. Vậy LinkedList gần như không còn chỗ đứng trong code mới.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Vì sao ArrayList.get O(1) còn LinkedList.get O(n)?</summary>
+      <div class="answer"><code class="inline">ArrayList</code> lưu trên mảng liên tục nên địa chỉ phần tử i = base + i × size — truy cập trực tiếp. <code class="inline">LinkedList</code> chỉ giữ node đầu/cuối, muốn tới vị trí i phải đi theo con trỏ <code class="inline">next</code>/<code class="inline">prev</code> (dù tối ưu đi từ đầu gần hơn), trung bình n/2 bước.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. List.of, Arrays.asList và new ArrayList khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">List.of</code> — immutable, cấm mọi sửa đổi kể cả <code class="inline">set</code>, không nhận null. <code class="inline">Arrays.asList</code> — fixed-size, <code class="inline">set</code> được và ghi thẳng vào mảng gốc, nhưng <code class="inline">add</code>/<code class="inline">remove</code> ném <code class="inline">UnsupportedOperationException</code>. <code class="inline">new ArrayList&lt;&gt;(...)</code> — bản sao mutable đầy đủ. Cần sửa thì luôn bọc: <code class="inline">new ArrayList&lt;&gt;(List.of(...))</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Collections.unmodifiableList vs List.copyOf — khác gì?</summary>
+      <div class="answer"><code class="inline">unmodifiableList</code> là <strong>view</strong>: thay đổi list gốc vẫn nhìn thấy qua view (chỉ chặn ghi qua view). <code class="inline">List.copyOf</code> là <strong>bản sao</strong> độc lập tại thời điểm gọi, không nhận null. Muốn chụp ảnh dữ liệu → copyOf; muốn chặn ghi trên collection đang sống → unmodifiable.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. subList trả về gì? Bẫy là gì?</summary>
+      <div class="answer">Trả về <strong>view</strong> của đoạn [from, to). Sửa qua sublist là sửa list gốc và ngược lại. Bẫy: sau khi list gốc bị sửa cấu trúc (add/remove), mọi truy cập sublist ném <code class="inline">ConcurrentModificationException</code>. Cần độc lập thì copy: <code class="inline">new ArrayList&lt;&gt;(list.subList(a, b))</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. remove(1) trên List&lt;Integer&gt; xóa gì?</summary>
+      <div class="answer">Gọi <code class="inline">remove(int index)</code> — xóa phần tử ở vị trí 1 và trả về phần tử đó. Muốn xóa theo giá trị 1 phải <code class="inline">remove(Integer.valueOf(1))</code> để chọn overload <code class="inline">remove(Object)</code> trả boolean. Với <code class="inline">List&lt;String&gt;</code> không có bẫy này vì không có overload int nhận String.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. HashSet hoạt động thế nào? Vì sao cần equals + hashCode?</summary>
+      <div class="answer">HashSet dùng HashMap bên trong: tính hash để chọn bucket, rồi dùng <code class="inline">equals</code> để phân biệt các phần tử cùng bucket. Nếu override <code class="inline">equals</code> mà không override <code class="inline">hashCode</code>, hai object "bằng nhau" rơi vào bucket khác → set giữ cả hai. Nếu override hashCode mà equals sai → có thể coi hai object khác nhau là một. Chi tiết ở <a href="object-contract.html#hashcode-contract">Object contract — mục 7</a>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 9. HashMap hoạt động thế nào? Load factor và treeify là gì?</summary>
+      <div class="answer">Mảng bucket; index = <code class="inline">(n-1) &amp; (h ^ (h &gt;&gt;&gt; 16))</code>; trong bucket dùng equals. Load factor 0.75: khi size vượt 75% capacity thì resize gấp đôi và rehash. Từ Java 8, bucket ≥ 8 node <em>và</em> capacity ≥ 64 thì chuyển linked list thành cây đỏ-đen (treeify) để tra cứu ~O(log n); nếu capacity &lt; 64 thì resize trước. Bucket co về ≤ 6 node thì quay lại linked list.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao capacity của HashMap luôn là lũy thừa 2?</summary>
+      <div class="answer">Để thay modulo bằng phép AND: <code class="inline">hash % n</code> chậm hơn <code class="inline">hash &amp; (n-1)</code>, và khi n là lũy thừa 2 thì <code class="inline">(n-1)</code> là mask toàn bit 1, phân bố đều nếu hash tốt. Constructor nhận capacity bất kỳ sẽ tự làm tròn lên lũy thừa 2 gần nhất. Đổi lại, phải "spread" bit cao xuống thấp (<code class="inline">h ^ (h &gt;&gt;&gt; 16)</code>) vì mask chỉ dùng bit thấp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. LinkedHashMap làm LRU cache thế nào?</summary>
+      <div class="answer">Constructor <code class="inline">LinkedHashMap(capacity, 0.75f, true)</code> với accessOrder=true: mỗi <code class="inline">get</code>/<code class="inline">put</code> đưa entry xuống cuối danh sách liên kết. Override <code class="inline">removeEldestEntry</code> trả <code class="inline">true</code> khi <code class="inline">size() &gt; limit</code> để tự xóa entry cũ nhất (đầu danh sách). Kết quả là LRU. Demo chạy thật ở mục 5.3.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. HashSet vs LinkedHashSet vs TreeSet?</summary>
+      <div class="answer"><code class="inline">HashSet</code> O(1) trung bình, thứ tự không đảm bảo. <code class="inline">LinkedHashSet</code> O(1) trung bình, giữ thứ tự chèn (thêm linked list). <code class="inline">TreeSet</code> O(log n), luôn sorted theo <code class="inline">compareTo</code>/comparator, implement <code class="inline">NavigableSet</code> (floor/ceiling/subSet). Chọn theo nhu cầu thứ tự; mặc định HashSet.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Comparable vs Comparator?</summary>
+      <div class="answer"><code class="inline">Comparable</code> (java.lang) định nghĩa thứ tự tự nhiên bên trong class qua <code class="inline">compareTo</code> — mỗi class chỉ có một. <code class="inline">Comparator</code> (java.util) là object so sánh bên ngoài, tạo được nhiều chiến lược (theo tên, theo điểm, đảo ngược) và là functional interface nên dùng lambda/method reference. Sort đa tiêu chí dùng <code class="inline">thenComparing</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Vì sao compareTo nên nhất quán với equals? Cho ví dụ.</summary>
+      <div class="answer">TreeSet/TreeMap dùng <code class="inline">compareTo == 0</code> để coi là trùng, còn HashSet/HashMap dùng equals. Nếu không nhất quán, hai collection cùng dữ liệu cho kết quả khác nhau: <code class="inline">BigDecimal("1.0")</code> vs <code class="inline">BigDecimal("1.00")</code> equals false (khác scale) nhưng compareTo 0 → HashSet giữ 2, TreeSet giữ 1. Tương tự record so theo một field. Cách tránh: thêm tie-breaker để compareTo khớp equals, hoặc không dùng TreeSet cho class đó.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Fail-fast là gì? ConcurrentModificationException sinh ra thế nào?</summary>
+      <div class="answer">Iterator của ArrayList/HashMap… ghi nhớ <code class="inline">modCount</code> lúc tạo; mỗi <code class="inline">next()</code> so với modCount hiện tại, lệch thì ném CME ngay. Sửa collection trực tiếp trong for-each là nguyên nhân phổ biến. Đây là cơ chế phát hiện bug sớm (best-effort), không phải để xử lý đồng thời. Xóa an toàn: <code class="inline">it.remove()</code> sau <code class="inline">next()</code> hoặc <code class="inline">removeIf</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. CopyOnWriteArrayList vs Collections.synchronizedList?</summary>
+      <div class="answer"><code class="inline">synchronizedList</code> khóa từng method, iterator vẫn fail-fast, duyệt phải tự synchronized. <code class="inline">CopyOnWriteArrayList</code> copy mảng mỗi lần ghi nên iterator là snapshot — duyệt không khóa, không CME; đổi lại ghi rất đắt. Read-heavy (listener) chọn COW; ghi nhiều chọn cấu trúc khác (ConcurrentLinkedQueue, CHM…).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Queue: add/offer, remove/poll, element/peek khác gì?</summary>
+      <div class="answer">Cùng hành vi nhưng khác cách báo lỗi: <code class="inline">add/remove/element</code> ném exception (<code class="inline">IllegalStateException</code>/<code class="inline">NoSuchElementException</code>); <code class="inline">offer/poll/peek</code> trả <code class="inline">false</code>/<code class="inline">null</code>. Code production thường dùng nhóm thứ hai trừ khi rỗng/đầy là lỗi lập trình. Với <code class="inline">BlockingQueue</code>, <code class="inline">put/take</code> còn block thay vì báo lỗi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. PriorityQueue có phải danh sách đã sort không? Có stable không?</summary>
+      <div class="answer">Không. Nó là binary heap trên mảng, chỉ đảm bảo <code class="inline">peek()/poll()</code> trả phần tử nhỏ nhất (theo natural order hoặc comparator); <code class="inline">toString()</code> và for-each in theo thứ tự heap, không sorted. Không stable: hai phần tử cùng độ ưu tiên ra thứ tự bất kỳ — muốn stable phải thêm tie-breaker vào comparator.</div>
+    </details>
+
+    <h3>Production</h3>
+
+    <details class="qa">
+      <summary>Câu 19. computeIfAbsent / merge giải quyết vấn đề gì?</summary>
+      <div class="answer">Gộp thao tác "kiểm tra rồi mới sửa" thành một lời gọi atomic về mặt logic, ngắn và tránh null check lặp: <code class="inline">computeIfAbsent</code> để khởi tạo value (ví dụ list con), <code class="inline">merge</code> để đếm/cộng dồn (<code class="inline">merge(k, 1, Integer::sum)</code>). Trên <code class="inline">ConcurrentHashMap</code>, <code class="inline">computeIfAbsent</code> còn atomic giữa các thread — quan trọng hơn cả cú pháp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Vì sao không nên dùng key mutable cho HashMap/HashSet?</summary>
+      <div class="answer">Key được định vị theo hashCode tại thời điểm put. Nếu sửa field ảnh hưởng hashCode, lần get sau đó sẽ tính bucket khác và không tìm thấy entry (entry vẫn nằm trong map). Dùng key immutable: String, số wrapper, enum, record, UUID, LocalDate.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Vì sao hạn chế Vector, Stack, Hashtable?</summary>
+      <div class="answer">Là class từ Java 1.0: mọi method synchronized (khóa toàn cục) nên chậm khi một thread; API lỗi thời (Stack kế thừa Vector nên vẫn cho phép chèn giữa như list); tên method không theo quy ước collection (Hashtable dùng <code class="inline">elements()</code>). Thay thế: ArrayList/ArrayDeque/ConcurrentHashMap hoặc concurrent collections.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Chọn collection nào cho: đếm tần suất, LRU, top-K, producer–consumer?</summary>
+      <div class="answer">Đếm tần suất → <code class="inline">HashMap</code> + <code class="inline">merge</code>. LRU → <code class="inline">LinkedHashMap</code> access-order + <code class="inline">removeEldestEntry</code>. Top-K → <code class="inline">PriorityQueue</code> kích thước K. Producer–consumer → <code class="inline">BlockingQueue</code> (<code class="inline">ArrayBlockingQueue</code> bounded). Nếu phải kể thêm: unique giữ thứ tự → <code class="inline">LinkedHashSet</code>, range query → <code class="inline">TreeMap</code>.</div>
+    </details>
+
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;String&gt; list = List.of("a", "b");
+try {
+    list.set(0, "z");
+} catch (UnsupportedOperationException e) {
+    IO.println("loi");
+}
+IO.println(list);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">loi</code> rồi <code class="inline">[a, b]</code>. <code class="inline">List.of</code> là immutable nên <code class="inline">set</code> cũng ném <code class="inline">UnsupportedOperationException</code>; list không đổi.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">String[] arr = {"x", "y"};
+List&lt;String&gt; fixed = Arrays.asList(arr);
+fixed.set(0, "A");
+IO.println(fixed);
+IO.println(arr[0]);
+fixed.add("z");</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[A, y]</code>, <code class="inline">A</code>, sau đó ném <code class="inline">UnsupportedOperationException</code> tại <code class="inline">fixed.add("z")</code>. <code class="inline">Arrays.asList</code> là fixed-size và dùng chung mảng gốc.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(5, 6, 7));
+IO.println(nums.remove(1));
+IO.println(nums);
+IO.println(nums.remove(Integer.valueOf(7)));
+IO.println(nums);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">6</code>, <code class="inline">[5, 7]</code>, <code class="inline">true</code>, <code class="inline">[5]</code>. <code class="inline">remove(1)</code> xóa theo index; <code class="inline">remove(Integer.valueOf(7))</code> xóa theo giá trị.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(0, 1, 2, 3, 4));
+List&lt;Integer&gt; sub = nums.subList(1, 4);
+sub.set(0, 99);
+IO.println(nums);
+sub.clear();
+IO.println(nums);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[0, 99, 2, 3, 4]</code> rồi <code class="inline">[0, 4]</code>. <code class="inline">subList</code> là view: <code class="inline">set</code> và <code class="inline">clear</code> tác động thẳng lên <code class="inline">nums</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">Set&lt;String&gt; hash = new HashSet&lt;&gt;(List.of("b", "a", "c"));
+Set&lt;String&gt; linked = new LinkedHashSet&lt;&gt;(List.of("b", "a", "c"));
+Set&lt;String&gt; tree = new TreeSet&lt;&gt;(List.of("b", "a", "c"));
+IO.println(linked);
+IO.println(tree);
+IO.println(hash.size());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[b, a, c]</code>, <code class="inline">[a, b, c]</code>, <code class="inline">3</code>. LinkedHashSet giữ thứ tự chèn, TreeSet sort, HashSet không đảm bảo thứ tự (chỉ chắc size = 3).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+map.put("Aa", 1);
+map.put("BB", 2);
+IO.println(map.size());
+IO.println(map.get("Aa"));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2</code> rồi <code class="inline">1</code>. <code class="inline">"Aa"</code> và <code class="inline">"BB"</code> cùng hash (collision) nhưng equals false nên vẫn là hai entry; <code class="inline">get</code> dùng equals để chọn đúng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">LinkedHashMap&lt;String, Integer&gt; m = new LinkedHashMap&lt;&gt;(16, 0.75f, true) {
+    @Override
+    protected boolean removeEldestEntry(Map.Entry&lt;String, Integer&gt; e) {
+        return size() &gt; 2;
+    }
+};
+m.put("a", 1);
+m.put("b", 2);
+m.get("a");
+m.put("c", 3);
+IO.println(m.keySet());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[a, c]</code>. <code class="inline">get("a")</code> đẩy <code class="inline">a</code> xuống cuối → thứ tự [b, a]; <code class="inline">put("c")</code> vượt limit 2 nên loại đầu danh sách là <code class="inline">b</code>, còn [a, c].</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;String&gt; list = new ArrayList&lt;&gt;(List.of("a", "b", "c"));
+for (String s : list) {
+    if (s.equals("b")) {
+        list.remove(s);
+    }
+}
+IO.println(list);</code></pre>
+      </div>
+      <div class="answer">Ném <code class="inline">ConcurrentModificationException</code> — dòng <code class="inline">IO.println(list)</code> không chạy. Xóa trực tiếp trong for-each làm modCount lệch; lần <code class="inline">next()</code> kế tiếp phát hiện. Sửa: dùng <code class="inline">removeIf</code> hoặc <code class="inline">Iterator.remove()</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code class="java">record SinhVien(String ten, double diem) implements Comparable&lt;SinhVien&gt; {
+    public int compareTo(SinhVien o) {
+        return Double.compare(diem, o.diem);
+    }
+}
+Set&lt;SinhVien&gt; tree = new TreeSet&lt;&gt;();
+tree.add(new SinhVien("An", 8.0));
+tree.add(new SinhVien("Binh", 8.0));
+IO.println(tree.size());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1</code>. TreeSet dùng <code class="inline">compareTo == 0</code> để coi là trùng; hai sinh viên cùng điểm nhưng khác tên bị "nuốt" một. Đây là hậu quả của compareTo không nhất quán với equals.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code class="java">int[] arr = {5, 2, 9, 1, 7};
+IO.println(Arrays.binarySearch(arr, 7));
+Arrays.sort(arr);
+IO.println(Arrays.binarySearch(arr, 7));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">-3</code> rồi <code class="inline">3</code>. Mảng chưa sort thì binarySearch cho kết quả không xác định (ở đây "không tìm thấy" dù 7 có trong mảng); sau khi sort mới trả đúng index 3.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code class="java">PriorityQueue&lt;Integer&gt; pq = new PriorityQueue&lt;&gt;(List.of(30, 10, 20));
+IO.println(pq.peek());
+StringBuilder sb = new StringBuilder();
+while (!pq.isEmpty()) {
+    sb.append(pq.poll()).append(' ');
+}
+IO.println(sb.toString().trim());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">10</code> rồi <code class="inline">10 20 30</code>. <code class="inline">peek</code> trả phần tử nhỏ nhất; <code class="inline">poll</code> lần lượt lấy ra theo thứ tự tăng dần.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">Map&lt;String, Integer&gt; dem = new HashMap&lt;&gt;();
+for (String tu : "a b a a b".split(" ")) {
+    dem.merge(tu, 1, Integer::sum);
+}
+IO.println(dem.get("a"));
+IO.println(dem.get("b"));
+IO.println(dem.getOrDefault("c", 0));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">3</code>, <code class="inline">2</code>, <code class="inline">0</code>. <code class="inline">merge</code> cộng dồn: chưa có key thì đặt 1, đã có thì <code class="inline">Integer::sum</code>. <code class="inline">getOrDefault</code> trả 0 cho key chưa xuất hiện.</div>
+    </details>
+
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>List động mặc định</td><td><code class="inline">List&lt;T&gt; list = new ArrayList&lt;&gt;();</code></td></tr>
+        <tr><td>List bất biến</td><td><code class="inline">List.of(a, b, c)</code> / <code class="inline">List.copyOf(list)</code></td></tr>
+        <tr><td>Bản sao mutable từ mảng/list khác</td><td><code class="inline">new ArrayList&lt;&gt;(nguon)</code></td></tr>
+        <tr><td>Set unique giữ thứ tự chèn</td><td><code class="inline">new LinkedHashSet&lt;&gt;()</code></td></tr>
+        <tr><td>Set sorted</td><td><code class="inline">new TreeSet&lt;&gt;(comparator)</code></td></tr>
+        <tr><td>Map mặc định</td><td><code class="inline">Map&lt;K, V&gt; map = new HashMap&lt;&gt;();</code></td></tr>
+        <tr><td>Map bất biến nhanh</td><td><code class="inline">Map.of(k1, v1, k2, v2)</code> / <code class="inline">Map.ofEntries(...)</code></td></tr>
+        <tr><td>Queue/stack hai đầu</td><td><code class="inline">Deque&lt;T&gt; d = new ArrayDeque&lt;&gt;();</code></td></tr>
+        <tr><td>Hàng đợi ưu tiên</td><td><code class="inline">new PriorityQueue&lt;&gt;(Comparator.comparingInt(...))</code></td></tr>
+        <tr><td>Lấy giá trị an toàn</td><td><code class="inline">map.getOrDefault(k, def)</code></td></tr>
+        <tr><td>Khởi tạo value theo key</td><td><code class="inline">map.computeIfAbsent(k, x -&gt; new ArrayList&lt;&gt;())</code></td></tr>
+        <tr><td>Đếm / cộng dồn</td><td><code class="inline">map.merge(k, 1, Integer::sum)</code></td></tr>
+        <tr><td>Xóa theo điều kiện khi duyệt</td><td><code class="inline">list.removeIf(predicate)</code></td></tr>
+        <tr><td>Sort theo natural order</td><td><code class="inline">list.sort(null)</code> hoặc <code class="inline">Collections.sort(list)</code></td></tr>
+        <tr><td>Sort nhiều tiêu chí</td><td><code class="inline">Comparator.comparing(A).thenComparing(B).reversed()</code></td></tr>
+        <tr><td>Comparator an toàn với null</td><td><code class="inline">Comparator.nullsFirst(Comparator.naturalOrder())</code></td></tr>
+        <tr><td>Đếm tần suất</td><td><code class="inline">Collections.frequency(list, x)</code> (hoặc <code class="inline">Map</code> + <code class="inline">merge</code>)</td></tr>
+        <tr><td>Tìm trong dữ liệu đã sort</td><td><code class="inline">Collections.binarySearch(list, key)</code> — <strong>phải sort trước</strong></td></tr>
+        <tr><td>In mảng / mảng 2 chiều</td><td><code class="inline">Arrays.toString(a)</code> / <code class="inline">Arrays.deepToString(a)</code></td></tr>
+        <tr><td>View chỉ đọc</td><td><code class="inline">Collections.unmodifiableList(list)</code></td></tr>
+        <tr><td>Map concurrent</td><td><code class="inline">new ConcurrentHashMap&lt;&gt;()</code> (không null)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Vẽ được hierarchy Collection và giải thích vì sao Map tách riêng.</li>
+      <li>Phân biệt List/Set/Queue/Map bằng 3 đặc điểm: thứ tự, trùng lặp, truy cập.</li>
+      <li>Giải thích Big-O của ArrayList vs LinkedList và khi nào dùng cái nào.</li>
+      <li>Phân biệt <code class="inline">List.of</code>, <code class="inline">Arrays.asList</code>, <code class="inline">new ArrayList&lt;&gt;</code> chỉ trong 30 giây.</li>
+      <li>Giải thích view vs copy: <code class="inline">subList</code>, <code class="inline">unmodifiableList</code> vs <code class="inline">List.copyOf</code>.</li>
+      <li>Trả lời trôi chảy bẫy <code class="inline">remove(1)</code> vs <code class="inline">remove(Integer.valueOf(1))</code>.</li>
+      <li>Mô tả HashMap internals: hash spreading, bucket, equals, load factor 0.75, resize, treeify (8 &amp; 64).</li>
+      <li>Giải thích vì sao capacity HashMap là lũy thừa 2.</li>
+      <li>Kể 3 loại Set và tiêu chí chọn; nhớ TreeSet dùng compareTo.</li>
+      <li>Viết LRU bằng LinkedHashMap access-order mà không cần tra cứu.</li>
+      <li>Nêu 5 method hiện đại của Map và khi nào trả null sẽ xóa entry.</li>
+      <li>Phân biệt Comparable vs Comparator và viết comparator chaining 2 tiêu chí.</li>
+      <li>Giải thích vì sao compareTo nên nhất quán với equals, kèm ví dụ BigDecimal/record.</li>
+      <li>Giải thích CME, cách xóa an toàn, và fail-safe collections.</li>
+      <li>Kể tên concurrent collections và use case của từng loại.</li>
+      <li>Nhớ binarySearch yêu cầu dữ liệu đã sort và quy ước giá trị âm.</li>
+      <li>Không dùng Vector/Stack/Hashtable; biết thay thế hiện đại.</li>
+    </ul>
+
+    <h2 id="nguon">15. Nguồn tham khảo</h2>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collection.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Collection</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.List</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Set.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Set</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Map</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.HashMap</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/LinkedHashMap.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.LinkedHashMap</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/TreeMap.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.TreeMap</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Deque.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Deque</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/PriorityQueue.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.PriorityQueue</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collections.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Collections</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Arrays</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Comparator.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.Comparator</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.10.3" target="_blank" rel="noreferrer">JLS §4.10.3 — Subtyping among Class and Interface Types</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/collections/" target="_blank" rel="noreferrer">Oracle Tutorial — Collections Trail</a></li>
+      <li><a href="https://dev.java/learn/collections/" target="_blank" rel="noreferrer">Dev.java — Collections Framework</a></li>
+      <li><a href="https://openjdk.org/jeps/431" target="_blank" rel="noreferrer">JEP 431 — Sequenced Collections (JDK 21)</a></li>
+      <li><a href="https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/util/HashMap.java" target="_blank" rel="noreferrer">OpenJDK — HashMap.java (đọc phần treeify/resize)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Collections Framework · JDK 25 · Cập nhật 04/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

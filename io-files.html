@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I/O &amp; Files — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item active" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+    </nav>
+  </aside>
+  <main class="content" id="top">
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+    <h1 id="io-files">I/O &amp; Files — đọc ghi dữ liệu trong Java</h1>
+    <p class="lead">Backend không chỉ tính toán — nó còn đọc file cấu hình, ghi log, xử lý CSV, ảnh upload, file nén… Trang này đi từ bản chất <strong>byte stream vs character stream</strong>, qua <strong>NIO.2</strong> (<code class="inline">Path</code>/<code class="inline">Files</code>) hiện đại, tới các bẫy <strong>encoding tiếng Việt</strong> và cách ghi file an toàn trong production. Mọi ví dụ tự tạo file tạm trong thư mục hệ thống rồi tự dọn, chạy được ngay bằng <code class="inline">java TenFile.java</code> trên JDK 25.</p>
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+    <p>Mức độ bắt buộc của chủ đề 3.4 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — đọc/ghi file text với UTF-8 tường minh; đọc file theo dòng; dùng <code class="inline">Path</code>/<code class="inline">Files</code> thay <code class="inline">File</code>; tạo/đọc/ghi trong thư mục tạm; copy/move/delete; duyệt cây thư mục và đóng Stream đúng cách.</li>
+      <li><strong>Phải hiểu</strong> — vì sao file trên đĩa luôn là byte còn <code class="inline">String</code> trong RAM là UTF-16; charset là "hợp đồng" giữa hai bên; try-with-resources đóng resource theo thứ tự nào; vì sao <code class="inline">Files.lines</code>/<code class="inline">Files.list</code>/<code class="inline">Files.walk</code> bắt buộc phải đóng.</li>
+      <li><strong>Nhận biết</strong> — NIO.2 (Java 7) và tiện ích JDK 11+ (<code class="inline">readString</code>/<code class="inline">writeString</code>); JEP 400 (JDK 18 — UTF-8 mặc định); atomic write; BOM; symbolic link; deserialization không an toàn.</li>
+    </ul>
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả — đặc biệt các ví dụ encoding.</li>
+      <li>Tự gõ lại ví dụ, đổi tên file/thư mục, thêm dòng tiếng Việt có dấu để tự kiểm chứng.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+    </ol>
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Các ví dụ là <strong>compact source file</strong>: không cần khai báo class, nhưng vẫn cần <code class="inline">void main()</code> (JDK 25 <em>không</em> cho câu lệnh trần). Compact file tự import mọi class public của module <code class="inline">java.base</code>, nên ví dụ không cần dòng <code class="inline">import</code>; khi viết trong class thường bạn phải tự import <code class="inline">java.io.*</code>, <code class="inline">java.nio.file.*</code>, <code class="inline">java.nio.charset.*</code>.</div>
+    <p>Bảng chọn API theo việc cần làm — phần quan trọng nhất để không đọc tài liệu theo kiểu "thấy class nào dùng class đó":</p>
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>API nên dùng</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đọc file text nhỏ một lần</td><td><code class="inline">Files.readString(path, UTF_8)</code></td><td>Một dòng, UTF-8 mặc định từ JDK 11</td></tr>
+        <tr><td>Ghi file text nhỏ</td><td><code class="inline">Files.writeString(path, s, UTF_8)</code></td><td>Ghi đè/truncate mặc định; APPEND nếu muốn nối</td></tr>
+        <tr><td>Đọc cả file thành <code class="inline">List&lt;String&gt;</code></td><td><code class="inline">Files.readAllLines(path, UTF_8)</code></td><td>Chỉ dùng khi file vừa, nạp hết vào RAM</td></tr>
+        <tr><td>Đọc từng dòng, file lớn</td><td><code class="inline">Files.lines(path, UTF_8)</code> trong try-with-resources</td><td>Lazy, phải đóng Stream (sang 3.8 <a href="streams.html">Stream API</a>)</td></tr>
+        <tr><td>Đọc/ghi text kiểm soát buffer &amp; charset</td><td><code class="inline">Files.newBufferedReader/newBufferedWriter</code></td><td>Tường minh nhất, dùng cho mọi kích thước</td></tr>
+        <tr><td>Ghi có định dạng <code class="inline">printf</code></td><td><code class="inline">PrintWriter</code></td><td>Nuốt <code class="inline">IOException</code> — nhớ <code class="inline">checkError()</code></td></tr>
+        <tr><td>Dữ liệu nhị phân (ảnh, zip, PDF)</td><td><code class="inline">Files.newInputStream/newOutputStream</code> + <code class="inline">Buffered*</code></td><td>Không quan tâm nội dung, thao tác trên <code class="inline">byte[]</code></td></tr>
+        <tr><td>Primitive / ghi kiểu Java</td><td><code class="inline">DataInputStream</code>/<code class="inline">DataOutputStream</code></td><td>Thứ tự ghi và đọc phải khớp tuyệt đối</td></tr>
+        <tr><td>Copy file</td><td><code class="inline">Files.copy</code> hoặc <code class="inline">InputStream.transferTo</code></td><td>Không tự viết vòng lặp đọc/ghi tay</td></tr>
+        <tr><td>Move/delete an toàn</td><td><code class="inline">Files.move</code>, <code class="inline">Files.deleteIfExists</code></td><td>Exception nói rõ lý do hơn <code class="inline">File.renameTo</code></td></tr>
+        <tr><td>Duyệt thư mục</td><td><code class="inline">Files.list</code> / <code class="inline">Files.walk</code> / <code class="inline">Files.find</code></td><td>Trả <code class="inline">Stream&lt;Path&gt;</code> — phải đóng</td></tr>
+        <tr><td>Ghép/chuẩn hoá đường dẫn</td><td><code class="inline">Path.resolve/normalize/relativize</code></td><td>Không nối chuỗi bằng <code class="inline">+</code></td></tr>
+        <tr><td>Tương thích API cũ dùng <code class="inline">File</code></td><td><code class="inline">file.toPath()</code> / <code class="inline">path.toFile()</code></td><td>Cầu nối hai thế giới; code mới dùng <code class="inline">Path</code></td></tr>
+      </tbody>
+    </table>
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#byte-char">Byte stream vs Character stream</a></li>
+        <li><a href="#byte-stream">Byte streams thực chiến</a></li>
+        <li><a href="#char-stream">Character streams &amp; encoding</a></li>
+        <li><a href="#nio">NIO.2 — Path &amp; Files</a></li>
+        <li><a href="#encoding">Bẫy encoding &amp; tiếng Việt</a></li>
+        <li><a href="#twr">try-with-resources, flush &amp; close</a></li>
+        <li><a href="#mini-project">Mini project — quản lý đơn hàng CSV</a></li>
+        <li><a href="#production">Ghi chú production</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+    <h2 id="byte-char">2. Byte stream vs Character stream</h2>
+    <p>Ổ đĩa, socket, mạng — tất cả chỉ biết <strong>byte</strong>. Còn <code class="inline">String</code> trong RAM là dãy <code class="inline">char</code> (UTF-16). Để chuyển giữa hai thế giới đó cần một bảng mã — gọi là <strong>charset</strong> (UTF-8, ISO-8859-1, windows-1252…). Nhánh <em>byte stream</em> vận chuyển byte thô, không diễn giải; nhánh <em>character stream</em> có bước encode/decode qua charset giúp bạn làm việc với ký tự.</p>
+    <table>
+      <thead>
+        <tr><th></th><th>Byte stream</th><th>Character stream</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đơn vị</td><td><code class="inline">byte</code> (8 bit)</td><td><code class="inline">char</code> (UTF-16 code unit)</td></tr>
+        <tr><td>Lớp gốc</td><td><code class="inline">InputStream</code>/<code class="inline">OutputStream</code></td><td><code class="inline">Reader</code>/<code class="inline">Writer</code></td></tr>
+        <tr><td>Lớp file</td><td><code class="inline">FileInputStream</code>/<code class="inline">FileOutputStream</code></td><td><code class="inline">FileReader</code>/<code class="inline">FileWriter</code></td></tr>
+        <tr><td>Buffer</td><td><code class="inline">BufferedInputStream</code>/<code class="inline">BufferedOutputStream</code></td><td><code class="inline">BufferedReader</code>/<code class="inline">BufferedWriter</code></td></tr>
+        <tr><td>Dùng cho</td><td>ảnh, zip, PDF, audio, protocol nhị phân, dữ liệu đã mã hoá</td><td>CSV, JSON, XML, log, properties, HTML — mọi thứ "đọc được"</td></tr>
+        <tr><td>Encoding</td><td>Không quan tâm</td><td>Bắt buộc phải quan tâm</td></tr>
+        <tr><td>Thao tác</td><td><code class="inline">read()</code> → <code class="inline">byte[]</code></td><td><code class="inline">readLine()</code>, <code class="inline">write(String)</code>, <code class="inline">newLine()</code></td></tr>
+      </tbody>
+    </table>
+    <p>Các class chính của từng họ:</p>
+    <table>
+      <thead>
+        <tr><th>Byte streams</th><th>Vai trò</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">FileInputStream</code> / <code class="inline">FileOutputStream</code></td><td>Nguồn/đích là file</td></tr>
+        <tr><td><code class="inline">BufferedInputStream</code> / <code class="inline">BufferedOutputStream</code></td><td>Thêm bộ đệm, giảm số lần gọi hệ điều hành</td></tr>
+        <tr><td><code class="inline">DataInputStream</code> / <code class="inline">DataOutputStream</code></td><td>Đọc/ghi <code class="inline">int</code>, <code class="inline">double</code>, <code class="inline">boolean</code>, <code class="inline">UTF</code>…</td></tr>
+        <tr><td><code class="inline">ByteArrayInputStream</code> / <code class="inline">ByteArrayOutputStream</code></td><td>Đọc/ghi vào mảng byte trong RAM</td></tr>
+        <tr><td><code class="inline">ObjectInputStream</code> / <code class="inline">ObjectOutputStream</code></td><td>Serialize object — <strong>tránh</strong> cho dữ liệu không tin cậy</td></tr>
+        <tr><td><code class="inline">PrintStream</code></td><td>Chính là <code class="inline">System.out</code> — output text tiện, nuốt lỗi</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead>
+        <tr><th>Character streams</th><th>Vai trò</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">FileReader</code> / <code class="inline">FileWriter</code></td><td>Tiện nhưng dùng charset mặc định — xem mục 4</td></tr>
+        <tr><td><code class="inline">BufferedReader</code> / <code class="inline">BufferedWriter</code></td><td>Bọc ngoài, thêm <code class="inline">readLine()</code>/<code class="inline">newLine()</code></td></tr>
+        <tr><td><code class="inline">InputStreamReader</code> / <code class="inline">OutputStreamWriter</code></td><td>Cầu nối byte ↔ char, nơi khai báo charset</td></tr>
+        <tr><td><code class="inline">PrintWriter</code></td><td><code class="inline">println/printf</code> ra file text</td></tr>
+        <tr><td><code class="inline">StringReader</code> / <code class="inline">StringWriter</code></td><td>Đọc/ghi text từ String trong RAM</td></tr>
+      </tbody>
+    </table>
+    <p>Hình dung luồng dữ liệu qua các lớp bọc:</p>
+    <div class="codeblock">
+      <pre><code>File --byte--&gt; FileInputStream --byte--&gt; InputStreamReader --char--&gt; BufferedReader
+File &lt;--byte-- FileOutputStream &lt;--char-- OutputStreamWriter &lt;--char-- BufferedWriter
+                             ^
+                      charset chi dinh o day
+                           (vi du UTF-8)</code></pre>
+    </div>
+    <div class="note"><strong>Nguyên tắc chọn:</strong> hỏi "nội dung này có phải text đọc được không?". Có → character stream và luôn nghĩ tới charset. Không (ảnh, zip, PDF, file nhị phân tự quy định) → byte stream và giữ nguyên <code class="inline">byte[]</code>, tuyệt đối không <code class="inline">new String(bytes)</code> rồi cố ghi lại.</div>
+    <h2 id="byte-stream">3. Byte streams thực chiến</h2>
+    <h3>3.1 Ghi/đọc file nhị phân với File* + Buffered*</h3>
+    <p><code class="inline">write(int)</code> chỉ dùng 8 bit thấp, nên <code class="inline">write(-1)</code> ghi byte <code class="inline">0xFF</code>; còn <code class="inline">read()</code> trả về <code class="inline">0..255</code> hoặc <code class="inline">-1</code> khi hết file. Vì vậy <code class="inline">-1</code> vừa là "EOF", vừa không bao giờ là giá trị byte hợp lệ:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path f = dir.resolve("raw.bin");
+
+    try (var out = new FileOutputStream(f.toString())) {
+        out.write(new byte[] {1, 2, 3, 127, -1});
+    }
+
+    try (var in = new FileInputStream(f.toString())) {
+        int b;
+        while ((b = in.read()) != -1) {
+            IO.print(b + " ");
+        }
+        IO.println();
+    }
+
+    try (var in = new FileInputStream(f.toString())) {
+        byte[] buf = new byte[4];
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            IO.print("[" + n + "]");
+        }
+        IO.println();
+    }
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>1 2 3 127 255 
+[4][1]</code></pre>
+    </div>
+    <p>Đọc bằng <code class="inline">read(byte[])</code> nhanh hơn hẳn <code class="inline">read()</code> từng byte vì mỗi lần gọi tốn một syscall. Lần đọc đầu đầy buffer (<code class="inline">[4]</code>), lần sau chỉ còn 1 byte (<code class="inline">[1]</code>). Luôn nhớ: <code class="inline">read(byte[])</code> có thể trả về <strong>ít hơn</strong> độ dài buffer — đừng giả định nó đọc đầy.</p>
+    <h3>3.2 DataInputStream/DataOutputStream — đọc ghi primitive</h3>
+    <p>Muốn ghi <code class="inline">int</code> xuống file đúng 4 byte thay vì 4 ký tự text thì dùng data streams. Chúng mã hoá cố định, độc lập nền tảng (big-endian), kèm <code class="inline">writeUTF</code> ghi chuỗi theo định dạng riêng (2 byte độ dài + modified UTF-8):</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path f = dir.resolve("data.bin");
+
+    // ghi: int -> UTF -> double -> boolean, buffer cho nhanh
+    try (var out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(f)))) {
+        out.writeInt(42);
+        out.writeUTF("Xin chao");
+        out.writeDouble(19.99);
+        out.writeBoolean(true);
+    }
+
+    // doc phai dung thu tu va dung kieu da ghi
+    try (var in = new DataInputStream(new BufferedInputStream(Files.newInputStream(f)))) {
+        IO.println(in.readInt());
+        IO.println(in.readUTF());
+        IO.println(in.readDouble());
+        IO.println(in.readBoolean());
+    }
+
+    IO.println("size=" + Files.size(f));
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>42
+Xin chao
+19.99
+true
+size=23</code></pre>
+    </div>
+    <p>File nặng 23 byte = 4 (<code class="inline">int</code>) + 2 + 8 (<code class="inline">UTF</code> dài 8 ký tự) + 8 (<code class="inline">double</code>) + 1 (<code class="inline">boolean</code>). Không có ký tự phân cách nào — đó là lý do <strong>thứ tự ghi và đọc phải khớp tuyệt đối</strong>. Đọc lệch kiểu sẽ không báo lỗi ngay mà trả về giá trị rác:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path f = dir.resolve("mixed.bin");
+
+    try (var out = new DataOutputStream(Files.newOutputStream(f))) {
+        out.writeInt(7);
+        out.writeDouble(2.5);
+    }
+
+    // doc sai thu tu: double truoc
+    try (var in = new DataInputStream(Files.newInputStream(f))) {
+        IO.println("readDouble truoc: " + in.readDouble());
+    }
+
+    // doc dung thu tu
+    try (var in = new DataInputStream(Files.newInputStream(f))) {
+        IO.println("readInt truoc: " + in.readInt());
+        IO.println("readDouble sau: " + in.readDouble());
+    }
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>readDouble truoc: 1.5384599001E-313
+readInt truoc: 7
+readDouble sau: 2.5</code></pre>
+    </div>
+    <p><code class="inline">readDouble()</code> đọc 8 byte đầu tiên (4 byte của <code class="inline">int</code> 7 + 4 byte đầu của <code class="inline">double</code>) và diễn giải thành một <code class="inline">double</code> rác <code class="inline">1.5384599001E-313</code> — không exception, chỉ sai âm thầm. Vì vậy data streams chỉ hợp với định dạng do chính bạn kiểm soát cả hai đầu (cache nội bộ, protocol riêng), không hợp làm API trao đổi dữ liệu giữa các hệ thống. Giao tiếp liên hệ thống hãy dùng JSON/protobuf; <code class="inline">ObjectInputStream</code> thì càng phải tránh vì lỗ hổng deserialization.</p>
+    <h3>3.3 read() vs read(byte[]) vs readAllBytes() vs transferTo()</h3>
+    <p>Bốn cách đọc, chọn theo kích thước và mục đích:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path src = dir.resolve("src.txt");
+    Files.writeString(src, "Hello NIO", StandardCharsets.UTF_8);
+
+    try (var in = Files.newInputStream(src)) {
+        int b = in.read();
+        IO.println("read()          -> " + (char) b);
+    }
+
+    try (var in = Files.newInputStream(src)) {
+        byte[] buf = new byte[5];
+        int n = in.read(buf);
+        IO.println("read(byte[5])   -> " + n + " + " + new String(buf, 0, n, StandardCharsets.UTF_8));
+    }
+
+    try (var in = Files.newInputStream(src)) {
+        byte[] all = in.readAllBytes();
+        IO.println("readAllBytes()  -> " + all.length + " + " + new String(all, StandardCharsets.UTF_8));
+    }
+
+    Path copy = dir.resolve("copy.txt");
+    try (var in = Files.newInputStream(src); var out = Files.newOutputStream(copy)) {
+        in.transferTo(out);
+    }
+    IO.println("transferTo()    -> " + Files.readString(copy));
+
+    Files.delete(copy);
+    Files.delete(src);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>read()          -&gt; H
+read(byte[5])   -&gt; 5 + Hello
+readAllBytes()  -&gt; 9 + Hello NIO
+transferTo()    -&gt; Hello NIO</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">read()</code> — 1 byte một lần, trả <code class="inline">0..255</code> hoặc <code class="inline">-1</code>. Chỉ dùng khi cần đọc từng byte (parse định dạng nhị phân).</li>
+      <li><code class="inline">read(byte[])</code> — đọc tối đa <code class="inline">buf.length</code> byte, trả số byte thực đọc (có thể nhỏ hơn) hoặc <code class="inline">-1</code>. Muốn đọc đủ phải lặp; khi biết trước số byte cần đọc, dùng <code class="inline">readNBytes(in, n)</code> cho gọn.</li>
+      <li><code class="inline">readAllBytes()</code> — đọc tới hết vào <code class="inline">byte[]</code>. Tiện cho file nhỏ; file lớn sẽ ngốn RAM gấp đôi (mảng byte + <code class="inline">String</code> khi decode).</li>
+      <li><code class="inline">transferTo(out)</code> — chuyền dữ liệu sang OutputStream khác, tự quản buffer, dùng để copy nhị phân mà không cần tự viết vòng <code class="inline">while</code> đọc/ghi.</li>
+    </ul>
+    <h2 id="char-stream">4. Character streams &amp; encoding <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+    <h3>4.1 Charset — hợp đồng giữa byte và ký tự</h3>
+    <p>UTF-8 mã hoá mỗi code point thành 1–4 byte; tiếng Việt có dấu thường 2–3 byte mỗi ký tự, còn ASCII 1 byte. Khi đọc/ghi text mà không chỉ định charset, chương trình dùng <code class="inline">Charset.defaultCharset()</code> — trên JDK 18+ (JEP 400) mặc định là UTF-8, nhưng vẫn có thể bị đổi bằng <code class="inline">-Dfile.encoding</code>, biến môi trường, locale container, hoặc chạy trên JDK cũ. Đó là lý do quy tắc số 1 của I/O text: <strong>luôn chỉ định charset ở biên</strong>.</p>
+    <div class="note warn"><strong>FileReader/FileWriter dùng charset mặc định</strong> — không có tham số charset. Từ JDK 18 mặc định là UTF-8 nên "thường đúng", nhưng chỉ cần JVM chạy với <code class="inline">-Dfile.encoding=ISO-8859-1</code> (CI, container, tùy chọn legacy) là ký tự tiếng Việt bị thay bằng <code class="inline">?</code> <em>âm thầm</em> khi ghi. Code production hãy dùng <code class="inline">Files.newBufferedWriter(path, UTF_8)</code> hoặc <code class="inline">new OutputStreamWriter(out, UTF_8)</code>.</div>
+    <h3>4.2 Demo: FileWriter ghi mất dấu mà không báo lỗi</h3>
+    <p>Chạy file sau hai lần — lần đầu bình thường, lần sau ép charset mặc định thành ISO-8859-1. Chuỗi dùng escape <code class="inline">\u1EBF</code> để source chỉ chứa ASCII, tránh việc <code class="inline">-Dfile.encoding</code> còn ảnh hưởng cả cách javac đọc source:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    String text = "Ti\u1EBFng Vi\u1EC7t";
+    IO.println("defaultCharset = " + Charset.defaultCharset());
+
+    Path dir = Files.createTempDirectory("enc-");
+    Path f = dir.resolve("writer.txt");
+
+    try (var w = new FileWriter(f.toString())) {
+        w.write(text);
+    }
+    byte[] bytes = Files.readAllBytes(f);
+    IO.println("FileWriter ghi : " + bytes.length + " byte");
+    IO.println("Dang UTF-8 can : " + text.getBytes(StandardCharsets.UTF_8).length + " byte");
+    IO.println("Hex            : " + HexFormat.of().formatHex(bytes));
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>$ java WriterDemo.java
+defaultCharset = UTF-8
+FileWriter ghi : 14 byte
+Dang UTF-8 can : 14 byte
+Hex            : 5469e1babf6e67205669e1bb8774
+
+$ java -Dfile.encoding=ISO-8859-1 WriterDemo.java
+defaultCharset = ISO-8859-1
+FileWriter ghi : 10 byte
+Dang UTF-8 can : 14 byte
+Hex            : 54693f6e672056693f74</code></pre>
+    </div>
+    <p>Dòng hex thứ hai chứa hai byte <code class="inline">3f</code> — chính là dấu <code class="inline">?</code> thay cho <code class="inline">ế</code> và <code class="inline">ệ</code>. Ghi xong không có exception, <code class="inline">close()</code> cũng không báo gì: dữ liệu đã mất. Trong khi đó <code class="inline">Files.writeString</code> luôn ghi UTF-8 (Javadoc ghi rõ), nên kết quả ổn định bất kể <code class="inline">-Dfile.encoding</code>.</p>
+    <h3>4.3 Cách viết đúng — chỉ định charset tường minh</h3>
+    <p>Ghép từ các lớp gốc; <code class="inline">InputStreamReader</code> chính là cầu byte→char và là nơi khai báo charset:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path f = dir.resolve("notes.txt");
+
+    try (var w = new BufferedWriter(
+            new OutputStreamWriter(new FileOutputStream(f.toString()), StandardCharsets.UTF_8))) {
+        w.write("Dòng 1: xin chào");
+        w.newLine();
+        w.write("Dòng 2: cảm ơn");
+        w.newLine();
+    }
+
+    try (var r = new BufferedReader(
+            new InputStreamReader(new FileInputStream(f.toString()), StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = r.readLine()) != null) {
+            IO.println("[" + line + "]");
+        }
+    }
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>[Dòng 1: xin chào]
+[Dòng 2: cảm ơn]</code></pre>
+    </div>
+    <p>Cách gọn hơn (JDK 8+) là để <code class="inline">Files</code> mở sẵn reader/writer có charset:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("iolab-");
+    Path f = dir.resolve("report.txt");
+
+    try (var w = new PrintWriter(Files.newBufferedWriter(f, StandardCharsets.UTF_8))) {
+        w.println("Mã: A01");
+        w.printf("%s = %d%n", "Tổng", 250);
+        w.print("Không xuống dòng");
+    }
+
+    try (var r = Files.newBufferedReader(f, StandardCharsets.UTF_8)) {
+        String line;
+        while ((line = r.readLine()) != null) {
+            IO.println("&lt;" + line + "&gt;");
+        }
+    }
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>&lt;Mã: A01&gt;
+&lt;Tổng = 250&gt;
+&lt;Không xuống dòng&gt;</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">readLine()</code> trả về dòng <strong>không kèm</strong> <code class="inline">\n</code>/<code class="inline">\r\n</code>, và <code class="inline">null</code> khi hết file; dòng trống trả về <code class="inline">""</code>. Nhờ vậy vòng <code class="inline">while ((line = r.readLine()) != null)</code> là mẫu chuẩn — không nhầm với dòng rỗng.</li>
+      <li><code class="inline">BufferedWriter.newLine()</code> ghi đúng dấu xuống dòng của hệ điều hành (<code class="inline">\n</code> trên Unix/macOS, <code class="inline">\r\n</code> trên Windows). <code class="inline">printf("%n")</code> cũng vậy; còn <code class="inline">"\n"</code> luôn là LF.</li>
+      <li><code class="inline">PrintWriter</code> tiện nhưng <strong>nuốt <code class="inline">IOException</code></strong> (đặt cờ lỗi thay vì ném). Nếu cần biết ghi thất bại, gọi <code class="inline">checkError()</code> sau khi ghi/đóng hoặc dùng trực tiếp <code class="inline">BufferedWriter</code>.</li>
+      <li>UTF-16/UTF-32 cũng là charset hợp lệ, nhưng trao đổi giữa các hệ thống hãy dùng UTF-8 để tránh BOM và endianness.</li>
+    </ul>
+    <h2 id="nio">5. NIO.2 — Path &amp; Files <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
+    <p>Từ Java 7, <code class="inline">java.nio.file</code> (NIO.2) thay thế dần <code class="inline">java.io.File</code>. <code class="inline">Path</code> là đường dẫn bất biến (immutable), <code class="inline">Files</code> là class tiện ích thao tác trên đó. Code mới <strong>không dùng <code class="inline">File</code></strong> nữa.</p>
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">java.io.File</code> (cũ)</th><th><code class="inline">java.nio.file.Path</code> (mới)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo</td><td><code class="inline">new File("a", "b")</code></td><td><code class="inline">Path.of("a", "b")</code></td></tr>
+        <tr><td>Báo lỗi</td><td><code class="inline">boolean</code> + <code class="inline">getAbsolutePath()</code> khó hiểu lý do</td><td>Exception cụ thể: <code class="inline">NoSuchFileException</code>, <code class="inline">FileAlreadyExistsException</code>…</td></tr>
+        <tr><td>Thao tác path</td><td>Ghép chuỗi, tự xử lý <code class="inline">/</code></td><td><code class="inline">resolve/normalize/relativize</code> chuẩn hoá</td></tr>
+        <tr><td>File system</td><td>Chỉ file hệ thống mặc định</td><td>Hỗ trợ nhiều provider (zip FS, in-memory FS…)</td></tr>
+        <tr><td>Tính bất biến</td><td>Mutable</td><td>Immutable — an toàn khi chia sẻ</td></tr>
+        <tr><td>Tương thích</td><td><code class="inline">file.toPath()</code></td><td><code class="inline">path.toFile()</code></td></tr>
+      </tbody>
+    </table>
+    <h3>5.1 Tạo &amp; thao tác Path</h3>
+    <p><code class="inline">Path.of(...)</code> nhận các thành phần và tự ghép theo dấu phân cách của hệ điều hành (trên Windows ra <code class="inline">\</code>). Lưu ý <code class="inline">Path</code> chỉ là <em>mô tả đường dẫn</em> — tạo object không có nghĩa file tồn tại:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    Path p = Path.of("data", "orders", "..", "orders", "2026", "don-hang.csv");
+    IO.println("p              = " + p);
+    IO.println("normalize      = " + p.normalize());
+    IO.println("fileName       = " + p.getFileName());
+    IO.println("parent         = " + p.getParent());
+    IO.println("nameCount      = " + p.getNameCount());
+    IO.println("isAbsolute     = " + p.isAbsolute());
+
+    Path base = Path.of("data");
+    IO.println("resolve(str)   = " + base.resolve("orders.csv"));
+    IO.println("resolve(path)  = " + base.resolve(Path.of("a", "b")));
+    IO.println("resolve(abs)   = " + base.resolve("/tmp/x"));
+
+    Path a = Path.of("data/2026/orders.csv");
+    Path b = Path.of("data/2026/backup/orders.csv");
+    IO.println("relativize     = " + a.relativize(b));
+    IO.println("toAbsolute abs = " + p.toAbsolutePath().isAbsolute());
+    IO.println("endsWith       = " + p.toAbsolutePath().endsWith("don-hang.csv"));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>p              = data/orders/../orders/2026/don-hang.csv
+normalize      = data/orders/2026/don-hang.csv
+fileName       = don-hang.csv
+parent         = data/orders/../orders/2026
+nameCount      = 6
+isAbsolute     = false
+resolve(str)   = data/orders.csv
+resolve(path)  = data/a/b
+resolve(abs)   = /tmp/x
+relativize     = ../backup/orders.csv
+toAbsolute abs = true
+endsWith       = true</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">normalize()</code> chỉ xử lý cú pháp (bỏ <code class="inline">.</code>, gộp <code class="inline">..</code>), <strong>không kiểm tra file có tồn tại</strong>; muốn dạng tuyệt đối đã resolve symlink thì dùng <code class="inline">toRealPath()</code> — nhưng nó ném <code class="inline">IOException</code> nếu file không tồn tại.</li>
+      <li><code class="inline">resolve(Path)</code> ghép đường dẫn; nếu tham số là <strong>absolute</strong> thì nó <em>thay thế</em> hoàn toàn path gốc (<code class="inline">/tmp/x</code>) — đây chính là bẫy path traversal ở <a href="#qa">Q&amp;A 15</a>.</li>
+      <li><code class="inline">relativize</code> tính đường dẫn tương đối từ path này tới path kia; hữu ích khi in log hoặc build đường dẫn tương đối.</li>
+    </ul>
+    <h3>5.2 Kiểm tra tồn tại, kích thước, đọc/ghi nhanh</h3>
+    <p>JDK 11+ có <code class="inline">readString</code>/<code class="inline">writeString</code> — mặc định UTF-8, ngắn gọn nhất cho file text nhỏ:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("nio-");
+    Path f = dir.resolve("hello.txt");
+
+    IO.println("exists truoc  = " + Files.exists(f));
+    Files.writeString(f, "Xin chào\nDòng 2", StandardCharsets.UTF_8);
+    IO.println("exists sau    = " + Files.exists(f));
+    IO.println("isRegularFile = " + Files.isRegularFile(f));
+    IO.println("isDirectory   = " + Files.isDirectory(f));
+    IO.println("size          = " + Files.size(f) + " byte");
+
+    String s = Files.readString(f, StandardCharsets.UTF_8);
+    IO.println("readString    = " + s.replace("\n", " | "));
+    IO.println("so dong       = " + s.lines().count());
+
+    Files.delete(f);
+    IO.println("delete roi    = " + Files.exists(f));
+    IO.println("deleteIfExists= " + Files.deleteIfExists(f));
+
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>exists truoc  = false
+exists sau    = true
+isRegularFile = true
+isDirectory   = false
+size          = 17 byte
+readString    = Xin chào | Dòng 2
+so dong       = 2
+delete roi    = false
+deleteIfExists= false</code></pre>
+    </div>
+    <div class="note"><code class="inline">size</code> là 17 byte vì tiếng Việt chiếm nhiều byte hơn số ký tự — đúng chủ đề mục 6. <code class="inline">Files.delete</code> ném <code class="inline">NoSuchFileException</code> nếu file không tồn tại; <code class="inline">deleteIfExists</code> trả <code class="inline">boolean</code> và an toàn khi gọi lại. Ngoài ra còn <code class="inline">Files.mismatch(p1, p2)</code> so sánh nội dung hai file, và <code class="inline">Files.readAttributes</code> để lấy metadata (thời gian, kích thước, quyền).</div>
+    <h3>5.3 Tạo cây thư mục, copy, move, delete</h3>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("nio-");
+    Path sub = dir.resolve("a/b/c");
+    Files.createDirectories(sub);
+    IO.println("tao sau       = " + Files.isDirectory(sub));
+
+    Path f1 = dir.resolve("data.txt");
+    Files.writeString(f1, "0123456789", StandardCharsets.UTF_8);
+
+    Path f2 = dir.resolve("copy.txt");
+    Files.copy(f1, f2, StandardCopyOption.COPY_ATTRIBUTES);
+    IO.println("copy noi dung = " + Files.readString(f2));
+
+    Path f3 = dir.resolve("moved.txt");
+    Files.move(f2, f3, StandardCopyOption.REPLACE_EXISTING);
+    IO.println("f2 con? " + Files.exists(f2) + " | f3 co? " + Files.exists(f3));
+
+    IO.println("deleteIfExists f1 = " + Files.deleteIfExists(f1));
+    IO.println("deleteIfExists f1 lan 2 = " + Files.deleteIfExists(f1));
+    IO.println("f1 con? " + Files.exists(f1));
+
+    try (var walk = Files.walk(dir)) {
+        walk.sorted(Comparator.reverseOrder()).forEach(p -&gt; {
+            try { Files.delete(p); } catch (IOException e) { throw new UncheckedIOException(e); }
+        });
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>tao sau       = true
+copy noi dung = 0123456789
+f2 con? false | f3 co? true
+deleteIfExists f1 = true
+deleteIfExists f1 lan 2 = false
+f1 con? false</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">createDirectories</code> tạo cả cây, không lỗi nếu đã tồn tại (khác <code class="inline">createDirectory</code> chỉ tạo 1 cấp và ném <code class="inline">FileAlreadyExistsException</code>).</li>
+      <li><code class="inline">Files.copy</code> <strong>không</strong> ghi đè mặc định — cần <code class="inline">REPLACE_EXISTING</code>. <code class="inline">Files.move</code> mặc định cũng vậy; muốn ghi đè phải khai báo tường minh.</li>
+      <li><code class="inline">Files.delete</code> không xoá được thư mục còn file; xoá cả cây dùng <code class="inline">Files.walk</code> duyệt theo thứ tự ngược như trên hoặc tiện ích của thư viện.</li>
+      <li>Khi copy/move qua ổ đĩa khác, <code class="inline">ATOMIC_MOVE</code> có thể không được hỗ trợ — xem mục 9.</li>
+    </ul>
+    <h3>5.4 Duyệt cây — Files.list vs walk vs find</h3>
+    <p>Cả ba đều trả <code class="inline">Stream&lt;Path&gt;</code> được hỗ trợ bởi handle của hệ điều hành, nên <strong>phải đóng</strong> bằng try-with-resources. <code class="inline">Files.list</code> chỉ liệt kê mục con trực tiếp; <code class="inline">Files.walk</code> duyệt đệ quy tới độ sâu cho trước; <code class="inline">Files.find</code> như walk kèm predicate lọc ngay (đỡ đọc attribute hai lần):</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("tree-");
+    Files.createDirectories(dir.resolve("2025"));
+    Files.createDirectories(dir.resolve("2026/thang-01"));
+    Files.writeString(dir.resolve("root.txt"), "r", StandardCharsets.UTF_8);
+    Files.writeString(dir.resolve("2025/old.txt"), "o", StandardCharsets.UTF_8);
+    Files.writeString(dir.resolve("2026/a.txt"), "a", StandardCharsets.UTF_8);
+    Files.writeString(dir.resolve("2026/thang-01/b.txt"), "b", StandardCharsets.UTF_8);
+    Files.writeString(dir.resolve("2026/thang-01/c.md"), "c", StandardCharsets.UTF_8);
+
+    IO.println("Files.list (chi muc con truc tiep), sap xep:");
+    try (var list = Files.list(dir)) {
+        list.sorted().forEach(p -&gt; IO.println("  " + dir.relativize(p)));
+    }
+
+    IO.println("Files.walk depth 2:");
+    try (var walk = Files.walk(dir, 2)) {
+        walk.sorted().forEach(p -&gt; IO.println("  " + (p.equals(dir) ? "." : dir.relativize(p))));
+    }
+
+    IO.println("Files.find: file .txt nam sau nhat 3 cap:");
+    try (var find = Files.find(dir, 3,
+            (p, attr) -&gt; attr.isRegularFile() &amp;&amp; p.getFileName().toString().endsWith(".txt"))) {
+        find.sorted().forEach(p -&gt; IO.println("  " + dir.relativize(p)));
+    }
+
+    try (var walk = Files.walk(dir)) {
+        walk.sorted(Comparator.reverseOrder()).forEach(p -&gt; {
+            try { Files.delete(p); } catch (IOException e) { throw new UncheckedIOException(e); }
+        });
+    }
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Files.list (chi muc con truc tiep), sap xep:
+  2025
+  2026
+  root.txt
+Files.walk depth 2:
+  .
+  2025
+  2025/old.txt
+  2026
+  2026/a.txt
+  2026/thang-01
+  root.txt
+Files.find: file .txt nam sau nhat 3 cap:
+  2025/old.txt
+  2026/a.txt
+  2026/thang-01/b.txt
+  root.txt</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">Files.walk(dir)</code> và <code class="inline">Files.find</code> <strong>bao gồm cả chính <code class="inline">dir</code></strong> (in ra <code class="inline">.</code> trong ví dụ) — đừng quên khi đếm/tính toán.</li>
+      <li>Thứ tự duyệt không được đảm bảo; muốn output ổn định hãy <code class="inline">.sorted()</code> (so sánh theo thứ tự từ điển của <code class="inline">Path</code>).</li>
+      <li>Lọc theo mẫu tên dùng <code class="inline">PathMatcher</code>: <code class="inline">FileSystems.getDefault().getPathMatcher("glob:**/*.txt")</code>. Đừng dùng <code class="inline">Path.endsWith(".txt")</code> để lọc đuôi file — nó so theo thành phần đường dẫn nên không khớp như bạn nghĩ.</li>
+      <li><code class="inline">Files.walk</code> mặc định không đi theo symbolic link; nếu truyền <code class="inline">FOLLOW_LINKS</code> hãy cẩn thận vòng lặp symlink.</li>
+    </ul>
+    <h3>5.5 Files.lines — đọc dòng kiểu Stream</h3>
+    <p><code class="inline">Files.lines</code> mở file và trả Stream các dòng, đọc <strong>lazy</strong>: mỗi dòng chỉ được đọc khi pipeline cần. Đổi lại, Stream này giữ file handle nên bắt buộc try-with-resources:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("lines-");
+    Path f = dir.resolve("log.txt");
+    Files.writeString(f, """
+            2026-01-03 Giao don A01
+            2026-01-04 Huy don A02
+            2026-01-05 Giao don A03
+            """, StandardCharsets.UTF_8);
+
+    try (var lines = Files.lines(f, StandardCharsets.UTF_8)) {
+        lines.filter(l -&gt; l.contains("Giao"))
+             .forEach(IO::println);
+    }
+
+    long soDong;
+    try (var lines = Files.lines(f, StandardCharsets.UTF_8)) {
+        soDong = lines.count();
+    }
+    IO.println("Dem dong: " + soDong);
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>2026-01-03 Giao don A01
+2026-01-05 Giao don A03
+Dem dong: 3</code></pre>
+    </div>
+    <div class="note">Stream API đầy đủ (map/filter/collect/parallel) học ở <a href="streams.html">3.8 Stream API</a>; ở đây chỉ cần nhớ <code class="inline">Files.lines</code> là cầu nối I/O ↔ Stream, và <strong>stream từ I/O luôn phải đóng</strong>. Với file rất lớn, pipeline lazy giúp xử lý mà không nạp cả file vào RAM — nhưng nếu gọi <code class="inline">collect(toList())</code> thì lại nạp hết; đừng nhầm "lazy" với "tiết kiệm bộ nhớ luôn luôn".</div>
+    <h2 id="encoding">6. Bẫy encoding &amp; tiếng Việt <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+    <h3>6.1 Mojibake — đọc UTF-8 bằng charset sai</h3>
+    <p>Tiếng Việt có dấu là "máy dò" encoding tốt nhất. Cùng một dãy byte, decode bằng charset khác nhau cho ra chuỗi khác nhau — hiện tượng này gọi là <em>mojibake</em> (chữ hỏng). Ví dụ kinh điển: đọc UTF-8 bằng windows-1252 (mặc định một thời của Windows):</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    String goc = "Tiếng Việt có dấu";
+    byte[] utf8 = goc.getBytes(StandardCharsets.UTF_8);
+    IO.println("So byte UTF-8: " + utf8.length);
+
+    // co tinh doc sai charset
+    String sai = new String(utf8, Charset.forName("windows-1252"));
+    IO.println("Doc sai       : " + sai);
+
+    // sua: ma hoa lai dung charset da doc sai, roi decode UTF-8
+    String sua = new String(sai.getBytes(Charset.forName("windows-1252")), StandardCharsets.UTF_8);
+    IO.println("Doc lai dung  : " + sua);
+
+    Path dir = Files.createTempDirectory("enc-");
+    Path f = dir.resolve("utf8.txt");
+    Files.write(f, utf8);
+
+    IO.println("readString UTF-8: " + Files.readString(f, StandardCharsets.UTF_8));
+    IO.println("readAllBytes    : " + Files.readAllBytes(f).length + " byte");
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>So byte UTF-8: 24
+Doc sai       : Tiáº¿ng Viá»‡t cÃ³ dáº¥u
+Doc lai dung  : Tiếng Việt có dấu
+readString UTF-8: Tiếng Việt có dấu
+readAllBytes    : 24 byte</code></pre>
+    </div>
+    <p>Chuỗi <code class="inline">"Tiếng Việt có dấu"</code> dài 18 ký tự nhưng chiếm 24 byte UTF-8. Khi thấy dữ liệu hiển thị dạng <code class="inline">Tiáº¿ng Viá»‡t</code>, gần như chắc chắn đâu đó đang decode UTF-8 bằng một charset single-byte (windows-1252/ISO-8859-1). Cách sửa đúng là tìm và chỉnh <strong>đúng chỗ decode</strong>, không phải "sửa chuỗi" lung tung. Chuỗi mojibake trong ví dụ là CP1252 → có thể đảo ngược hoàn hảo vì windows-1252 phủ hết các byte đã dùng; gặp C1 control của ISO-8859-1 thì có thể mất dữ liệu.</p>
+    <h3>6.2 Byte hỏng và hai kiểu phản ứng</h3>
+    <p>Cùng gặp chuỗi byte không hợp lệ, hai API phản ứng khác nhau — đây là bẫy âm thầm:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    byte[] bad = {(byte) 0xE1, (byte) 0xBA};   // thieu byte thu 3 cua ky tu ế
+
+    String replace = new String(bad, StandardCharsets.UTF_8);
+    IO.println("new String : [" + replace + "] length=" + replace.length());
+    IO.println("char      : " + (int) replace.charAt(0));
+
+    Path dir = Files.createTempDirectory("bad-");
+    Path f = dir.resolve("bad.bin");
+    Files.write(f, bad);
+    try {
+        Files.readString(f, StandardCharsets.UTF_8);
+    } catch (Exception e) {
+        IO.println("readString: " + e.getClass().getSimpleName());
+    }
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>new String : [�] length=1
+char      : 65533
+readString: MalformedInputException</code></pre>
+    </div>
+    <p><code class="inline">new String(bytes, charset)</code> thay byte hỏng bằng <code class="inline">U+FFFD</code> (dấu hỏi trong ô vuông) — chạy tiếp như không có gì. <code class="inline">Files.readString</code> dùng decoder chế độ REPORT nên ném <code class="inline">MalformedInputException</code> — tốt cho production vì lỗi dữ liệu lộ ra sớm thay vì lặng lẽ mất chữ.</p>
+    <h3>6.3 BOM — ký tự vô hình đầu file</h3>
+    <p>UTF-8 BOM là 3 byte <code class="inline">EF BB BF</code> mà một số công cụ (điển hình là Excel khi lưu CSV) chèn đầu file. Java không tự bỏ BOM, nên nó biến thành ký tự <code class="inline">U+FEFF</code> đầu dòng, làm so sánh chuỗi trượt:</p>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("bom-");
+    Path f = dir.resolve("bom.csv");
+
+    byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+    Files.write(f, bom);
+    Files.write(f, "ma,ten\nA01,Ghe".getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+
+    String s = Files.readString(f, StandardCharsets.UTF_8);
+    IO.println("startsWith ma    = " + s.startsWith("ma"));
+    IO.println("startsWith BOM   = " + s.startsWith("\uFEFF"));
+    IO.println("char dau (int)   = " + (int) s.charAt(0));
+    IO.println("dong dau tho     = " + s.lines().findFirst().orElse(""));
+    String sach = s.startsWith("\uFEFF") ? s.substring(1) : s;
+    IO.println("sau khi bo BOM   = " + sach.lines().findFirst().orElse(""));
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>startsWith ma    = false
+startsWith BOM   = true
+char dau (int)   = 65279
+dong dau tho     = ﻿ma,ten
+sau khi bo BOM   = ma,ten</code></pre>
+    </div>
+    <p>Hai quy tắc thực dụng: (1) đọc file do người dùng/Excel tạo thì strip <code class="inline">U+FEFF</code> ở đầu trước khi parse — nhớ xử lý cả trường hợp chỉ đọc dòng đầu; (2) khi ghi CSV cho Excel mở đúng tiếng Việt trên Windows, có thể phải <em>thêm</em> BOM thủ công.</p>
+    <h3>6.4 Encoding của terminal và System.out</h3>
+    <div class="codeblock">
+      <pre><code class="java">void main() {
+    IO.println("file.encoding   = " + System.getProperty("file.encoding"));
+    IO.println("native.encoding = " + System.getProperty("native.encoding"));
+    IO.println("Charset.default = " + Charset.defaultCharset());
+    IO.println("System.out      = " + System.out.charset());
+    IO.println("Console         = " + (System.console() != null ? "co" : "khong (IDE/redirect)"));
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>file.encoding   = UTF-8
+native.encoding = UTF-8
+Charset.default = UTF-8
+System.out      = UTF-8
+Console         = khong (IDE/redirect)</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">System.out.charset()</code> là charset mà <em>terminal/console</em> đang chờ, có thể khác <code class="inline">Charset.defaultCharset()</code>. Trên Windows cmd cũ thường là CP1258/CP437 — tiếng Việt in ra hỏng dù file ghi đúng; sửa bằng <code class="inline">chcp 65001</code> hoặc set <code class="inline">-Dstdout.encoding=UTF-8</code>.</li>
+      <li><code class="inline">file.encoding</code> có thể bị override khi chạy (<code class="inline">-Dfile.encoding=...</code>), khác <code class="inline">native.encoding</code> (charset gốc của OS/JVM). Đừng dựa vào mặc định — chỉ định charset trong code.</li>
+      <li>Khi output bị pipe/redirect (CI log), <code class="inline">System.console()</code> trả <code class="inline">null</code>; đừng dùng <code class="inline">Console</code> cho logic bắt buộc.</li>
+    </ul>
+    <div class="note"><strong>Nguyên tắc vàng:</strong> bên trong chương trình, <code class="inline">String</code> là Unicode — không có encoding. Encoding chỉ tồn tại ở <em>biên</em> I/O: đọc file, ghi file, đọc socket, đọc HTTP request, ghi DB, in console, nhận tham số dòng lệnh. Hãy khai báo UTF-8 ở mọi biên đó và kiểm tra ở cả hai đầu hệ thống (client gửi gì — server đọc nấy).</div>
+    <h2 id="twr">7. try-with-resources, flush &amp; close <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+    <h3>7.1 try-with-resources đóng theo thứ tự ngược</h3>
+    <p>Mọi resource implement <code class="inline">AutoCloseable</code> đều dùng được trong try-with-resources (Java 7+). Resource được đóng theo thứ tự <strong>ngược với lúc mở</strong> (LIFO), kể cả khi body <code class="inline">return</code> hoặc ném exception. Chi tiết exception suppression học ở <a href="exceptions.html">exceptions.html</a>; phần I/O chỉ cần nhớ thứ tự đóng quyết định dữ liệu có được flush đúng hay không:</p>
+    <div class="codeblock">
+      <pre><code class="java">class Res implements AutoCloseable {
+    private final String ten;
+
+    Res(String ten) {
+        this.ten = ten;
+        IO.println("mo  " + ten);
+    }
+
+    @Override
+    public void close() {
+        IO.println("dong " + ten);
+    }
+}
+
+void main() throws Exception {
+    IO.println("truoc try");
+    try (var a = new Res("A"); var b = new Res("B")) {
+        IO.println("trong try");
+    }
+    IO.println("sau try");
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>truoc try
+mo  A
+mo  B
+trong try
+dong B
+dong A
+sau try</code></pre>
+    </div>
+    <p>Bọc nhiều lớp cũng theo nguyên tắc đó: đóng <code class="inline">BufferedWriter</code> trước, nó tự flush rồi mới đóng <code class="inline">FileOutputStream</code> bên trong. Bạn <strong>không cần</strong> gọi <code class="inline">close()</code> thủ công cho từng lớp — chỉ cần đóng lớp ngoài cùng. Ngược lại, đóng lớp trong trước rồi mới dùng lớp ngoài sẽ lỗi, nên hãy để try-with-resources lo trọn gói.</p>
+    <h3>7.2 flush() vs close() — dữ liệu mất ở đâu</h3>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("flush-");
+    Path f = dir.resolve("out.txt");
+
+    var w = new BufferedWriter(Files.newBufferedWriter(f, StandardCharsets.UTF_8));
+    w.write("dữ liệu");
+    IO.println("size truoc flush = " + Files.size(f));
+
+    w.flush();
+    IO.println("size sau flush   = " + Files.size(f));
+
+    w.write(" them");
+    IO.println("size sau ghi tiep= " + Files.size(f));
+    w.close();
+    IO.println("size sau close   = " + Files.size(f));
+    IO.println("noi dung         = " + Files.readString(f, StandardCharsets.UTF_8));
+
+    Files.delete(f);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>size truoc flush = 0
+size sau flush   = 11
+size sau ghi tiep= 11
+size sau close   = 16
+noi dung         = dữ liệu them</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">flush()</code> đẩy dữ liệu từ buffer trong RAM xuống hệ điều hành; sau đó bạn vẫn ghi tiếp bình thường.</li>
+      <li><code class="inline">close()</code> flush rồi trả tài nguyên (file handle) về cho OS. Sau <code class="inline">close()</code> không dùng lại được resource.</li>
+      <li>Buffered stream <strong>chưa flush/close thì dữ liệu còn nằm trong RAM</strong> — size bằng 0 như ví dụ. Với socket, quên flush còn khiến phía kia chờ vô hạn.</li>
+      <li>try-with-resources gọi <code class="inline">close()</code> giúp bạn, nên hiếm khi cần <code class="inline">flush()</code> thủ công — ngoại lệ là socket/stream trước khi đọc phản hồi ngay (request/response trên cùng kết nối).</li>
+    </ul>
+    <h3>7.3 Exception khi close</h3>
+    <p>Nếu body try ném exception và <code class="inline">close()</code> cũng ném, exception của <code class="inline">close()</code> được gắn vào exception chính qua <code class="inline">getSuppressed()</code> — bạn không mất thông tin gốc. Nếu chỉ <code class="inline">close()</code> ném (body chạy bình thường), exception đó trở thành exception chính. Vì vậy đừng viết <code class="inline">close()</code> có logic nghiệp vụ phức tạp, và đừng "nuốt" exception trong <code class="inline">close()</code>.</p>
+    <h2 id="mini-project">8. Mini project — quản lý đơn hàng CSV</h2>
+    <p>Ghép mọi thứ đã học: tạo thư mục tạm, ghi CSV UTF-8, đọc bằng <code class="inline">Files.readAllLines</code>, parse bằng <code class="inline">split</code> + <code class="inline">Integer.parseInt</code>/<code class="inline">Long.parseLong</code>, tính tổng, lọc theo ngưỡng, ghi file kết quả và tự dọn. <code class="inline">List</code>/<code class="inline">ArrayList</code> đã học ở <a href="collections.html">3.3 Collections</a>; chỗ này cố tình dùng vòng lặp thay vì Stream (3.8 học sau) để bạn thấy rõ từng bước:</p>
+    <div class="codeblock">
+      <pre><code class="java">record DonHang(String ma, String ten, int soLuong, long donGia) {
+    long tongTien() {
+        return soLuong * donGia;
+    }
+}
+
+void main() throws IOException {
+    Path dir = Files.createTempDirectory("donhang-");
+    Path csv = dir.resolve("don-hang.csv");
+
+    Files.writeString(csv, """
+            A01,Bàn phím cơ,2,890000
+            A02,Chuột không dây,1,450000
+            A03,Màn hình 27 inch,1,3200000
+            A04,Tai nghe,3,250000
+            """, StandardCharsets.UTF_8);
+
+    List&lt;DonHang&gt; donHangs = new ArrayList&lt;&gt;();
+    for (String line : Files.readAllLines(csv, StandardCharsets.UTF_8)) {
+        if (line.isBlank()) {
+            continue;
+        }
+        String[] parts = line.split(",");
+        donHangs.add(new DonHang(
+                parts[0],
+                parts[1],
+                Integer.parseInt(parts[2]),
+                Long.parseLong(parts[3])));
+    }
+
+    long tong = 0;
+    for (DonHang d : donHangs) {
+        tong += d.tongTien();
+    }
+    IO.println("Tong tien: " + tong);
+
+    long nguong = 1_000_000;
+    List&lt;String&gt; ketQua = new ArrayList&lt;&gt;();
+    for (DonHang d : donHangs) {
+        if (d.tongTien() &gt; nguong) {
+            ketQua.add(d.ma() + "," + d.ten() + "," + d.tongTien());
+        }
+    }
+
+    Path out = dir.resolve("ket-qua.csv");
+    Files.write(out, ketQua, StandardCharsets.UTF_8);
+    IO.println("Ghi " + ketQua.size() + " don vao " + out.getFileName());
+
+    for (String line : Files.readAllLines(out, StandardCharsets.UTF_8)) {
+        IO.println(line);
+    }
+
+    Files.delete(csv);
+    Files.delete(out);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>Tong tien: 6180000
+Ghi 2 don vao ket-qua.csv
+A01,Bàn phím cơ,1780000
+A03,Màn hình 27 inch,3200000</code></pre>
+    </div>
+    <ul>
+      <li><code class="inline">split(",")</code> đủ cho CSV đơn giản, nhưng CSV thật có dấu phẩy trong tên, dấu ngoặc kép, xuống dòng trong ô — lúc đó cần parser chuẩn (RFC 4180) hoặc thư viện như OpenCSV. Đây là bẫy phỏng vấn rất hay gặp.</li>
+      <li><code class="inline">Integer.parseInt</code>/<code class="inline">Long.parseLong</code> ném <code class="inline">NumberFormatException</code> khi ô rỗng/sai định dạng — production phải validate từng dòng và thông báo kèm số dòng lỗi, đừng để cả file fail vì một dòng.</li>
+      <li>Tiền nên là <code class="inline">long</code> theo đơn vị nhỏ nhất (VND) hoặc <code class="inline">BigDecimal</code> cho USD — xem <a href="index.html#bigdecimal">Biến trong Java — mục 13</a>. <code class="inline">long</code> tính bằng <code class="inline">*</code> có thể tràn nếu số lượng/đơn giá lớn; kiểm tra hoặc dùng <code class="inline">Math.multiplyExact</code>.</li>
+      <li><code class="inline">Files.write(path, Iterable&lt;CharSequence&gt;, charset)</code> tự thêm dấu xuống dòng sau mỗi phần tử. Muốn kiểm soát hoàn toàn, dùng <code class="inline">BufferedWriter</code> và <code class="inline">newLine()</code>.</li>
+      <li>Thư mục tạm của OS được dọn tự động theo thời gian nhưng đừng ỷ lại — code mẫu vẫn <code class="inline">delete</code> để ví dụ chạy lại được nhiều lần.</li>
+    </ul>
+    <h2 id="production">9. Ghi chú production <span class="badge b-prod">Production</span></h2>
+    <h3>9.1 Atomic write, quyền file, symbolic link</h3>
+    <div class="codeblock">
+      <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("prod-");
+    Path target = dir.resolve("config.properties");
+    Files.writeString(target, "version=1", StandardCharsets.UTF_8);
+
+    Path tmp = Files.createTempFile(dir, "config-", ".tmp");
+    try {
+        Files.writeString(tmp, "version=2", StandardCharsets.UTF_8);
+        Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        IO.println("noi dung moi = " + Files.readString(target));
+    } finally {
+        Files.deleteIfExists(tmp);
+    }
+
+    Path link = dir.resolve("link.properties");
+    Files.createSymbolicLink(link, target.getFileName());
+    IO.println("isSymbolicLink           = " + Files.isSymbolicLink(link));
+    IO.println("isRegularFile (follow)   = " + Files.isRegularFile(link));
+    IO.println("isRegularFile NOFOLLOW   = " + Files.isRegularFile(link, LinkOption.NOFOLLOW_LINKS));
+    IO.println("readSymbolicLink         = " + Files.readSymbolicLink(link));
+
+    Files.setPosixFilePermissions(target, PosixFilePermissions.fromString("rw-------"));
+    IO.println("quyen                    = " + Files.getPosixFilePermissions(target));
+
+    Files.delete(link);
+    Files.delete(target);
+    Files.delete(dir);
+}</code></pre>
+    </div>
+    <div class="codeblock error">
+      <pre><code>noi dung moi = version=2
+isSymbolicLink           = true
+isRegularFile (follow)   = true
+isRegularFile NOFOLLOW   = false
+readSymbolicLink         = config.properties
+quyen                    = [OWNER_READ, OWNER_WRITE]</code></pre>
+    </div>
+    <ul>
+      <li><strong>Atomic write</strong> — ghi ra file tạm <em>cùng thư mục</em> rồi <code class="inline">Files.move(..., ATOMIC_MOVE)</code>. Người đọc chỉ thấy bản cũ hoặc bản mới, không bao giờ thấy file dở dang; dùng cho file cấu hình/state mà tiến trình khác có thể đọc đồng thời. Trên POSIX, rename cùng filesystem là atomic. Cần bền vững qua mất điện thì thêm <code class="inline">FileChannel.force(true)</code> trước khi move.</li>
+      <li><strong>Quyền file</strong> — <code class="inline">PosixFilePermissions</code> chỉ chạy trên hệ thống POSIX; trên Windows ném <code class="inline">UnsupportedOperationException</code>, phải kiểm tra <code class="inline">FileSystems.getDefault().supportedFileAttributeViews().contains("posix")</code>. File chứa bí mật nên để <code class="inline">rw-------</code>; đừng đặt quyền mở cho tiện.</li>
+      <li><strong>Symbolic link</strong> — mặc định các method như <code class="inline">Files.isRegularFile</code>, <code class="inline">Files.size</code>, <code class="inline">Files.delete</code> <em>đi theo</em> link (thao tác trên đích); thêm <code class="inline">LinkOption.NOFOLLOW_LINKS</code> để thao tác trên chính link. <code class="inline">Files.delete</code> xoá link chứ không xoá đích.</li>
+    </ul>
+    <div class="note warn"><strong>Path traversal:</strong> không bao giờ ghép đường dẫn từ input người dùng bằng phép cộng chuỗi hay <code class="inline">resolve</code> trần. Input <code class="inline">"../../etc/passwd"</code> hoặc đường dẫn tuyệt đối có thể thoát khỏi thư mục cho phép — xem <a href="#qa">Q&amp;A 15</a> để biết cách chặn.</div>
+    <h3>9.2 Checklist production cho I/O</h3>
+    <ul>
+      <li><strong>Không hardcode path</strong> — nhận base directory từ cấu hình/biến môi trường, ghép bằng <code class="inline">Path.of(base).resolve(...)</code>. Đừng dùng <code class="inline">"data/orders.csv"</code> trần vì working directory khi chạy service khác khi chạy test.</li>
+      <li><strong>File lớn thì đọc theo dòng</strong> — <code class="inline">Files.lines</code> hoặc <code class="inline">BufferedReader</code>, tuyệt đối không <code class="inline">readAllLines</code>/<code class="inline">readString</code> cho file GB. Ghi cũng vậy, dùng <code class="inline">BufferedWriter</code> thay vì dựng cả <code class="inline">String</code> khổng lồ.</li>
+      <li><strong>Luôn chỉ định UTF-8</strong> ở mọi biên; đừng phụ thuộc <code class="inline">Charset.defaultCharset()</code>. Kiểm tra cả phía nhận dữ liệu (DB collation, HTTP charset header).</li>
+      <li><strong>Đóng resource</strong> bằng try-with-resources; với Stream từ <code class="inline">Files.list/walk/find/lines</code> càng bắt buộc vì giữ file handle của OS.</li>
+      <li><strong>Atomic write</strong> cho file trạng thái/cấu hình; <code class="inline">ATOMIC_MOVE</code> chỉ hiệu lực khi nguồn và đích cùng filesystem — file tạm phải nằm cùng thư mục với đích.</li>
+      <li><strong>Không dùng <code class="inline">File</code></strong> trong code mới; chuyển dần bằng <code class="inline">toPath()</code>. Ưu tiên <code class="inline">Files</code> vì exception nói rõ lý do (không tồn tại, bị chiếm, hết quyền…).</li>
+      <li><strong>Kiểm tra quyền trước khi ghi</strong> — <code class="inline">Files.isWritable</code>; thư mục cha phải tồn tại, tạo bằng <code class="inline">createDirectories</code>. Ghi file secret với quyền hạn chế.</li>
+      <li><strong>Xử lý <code class="inline">IOException</code> có ngữ cảnh</strong> — log kèm đường dẫn và thao tác (<code class="inline">"Khong ghi duoc " + path</code>), giữ nguyên exception gốc làm cause. Không catch rồi bỏ qua.</li>
+      <li><strong>Cẩn thận symlink và TOCTOU</strong> — kiểm tra tồn tại rồi mới mở là hai bước có thể bị thay đổi ở giữa; với thư mục do người khác ghi, ưu tiên thao tác trực tiếp và bắt exception.</li>
+      <li><strong>Đặt tên file theo thời gian</strong> — log/backup nên có timestamp trong tên; dùng <code class="inline">java.time</code> (<code class="inline">LocalDate</code>, <code class="inline">DateTimeFormatter</code>) thay vì <code class="inline">SimpleDateFormat</code> cũ — xem <a href="date-time.html">3.5 java.time</a>.</li>
+      <li><strong>Dọn file tạm</strong> trong <code class="inline">finally</code>/try-with-resources; đặt tên có prefix dễ nhận biết (<code class="inline">createTempFile(dir, "upload-", ".tmp")</code>).</li>
+    </ul>
+    <h2 id="goc-nodejs">10. Góc Node.js — fs, path &amp; streams</h2>
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>Node.js</th><th>Java (JDK 25)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đọc text</td><td><code class="inline">await fs.promises.readFile(p, "utf8")</code></td><td><code class="inline">Files.readString(p, UTF_8)</code></td></tr>
+        <tr><td>Ghi text</td><td><code class="inline">fs.writeFileSync(p, s, "utf8")</code></td><td><code class="inline">Files.writeString(p, s, UTF_8)</code></td></tr>
+        <tr><td>Ghi nối</td><td><code class="inline">fs.appendFileSync(p, s)</code> / flag <code class="inline">"a"</code></td><td><code class="inline">StandardOpenOption.APPEND</code></td></tr>
+        <tr><td>Đọc từng dòng</td><td><code class="inline">readline.createInterface</code></td><td><code class="inline">BufferedReader.readLine</code> / <code class="inline">Files.lines</code></td></tr>
+        <tr><td>Stream byte</td><td><code class="inline">fs.createReadStream</code>/<code class="inline">createWriteStream</code></td><td><code class="inline">Files.newInputStream</code>/<code class="inline">newOutputStream</code></td></tr>
+        <tr><td>Kiểu byte</td><td><code class="inline">Buffer</code>; <code class="inline">buf.toString("utf8")</code></td><td><code class="inline">byte[]</code>; <code class="inline">new String(bytes, UTF_8)</code></td></tr>
+        <tr><td>Ghép đường dẫn</td><td><code class="inline">path.join(base, "a.csv")</code></td><td><code class="inline">Path.of(base).resolve("a.csv")</code></td></tr>
+        <tr><td>Chuẩn hoá / tương đối</td><td><code class="inline">path.normalize</code> / <code class="inline">path.relative</code></td><td><code class="inline">Path.normalize</code> / <code class="inline">Path.relativize</code></td></tr>
+        <tr><td>Copy / move</td><td><code class="inline">fs.copyFile</code> / <code class="inline">fs.rename</code></td><td><code class="inline">Files.copy</code> / <code class="inline">Files.move</code></td></tr>
+        <tr><td>Xoá</td><td><code class="inline">fs.rm</code>/<code class="inline">fs.unlink</code>, <code class="inline">{ recursive: true }</code></td><td><code class="inline">Files.deleteIfExists</code>; xoá cây bằng <code class="inline">Files.walk</code></td></tr>
+        <tr><td>Duyệt thư mục</td><td><code class="inline">fs.readdirSync(p, { recursive: true })</code></td><td><code class="inline">Files.list</code> / <code class="inline">Files.walk</code> / <code class="inline">Files.find</code></td></tr>
+        <tr><td>Dấu xuống dòng</td><td><code class="inline">os.EOL</code></td><td><code class="inline">BufferedWriter.newLine()</code> / <code class="inline">System.lineSeparator()</code></td></tr>
+        <tr><td>Đóng resource</td><td><code class="inline">try/finally</code>, pipeline, <code class="inline">using</code></td><td>try-with-resources</td></tr>
+        <tr><td>Lỗi</td><td><code class="inline">Error</code> với <code class="inline">err.code === "ENOENT"</code></td><td>Checked exception cụ thể: <code class="inline">NoSuchFileException</code>…</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>Encoding mặc định:</strong> Node mặc định <code class="inline">"utf8"</code> cho <code class="inline">readFile</code> dạng chuỗi; Java trước JDK 18 lấy charset nền tảng, từ JDK 18 mới mặc định UTF-8 (JEP 400). Cả hai vẫn nên chỉ định tường minh khi đọc dữ liệu do người dùng tạo.</li>
+      <li><strong><code class="inline">Buffer</code> ≠ <code class="inline">byte[]</code>?</strong> Về ý niệm gần giống: bãi byte thô. Khác ở chỗ <code class="inline">Buffer</code> là mutable view trên bộ nhớ ngoài V8 heap; <code class="inline">byte[]</code> là mảng Java bình thường. Cả hai đều không có encoding — muốn text phải gọi <code class="inline">toString("utf8")</code>/<code class="inline">new String(bytes, UTF_8)</code>.</li>
+      <li><strong>Node streams ≠ Java Stream API.</strong> <code class="inline">fs.createReadStream</code> là luồng byte có backpressure; <code class="inline">Files.lines</code> của Java trả <code class="inline">java.util.stream.Stream&lt;String&gt;</code> để xử lý functional. Java cũng có byte-stream (<code class="inline">InputStream</code>) tương ứng Node stream — đừng lẫn tên gọi.</li>
+      <li><strong>Async vs blocking:</strong> API async của Node không chặn event loop; Java truyền thống blocking theo thread. Muốn mô hình async trong Java phải dùng thread pool/CompletableFuture (học sau); còn thao tác file Java thường chạy trong worker pool của riêng nó tùy hệ thống.</li>
+      <li><strong>Không có checked exception:</strong> Node trả lỗi qua callback/rejected promise nên dễ quên; Java bắt compiler nhắc xử lý <code class="inline">IOException</code> — lợi thế lớn cho sự ổn định của I/O production.</li>
+      <li><strong>Atomic write trong Node:</strong> mẫu tương đương là <code class="inline">fs.writeFileSync(tmp, data)</code> rồi <code class="inline">fs.renameSync(tmp, target)</code> — cùng ý tưởng write-temp-then-rename như mục 9.</li>
+    </ul>
+    <h2 id="qa">11. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+    <h3>Cơ bản</h3>
+    <details class="qa">
+      <summary>Câu 1. Byte stream và character stream khác nhau thế nào? Khi nào dùng loại nào?</summary>
+      <div class="answer">Byte stream (<code class="inline">InputStream</code>/<code class="inline">OutputStream</code>) vận chuyển byte thô, không diễn giải nội dung — dùng cho ảnh, zip, PDF, audio, protocol nhị phân. Character stream (<code class="inline">Reader</code>/<code class="inline">Writer</code>) làm việc với <code class="inline">char</code> và có bước encode/decode qua charset — dùng cho text: CSV, JSON, log, properties. File trên đĩa luôn là byte; character stream chỉ là lớp bọc thêm charset. Dùng nhầm (đọc text bằng <code class="inline">FileInputStream</code> rồi tự cắt <code class="inline">byte[]</code>) sẽ chẻ đôi ký tự UTF-8 nhiều byte.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 2. Có những cách nào đọc file text? Chọn cách nào cho trường hợp nào?</summary>
+      <div class="answer"><code class="inline">Files.readString</code> — file nhỏ, cần cả nội dung một lần (UTF-8 mặc định). <code class="inline">Files.readAllLines</code> — cần <code class="inline">List&lt;String&gt;</code> và file vừa. <code class="inline">Files.lines</code> — cần pipeline Stream, file lớn, lazy, phải đóng. <code class="inline">BufferedReader.readLine</code> — vòng lặp cổ điển, kiểm soát tốt, file rất lớn. <code class="inline">Scanner</code> — parse token/kiểu dữ liệu nhanh gọn nhưng chậm hơn và ít dùng cho production I/O. Quy tắc: file lớn thì <strong>không</strong> <code class="inline">readString</code>/<code class="inline">readAllLines</code>; xử lý theo dòng để bộ nhớ không tăng theo kích thước file.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 3. Vì sao <code class="inline">"ế".length() == 1</code> nhưng ghi UTF-8 lại mất 3 byte?</summary>
+      <div class="answer">Trong RAM, Java dùng UTF-16: <code class="inline">String.length()</code> đếm <em>code unit</em> 16 bit, không phải byte. Ký tự <code class="inline">ế</code> (U+1EBF) nằm trong BMP nên chỉ 1 <code class="inline">char</code>, nhưng UTF-8 cần 3 byte để mã hoá. Với ký tự ngoài BMP (emoji), một code point cần 2 <code class="inline">char</code> (surrogate pair) nên <code class="inline">length()</code> = 2 và <code class="inline">codePointCount</code> = 1. Hệ quả: đừng dùng <code class="inline">length()</code>/<code class="inline">substring()</code> để cắt chuỗi theo "ký tự người dùng"; dùng <code class="inline">codePointCount</code>/<code class="inline">offsetByCodePoints</code>.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 4. <code class="inline">FileReader</code>/<code class="inline">FileWriter</code> dùng charset gì? Vì sao production nên tránh?</summary>
+      <div class="answer">Chúng dùng <code class="inline">Charset.defaultCharset()</code>. Từ JDK 18 (JEP 400), mặc định là UTF-8, nhưng vẫn có thể bị đổi bằng <code class="inline">-Dfile.encoding</code>, locale/container, hoặc chạy trên JDK cũ. Khi ghi bằng charset không chứa ký tự tiếng Việt, Java thay bằng <code class="inline">?</code> <em>âm thầm</em> (xem demo mục 4.2: 14 byte thành 10 byte, hex chứa <code class="inline">3f</code>) — không exception, <code class="inline">close()</code> cũng im lặng. Vì vậy hãy dùng <code class="inline">Files.newBufferedReader/newBufferedWriter(path, UTF_8)</code> hoặc <code class="inline">InputStreamReader</code>/<code class="inline">OutputStreamWriter</code> có charset tường minh.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">readLine()</code> có trả ký tự xuống dòng không? File có <code class="inline">\r\n</code> thì sao?</summary>
+      <div class="answer">Không. <code class="inline">readLine()</code> trả nội dung dòng đã bỏ ký tự kết thúc (<code class="inline">\n</code>, <code class="inline">\r\n</code>, hoặc <code class="inline">\r</code>), trả <code class="inline">""</code> cho dòng trống và <code class="inline">null</code> khi hết file. Nhờ vậy <code class="inline">while ((line = r.readLine()) != null)</code> phân biệt được dòng rỗng với hết file. Khi ghi, dùng <code class="inline">BufferedWriter.newLine()</code> hoặc <code class="inline">printf("%n")</code> để ghi đúng dấu của hệ điều hành; <code class="inline">"\n"</code> cố định là LF.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 6. Phân biệt <code class="inline">read()</code>, <code class="inline">read(byte[])</code> và <code class="inline">readAllBytes()</code>.</summary>
+      <div class="answer"><code class="inline">read()</code> đọc 1 byte, trả <code class="inline">0..255</code> hoặc <code class="inline">-1</code>. <code class="inline">read(byte[])</code> đọc tối đa <code class="inline">buf.length</code> byte, trả <strong>số byte thực đọc</strong> (có thể nhỏ hơn độ dài buffer, không bao giờ là 0 khi <code class="inline">buf.length &gt; 0</code>) hoặc <code class="inline">-1</code> — phải lặp tới <code class="inline">-1</code> và dùng đúng <code class="inline">n</code>. <code class="inline">readAllBytes()</code> đọc tới hết vào một mảng — tiện nhưng nạp toàn bộ vào RAM, chỉ dùng file nhỏ. Muốn đọc đủ <code class="inline">n</code> byte đã biết, dùng <code class="inline">readNBytes(n)</code>.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 7. Vì sao cần charset tường minh khi làm việc với text? Bên trong String có encoding không?</summary>
+      <div class="answer">Bên trong JVM, <code class="inline">String</code> là dãy UTF-16 trong bộ nhớ — <strong>không có encoding</strong>. Encoding chỉ xuất hiện ở biên I/O khi chuyển <code class="inline">String</code> ↔ <code class="inline">byte[]</code>. Nếu hai đầu biên không thống nhất charset: ghi UTF-8 đọc windows-1252 ra mojibake; ghi bằng charset thiếu ký tự có thể ra <code class="inline">?</code> âm thầm. Nguyên tắc: khai báo UTF-8 ở mọi biên (file, socket, HTTP, DB, console, args) và kiểm tra cả phía gửi lẫn phía nhận.</div>
+    </details>
+    <h3>Nâng cao (Junior+)</h3>
+    <details class="qa">
+      <summary>Câu 8. try-with-resources hoạt động thế nào? Thứ tự đóng và exception suppression ra sao?</summary>
+      <div class="answer">Cú pháp <code class="inline">try (R1 a = ...; R2 b = ...) { }</code> yêu cầu resource implement <code class="inline">AutoCloseable</code>. Khi thoát khối try (bình thường, <code class="inline">return</code>, hay exception), các resource được đóng theo thứ tự <strong>ngược lúc khai báo</strong> (b rồi a). Nếu body ném exception chính và <code class="inline">close()</code> cũng ném, exception của <code class="inline">close()</code> được <strong>suppress</strong> (gắn vào exception chính, đọc bằng <code class="inline">getSuppressed()</code>) để không che mất lỗi gốc; nếu chỉ <code class="inline">close()</code> ném, nó là exception chính. Chi tiết ở <a href="exceptions.html">exceptions.html</a>.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">flush()</code> và <code class="inline">close()</code> khác gì nhau? Khi nào dữ liệu bị mất?</summary>
+      <div class="answer"><code class="inline">flush()</code> đẩy buffer từ RAM xuống OS nhưng chưa giải phóng tài nguyên — sau đó vẫn ghi tiếp được. <code class="inline">close()</code> flush rồi giải phóng file handle; sau đó không dùng lại resource. Buffered stream không flush/close thì dữ liệu vẫn nằm trong RAM (ví dụ mục 7.2: size = 0 trước flush) — chương trình kết thúc hoặc mất điện là mất. Với socket, thiếu flush có thể làm bên kia chờ vô hạn. try-with-resources tự gọi <code class="inline">close()</code>, nên hiếm khi cần <code class="inline">flush()</code> thủ công — ngoại lệ là giao thức request/response trên cùng kết nối.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 10. Vì sao <code class="inline">Files.list</code>/<code class="inline">walk</code>/<code class="inline">find</code>/<code class="inline">lines</code> phải đóng? Không đóng thì sao?</summary>
+      <div class="answer">Chúng trả <code class="inline">Stream</code> nhưng bên dưới là tài nguyên I/O: <code class="inline">Files.lines</code> giữ file handle, <code class="inline">Files.list/walk/find</code> tựa trên <code class="inline">DirectoryStream</code> cũng mở handle của hệ điều hành. Không đóng → rò rỉ file descriptor; đủ nhiều sẽ gặp <code class="inline">Too many open files</code>, trên Windows file còn bị khoá không xoá/ghi được. Vì <code class="inline">Stream</code> implement <code class="inline">AutoCloseable</code>, hãy luôn đặt trong try-with-resources dù chỉ gọi <code class="inline">findFirst()</code> rồi thoát.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 11. Vì sao code mới nên dùng <code class="inline">Path</code> thay vì <code class="inline">File</code>?</summary>
+      <div class="answer"><code class="inline">File</code> từ Java 1.0 nhiều hạn chế: method trả <code class="inline">boolean</code> không cho biết lý do thất bại, thao tác path thủ công bằng chuỗi dễ sai dấu phân cách, chỉ hỗ trợ file system mặc định. <code class="inline">Path</code> (NIO.2, Java 7) immutable, tạo bằng factory <code class="inline">Path.of</code>, có <code class="inline">resolve/normalize/relativize</code> chuẩn hoá, hỗ trợ nhiều provider (zip file system, in-memory), và <code class="inline">Files</code> ném exception cụ thể (<code class="inline">NoSuchFileException</code>, <code class="inline">AccessDeniedException</code>…). Cầu nối với API cũ: <code class="inline">file.toPath()</code> / <code class="inline">path.toFile()</code>.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 12. BOM là gì? Vì sao đọc CSV do Excel tạo ra hay bị lỗi dòng đầu?</summary>
+      <div class="answer">BOM (Byte Order Mark) là vài byte đánh dấu encoding ở đầu file; riêng UTF-8 BOM là <code class="inline">EF BB BF</code>. Excel khi lưu CSV thường chèn BOM để nhận diện UTF-8. Java không tự bỏ BOM: sau khi decode UTF-8, nó thành ký tự <code class="inline">U+FEFF</code> (char 65279) ở đầu chuỗi, khiến <code class="inline">"ma".equals(header)</code> trượt dù mắt thường nhìn giống hệt. Cách xử lý: kiểm tra và cắt <code class="inline">U+FEFF</code> đầu nội dung trước khi parse (chú ý cả dòng đầu). Khi ghi CSV cho Excel trên Windows, có thể cần chủ động thêm BOM.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 13. Atomic write là gì? Viết file an toàn cho production như thế nào?</summary>
+      <div class="answer">Là kỹ thuật ghi sao cho người đọc khác không bao giờ thấy file dở dang: ghi nội dung mới ra <strong>file tạm cùng thư mục</strong>, flush/fsync nếu cần, rồi <code class="inline">Files.move(tmp, target, ATOMIC_MOVE, REPLACE_EXISTING)</code>. Trên POSIX, rename cùng filesystem là thao tác nguyên tử nên người đọc chỉ thấy bản cũ hoàn chỉnh hoặc bản mới hoàn chỉnh. Lưu ý <code class="inline">ATOMIC_MOVE</code> không hỗ trợ khi vượt filesystem; cần bền vững qua mất điện thì gọi <code class="inline">FileChannel.force(true)</code> trước khi move; luôn dọn file tạm trong <code class="inline">finally</code>.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">DataInputStream</code> dùng khi nào? Vì sao phải khớp thứ tự ghi/đọc?</summary>
+      <div class="answer">Dùng để đọc/ghi primitive và chuỗi theo định dạng nhị phân cố định, độc lập nền tảng (big-endian; <code class="inline">writeUTF</code> dùng 2 byte độ dài + modified UTF-8). Vì định dạng không có nhãn/độ dài phân cách kiểu, reader phải gọi đúng chuỗi method theo đúng kiểu: lệch một kiểu là mọi byte sau đó bị diễn giải sai (giá trị rác như <code class="inline">1.5384599001E-313</code>) hoặc <code class="inline">EOFException</code>. Chỉ dùng khi cả hai đầu do bạn kiểm soát; giao tiếp giữa các hệ thống dùng JSON/protobuf. Tuyệt đối không dùng <code class="inline">ObjectInputStream</code> với dữ liệu không tin cậy vì rủi ro deserialization.</div>
+    </details>
+    <details class="qa">
+      <summary>Câu 15. Vì sao ghép đường dẫn từ input người dùng là lỗ hổng? Chặn thế nào?</summary>
+      <div class="answer">Vì <code class="inline">resolve</code> với input tuyệt đối sẽ <em>thay thế</em> path gốc (<code class="inline">Path.of("uploads").resolve("/etc/passwd")</code> → <code class="inline">/etc/passwd</code>), còn input chứa <code class="inline">..</code> có thể thoát khỏi thư mục cho phép — gọi là path traversal. Cách chặn: chuẩn hoá rồi kiểm tra nằm trong gốc, ví dụ <code class="inline">Path base = Path.of(uploadDir).toAbsolutePath().normalize(); Path target = base.resolve(userInput).normalize(); if (!target.startsWith(base)) throw new IllegalArgumentException(...)</code>. Không ghép bằng phép <code class="inline">+</code>, không tin tên file do client gửi, và cẩn thận thêm với symbolic link trong thư mục ai cũng ghi được.</div>
+    </details>
+    <h2 id="bai-tap">12. Bài tập đoán output</h2>
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() {
+    String s = "Việt";
+    IO.println(s.length());
+    IO.println(s.getBytes(StandardCharsets.UTF_8).length);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">4</code> rồi <code class="inline">6</code>. <code class="inline">"Việt"</code> có 4 code unit; <code class="inline">ệ</code> chiếm 3 byte UTF-8 nên tổng là 1 + 1 + 3 + 1 = 6 byte. Nhớ: <code class="inline">String.length()</code> đếm <code class="inline">char</code>, không đếm byte.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    Path f = Files.createTempFile("ex-", ".txt");
+    Files.writeString(f, "ế", StandardCharsets.UTF_8);
+
+    try (var in = Files.newInputStream(f)) {
+        byte[] buf = new byte[2];
+        int n = in.read(buf);
+        IO.println(n + " -> " + new String(buf, 0, n, StandardCharsets.UTF_8));
+        n = in.read(buf);
+        IO.println(n + " -> " + new String(buf, 0, n, StandardCharsets.UTF_8));
+    }
+
+    Files.delete(f);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2 -&gt; �</code> rồi <code class="inline">1 -&gt; �</code>. <code class="inline">ế</code> là 3 byte (<code class="inline">E1 BA BF</code>); lần đọc đầu lấy 2 byte nên ký tự dở dang, lần sau lấy byte cuối — cả hai lần decode đều ra <code class="inline">U+FFFD</code>. Đây là lý do không bao giờ tự cắt <code class="inline">byte[]</code> khi đọc text: hãy để character stream lo.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    Path f = Files.createTempFile("ex-", ".txt");
+    Files.writeString(f, "a\r\n\r\nb\r\n", StandardCharsets.UTF_8);
+
+    try (var r = Files.newBufferedReader(f, StandardCharsets.UTF_8)) {
+        String line;
+        int dem = 0;
+        while ((line = r.readLine()) != null) {
+            dem++;
+            IO.println(dem + ": [" + line + "]");
+        }
+        IO.println("tong = " + dem);
+    }
+
+    Files.delete(f);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">1: [a]</code>, <code class="inline">2: []</code>, <code class="inline">3: [b]</code>, <code class="inline">tong = 3</code>. <code class="inline">readLine()</code> bỏ cả <code class="inline">\r\n</code>; dòng trống giữa file trả về <code class="inline">""</code> (khác <code class="inline">null</code>), nên vẫn được đếm. Dấu <code class="inline">\r\n</code> không xuất hiện trong output.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("ex-");
+    Path a = dir.resolve("a.txt");
+    Path b = dir.resolve("b.txt");
+    Files.writeString(a, "x", StandardCharsets.UTF_8);
+
+    Files.move(a, b);
+    IO.println(Files.exists(a) + " " + Files.exists(b));
+    IO.println(Files.readString(b));
+    IO.println(Files.deleteIfExists(a));
+
+    Files.delete(b);
+    Files.delete(dir);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false true</code>, <code class="inline">x</code>, <code class="inline">false</code>. <code class="inline">Files.move</code> không để lại bản gốc; <code class="inline">deleteIfExists(a)</code> trả <code class="inline">false</code> vì <code class="inline">a</code> không còn tồn tại — không ném exception (khác <code class="inline">Files.delete</code>).</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() {
+    Path p = Path.of("a/./b/../c");
+    IO.println(p.normalize());
+    IO.println(p.normalize().getNameCount());
+    IO.println(Path.of("a").resolve("b").resolve("c.txt"));
+    IO.println(Path.of("a").resolve("/tmp"));
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">a/c</code>, <code class="inline">2</code>, <code class="inline">a/b/c.txt</code>, <code class="inline">/tmp</code>. <code class="inline">normalize</code> bỏ <code class="inline">.</code> và gộp <code class="inline">..</code> (a/./b/../c → a/c). Dòng cuối: tham số tuyệt đối khiến <code class="inline">resolve</code> trả về chính <code class="inline">/tmp</code>, bỏ luôn <code class="inline">a</code> — bẫy path traversal.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    try (var r = new BufferedReader(new FileInputStream("data.txt"))) {
+        IO.println(r.readLine());
+    }
+}</code></pre>
+      </div>
+      <div class="errblock">
+        <pre><code>Bai6.java:2: error: incompatible types: FileInputStream cannot be converted to Reader
+    try (var r = new BufferedReader(new FileInputStream("data.txt"))) {
+                                    ^
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+1 error</code></pre>
+      </div>
+      <div class="answer"><strong>Không compile.</strong> <code class="inline">BufferedReader</code> cần một <code class="inline">Reader</code>, không nhận byte stream. Sửa bằng cầu nối charset: <code class="inline">new BufferedReader(new InputStreamReader(new FileInputStream("data.txt"), StandardCharsets.UTF_8))</code> — hoặc gọn hơn: <code class="inline">Files.newBufferedReader(Path.of("data.txt"), StandardCharsets.UTF_8)</code>.</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    Path dir = Files.createTempDirectory("ex-");
+    Files.writeString(dir.resolve("a.txt"), "a", StandardCharsets.UTF_8);
+    Files.createDirectories(dir.resolve("sub"));
+    Files.writeString(dir.resolve("sub/b.txt"), "b", StandardCharsets.UTF_8);
+
+    try (var walk = Files.walk(dir)) {
+        IO.println(walk.count());
+    }
+    try (var list = Files.list(dir)) {
+        IO.println(list.count());
+    }
+
+    try (var walk = Files.walk(dir)) {
+        walk.sorted(Comparator.reverseOrder()).forEach(p -&gt; {
+            try { Files.delete(p); } catch (IOException e) { throw new UncheckedIOException(e); }
+        });
+    }
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">4</code> rồi <code class="inline">2</code>. Cây gồm: <code class="inline">dir</code>, <code class="inline">a.txt</code>, <code class="inline">sub</code>, <code class="inline">sub/b.txt</code> — <code class="inline">Files.walk</code> tính cả thư mục gốc và thư mục con. <code class="inline">Files.list</code> chỉ tính mục con trực tiếp (<code class="inline">a.txt</code>, <code class="inline">sub</code>).</div>
+    </details>
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code class="java">void main() throws IOException {
+    Path f = Files.createTempFile("ex-", ".txt");
+    Files.writeString(f, "A", StandardCharsets.UTF_8);
+    Files.writeString(f, "B", StandardCharsets.UTF_8);
+    IO.println("[" + Files.readString(f) + "]");
+    Files.writeString(f, "C", StandardOpenOption.APPEND);
+    IO.println("[" + Files.readString(f) + "]");
+
+    Files.delete(f);
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">[B]</code> rồi <code class="inline">[BC]</code>. <code class="inline">Files.writeString</code> mặc định <code class="inline">CREATE + TRUNCATE_EXISTING + WRITE</code> nên lần ghi thứ hai <strong>xoá sạch</strong> nội dung cũ; muốn ghi nối phải chỉ định <code class="inline">StandardOpenOption.APPEND</code>. Bẫy kinh điển khi ghi log vòng lặp: quên APPEND là mất hết file cũ.</div>
+    </details>
+    <h2 id="cheat-sheet">13. Cheat sheet &amp; checklist</h2>
+    <h3>Cheat sheet</h3>
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo đường dẫn</td><td><code class="inline">Path.of("data", "orders.csv")</code></td></tr>
+        <tr><td>File tạm</td><td><code class="inline">Files.createTempDirectory("app-")</code>, <code class="inline">Files.createTempFile(dir, "f-", ".tmp")</code></td></tr>
+        <tr><td>Đọc text</td><td><code class="inline">Files.readString(p, StandardCharsets.UTF_8)</code></td></tr>
+        <tr><td>Ghi text (ghi đè)</td><td><code class="inline">Files.writeString(p, s, StandardCharsets.UTF_8)</code></td></tr>
+        <tr><td>Ghi nối</td><td><code class="inline">Files.writeString(p, s, UTF_8, StandardOpenOption.APPEND)</code></td></tr>
+        <tr><td>Đọc cả file thành List</td><td><code class="inline">Files.readAllLines(p, StandardCharsets.UTF_8)</code></td></tr>
+        <tr><td>Đọc từng dòng (lớn)</td><td><code class="inline">try (var lines = Files.lines(p, UTF_8)) { ... }</code></td></tr>
+        <tr><td>Ghi từng dòng</td><td><code class="inline">try (var w = Files.newBufferedWriter(p, UTF_8)) { w.write(...); w.newLine(); }</code></td></tr>
+        <tr><td>Đọc nhị phân</td><td><code class="inline">try (var in = Files.newInputStream(p)) { byte[] b = in.readAllBytes(); }</code></td></tr>
+        <tr><td>Copy file</td><td><code class="inline">Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING)</code></td></tr>
+        <tr><td>Ghi atomic</td><td><code class="inline">Files.move(tmp, dst, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)</code></td></tr>
+        <tr><td>Xoá an toàn</td><td><code class="inline">Files.deleteIfExists(p)</code></td></tr>
+        <tr><td>Tạo cây thư mục</td><td><code class="inline">Files.createDirectories(p)</code></td></tr>
+        <tr><td>Kiểm tra</td><td><code class="inline">Files.exists / isDirectory / isRegularFile / isSymbolicLink / size</code></td></tr>
+        <tr><td>Duyệt cây</td><td><code class="inline">try (var s = Files.walk(p)) { ... }</code></td></tr>
+        <tr><td>Charset</td><td><code class="inline">StandardCharsets.UTF_8</code> — khai báo ở mọi biên</td></tr>
+        <tr><td>Cầu nối cũ ↔ mới</td><td><code class="inline">file.toPath()</code> / <code class="inline">path.toFile()</code></td></tr>
+        <tr><td>Path an toàn</td><td><code class="inline">base.resolve(input).normalize().startsWith(base)</code></td></tr>
+        <tr><td>Dọn dẹp</td><td>try-with-resources cho mọi resource; xoá file tạm trong <code class="inline">finally</code></td></tr>
+      </tbody>
+    </table>
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+    <ul class="checklist">
+      <li>Phân biệt byte stream và character stream, nêu 3 tình huống dùng mỗi loại.</li>
+      <li>Giải thích vì sao file luôn là byte còn String là UTF-16, và charset nằm ở đâu trong đường đi.</li>
+      <li>Biết <code class="inline">read()</code> trả <code class="inline">0..255</code>/<code class="inline">-1</code> và <code class="inline">read(byte[])</code> có thể trả ít hơn buffer.</li>
+      <li>Tự tay đọc/ghi được file UTF-8 chỉ với <code class="inline">Files.newBufferedReader/newBufferedWriter</code>.</li>
+      <li>Giải thích được demo FileWriter mất dấu với <code class="inline">-Dfile.encoding=ISO-8859-1</code> (14 byte → 10 byte, hex <code class="inline">3f</code>).</li>
+      <li>Nhớ <code class="inline">Files.readString</code> ném <code class="inline">MalformedInputException</code> còn <code class="inline">new String</code> thay bằng <code class="inline">U+FFFD</code>.</li>
+      <li>Nhận diện mojibake windows-1252 của tiếng Việt và biết cách điều tra đúng chỗ decode.</li>
+      <li>Giải thích BOM <code class="inline">EF BB BF</code> và cách strip <code class="inline">U+FEFF</code>.</li>
+      <li>Trả lời trôi chảy try-with-resources: LIFO, suppressed exception, resource phải AutoCloseable.</li>
+      <li>Phân biệt <code class="inline">flush()</code> và <code class="inline">close()</code>, kể được ca dữ liệu mất do thiếu flush.</li>
+      <li>Dùng thành thạo <code class="inline">Path.of/resolve/normalize/relativize/getFileName/parent</code>.</li>
+      <li>Phân biệt <code class="inline">Files.list</code>/<code class="inline">walk</code>/<code class="inline">find</code>, biết walk tính cả thư mục gốc và Stream phải đóng.</li>
+      <li>Viết được atomic write và giải thích vì sao file tạm phải cùng thư mục.</li>
+      <li>Nhận diện path traversal và viết được đoạn kiểm tra <code class="inline">startsWith(base)</code>.</li>
+      <li>Kể được vì sao không dùng <code class="inline">readAllLines</code>/<code class="inline">readString</code> cho file lớn.</li>
+    </ul>
+    <h2 id="nguon">14. Nguồn tham khảo</h2>
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html" target="_blank" rel="noreferrer">Javadoc 25 — java.nio.file.Files</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Path.html" target="_blank" rel="noreferrer">Javadoc 25 — java.nio.file.Path</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Reader.html" target="_blank" rel="noreferrer">Javadoc 25 — java.io.Reader</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Writer.html" target="_blank" rel="noreferrer">Javadoc 25 — java.io.Writer</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/InputStream.html" target="_blank" rel="noreferrer">Javadoc 25 — java.io.InputStream</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/BufferedReader.html" target="_blank" rel="noreferrer">Javadoc 25 — java.io.BufferedReader (readLine)</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/essential/io/" target="_blank" rel="noreferrer">Oracle Tutorial — Basic I/O</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/essential/io/fileio.html" target="_blank" rel="noreferrer">Oracle Tutorial — File I/O (NIO.2)</a></li>
+      <li><a href="https://openjdk.org/jeps/400" target="_blank" rel="noreferrer">JEP 400 — UTF-8 by Default (JDK 18)</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+    </ul>
+    <p class="footer">Java Docs · I/O &amp; Files · JDK 25 · Cập nhật 04/10/2026</p>
+  </main>
+</div>
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

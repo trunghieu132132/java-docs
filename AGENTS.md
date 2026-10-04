@@ -6,8 +6,8 @@
 
 - Static site tài liệu học **Java Backend** tiếng Việt, cho người đã biết JS/Node.js, mục tiêu **Junior+ (2–3 năm)** — trọng tâm phỏng vấn và production.
 - Không build step, không framework, không dependency: mở file là chạy.
-- Nguồn gốc: phục hồi từ bản deploy Cloudflare Workers ngày **03/10/2026** sau khi mất repo. Không có source Java gốc, không có `wrangler.toml`.
-- Deploy cũ: `https://java-docs.vlkh00volam13.workers.dev/` (lưu ý: trên CF `index.html` bị 307 → `/`).
+- Nguồn gốc: phục hồi từ bản deploy Cloudflare Workers ngày **03/10/2026** sau khi mất repo. Không có source Java gốc; `wrangler.toml` đã có trong repo.
+- Deploy: `https://java-docs.vlkh00volam100.workers.dev/` (lưu ý: trên CF các trang `.html` bị 307 → URL không đuôi).
 - GitHub: `git@github.com:trunghieu132132/java-docs.git` — nhánh `main`.
 
 ## 2. Cấu trúc file
@@ -30,6 +30,14 @@
 | `enum-nested.html` | 2.7 Enum, nested & sealed classes |
 | `solid-patterns.html` | 2.8 SOLID & design patterns |
 | `annotations-reflection.html` | 2.9 Annotations & Reflection |
+| `exceptions.html` | 3.1 Exception Handling |
+| `generics.html` | 3.2 Generics |
+| `collections.html` | 3.3 Collections Framework |
+| `io-files.html` | 3.4 I/O & Files |
+| `date-time.html` | 3.5 java.time |
+| `lambda-functional.html` | 3.6 Lambda & Functional interfaces |
+| `optional.html` | 3.7 Optional |
+| `streams.html` | 3.8 Stream API |
 | `roadmap.html` | Lộ trình tổng + trạng thái từng chủ đề |
 | `styles.css` | Toàn bộ style — KHÔNG thêm class mới tuỳ tiện |
 | `script.js` | Highlight Java, nút Copy, search sidebar, toast, toggle đáp án |
@@ -59,7 +67,7 @@
 </div><script src="script.js"></script></body></html>
 ```
 
-- Sidebar có 2 nhóm: **Java Core** (roadmap + 7 doc GĐ1) và **OOP** (9 doc GĐ2). Nhóm chứa trang hiện tại để `open`; trang hiện tại gắn `class="item active"`.
+- Sidebar có 3 nhóm: **Java Core** (roadmap + 7 doc GĐ1), **OOP** (9 doc GĐ2) và **Dữ liệu & lỗi** (8 doc GĐ3). Nhóm chứa trang hiện tại để `open`; trang hiện tại gắn `class="item active"`.
 
 ## 4. Quy ước nội dung
 
@@ -94,11 +102,12 @@
 ## 6. Trạng thái & việc tiếp theo
 
 - **GĐ1 xong:** 7 doc (1.1–1.7).
-- **GĐ2 OOP (2.1–2.9):** 9 doc — vừa viết xong, xem `roadmap.html#phase-2`.
-- **Tiếp theo:** GĐ3 — 3.1 Exception Handling, 3.2 Generics, 3.3 Collections, 3.4 I/O & Files, 3.5 java.time, 3.6 Lambda & Functional interfaces, 3.7 Optional, 3.8 Stream API.
+- **GĐ2 OOP xong:** 9 doc (2.1–2.9), xem `roadmap.html#phase-2`.
+- **GĐ3 Dữ liệu & lỗi xong:** 8 doc (3.1–3.8), xem `roadmap.html#phase-3`.
+- **Tiếp theo:** GĐ4 — 4.1 JVM cơ bản, 4.2 Concurrency, 4.3 Maven, 4.4 Testing (JUnit), 4.5 Logging, 4.6 Clean code, 4.7 Debug/tooling.
 - Project xuyên suốt: "quản lý đơn hàng" (console → OOP → file/Stream → Maven/JUnit → REST API).
 
 ## 7. Lưu ý vận hành
 
-- Nếu deploy lại lên Cloudflare Workers: cần `wrangler.toml` với `assets` trỏ vào thư mục gốc (chưa có trong repo).
+- Deploy: `wrangler deploy` (đã đăng nhập OAuth). `wrangler.toml` có sẵn, `assets.directory = "."`; `.assetsignore` loại `.git`, `*.md`, `wrangler.toml`, `.wrangler`.
 - Không commit file rác (`.DS_Store`).

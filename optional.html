@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optional — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item active" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="optional">Optional — container có thể không có giá trị</h1>
+
+    <p class="lead"><code class="inline">Optional&lt;T&gt;</code> là một cái hộp: hoặc chứa đúng một giá trị khác <code class="inline">null</code>, hoặc rỗng. Nó giúp Java nói rõ ý định "<strong>có thể không có kết quả</strong>" ngay trong kiểu trả về của method, thay vì trả <code class="inline">null</code> rồi hy vọng người gọi nhớ kiểm tra. Trang này đi từ vấn đề <code class="inline">null</code>, các API cốt lõi (<code class="inline">of</code>, <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">orElse</code>…), tới best practices và góc nhìn Node.js.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 3.7 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — tạo <code class="inline">Optional</code> bằng <code class="inline">of</code>/<code class="inline">ofNullable</code>/<code class="inline">empty</code>; dùng <code class="inline">map</code>, <code class="inline">flatMap</code>, <code class="inline">filter</code>, <code class="inline">ifPresent</code>, <code class="inline">orElse</code>, <code class="inline">orElseGet</code>, <code class="inline">orElseThrow</code> đúng chỗ; chuyển một chuỗi <code class="inline">if (x != null)</code> lồng nhau thành chain Optional; kết hợp Optional với Stream.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">Optional.of(null)</code> ném <code class="inline">NullPointerException</code> ngay; <code class="inline">map</code> null-safe còn <code class="inline">Stream.map</code> thì không; <code class="inline">orElse</code> <strong>eager</strong> còn <code class="inline">orElseGet</code> <strong>lazy</strong>; vì sao Optional <strong>không thay thế null hoàn toàn</strong> và chỉ nên là kiểu trả về.</li>
+      <li><strong>Nhận biết</strong> — nguồn gốc Guava/Java 8; các lớp nguyên thủy <code class="inline">OptionalInt</code>/<code class="inline">OptionalLong</code>/<code class="inline">OptionalDouble</code>; vấn đề serialize (<code class="inline">Optional</code> không <code class="inline">Serializable</code>), Jackson và JPA; JEP 358 (helpful NullPointerException) của JDK hiện đại.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn comment kết quả.</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Kiến thức nền nên nắm trước: <a href="lambda-functional.html">3.6 Lambda &amp; Functional interfaces</a> (<code class="inline">Supplier</code>, <code class="inline">Function</code>, <code class="inline">Consumer</code>, <code class="inline">Predicate</code> — Optional dùng chúng ở mọi method), <a href="exceptions.html">3.1 Exceptions</a> (<code class="inline">NoSuchElementException</code>, <code class="inline">NullPointerException</code>) và <a href="streams.html">3.8 Stream API</a> (Optional là "anh em sinh đôi" của Stream, cùng ra đời ở Java 8).</div>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và tài liệu cũ.</div>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#vi-sao">Vấn đề <code class="inline">null</code> &amp; Optional là gì</a></li>
+        <li><a href="#tao">Tạo Optional: of, ofNullable, empty</a></li>
+        <li><a href="#truy-xuat">Kiểm tra &amp; truy xuất giá trị</a></li>
+        <li><a href="#or-else">orElse vs orElseGet vs orElseThrow</a></li>
+        <li><a href="#bien-doi">Biến đổi: map, flatMap, filter, stream</a></li>
+        <li><a href="#thuc-te">Ví dụ thực tế: thoát null-hell</a></li>
+        <li><a href="#best-practices">Best practices &amp; anti-patterns</a></li>
+        <li><a href="#optional-stream">Optional trong Stream</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js — null, undefined, ?. và ??</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="vi-sao">2. Vấn đề <code class="inline">null</code> &amp; Optional là gì</h2>
+
+    <p>Năm 1965, Tony Hoare đưa <code class="inline">null</code> vào ngôn ngữ ALGOL W và sau này gọi đó là <strong>"sai lầm tỷ đô"</strong> (billion-dollar mistake): hệ thống ngôn ngữ không ép ai kiểm tra null, nên hàng triệu chương trình sập vì truy cập vào thứ không tồn tại. Java thừa hưởng nguyên xi vấn đề đó.</p>
+
+    <p>Điều tệ nhất của <code class="inline">null</code> trong Java không phải là nó tồn tại, mà là <strong>trình biên dịch không hề cảnh báo</strong>. Mọi reference type đều nhận null; đọc tài liệu method cũng không nói rõ nó có thể trả null hay không:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record User(String name) {}
+
+public class HelpfulNpe2 {
+    public static void main() {
+        User u = new User(null);
+        IO.println(u.name().length());
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre><code>Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because the return value of "User.name()" is null
+	at HelpfulNpe2.main(HelpfulNpe2.java:6)</code></pre>
+    </div>
+
+    <p>Dòng message dài kia là <strong>JEP 358 — Helpful NullPointerExceptions</strong>, bật mặc định từ JDK 15: thay vì chỉ có <code class="inline">NullPointerException</code> trần, JVM mô tả chính xác cái gì null và method nào trả về null. Muốn hiểu thêm về NPE và các <code class="inline">RuntimeException</code> khác, xem <a href="exceptions.html">3.1 Exceptions</a>.</p>
+
+    <p><code class="inline">null</code> len lỏi vào code qua rất nhiều cửa:</p>
+    <ul>
+      <li>API/DB trả "không tìm thấy" bằng <code class="inline">null</code> thay vì báo lỗi rõ ràng.</li>
+      <li><code class="inline">Map.get(key)</code> trả <code class="inline">null</code> khi key không tồn tại.</li>
+      <li>Field chưa được gán; tham số truyền vào là null.</li>
+      <li>Autoboxing: <code class="inline">Integer i = null; int x = i;</code> nổ ngay chỗ unbox (xem <a href="index.html#wrapper">Biến trong Java — mục 12</a>).</li>
+    </ul>
+
+    <p>Văn hóa Java hiện đại thay đổi cách tiếp cận: <strong>đừng trả null khi "không có kết quả" — hãy trả <code class="inline">Optional</code></strong>. Javadoc của <code class="inline">Optional</code> định nghĩa: <em>"A container object which may or may not contain a non-null value"</em> — một hộp hoặc chứa một giá trị khác null, hoặc rỗng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Trả <code class="inline">null</code></th><th>Trả <code class="inline">Optional</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ý định trong kiểu trả về</td><td>Không nói gì — người gọi phải tự đoán</td><td>Nói rõ: có thể không có giá trị</td></tr>
+        <tr><td>Quên kiểm tra</td><td>NPE ở đâu đó xa nơi phát sinh</td><td>Không thể quên: muốn lấy giá trị phải gọi API của Optional</td></tr>
+        <tr><td>Xử lý mặc định / ném lỗi</td><td><code class="inline">if (x == null) ...</code></td><td><code class="inline">orElse</code>, <code class="inline">orElseGet</code>, <code class="inline">orElseThrow</code> ngay tại chỗ</td></tr>
+        <tr><td>Chain biến đổi</td><td><code class="inline">if</code> lồng nhau</td><td><code class="inline">map</code>/<code class="inline">filter</code>/<code class="inline">flatMap</code> một dòng</td></tr>
+        <tr><td>Lịch sử</td><td>Có từ đầu Java</td><td>Guava <code class="inline">Optional</code> (2011) → Java 8 (2014), thiết kế bởi Brian Goetz</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Optional không phải "nullable type" của Java.</strong> Nó không thay thế mọi null check trong ngôn ngữ, không phải annotation <code class="inline">@Nullable</code>, và không làm compiler ép bạn kiểm tra. Nó chỉ là một <em>quy ước API</em>: method trả Optional nghĩa là "tôi có thể không có kết quả, hãy xử lý bằng API của tôi".</div>
+
+    <h2 id="tao">3. Tạo Optional: of, ofNullable, empty</h2>
+
+    <p>Có đúng ba cách tạo, và chọn sai cách là nguồn bug phổ biến:</p>
+
+    <div class="signature">
+      <span class="tok-typ">Optional</span><span class="sig-muted">&lt;T&gt;</span> <span class="sig-var">of</span><span class="sig-muted">(T value)</span> &nbsp;·&nbsp;
+      <span class="tok-typ">Optional</span><span class="sig-muted">&lt;T&gt;</span> <span class="sig-var">ofNullable</span><span class="sig-muted">(T value)</span> &nbsp;·&nbsp;
+      <span class="tok-typ">Optional</span><span class="sig-muted">&lt;T&gt;</span> <span class="sig-var">empty</span><span class="sig-muted">()</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>API</th><th>Dùng khi</th><th>Hành vi với <code class="inline">null</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Optional.of(v)</code></td><td>Chắc chắn 100% <code class="inline">v != null</code></td><td>Ném <code class="inline">NullPointerException</code> ngay lập tức (fail fast)</td></tr>
+        <tr><td><code class="inline">Optional.ofNullable(v)</code></td><td><code class="inline">v</code> có thể null (Map.get, field, API)</td><td>Trả <code class="inline">Optional.empty()</code></td></tr>
+        <tr><td><code class="inline">Optional.empty()</code></td><td>Muốn thể hiện "chắc chắn không có giá trị"</td><td>Chính là giá trị rỗng</td></tr>
+      </tbody>
+    </table>
+
+    <p><code class="inline">Optional.of(null)</code> ném NPE <strong>tại thời điểm chạy, ngay dòng đó</strong> — đây là hành vi có chủ đích (fail fast). Chạy thật file dưới đây sẽ thấy stack trace chính xác:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class OfNull {
+    public static void main() {
+        Optional&lt;String&gt; ten = Optional.of(null);
+        IO.println(ten);
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre><code>Exception in thread "main" java.lang.NullPointerException
+	at java.base/java.util.Objects.requireNonNull(Objects.java:220)
+	at java.base/java.util.Optional.of(Optional.java:113)
+	at OfNull.main(OfNull.java:5)</code></pre>
+    </div>
+
+    <p>Stack trace chỉ rõ <code class="inline">Optional.of</code> gọi <code class="inline">Objects.requireNonNull</code>. Còn với nguồn có thể null, đúng vũ khí là <code class="inline">ofNullable</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class OptionalCreate {
+    public static void main() {
+        Optional&lt;String&gt; co = Optional.of("Java");
+        IO.println(co);   // Optional[Java]
+
+        Optional&lt;String&gt; rong = Optional.empty();
+        IO.println(rong);   // Optional.empty
+
+        String giaTri = null;
+        Optional&lt;String&gt; coThe = Optional.ofNullable(giaTri);
+        IO.println(coThe);   // Optional.empty
+
+        Map&lt;String, String&gt; config = new HashMap&lt;&gt;();
+        config.put("lang", "Java");
+        Optional&lt;String&gt; lang = Optional.ofNullable(config.get("missing"));
+        IO.println(lang);   // Optional.empty
+
+        Optional&lt;Optional&lt;String&gt;&gt; longNhau = Optional.of(Optional.empty());
+        IO.println(longNhau);   // Optional[Optional.empty]  &lt;- long Optional, tranh dung
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Optional[Java]
+Optional.empty
+Optional.empty
+Optional.empty
+Optional[Optional.empty]</code></pre>
+    </div>
+
+    <p>Bốn quy tắc vàng khi tạo:</p>
+    <ol>
+      <li><strong>Biến kiểu <code class="inline">Optional</code> không bao giờ được là <code class="inline">null</code>.</strong> "Optional rỗng" là <code class="inline">Optional.empty()</code>, không phải <code class="inline">null</code>. Nếu biến Optional của bạn null thì chính bạn đã tạo ra bug khó chịu gấp đôi: người gọi vừa phải kiểm tra rỗng, vừa phải phòng null.</li>
+      <li><strong>Không so sánh Optional với <code class="inline">null</code>.</strong> <code class="inline">opt == null</code> luôn <code class="inline">false</code> với Optional hợp lệ, còn <code class="inline">opt.equals(null)</code> cũng <code class="inline">false</code>. Cả hai cách đều vô nghĩa — hãy dùng <code class="inline">isEmpty()</code>/<code class="inline">isPresent()</code>.</li>
+      <li><strong>Không lồng Optional trong Optional.</strong> <code class="inline">Optional&lt;Optional&lt;T&gt;&gt;</code> hợp lệ về mặt kiểu nhưng gần như luôn là dấu hiệu dùng sai <code class="inline">map</code> (đúng ra là <code class="inline">flatMap</code> — mục 6).</li>
+      <li><strong>Nguồn có thể null thì dùng <code class="inline">ofNullable</code></strong> — đặc biệt là <code class="inline">Optional.ofNullable(map.get(k))</code>, thay vì <code class="inline">Optional.of(map.get(k))</code> dễ nổ khi miss key.</li>
+    </ol>
+
+    <p>Vài thuộc tính cần biết để không "đoán mò" (chạy thật và in ra):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.io.Serializable;
+import java.util.Optional;
+
+public class OptionalMicro {
+    public static void main() {
+        Optional&lt;String&gt; e = Optional.empty();
+        IO.println("e == null          -&gt; " + (e == null));          // false
+        IO.println("e.equals(null)     -&gt; " + e.equals(null));         // false
+        IO.println("Serializable -&gt; " + Serializable.class.isAssignableFrom(Optional.class));   // false
+        IO.println("empty() cung object -&gt; " + (Optional.empty() == Optional.empty()));   // true
+        IO.println("of(\"a\") cung object -&gt; " + (Optional.of("a") == Optional.of("a")));   // false
+        IO.println("equals theo gia tri -&gt; " + Optional.of("a").equals(Optional.of("a")));   // true
+        IO.println("ofNullable(null)   -&gt; " + Optional.ofNullable(null));      // Optional.empty
+        IO.println("hashCode of empty  -&gt; " + Optional.empty().hashCode());   // 0
+    }
+}</code></pre>
+    </div>
+
+    <div class="note"><code class="inline">Optional</code> là <strong>value-based class</strong> giống <code class="inline">Integer</code>/<code class="inline">String</code> (xem <a href="object-contract.html">2.6 equals / hashCode / toString</a>): <code class="inline">equals</code> so theo giá trị bên trong, không so địa chỉ, nên <code class="inline">Optional.of("a").equals(Optional.of("a"))</code> là <code class="inline">true</code>. Vì vậy đừng bao giờ dùng <code class="inline">==</code> để so hai Optional, và đừng <code class="inline">synchronized</code> trên Optional.</div>
+
+    <h2 id="truy-xuat">4. Kiểm tra &amp; truy xuất giá trị</h2>
+
+    <p>Optional có hai trạng thái: present (có giá trị) hoặc empty. Nhóm API kiểm tra/đọc giá trị:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Trả về</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">isPresent()</code></td><td><code class="inline">boolean</code></td><td>Có giá trị hay không</td></tr>
+        <tr><td><code class="inline">isEmpty()</code></td><td><code class="inline">boolean</code></td><td>Ngược của <code class="inline">isPresent()</code>, thêm từ Java 11</td></tr>
+        <tr><td><code class="inline">get()</code></td><td><code class="inline">T</code></td><td><strong>Tránh</strong> — empty thì ném <code class="inline">NoSuchElementException</code></td></tr>
+        <tr><td><code class="inline">ifPresent(Consumer)</code></td><td><code class="inline">void</code></td><td>Chạy consumer nếu có giá trị</td></tr>
+        <tr><td><code class="inline">ifPresentOrElse(Consumer, Runnable)</code></td><td><code class="inline">void</code></td><td>Hai nhánh, Java 9</td></tr>
+        <tr><td><code class="inline">or(Supplier&lt;Optional&lt;T&gt;&gt;)</code></td><td><code class="inline">Optional&lt;T&gt;</code></td><td>Trả Optional thay thế nếu empty, Java 9</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class OptionalAccess {
+    public static void main() {
+        Optional&lt;String&gt; o = Optional.of("Java");
+
+        IO.println(o.isPresent());   // true
+        IO.println(o.isEmpty());     // false
+        IO.println(o.get());         // Java
+
+        o.ifPresent(v -&gt; IO.println("Co gia tri: " + v));
+
+        Optional&lt;String&gt; e = Optional.empty();
+        e.ifPresentOrElse(
+                v -&gt; IO.println("Co: " + v),
+                () -&gt; IO.println("Khong co gia tri"));
+
+        Optional&lt;String&gt; duPhong = e.or(() -&gt; Optional.of("mac dinh"));
+        IO.println(duPhong.get());   // mac dinh
+
+        IO.println(e.or(() -&gt; Optional.empty()));   // Optional.empty
+
+        IO.println(e.isPresent());   // false
+        IO.println(e.isEmpty());     // true
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>true
+false
+Java
+Co gia tri: Java
+Khong co gia tri
+mac dinh
+Optional.empty
+false
+true</code></pre>
+    </div>
+
+    <p>Còn đây là lý do <code class="inline">get()</code> bị mang tiếng xấu — nó ném exception y hệt việc dereference null, chỉ khác tên lỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class EmptyGet {
+    public static void main() {
+        Optional&lt;String&gt; rong = Optional.empty();
+        IO.println(rong.get());
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre><code>Exception in thread "main" java.util.NoSuchElementException: No value present
+	at java.base/java.util.Optional.get(Optional.java:143)
+	at EmptyGet.main(EmptyGet.java:6)</code></pre>
+    </div>
+
+    <p>Bảng quy đổi thói quen — bên trái là code kiểu cũ, bên phải là cách viết Optional:</p>
+
+    <table>
+      <thead>
+        <tr><th>Không nên</th><th>Nên</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">if (opt.isPresent()) { v = opt.get(); ... }</code></td><td><code class="inline">opt.ifPresent(v -&gt; ...)</code> hoặc <code class="inline">opt.ifPresentOrElse(...)</code></td><td>Ngắn hơn, không có cửa sổ gọi <code class="inline">get()</code> sai</td></tr>
+        <tr><td><code class="inline">return opt.isPresent() ? opt.get() : macDinh;</code></td><td><code class="inline">return opt.orElse(macDinh);</code></td><td>Đọc như câu tiếng Việt</td></tr>
+        <tr><td><code class="inline">opt.get()</code> trần</td><td><code class="inline">opt.orElseThrow(() -&gt; new IllegalStateException(...))</code></td><td>Nếu chắc chắn phải có giá trị, hãy ném lỗi có ngữ nghĩa</td></tr>
+        <tr><td><code class="inline">Optional&lt;T&gt; x = null;</code></td><td><code class="inline">Optional&lt;T&gt; x = Optional.empty();</code></td><td>Optional null phá hỏng toàn bộ ý tưởng container</td></tr>
+        <tr><td><code class="inline">if (opt != null) opt.ifPresent(...)</code></td><td>Bỏ hẳn check null — Optional không bao giờ null</td><td>Check này là code thừa và che giấu bug ở nơi khác</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><code class="inline">or(...)</code> hay bị nhầm với <code class="inline">orElse(...)</code>: <code class="inline">or</code> nhận một <code class="inline">Supplier&lt;Optional&lt;T&gt;&gt;</code> và <strong>trả về Optional</strong> (giữ được chain), còn <code class="inline">orElse</code> nhận giá trị <code class="inline">T</code> và trả thẳng giá trị. Muốn chain tiếp bằng <code class="inline">map</code> thì dùng <code class="inline">or</code>.</div>
+
+    <h2 id="or-else">5. orElse vs orElseGet vs orElseThrow <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Ba method cùng mục đích "lấy giá trị ra khỏi Optional", khác nhau ở <strong>thời điểm</strong> tính giá trị mặc định và ở <strong>hành vi khi rỗng</strong>:</p>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Nhận gì</th><th>Khi Optional rỗng</th><th>Khi Optional có giá trị</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">orElse(T other)</code></td><td>Giá trị sẵn</td><td>Trả <code class="inline">other</code></td><td>Trả giá trị trong hộp — nhưng <code class="inline">other</code> <strong>đã được tính từ trước</strong></td></tr>
+        <tr><td><code class="inline">orElseGet(Supplier&lt;T&gt;)</code></td><td>Hàm sinh giá trị</td><td>Gọi supplier rồi trả kết quả</td><td>Trả giá trị trong hộp — supplier <strong>không bao giờ được gọi</strong></td></tr>
+        <tr><td><code class="inline">orElseThrow()</code> (Java 10)</td><td>—</td><td>Ném <code class="inline">NoSuchElementException("No value present")</code></td><td>Trả giá trị</td></tr>
+        <tr><td><code class="inline">orElseThrow(Supplier&lt;X&gt;)</code></td><td>Hàm sinh exception</td><td>Ném exception do supplier tạo</td><td>Trả giá trị</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khác biệt eager/lazy không phải chuyện lý thuyết. Ví dụ dưới đây in ra dấu vết khi hàm mặc định được gọi; để ý <code class="inline">orElse</code> gọi hàm mặc định <strong>kể cả khi Optional đã có giá trị</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class OptionalElse {
+    static String macDinh() {
+        IO.println("  -&gt; macDinh() duoc goi");
+        return "mac dinh";
+    }
+
+    static String tuDatabase() {
+        IO.println("  -&gt; tuDatabase() duoc goi");
+        return "tu DB";
+    }
+
+    public static void main() {
+        Optional&lt;String&gt; co = Optional.of("Java");
+        Optional&lt;String&gt; rong = Optional.empty();
+
+        IO.println("co.orElse(macDinh()):");
+        IO.println("  ket qua = " + co.orElse(macDinh()));
+
+        IO.println("co.orElseGet(OptionalElse::macDinh):");
+        IO.println("  ket qua = " + co.orElseGet(OptionalElse::macDinh));
+
+        IO.println("rong.orElseGet(OptionalElse::tuDatabase):");
+        IO.println("  ket qua = " + rong.orElseGet(OptionalElse::tuDatabase));
+
+        IO.println("rong.orElse(macDinh()):");
+        IO.println("  ket qua = " + rong.orElse(macDinh()));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>co.orElse(macDinh()):
+  -> macDinh() duoc goi
+  ket qua = Java
+co.orElseGet(OptionalElse::macDinh):
+  ket qua = Java
+rong.orElseGet(OptionalElse::tuDatabase):
+  -> tuDatabase() duoc goi
+  ket qua = tu DB
+rong.orElse(macDinh()):
+  -> macDinh() duoc goi
+  ket qua = mac dinh</code></pre>
+    </div>
+
+    <p>Vì sao? <code class="inline">co.orElse(macDinh())</code> tương đương <code class="inline">co.orElse(giá trị-đã-tính)</code>: Java phải <strong>gọi <code class="inline">macDinh()</code> trước</strong> để có tham số truyền vào. Còn <code class="inline">orElseGet</code> nhận <em>hàm</em> <code class="inline">Supplier</code>, chỉ gọi khi cần. Hệ quả thực tế:</p>
+
+    <ul>
+      <li>Mặc định rẻ và vô hại (hằng số, <code class="inline">0</code>, chuỗi cố định) → <code class="inline">orElse</code> cho gọn.</li>
+      <li>Mặc định đắt hoặc có side effect (query DB, gọi API, đọc file, ghi log) → <strong>bắt buộc</strong> <code class="inline">orElseGet</code>, nếu không bạn trả tiền cho công việc bị vứt bỏ.</li>
+      <li><code class="inline">orElse(null)</code> hợp lệ về cú pháp nhưng trả bạn về đúng vấn đề null ban đầu — hạn chế dùng.</li>
+    </ul>
+
+    <p>Nhóm ném lỗi: <code class="inline">orElseThrow()</code> (không tham số) luôn dùng <code class="inline">NoSuchElementException</code> với message <code class="inline">"No value present"</code> — cùng exception như <code class="inline">get()</code>. Bản có <code class="inline">Supplier</code> cho phép tự chọn loại lỗi và message nghiệp vụ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.NoSuchElementException;
+import java.util.Optional;
+
+public class OptionalThrow {
+    static Optional&lt;String&gt; timTheoId(String id) {
+        if ("U01".equals(id)) {
+            return Optional.of("An");
+        }
+        return Optional.empty();
+    }
+
+    public static void main() {
+        Optional&lt;String&gt; rong = Optional.empty();
+
+        try {
+            rong.orElseThrow();
+        } catch (NoSuchElementException e) {
+            IO.println("orElseThrow()            -&gt; " + e.getMessage());
+        }
+
+        try {
+            rong.orElseThrow(() -&gt; new IllegalStateException("Khong tim thay nguoi dung"));
+        } catch (IllegalStateException e) {
+            IO.println("orElseThrow(supplier)    -&gt; " + e.getMessage());
+        }
+
+        try {
+            rong.get();
+        } catch (NoSuchElementException e) {
+            IO.println("get() tren empty         -&gt; " + e.getMessage());
+        }
+
+        IO.println("timTheoId(U01)           -&gt; " + timTheoId("U01").orElseThrow());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>orElseThrow()            -> No value present
+orElseThrow(supplier)    -> Khong tim thay nguoi dung
+get() tren empty         -> No value present
+timTheoId(U01)           -> An</code></pre>
+    </div>
+
+    <div class="note">Nếu "không có giá trị" là <strong>lỗi thật</strong> theo hợp đồng method, <code class="inline">orElseThrow(() -&gt; new ...())</code> là cách nói rõ nhất. Nếu là luồng bình thường, hãy trả mặc định (<code class="inline">orElse</code>/<code class="inline">orElseGet</code>) hoặc để người gọi quyết định — đừng ném exception cho tình huống "không tìm thấy". Triết lý này học ở <a href="exceptions.html">3.1 Exceptions</a>.</div>
+
+    <h2 id="bien-doi">6. Biến đổi: map, flatMap, filter, stream</h2>
+
+    <p>Optional mạnh nhất khi bạn <strong>không cần mở hộp</strong>: cứ biến đổi bên trong, đến cuối mới quyết định (mặc định / ném lỗi / trả Optional). Nhóm method:</p>
+
+    <div class="signature">
+      <span class="sig-var">map</span><span class="sig-muted">(Function&lt;T, U&gt;)</span> → <span class="tok-typ">Optional</span><span class="sig-muted">&lt;U&gt;</span> &nbsp;·&nbsp;
+      <span class="sig-var">flatMap</span><span class="sig-muted">(Function&lt;T, Optional&lt;U&gt;&gt;)</span> → <span class="tok-typ">Optional</span><span class="sig-muted">&lt;U&gt;</span> &nbsp;·&nbsp;
+      <span class="sig-var">filter</span><span class="sig-muted">(Predicate&lt;T&gt;)</span> → <span class="tok-typ">Optional</span><span class="sig-muted">&lt;T&gt;</span> &nbsp;·&nbsp;
+      <span class="sig-var">stream</span><span class="sig-muted">()</span> → <span class="tok-typ">Stream</span><span class="sig-muted">&lt;T&gt;</span>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">map</code> — biến đổi nếu có giá trị.</strong> Optional rỗng thì trả luôn Optional rỗng (không gọi hàm). Đặc biệt: nếu hàm biến đổi trả về <code class="inline">null</code>, kết quả là <code class="inline">Optional.empty()</code> — <code class="inline">map</code> <strong>null-safe</strong>. Đây là điểm khác biệt với <code class="inline">Stream.map</code>: stream giữ nguyên phần tử null, Optional biến null thành rỗng.</li>
+      <li><strong><code class="inline">flatMap</code> — dùng khi hàm biến đổi trả về <code class="inline">Optional</code>.</strong> <code class="inline">map</code> sẽ bọc thêm một lớp (<code class="inline">Optional&lt;Optional&lt;U&gt;&gt;</code>), <code class="inline">flatMap</code> làm phẳng.</li>
+      <li><strong><code class="inline">filter</code> — giữ giá trị nếu thỏa predicate</strong>, ngược lại thành rỗng. Không bao giờ gọi predicate trên Optional rỗng.</li>
+      <li><strong><code class="inline">stream</code> — Java 9</strong>, biến Optional thành <code class="inline">Stream</code> có 0 hoặc 1 phần tử, chuyên dùng để nhúng vào pipeline (mục 9).</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Optional;
+
+public class OptionalTransform {
+    record User(String ten, String email) {}
+
+    static Optional&lt;String&gt; emailCua(User u) {
+        return Optional.ofNullable(u.email());
+    }
+
+    public static void main() {
+        Optional&lt;String&gt; ten = Optional.of("  java  ");
+
+        IO.println(ten.map(String::trim));                       // Optional[java]
+        IO.println(ten.map(String::trim).map(String::toUpperCase)); // Optional[JAVA]
+        IO.println(ten.map(String::trim).orElse("khong co"));     // java
+
+        Optional&lt;String&gt; trong = Optional.empty();
+        IO.println(trong.map(String::length));                   // Optional.empty
+
+        IO.println(Optional.of("abc").map(s -&gt; (String) null));  // Optional.empty
+
+        IO.println(Optional.of(15).filter(n -&gt; n &gt; 10));         // Optional[15]
+        IO.println(Optional.of(5).filter(n -&gt; n &gt; 10));          // Optional.empty
+
+        Optional&lt;User&gt; u = Optional.of(new User("An", null));
+        Optional&lt;String&gt; email = u.flatMap(OptionalTransform::emailCua);
+        IO.println(email);                                        // Optional.empty
+
+        Optional&lt;User&gt; u2 = Optional.of(new User("Binh", "binh@example.com"));
+        IO.println(u2.flatMap(OptionalTransform::emailCua));      // Optional[binh@example.com]
+
+        List&lt;Optional&lt;Integer&gt;&gt; ds = List.of(Optional.of(1), Optional.empty(), Optional.of(3));
+        long dem = ds.stream().flatMap(Optional::stream).count();
+        IO.println("dem = " + dem);                               // dem = 2
+
+        Optional&lt;Optional&lt;String&gt;&gt; longNhau = u2.map(x -&gt; emailCua(x));
+        IO.println(longNhau);                                     // Optional[Optional[binh@example.com]]
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Optional[java]
+Optional[JAVA]
+java
+Optional.empty
+Optional.empty
+Optional[15]
+Optional.empty
+Optional.empty
+Optional[binh@example.com]
+dem = 2
+Optional[Optional[binh@example.com]]</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Bẫy <code class="inline">map</code> vs <code class="inline">flatMap</code>:</strong> dấu hiệu nhận biết là <strong>kiểu hàm</strong>. Hàm trả <code class="inline">String</code>, <code class="inline">Integer</code>, object thường → <code class="inline">map</code>. Hàm trả <code class="inline">Optional&lt;X&gt;</code> (ví dụ <code class="inline">findById</code>, <code class="inline">emailCua</code>) → <code class="inline">flatMap</code>. Dùng nhầm <code class="inline">map</code> bạn có <code class="inline">Optional[Optional[...]]</code> như dòng cuối ví dụ.</div>
+
+    <h3>Optional cho kiểu nguyên thủy — tránh boxing</h3>
+
+    <p>Với <code class="inline">int</code>/<code class="inline">long</code>/<code class="inline">double</code>, JDK cung cấp <code class="inline">OptionalInt</code>, <code class="inline">OptionalLong</code>, <code class="inline">OptionalDouble</code>. Lợi ích: không autobox mỗi giá trị (xem <a href="index.html#wrapper">Biến trong Java — mục 12</a>), và có API riêng <code class="inline">getAsInt()</code>, <code class="inline">orElse(0)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.stream.IntStream;
+
+public class OptionalPrimitive {
+    public static void main() {
+        OptionalInt max = IntStream.of(3, 7, 2).max();
+        IO.println(max);                  // OptionalInt[7]
+        IO.println(max.getAsInt());       // 7
+        IO.println(max.orElse(-1));       // 7
+
+        OptionalInt rong = OptionalInt.empty();
+        IO.println(rong.isPresent());     // false
+        IO.println(rong.orElse(-1));      // -1
+
+        OptionalLong tong = OptionalLong.of(1_000_000_000L);
+        IO.println(tong.getAsLong());     // 1000000000
+
+        OptionalDouble tb = IntStream.of(1, 2, 3).average();
+        IO.println(tb.getAsDouble());     // 2.0
+
+        OptionalInt tuChuoi = Optional.of("42").stream()
+                .mapToInt(Integer::parseInt)
+                .findFirst();
+        IO.println(tuChuoi.getAsInt());   // 42
+
+        Optional&lt;Integer&gt; boxing = Optional.of(1_000_000);
+        IO.println(boxing);               // Optional[1000000]
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>OptionalInt[7]
+7
+7
+false
+-1
+1000000000
+2.0
+42
+Optional[1000000]</code></pre>
+    </div>
+
+    <div class="note"><code class="inline">OptionalInt/Long/Double</code> cố tình <strong>không có</strong> <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">filter</code>/<code class="inline">stream</code> để tránh boxing trở lại. Nếu cần chain biến đổi, dùng <code class="inline">Optional&lt;Integer&gt;</code>, hoặc giữ nguyên trong <code class="inline">IntStream</code> rồi <code class="inline">findFirst()</code>/<code class="inline">max()</code> ở cuối. Chúng sinh ra chủ yếu từ các terminal operation của stream số: <code class="inline">IntStream.max()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code> (xem <a href="streams.html">3.8 Stream API</a>).</div>
+
+    <h2 id="thuc-te">7. Ví dụ thực tế: thoát null-hell</h2>
+
+    <p>Bài toán kinh điển: lấy thành phố của user qua chuỗi <code class="inline">User → Address → City</code>, mỗi mắt xích đều có thể null. Đây là "null-hell" — kim tự tháp <code class="inline">if</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class NullHell {
+    record City(String name) {}
+    record Address(String duong, City city) {}
+    record User(String ten, Address address) {}
+
+    static String thanhPhoCua(User u) {
+        if (u != null) {
+            Address a = u.address();
+            if (a != null) {
+                City c = a.city();
+                if (c != null) {
+                    return c.name();
+                }
+            }
+        }
+        return "Khong ro";
+    }
+
+    public static void main() {
+        City daNang = new City("Da Nang");
+        Address a1 = new Address("Nguyen Hue", daNang);
+        User u1 = new User("An", a1);
+        User u2 = new User("Binh", null);
+        User u3 = new User("Chi", new Address("Le Loi", null));
+
+        IO.println(thanhPhoCua(u1));   // Da Nang
+        IO.println(thanhPhoCua(u2));   // Khong ro
+        IO.println(thanhPhoCua(u3));   // Khong ro
+        IO.println(thanhPhoCua(null)); // Khong ro
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Da Nang
+Khong ro
+Khong ro
+Khong ro</code></pre>
+    </div>
+
+    <p>Với Optional, cùng hành vi nhưng là một biểu thức phẳng. Điểm quan trọng: các accessor trả về giá trị <em>có thể null</em>, nên chỉ cần <code class="inline">map</code> — <code class="inline">map</code> tự bọc null thành empty:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class OptionalChain {
+    record City(String name) {}
+    record Address(String duong, City city) {}
+    record User(String ten, Address address) {}
+
+    static String thanhPhoCua(User u) {
+        return Optional.ofNullable(u)
+                .map(User::address)
+                .map(Address::city)
+                .map(City::name)
+                .orElse("Khong ro");
+    }
+
+    public static void main() {
+        City daNang = new City("Da Nang");
+        Address a1 = new Address("Nguyen Hue", daNang);
+        User u1 = new User("An", a1);
+        User u2 = new User("Binh", null);
+        User u3 = new User("Chi", new Address("Le Loi", null));
+
+        IO.println(thanhPhoCua(u1));   // Da Nang
+        IO.println(thanhPhoCua(u2));   // Khong ro
+        IO.println(thanhPhoCua(u3));   // Khong ro
+        IO.println(thanhPhoCua(null)); // Khong ro
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Da Nang
+Khong ro
+Khong ro
+Khong ro</code></pre>
+    </div>
+
+    <p>Còn khi chính accessor đã trả <code class="inline">Optional</code> (ví dụ entity/API hiện đại), hãy dùng <code class="inline">flatMap</code> để không bị lồng hộp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Optional;
+
+public class OptionalFlatMapChain {
+    record City(String name) {}
+    record Address(String duong, Optional&lt;City&gt; city) {}
+    record User(String ten, Optional&lt;Address&gt; address) {}
+
+    static String thanhPhoCua(User u) {
+        return Optional.ofNullable(u)
+                .flatMap(User::address)
+                .flatMap(Address::city)
+                .map(City::name)
+                .orElse("Khong ro");
+    }
+
+    public static void main() {
+        User u1 = new User("An", Optional.of(new Address("Nguyen Hue", Optional.of(new City("Da Nang")))));
+        User u2 = new User("Binh", Optional.empty());
+        User u3 = new User("Chi", Optional.of(new Address("Le Loi", Optional.empty())));
+
+        IO.println(thanhPhoCua(u1));   // Da Nang
+        IO.println(thanhPhoCua(u2));   // Khong ro
+        IO.println(thanhPhoCua(u3));   // Khong ro
+        IO.println(thanhPhoCua(null)); // Khong ro
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Da Nang
+Khong ro
+Khong ro
+Khong ro</code></pre>
+    </div>
+
+    <p>Tìm kiếm trong <code class="inline">Map</code>/<code class="inline">List</code> — hai nguồn trả về "không có" phổ biến nhất:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class OptionalSearch {
+    record User(String ma, String ten) {}
+
+    static Optional&lt;User&gt; timTheoMa(Map&lt;String, User&gt; db, String ma) {
+        return Optional.ofNullable(db.get(ma));
+    }
+
+    static Optional&lt;String&gt; timTheoTuKhoa(List&lt;String&gt; ds, String tuKhoa) {
+        return ds.stream()
+                .filter(s -&gt; s.toLowerCase().contains(tuKhoa.toLowerCase()))
+                .findFirst();
+    }
+
+    public static void main() {
+        Map&lt;String, User&gt; db = Map.of(
+                "U01", new User("U01", "An"),
+                "U02", new User("U02", "Binh"));
+
+        IO.println(timTheoMa(db, "U01").map(User::ten).orElse("khong co"));   // An
+        IO.println(timTheoMa(db, "U99").map(User::ten).orElse("khong co"));   // khong co
+        IO.println(timTheoMa(db, "U99").map(User::ten)
+                .orElseGet(() -&gt; "khong tim thay"));                          // khong tim thay
+
+        List&lt;String&gt; ds = List.of("Java", "JavaScript", "Python");
+        IO.println(timTheoTuKhoa(ds, "java"));   // Optional[Java]
+        IO.println(timTheoTuKhoa(ds, "ruby"));   // Optional.empty
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>An
+khong co
+khong tim thay
+Optional[Java]
+Optional.empty</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Phiên bản</th><th>Ưu điểm</th><th>Nhược điểm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Null-hell (<code class="inline">if</code> lồng)</td><td>Không thêm object, dễ hiểu với người mới</td><td>Dài, dễ sót một mắt xích, phải viết nhánh mặc định giữa code</td></tr>
+        <tr><td>Chain <code class="inline">map</code></td><td>Một biểu thức, kiểu trả về nói rõ "có thể không có"; không thể quên check</td><td>Cần quen; debug từng bước khó hơn một chút</td></tr>
+        <tr><td>Chain <code class="inline">flatMap</code></td><td>Không lồng hộp khi accessor đã trả Optional</td><td>Chỉ dùng khi model thực sự để field/tham số là Optional</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Khi nào KHÔNG nên chain:</strong> khi mỗi bước cần xử lý lỗi riêng, cần log giá trị trung gian, hoặc logic nghiệp vụ khác nhau ở từng nhánh — lúc đó <code class="inline">if</code>/guard clause dễ đọc hơn. Chain 2–4 bước <code class="inline">map</code> là vùng ngọt; dài hơn hãy tách method có tên.</div>
+
+    <h2 id="best-practices">8. Best practices &amp; anti-patterns <span class="badge b-prod">Production</span></h2>
+
+    <p>Câu thần chú từ Javadoc: <em>Optional chủ yếu dành cho <strong>kiểu trả về của method</strong> khi cần biểu diễn rõ "không có kết quả"</em> (xem thêm Effective Java, item 55 — "Return optionals judiciously"). Mọi lạm dụng đều bắt nguồn từ việc quên câu này.</p>
+
+    <table>
+      <thead>
+        <tr><th>Nên</th><th>Tránh</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Method trả <code class="inline">Optional&lt;T&gt;</code> khi "không tìm thấy" là bình thường</td><td>Trả <code class="inline">null</code> rồi ghi chú trong Javadoc</td><td>Kiểu trả về tự tài liệu hóa; caller buộc xử lý</td></tr>
+        <tr><td><code class="inline">map</code>, <code class="inline">orElse</code>, <code class="inline">ifPresent</code>, <code class="inline">orElseThrow</code></td><td><code class="inline">isPresent()</code> + <code class="inline">get()</code></td><td>API bậc cao an toàn hơn, ngắn hơn, không có đường quên check</td></tr>
+        <tr><td><code class="inline">ofNullable(map.get(k))</code></td><td><code class="inline">of(map.get(k))</code></td><td>Key miss trả null → <code class="inline">of</code> ném NPE ngay, sai ngữ nghĩa "không có"</td></tr>
+        <tr><td><code class="inline">orElseGet</code> cho giá trị đắt/side effect</td><td><code class="inline">orElse(queryDatabase())</code></td><td><code class="inline">orElse</code> eager: chạy query cả khi đã có giá trị</td></tr>
+        <tr><td><code class="inline">OptionalInt/Long/Double</code> cho primitive</td><td><code class="inline">Optional&lt;Integer&gt;</code> trong vòng lặp nóng</td><td>Tránh boxing/unboxing và allocation thừa</td></tr>
+        <tr><td>Field/param/collection để là kiểu thường + validate</td><td><code class="inline">Optional</code> làm field, parameter, phần tử List/Map</td><td>Javadoc khuyến nghị return type; field Optional làm nặng constructor, so sánh, serialize</td></tr>
+        <tr><td>Trả <code class="inline">List</code> rỗng cho "không có phần tử"</td><td><code class="inline">Optional&lt;List&lt;T&gt;&gt;</code></td><td>List đã có trạng thái rỗng; bọc thêm một lớp là thừa (xem <a href="collections.html">3.3 Collections</a>)</td></tr>
+        <tr><td>Exception cho lỗi thật, Optional cho "không có"</td><td>Dùng Optional thay cho mọi lỗi/báo lỗi validation</td><td>Lỗi có ngữ cảnh và stack trace; Optional không mang lý do (xem <a href="exceptions.html">3.1</a>)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Anti-pattern 1 — isPresent() + get()</h3>
+
+    <p>Đây là "null check đội lốt Optional": code chạy đúng nhưng cồng kềnh và không tận dụng gì cả, đặc biệt trong Stream:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Khong nen
+if (opt.isPresent()) {
+    return opt.get().toUpperCase();
+}
+return "khong co";
+
+// Nen
+return opt.map(String::toUpperCase).orElse("khong co");
+
+// Trong Stream - khong nen
+list.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+// Trong Stream - nen
+list.stream().flatMap(Optional::stream).toList();</code></pre>
+    </div>
+
+    <h3>Anti-pattern 2 — Optional làm field / parameter</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">// Khong nen: Optional lam field trong domain model / DTO / entity
+public class KhachHang {
+    private Optional&lt;String&gt; email;   // khoi tao phuc tap, serialize loi, JPA khong ho tro
+}
+
+// Nen: field kieu thuong + validate o constructor, getter tra Optional NEU can
+public class KhachHang {
+    private final String email;       // co the null neu nghiep vu cho phep
+
+    public Optional&lt;String&gt; email() {
+        return Optional.ofNullable(email);
+    }
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Parameter:</strong> nhận <code class="inline">Optional</code> làm tham số ép caller bọc giá trị — phiền và không giải quyết vấn đề gì. Hãy nhận kiểu thường, hoặc tách overload (<code class="inline">tim(ten)</code> / <code class="inline">tim(ten, email)</code>) theo tinh thần <a href="methods.html#overloading">Methods — mục 5</a>.</li>
+      <li><strong>Collection element:</strong> <code class="inline">List&lt;Optional&lt;T&gt;&gt;</code> thường là dấu hiệu bạn nên lọc bỏ rỗng hoặc dùng <code class="inline">Map</code>; mỗi Optional là một allocation.</li>
+      <li><strong>Đừng lạm dụng:</strong> local variable, private method trong nội bộ class, hay trạng thái "đã set/đã gán" không cần Optional. Optional sinh ra cho <em>ranh giới API công khai</em>, nơi hai phía không biết nhau.</li>
+    </ul>
+
+    <h3>Anti-pattern 3 — serialize &amp; framework</h3>
+
+    <ul>
+      <li><code class="inline">Optional</code> <strong>không implement <code class="inline">Serializable</code></strong> (đã kiểm chứng ở mục 3). Đừng để nó trong session, cache phân tán, RMI, DTO serialize nhị phân.</li>
+      <li><strong>JPA/Hibernate:</strong> entity không nên có field Optional — JPA không ánh xạ được và bạn gặp lỗi mapping. Dùng getter trả Optional nếu muốn (như ví dụ trên).</li>
+      <li><strong>Jackson (REST API):</strong> mặc định Jackson không hiểu <code class="inline">Optional</code> là container; cần đăng ký <code class="inline">com.fasterxml.jackson.datatype.jdk8.Jdk8Module</code> để nó serialize đúng giá trị bên trong (và bỏ qua rỗng tùy cấu hình). Nếu không, response có thể chứa cấu trúc lạ thay vì giá trị mong đợi — một trong những bug tích hợp phổ biến khi dùng Optional trong DTO. Cách an toàn hơn cho API: DTO dùng kiểu thường + <code class="inline">@JsonInclude(NON_NULL)</code>.</li>
+      <li>Khi ghi log, đừng log <code class="inline">Optional[...]</code> trần — <code class="inline">opt.orElse(null)</code> hoặc <code class="inline">opt.map(Object::toString).orElse("&lt;empty&gt;")</code> dễ đọc hơn.</li>
+    </ul>
+
+    <div class="note warn"><strong>"Optional có thay thế null hoàn toàn không?" — Không.</strong> <code class="inline">null</code> vẫn tồn tại trong Java: field chưa gán, mảng, tham số, API cũ trả null, <code class="inline">Map.get</code>. Optional chỉ là <em>quy ước</em> ở tầng kiểu trả về để giảm NPE. Nó cũng không phải thuốc chữa mọi bệnh: lạm dụng Optional làm code rối, tốn allocation và che giấu lỗi thật — đôi khi <code class="inline">null</code> nội bộ hoặc một exception rõ nghĩa lại đúng hơn.</div>
+
+    <h2 id="optional-stream">9. Optional trong Stream <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Stream và Optional là cặp bài trùng: nhiều terminal operation của Stream trả về Optional vì dữ liệu có thể rỗng — <code class="inline">findFirst()</code>, <code class="inline">findAny()</code>, <code class="inline">max()</code>, <code class="inline">min()</code>, <code class="inline">reduce(BinaryOperator)</code>. Chi tiết Stream xem <a href="streams.html">3.8</a>.</p>
+
+    <p>Bài toán thực tế: từ danh sách đơn hàng, mỗi đơn có <code class="inline">maKhach</code>; tra khách trong "DB" (Map) — khách có thể không tồn tại (dữ liệu mồ côi). Đây là chỗ <code class="inline">map(::find)</code> sinh ra <code class="inline">Stream&lt;Optional&lt;Khach&gt;&gt;</code> rồi <code class="inline">flatMap(Optional::stream)</code> làm phẳng, bỏ các empty:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class OptionalStream {
+    record DonHang(String ma, String trangThai, long tong, String maKhach) {}
+    record Khach(String ma, String ten) {}
+
+    static Map&lt;String, Khach&gt; db = Map.of(
+            "K01", new Khach("K01", "An"),
+            "K02", new Khach("K02", "Binh"));
+
+    static Optional&lt;Khach&gt; timKhach(String ma) {
+        return Optional.ofNullable(db.get(ma));
+    }
+
+    public static void main() {
+        List&lt;DonHang&gt; don = List.of(
+                new DonHang("DH01", "DA_GIAO", 250_000, "K01"),
+                new DonHang("DH02", "DANG_GIAO", 120_000, "K02"),
+                new DonHang("DH03", "DA_GIAO", 90_000, "K99"),
+                new DonHang("DH04", "HUY", 0, "K01"));
+
+        long tongDaGiao = don.stream()
+                .filter(d -&gt; "DA_GIAO".equals(d.trangThai()))
+                .mapToLong(DonHang::tong)
+                .sum();
+        IO.println("tong da giao   = " + tongDaGiao);   // 340000
+
+        Optional&lt;DonHang&gt; lonNhat = don.stream()
+                .max(Comparator.comparingLong(DonHang::tong));
+        IO.println("don lon nhat   = " + lonNhat.map(DonHang::ma).orElse("khong co"));   // DH01
+
+        List&lt;String&gt; khachDaGiao = don.stream()
+                .filter(d -&gt; "DA_GIAO".equals(d.trangThai()))
+                .map(d -&gt; timKhach(d.maKhach()))
+                .flatMap(Optional::stream)
+                .map(Khach::ten)
+                .toList();
+        IO.println("khach da giao  = " + khachDaGiao);   // [An]
+
+        long khongTimThay = don.stream()
+                .map(d -&gt; timKhach(d.maKhach()))
+                .filter(Optional::isEmpty)
+                .count();
+        IO.println("khong tim thay = " + khongTimThay);   // 1
+
+        List&lt;String&gt; maCoKhach = don.stream()
+                .map(DonHang::maKhach)
+                .distinct()
+                .filter(ma -&gt; timKhach(ma).isPresent())
+                .toList();
+        IO.println("ma co khach    = " + maCoKhach);     // [K01, K02]
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tong da giao   = 340000
+don lon nhat   = DH01
+khach da giao  = [An]
+khong tim thay = 1
+ma co khach    = [K01, K02]</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">flatMap(Optional::stream)</code> là idiom chuẩn để "vứt bỏ empty, giữ giá trị" — thay cho <code class="inline">filter(isPresent).map(get)</code> vừa dài vừa dễ sai.</li>
+      <li><code class="inline">Optional::stream</code> chỉ là method reference của <code class="inline">opt -&gt; opt.stream()</code>; mỗi Optional cho ra 0 hoặc 1 phần tử.</li>
+      <li>Stream <strong>lazy</strong>: không có gì chạy cho tới terminal operation (<code class="inline">toList()</code>, <code class="inline">count()</code>, <code class="inline">sum()</code>). Vì thế đừng đặt side effect trong <code class="inline">map</code>/<code class="inline">filter</code> (chi tiết ở <a href="streams.html">3.8</a>).</li>
+      <li>Ngược lại, cần đếm "không tìm thấy" thì <code class="inline">filter(Optional::isEmpty)</code> lại đúng ý hơn cả.</li>
+    </ul>
+
+    <div class="note"><strong>Quy tắc nhớ nhanh:</strong> method tìm kiếm trả <code class="inline">Optional</code> → dùng <code class="inline">map(::find)</code> khi muốn giữ Optional để xử lý tiếp, dùng <code class="inline">map(::find).flatMap(Optional::stream)</code> khi muốn lọc sạch dữ liệu để đi tiếp pipeline.</div>
+
+    <h2 id="goc-nodejs">10. Góc Node.js — null, undefined, ?. và ??</h2>
+
+    <p>JavaScript có <strong>hai</strong> giá trị "rỗng": <code class="inline">null</code> (gán có chủ ý, "rỗng") và <code class="inline">undefined</code> (chưa gán, không tồn tại, truy cập property thiếu). Java chỉ có một: <code class="inline">null</code>. Còn Optional gần với cặp toán tử hiện đại <code class="inline">?.</code> + <code class="inline">??</code> của JS/TS hơn là với null.</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>JavaScript / TypeScript</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Giá trị rỗng</td><td><code class="inline">null</code> + <code class="inline">undefined</code></td><td>Chỉ <code class="inline">null</code>; Optional là <em>hộp</em> có/không</td></tr>
+        <tr><td>Truy cập an toàn</td><td><code class="inline">a?.b?.c</code> (ES2020)</td><td><code class="inline">opt.map(...).map(...)</code> hoặc <code class="inline">Optional</code> chain</td></tr>
+        <tr><td>Giá trị mặc định</td><td><code class="inline">x ?? macDinh</code> chỉ thay null/undefined</td><td><code class="inline">orElse(x)</code> / <code class="inline">orElseGet(supplier)</code></td></tr>
+        <tr><td>Bẫy falsy</td><td><code class="inline">x || macDinh</code> thay cả <code class="inline">0</code>, <code class="inline">""</code>, <code class="inline">false</code>, <code class="inline">NaN</code></td><td><code class="inline">orElse</code> chỉ kích hoạt khi hộp rỗng — không có "falsy"</td></tr>
+        <tr><td>Ép kiểu lúc compile</td><td><code class="inline">strictNullChecks</code> buộc check <code class="inline">T | null</code></td><td>Compiler không giúp; Optional là quy ước API</td></tr>
+        <tr><td>Ném lỗi</td><td><code class="inline">throw new Error(...)</code></td><td><code class="inline">orElseThrow(() -&gt; new ...())</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Chạy thật bằng Node (v22) — để ý dòng <code class="inline">0 ?? "mac dinh"</code> và <code class="inline">"" ?? "mac dinh"</code> giữ nguyên giá trị, còn <code class="inline">||</code> thay thế chúng:</p>
+
+    <div class="codeblock">
+      <pre><code>const nhan = (x) =&gt; console.log("  " + x);
+
+nhan("0 ?? 'mac dinh'        -&gt; " + (0 ?? "mac dinh"));
+nhan("0 || 'mac dinh'        -&gt; " + (0 || "mac dinh"));
+nhan("'' ?? 'mac dinh'       -&gt; [" + ("" ?? "mac dinh") + "]");
+nhan("'' || 'mac dinh'       -&gt; " + ("" || "mac dinh"));
+nhan("false ?? 'mac dinh'    -&gt; " + (false ?? "mac dinh"));
+nhan("null ?? 'mac dinh'     -&gt; " + (null ?? "mac dinh"));
+nhan("undefined ?? 'mac dinh'-&gt; " + (undefined ?? "mac dinh"));
+nhan("NaN ?? 'mac dinh'      -&gt; " + (NaN ?? "mac dinh"));
+
+const user = { profile: null };
+nhan("user?.profile?.email  -&gt; " + user?.profile?.email);
+nhan("... ?? 'khong co'      -&gt; " + (user?.profile?.email ?? "khong co"));
+
+const arr = null;
+nhan("arr?.[0]              -&gt; " + arr?.[0]);
+
+const obj = { ten: "An" };
+nhan("obj.khongCo?.toUpperCase() -&gt; " + obj.khongCo?.toUpperCase());
+nhan("obj.ten?.toUpperCase()      -&gt; " + obj.ten?.toUpperCase());</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>  0 ?? 'mac dinh'        -> 0
+  0 || 'mac dinh'        -> mac dinh
+  '' ?? 'mac dinh'       -> []
+  '' || 'mac dinh'       -> mac dinh
+  false ?? 'mac dinh'    -> false
+  null ?? 'mac dinh'     -> mac dinh
+  undefined ?? 'mac dinh'-> mac dinh
+  NaN ?? 'mac dinh'      -> NaN
+  user?.profile?.email  -> undefined
+  ... ?? 'khong co'      -> khong co
+  arr?.[0]              -> undefined
+  obj.khongCo?.toUpperCase() -> undefined
+  obj.ten?.toUpperCase()      -> AN</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">?.</code> chỉ ngắn mạch với <code class="inline">null</code>/<code class="inline">undefined</code></strong>, không phải mọi giá trị "rỗng": <code class="inline">0?.toString()</code> chạy bình thường, nhưng <code class="inline">a?.b.c</code> vẫn nổ nếu <code class="inline">a</code> khác null mà <code class="inline">b</code> undefined — phải viết <code class="inline">a?.b?.c</code>. Java không có <code class="inline">?.</code>; mỗi bước null phải là <code class="inline">map</code> hoặc check riêng.</li>
+      <li><strong><code class="inline">??</code> vs <code class="inline">||</code></strong>: <code class="inline">??</code> chỉ thay null/undefined, nên an toàn với <code class="inline">0</code>, <code class="inline">""</code>, <code class="inline">false</code>, <code class="inline">NaN</code>; <code class="inline">||</code> thay mọi giá trị falsy — bug kinh điển khi số lượng/chuỗi rỗng là hợp lệ.</li>
+      <li><strong>TypeScript <code class="inline">strictNullChecks</code>:</strong> khi bật, <code class="inline">string | null</code> buộc bạn kiểm tra trước khi dùng — gần với tinh thần Optional nhất. Toán tử non-null assertion <code class="inline">x!</code> là "lời hứa" với compiler rằng x không null; dùng bừa sẽ đổi compile error thành runtime crash, đúng kiểu <code class="inline">get()</code> bừa trong Java.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code>// TypeScript - minh hoa strictNullChecks (khong chay trong vi du Java)
+interface Khach { ten: string; email: string | null; }
+function guiMail(k: Khach) {
+    // return k.email.toUpperCase();        // LOI compile: 'k.email' is possibly 'null'
+    return (k.email ?? "khong-co@example.com").toUpperCase();   // OK
+}
+const k: Khach = { ten: "An", email: null };
+console.log(guiMail(k));   // KHONG-CO@EXAMPLE.COM</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Tình huống</th><th>Node.js / TS</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Không tìm thấy user</td><td><code class="inline">users.find(...)</code> → <code class="inline">User | undefined</code></td><td><code class="inline">findFirst()</code> → <code class="inline">Optional&lt;User&gt;</code></td></tr>
+        <tr><td>Map miss</td><td><code class="inline">map.get(k)</code> → <code class="inline">undefined</code></td><td><code class="inline">map.get(k)</code> → <code class="inline">null</code></td></tr>
+        <tr><td>Chuỗi biến đổi</td><td><code class="inline">u?.address?.city?.name ?? "?"</code></td><td><code class="inline">opt.map(User::address).map(Address::city).map(City::name).orElse("?")</code></td></tr>
+        <tr><td>Giá trị mặc định đắt</td><td><code class="inline">a ?? tinhMacDinh()</code> — <code class="inline">??</code> không gọi vế phải khi <code class="inline">a</code> non-nullish, nhưng phải tự viết lời gọi hàm</td><td><code class="inline">orElseGet(supplier)</code> — truyền hàm, runtime quyết định gọi</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Chốt:</strong> Optional Java gần với sự kết hợp của <code class="inline">T | null</code> trong TS, <code class="inline">?.</code> (map) và <code class="inline">??</code> (orElse) — nhưng ràng buộc ở tầng kiểu trả về và xử lý bằng method thay vì toán tử.</div>
+
+    <h2 id="qa">11. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Optional là gì? Nó giải quyết vấn đề gì?</summary>
+      <div class="answer"><code class="inline">Optional&lt;T&gt;</code> là container có thể chứa hoặc không chứa một giá trị non-null. Nó giải quyết vấn đề "trả null mơ hồ": thay vì trả <code class="inline">null</code> và hy vọng caller nhớ kiểm tra, method trả <code class="inline">Optional</code> nói rõ trong chữ ký rằng "có thể không có kết quả", buộc caller xử lý qua API của Optional (<code class="inline">orElse</code>, <code class="inline">map</code>, <code class="inline">ifPresent</code>…). Nó không loại bỏ <code class="inline">null</code> khỏi ngôn ngữ, chỉ giảm NPE ở ranh giới API.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Optional có thay thế null hoàn toàn không?</summary>
+      <div class="answer"><strong>Không.</strong> (1) <code class="inline">null</code> vẫn tồn tại cho field, tham số, mảng, <code class="inline">Map.get</code>, API cũ; (2) Javadoc khuyến nghị Optional chỉ dùng làm <em>kiểu trả về</em>, không làm field/parameter/collection element; (3) lạm dụng Optional tạo thêm allocation và code rối hơn cả null check; (4) nhiều tình huống null hoặc exception rõ nghĩa vẫn hợp lý hơn (private method nội bộ, lỗi thật). Optional là quy ước thiết kế API, không phải hệ thống kiểu nullable.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. <code class="inline">Optional.of</code>, <code class="inline">ofNullable</code> và <code class="inline">empty</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">of(v)</code> yêu cầu chắc chắn non-null, truyền null sẽ ném <code class="inline">NullPointerException</code> ngay (fail fast). <code class="inline">ofNullable(v)</code> nhận cả null và biến thành <code class="inline">empty()</code> — dùng cho nguồn có thể null như <code class="inline">map.get(k)</code>. <code class="inline">empty()</code> trả Optional rỗng (singleton). Với Map, idiom đúng là <code class="inline">Optional.ofNullable(map.get(k))</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Vì sao không nên gọi <code class="inline">get()</code>?</summary>
+      <div class="answer">Vì <code class="inline">get()</code> trên Optional rỗng ném <code class="inline">NoSuchElementException: No value present</code> — chẳng khác gì dereference null, chỉ đổi tên lỗi, và không mang ngữ nghĩa nghiệp vụ. Hãy dùng <code class="inline">orElse</code>/<code class="inline">orElseGet</code> (mặc định), <code class="inline">orElseThrow(() -&gt; new ...)</code> (lỗi có ngữ nghĩa), <code class="inline">ifPresent</code>/<code class="inline">ifPresentOrElse</code> (side effect) hoặc <code class="inline">map</code> (biến đổi).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">orElse</code> và <code class="inline">orElseGet</code> khác nhau ra sao? Cho ví dụ bị bug.</summary>
+      <div class="answer"><code class="inline">orElse(T)</code> nhận giá trị nên tham số <strong>được tính trước</strong> khi gọi method (eager) — kể cả khi Optional có giá trị. <code class="inline">orElseGet(Supplier)</code> nhận hàm, chỉ gọi khi Optional rỗng (lazy). Bug điển hình: <code class="inline">opt.orElse(loadFromDatabase())</code> vẫn query DB dù giá trị đã có; sửa thành <code class="inline">opt.orElseGet(this::loadFromDatabase)</code>. Mặc định hằng số rẻ thì <code class="inline">orElse</code> tiện hơn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">get()</code> và <code class="inline">orElseThrow()</code> không tham số khác gì nhau?</summary>
+      <div class="answer">Cả hai ném cùng <code class="inline">NoSuchElementException("No value present")</code> khi rỗng. Khác ở tên gọi và ngữ nghĩa: <code class="inline">orElseThrow</code> nói rõ hành vi "ném nếu rỗng" và có bản nhận <code class="inline">Supplier</code> để chọn exception riêng; <code class="inline">get()</code> là API cũ, tên mơ hồ, dễ bị gọi bừa. Từ Java 10, <code class="inline">orElseThrow()</code> thay thế <code class="inline">get()</code> trong code mới.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">ifPresent</code>, <code class="inline">ifPresentOrElse</code> và <code class="inline">or</code> dùng khi nào?</summary>
+      <div class="answer"><code class="inline">ifPresent(Consumer)</code>: chỉ chạy hành động khi có giá trị (không có nhánh else). <code class="inline">ifPresentOrElse(Consumer, Runnable)</code> (Java 9): đủ hai nhánh, dùng cho logging/thông báo. <code class="inline">or(Supplier&lt;Optional&lt;T&gt;&gt;)</code> (Java 9): trả về Optional thay thế nếu rỗng — giữ được chain <code class="inline">map</code>/<code class="inline">filter</code> phía sau, khác hẳn <code class="inline">orElse</code> trả giá trị trần.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">map</code> và <code class="inline">flatMap</code> trên Optional khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">map(Function&lt;T,U&gt;)</code> bọc kết quả thành <code class="inline">Optional&lt;U&gt;</code>; nếu hàm trả null thì kết quả là empty (null-safe). <code class="inline">flatMap(Function&lt;T, Optional&lt;U&gt;&gt;)</code> yêu cầu hàm đã trả <code class="inline">Optional&lt;U&gt;</code> và không bọc thêm — nhờ đó tránh <code class="inline">Optional&lt;Optional&lt;U&gt;&gt;</code>. Quy tắc: hàm trả object thường → <code class="inline">map</code>; hàm trả Optional → <code class="inline">flatMap</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. <code class="inline">Optional.stream()</code> là gì và dùng làm gì?</summary>
+      <div class="answer">Method thêm từ Java 9, biến Optional thành <code class="inline">Stream</code> 0 hoặc 1 phần tử. Ứng dụng chính là <code class="inline">stream().map(::find).flatMap(Optional::stream)</code> để lọc bỏ kết quả rỗng trong pipeline, thay cho <code class="inline">filter(Optional::isPresent).map(Optional::get)</code>. Ngoài ra còn dùng khi cần trộn Optional đơn lẻ vào stream khác.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao có <code class="inline">OptionalInt</code>/<code class="inline">OptionalLong</code>/<code class="inline">OptionalDouble</code>?</summary>
+      <div class="answer">Để tránh autoboxing khi làm việc với primitive: <code class="inline">Optional&lt;Integer&gt;</code> bọc một object <code class="inline">Integer</code>, còn <code class="inline">OptionalInt</code> lưu trực tiếp <code class="inline">int</code>, có <code class="inline">getAsInt()</code>, <code class="inline">orElse(int)</code>. Chúng sinh ra từ các terminal operation của IntStream/LongStream/DoubleStream: <code class="inline">max()</code>, <code class="inline">min()</code>, <code class="inline">average()</code>, <code class="inline">findFirst()</code>. Đổi lại chúng không có <code class="inline">map</code>/<code class="inline">flatMap</code>/<code class="inline">stream</code>.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Vì sao không nên dùng Optional cho field, parameter và phần tử collection?</summary>
+      <div class="answer">Javadoc nói Optional chủ yếu dành cho <em>kiểu trả về</em>. Field Optional: constructor phải khởi tạo hộp, getter lồng getter, so sánh/equals phức tạp, JPA không map được, Jackson cần module, không <code class="inline">Serializable</code>. Parameter Optional: ép caller bọc giá trị, dễ nhầm giữa "không truyền" và "truyền rỗng"; hãy dùng overload. Collection element <code class="inline">List&lt;Optional&lt;T&gt;&gt;</code>: mỗi phần tử thêm một allocation; gần như luôn có cách biểu diễn tốt hơn (lọc bỏ rỗng, Map, sentinel).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Vì sao <code class="inline">Optional&lt;String&gt; x = Optional.of(Optional.empty());</code> không compile, nhưng <code class="inline">Optional&lt;Optional&lt;String&gt;&gt; x = Optional.of(Optional.empty());</code> thì được?</summary>
+      <div class="answer">Vì <code class="inline">Optional.of</code> generic và Java dùng target typing để suy luận <code class="inline">T</code>. Ở vế đầu, compiler cố ép <code class="inline">T = String</code> nhưng tham số lại là <code class="inline">Optional&lt;T2&gt;</code> — mâu thuẫn nên báo lỗi "inference variable T has incompatible bounds". Ở vế sau, <code class="inline">T</code> được suy ra là <code class="inline">Optional&lt;String&gt;</code> nên hợp lệ. Điều này cũng cho thấy Optional lồng nhau là hợp lệ về kiểu nhưng hầu như luôn là dấu hiệu dùng sai <code class="inline">map</code> thay vì <code class="inline">flatMap</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Optional có serialize được không? Vấn đề gì khi dùng trong DTO/API?</summary>
+      <div class="answer"><code class="inline">Optional</code> không implement <code class="inline">Serializable</code>, nên không dùng trong session/RMI/cache nhị phân. Với REST API + Jackson, phải đăng ký <code class="inline">Jdk8Module</code> thì Jackson mới hiểu Optional là container; nếu không, JSON trả ra không như mong đợi (cấu trúc lạ hoặc lỗi serializer tùy phiên bản). Nhiều team chọn DTO dùng kiểu thường + <code class="inline">@JsonInclude(NON_NULL)</code> để API sạch và không phụ thuộc module.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Có nên dùng Optional để biểu diễn mọi trường hợp lỗi/không hợp lệ không?</summary>
+      <div class="answer">Không. Optional phù hợp cho "không có kết quả" như một trạng thái <em>bình thường</em> (tìm không thấy, chưa cấu hình). Lỗi thật (sai định dạng, vi phạm ràng buộc, thao tác bất khả thi) nên là exception với message/ngữ cảnh — exception mang stack trace và lý do, Optional thì không. Ngoài ra Optional không nói được <em>vì sao</em> rỗng; nếu cần lý do, dùng record kết quả (ví dụ <code class="inline">record KetQua&lt;T&gt;(T value, String lyDo) {}</code>) theo tinh thần <a href="exceptions.html">3.1 Exceptions</a>.</div>
+    </details>
+
+    <h2 id="bai-tap">12. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(Optional.of("Java"));
+IO.println(Optional.empty());
+IO.println(Optional.ofNullable(null));
+IO.println(Optional.ofNullable("A").map(String::toLowerCase));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Optional[Java]</code>, <code class="inline">Optional.empty</code>, <code class="inline">Optional.empty</code>, <code class="inline">Optional[a]</code>. <code class="inline">toString</code> của Optional in giá trị trong hộp hoặc chữ <code class="inline">empty</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code class="java">static String macDinh() {
+    IO.println("goi macDinh");
+    return "mac dinh";
+}
+
+Optional&lt;String&gt; co = Optional.of("Java");
+IO.println(co.orElse(macDinh()));
+IO.println(co.orElseGet(() -&gt; macDinh()));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">goi macDinh</code>, <code class="inline">Java</code>, <code class="inline">Java</code>. <code class="inline">orElse</code> tính tham số trước khi gọi nên <code class="inline">macDinh()</code> chạy dù hộp có giá trị; <code class="inline">orElseGet</code> không gọi supplier.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">Optional&lt;String&gt; a = Optional.of("abc").map(s -&gt; null);
+Optional&lt;String&gt; b = Optional.of("abc").flatMap(s -&gt; Optional.empty());
+IO.println(a);
+IO.println(b);
+IO.println(a.equals(b));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Optional.empty</code>, <code class="inline">Optional.empty</code>, <code class="inline">true</code>. <code class="inline">map</code> biến kết quả null thành empty; <code class="inline">flatMap</code> nhận Optional rỗng. Hai Optional rỗng <code class="inline">equals</code> nhau vì Optional là value-based class. Đừng dựa vào <code class="inline">==</code> để so — ở ví dụ này <code class="inline">==</code> tình cờ cũng <code class="inline">true</code> vì <code class="inline">empty()</code> là singleton (chi tiết triển khai), nhưng đó không phải ngữ nghĩa bạn được phép dựa vào.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">Optional&lt;String&gt; ten = Optional.of("An");
+Optional&lt;Optional&lt;Integer&gt;&gt; a = ten.map(s -&gt; Optional.of(s.length()));
+Optional&lt;Integer&gt; b = ten.flatMap(s -&gt; Optional.of(s.length()));
+IO.println(a);
+IO.println(b);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Optional[Optional[2]]</code> rồi <code class="inline">Optional[2]</code>. <code class="inline">map</code> bọc thêm một lớp Optional; <code class="inline">flatMap</code> làm phẳng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code class="java">Optional&lt;String&gt; rong = Optional.empty();
+try {
+    rong.orElseThrow(() -&gt; new IllegalStateException("thieu du lieu"));
+} catch (Exception e) {
+    IO.println(e.getClass().getSimpleName() + ": " + e.getMessage());
+}</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">IllegalStateException: thieu du lieu</code>. Supplier chỉ được gọi khi Optional rỗng, exception ném ra là loại bạn chọn.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;Optional&lt;Integer&gt;&gt; ds = List.of(Optional.of(1), Optional.empty(), Optional.of(3), Optional.empty());
+long dem = ds.stream().flatMap(Optional::stream).count();
+IO.println(dem);
+IO.println(ds.stream().filter(Optional::isEmpty).count());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">2</code> rồi <code class="inline">2</code>. <code class="inline">Optional.stream()</code> cho 0/1 phần tử nên <code class="inline">flatMap</code> giữ lại đúng hai số; nhánh còn lại đếm hai hộp rỗng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code class="java">static String thanhPho(User u) {
+    return Optional.ofNullable(u)
+            .map(User::address)
+            .map(Address::city)
+            .map(City::name)
+            .orElse("Khong ro");
+}
+
+User u = new User("An", new Address("Le Loi", null));
+IO.println(thanhPho(u));
+IO.println(thanhPho(null));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">Khong ro</code> hai lần. <code class="inline">address()</code> trả object nhưng <code class="inline">city()</code> trả null → <code class="inline">map</code> biến thành empty; user null thì <code class="inline">ofNullable</code> vào empty ngay.</div>
+    </details>
+
+    <h2 id="cheat-sheet">13. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tạo hộp có giá trị chắc chắn</td><td><code class="inline">Optional.of(v)</code> — v null thì NPE ngay</td></tr>
+        <tr><td>Tạo hộp từ nguồn có thể null</td><td><code class="inline">Optional.ofNullable(v)</code>; đặc biệt <code class="inline">Optional.ofNullable(map.get(k))</code></td></tr>
+        <tr><td>Tạo hộp rỗng</td><td><code class="inline">Optional.empty()</code> — không bao giờ gán biến Optional bằng <code class="inline">null</code></td></tr>
+        <tr><td>Kiểm tra</td><td><code class="inline">isPresent()</code> / <code class="inline">isEmpty()</code></td></tr>
+        <tr><td>Biến đổi</td><td><code class="inline">map(fn)</code> (fn trả object), <code class="inline">flatMap(fn)</code> (fn trả Optional), <code class="inline">filter(pred)</code></td></tr>
+        <tr><td>Lấy giá trị mặc định</td><td><code class="inline">orElse(hangSo)</code> (eager) / <code class="inline">orElseGet(supplier)</code> (lazy — dùng khi đắt/side effect)</td></tr>
+        <tr><td>Không có thì ném lỗi</td><td><code class="inline">orElseThrow()</code> / <code class="inline">orElseThrow(() -&gt; new ...("..."))</code></td></tr>
+        <tr><td>Chạy side effect</td><td><code class="inline">ifPresent(consumer)</code> / <code class="inline">ifPresentOrElse(consumer, runnable)</code></td></tr>
+        <tr><td>Thay thế Optional khác</td><td><code class="inline">or(() -&gt; Optional.of(...))</code> — trả Optional, giữ được chain</td></tr>
+        <tr><td>Đưa vào Stream</td><td><code class="inline">opt.stream()</code>; idiom <code class="inline">map(::find).flatMap(Optional::stream)</code></td></tr>
+        <tr><td>Primitive</td><td><code class="inline">OptionalInt</code>/<code class="inline">OptionalLong</code>/<code class="inline">OptionalDouble</code> + <code class="inline">getAsInt()</code>/<code class="inline">orElse(0)</code></td></tr>
+        <tr><td>Kiểm tra hộp</td><td><code class="inline">opt == null</code> luôn false; <code class="inline">equals</code> so giá trị; <code class="inline">toString</code> in <code class="inline">Optional[...]</code></td></tr>
+        <tr><td>Không dùng</td><td><code class="inline">get()</code> trần, <code class="inline">isPresent() + get()</code>, Optional làm field/param/collection element, trong entity JPA, khi cần <code class="inline">Serializable</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được "null là sai lầm tỷ đô" và Optional giải quyết phần nào của vấn đề.</li>
+      <li>Trả lời trôi chảy câu kinh điển: "Optional có thay thế null hoàn toàn không?" — Không, kèm 3 lý do.</li>
+      <li>Phân biệt <code class="inline">of</code> / <code class="inline">ofNullable</code> / <code class="inline">empty</code> và biết <code class="inline">of(null)</code> ném NPE lúc runtime.</li>
+      <li>Nhớ biến Optional không bao giờ null; không so <code class="inline">== null</code>; không lồng Optional ngoài ý muốn.</li>
+      <li>Kể được vì sao tránh <code class="inline">get()</code> và <code class="inline">isPresent()+get()</code>; nêu API thay thế.</li>
+      <li>Phân biệt <code class="inline">orElse</code> (eager) vs <code class="inline">orElseGet</code> (lazy) kèm ví dụ side effect.</li>
+      <li>Phân biệt <code class="inline">map</code> vs <code class="inline">flatMap</code> qua kiểu hàm; biết <code class="inline">map</code> null-safe.</li>
+      <li>Biến chuỗi truy cập <code class="inline">a → b → c</code> thành <code class="inline">Optional.ofNullable(a).map(...).map(...).orElse(...)</code>.</li>
+      <li>Biết <code class="inline">Optional::stream</code> và idiom <code class="inline">map(::find).flatMap(Optional::stream)</code>.</li>
+      <li>Nêu ít nhất 3 chỗ KHÔNG nên dùng Optional: field/param/collection, entity JPA, DTO serialize.</li>
+      <li>So sánh được với JS: <code class="inline">null</code>/<code class="inline">undefined</code>, <code class="inline">?.</code>, <code class="inline">??</code> vs <code class="inline">||</code>, <code class="inline">strictNullChecks</code>.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Optional.html" target="_blank" rel="noreferrer">Javadoc JDK 25 — java.util.Optional</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/OptionalInt.html" target="_blank" rel="noreferrer">Javadoc JDK 25 — OptionalInt / OptionalLong / OptionalDouble</a></li>
+      <li><a href="https://dev.java/learn/api/streams/optional/" target="_blank" rel="noreferrer">Oracle (dev.java) — Optional: The Missing Type</a></li>
+      <li><a href="https://openjdk.org/jeps/358" target="_blank" rel="noreferrer">JEP 358 — Helpful NullPointerExceptions</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+      <li>Joshua Bloch — <em>Effective Java</em>, item 55: "Return optionals judiciously"</li>
+      <li>Tony Hoare — bài nói "Null References: The Billion Dollar Mistake" (QCon London 2009)</li>
+    </ul>
+
+    <p class="footer">Java Docs · Optional · JDK 25 · Cập nhật 04/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>
