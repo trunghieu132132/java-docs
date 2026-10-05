@@ -38,6 +38,13 @@
 | `lambda-functional.html` | 3.6 Lambda & Functional interfaces |
 | `optional.html` | 3.7 Optional |
 | `streams.html` | 3.8 Stream API |
+| `jvm.html` | 4.1 JVM cơ bản |
+| `concurrency.html` | 4.2 Concurrency |
+| `maven-gradle.html` | 4.3 Maven & Gradle |
+| `testing.html` | 4.4 Testing |
+| `logging.html` | 4.5 Logging |
+| `code-quality.html` | 4.6 Code quality & quy trình team |
+| `debugging.html` | 4.7 Debugging |
 | `roadmap.html` | Lộ trình tổng + trạng thái từng chủ đề |
 | `styles.css` | Toàn bộ style — KHÔNG thêm class mới tuỳ tiện |
 | `script.js` | Highlight Java, nút Copy, search sidebar, toast, toggle đáp án |
@@ -67,7 +74,7 @@
 </div><script src="script.js"></script></body></html>
 ```
 
-- Sidebar có 3 nhóm: **Java Core** (roadmap + 7 doc GĐ1), **OOP** (9 doc GĐ2) và **Dữ liệu & lỗi** (8 doc GĐ3). Nhóm chứa trang hiện tại để `open`; trang hiện tại gắn `class="item active"`.
+- Sidebar có 4 nhóm: **Java Core** (roadmap + 7 doc GĐ1), **OOP** (9 doc GĐ2), **Dữ liệu & lỗi** (8 doc GĐ3) và **Production** (7 doc GĐ4 — 4.1–4.7). Nhóm chứa trang hiện tại để `open`; trang hiện tại gắn `class="item active"`.
 
 ## 4. Quy ước nội dung
 
@@ -104,7 +111,8 @@
 - **GĐ1 xong:** 7 doc (1.1–1.7).
 - **GĐ2 OOP xong:** 9 doc (2.1–2.9), xem `roadmap.html#phase-2`.
 - **GĐ3 Dữ liệu & lỗi xong:** 8 doc (3.1–3.8), xem `roadmap.html#phase-3`.
-- **Tiếp theo:** GĐ4 — 4.1 JVM cơ bản, 4.2 Concurrency, 4.3 Maven, 4.4 Testing (JUnit), 4.5 Logging, 4.6 Clean code, 4.7 Debug/tooling.
+- **GĐ4 Production essentials xong:** 7 doc (4.1–4.7), xem `roadmap.html#phase-4`.
+- **Tiếp theo:** GĐ5 — Backend stack: 5.1 HTTP & REST, 5.2 JSON & Jackson, 5.3 SQL & PostgreSQL, 5.4 Spring Core, 5.5 Spring Boot & REST API, 5.6 JDBC → JPA/Hibernate, 5.7 Spring Security & JWT, 5.8 Docker & CI/CD, 5.9 Nâng cao.
 - Project xuyên suốt: "quản lý đơn hàng" (console → OOP → file/Stream → Maven/JUnit → REST API).
 
 ## 7. Lưu ý vận hành

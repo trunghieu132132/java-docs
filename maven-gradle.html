@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maven &amp; Gradle — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item active" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="maven-gradle">Maven &amp; Gradle — build &amp; quản lý dependency</h1>
+
+    <p class="lead">Từ đầu khóa tới giờ bạn chạy code bằng <code class="inline">java TenFile.java</code> và tự tải từng thư viện bằng tay. Dự án thật không như vậy: hàng chục thư viện, hàng trăm file, nhiều người cùng sửa, CI chạy tự động. <strong>Build tool</strong> — Maven và Gradle — biến code rời rạc thành một project build được ở mọi máy, tự tải dependency, chạy test và đóng gói. Đây là chủ đề 4.3 trong lộ trình: project "quản lý đơn hàng" chính thức lên Maven trước khi học JUnit ở <a href="roadmap.html#phase-4">4.4 Testing</a>.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p><strong>Build tool là gì?</strong> Là công cụ tự động hoá toàn bộ vòng đời của project: biên dịch, chạy test, đóng gói (.jar/.war), quản lý thư viện (tải cả thư viện của thư viện), và phát hành artifact. Trước khi có nó, bạn phải gõ <code class="inline">javac</code> từng file, tự tải jar, tự set <code class="inline">-cp</code> — làm vài lần là hết muốn làm. Maven ra đời 2004 và trở thành chuẩn; Gradle (2007) nhanh hơn, linh hoạt hơn, được Android và nhiều startup dùng. Cả hai đọc chung kho Maven Central.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 4.3 (phỏng vấn: trung bình · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — đọc và viết <code class="inline">pom.xml</code> có dependency + scope đúng; chạy <code class="inline">mvn clean package</code>, <code class="inline">mvn test</code>, <code class="inline">mvn install</code>; đọc <code class="inline">mvn dependency:tree</code>; dùng wrapper <code class="inline">./mvnw</code>; đọc một <code class="inline">build.gradle</code> đơn giản.</li>
+      <li><strong>Phải hiểu</strong> — dependency được resolve thế nào (transitive, mediation); scope ảnh hưởng classpath và file đóng gói ra sao; lifecycle gồm những phase nào; BOM/<code class="inline">dependencyManagement</code> giải quyết gì; vì sao lệch version gây lỗi runtime chứ không phải lỗi compile.</li>
+      <li><strong>Nhận biết</strong> — multi-module, profile, <code class="inline">deploy</code> lên Nexus nội bộ, Gradle task tự viết, Maven 4 đang tới.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đọc mục 2–4 rồi tự tay tạo project Maven nhỏ cho "quản lý đơn hàng" đã học ở GĐ1–3 (chỉ cần 2–3 class).</li>
+      <li>Chạy từng lệnh <code class="inline">mvn ...</code> và quan sát thư mục <code class="inline">target/</code> thay đổi — build tool học bằng tay, không học bằng mắt.</li>
+      <li>Làm <a href="#bai-tap">Bài tập</a> (đọc pom, chọn scope, sửa conflict) trước khi mở đáp án.</li>
+      <li>Ôn <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Câu lạ tra ở <a href="#qa">Interview Q&amp;A</a>; nếu công ty dùng Maven vẫn nên đọc lướt Gradle vì nhiều dự án mới chuyển sang.</li>
+    </ol>
+
+    <div class="note"><strong>Maven hay Gradle trước?</strong> Học Maven trước: XML dài nhưng tường minh, doanh nghiệp/ngân hàng và tài liệu Spring Boot ở Việt Nam dùng nhiều. Nắm khái niệm Maven (dependency, scope, lifecycle) rồi chuyển sang Gradle sẽ thấy mọi thứ ánh xạ gần 1-1 (mục <a href="#gradle">8</a> và <a href="#so-sanh">10</a>).</div>
+
+    <h3>Góc Node.js — npm vs Maven</h3>
+
+    <p>Nếu từng làm Node, bạn đã dùng một build tool rồi: <code class="inline">npm</code> + <code class="inline">package.json</code>. Bảng dưới là ánh xạ trực tiếp:</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>npm / Node.js</th><th>Maven / Gradle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>File cấu hình</td><td><code class="inline">package.json</code> (JSON)</td><td><code class="inline">pom.xml</code> (XML) / <code class="inline">build.gradle(.kts)</code></td></tr>
+        <tr><td>Kho chứa dependency</td><td><code class="inline">node_modules/</code> nằm trong từng project, không commit</td><td><code class="inline">~/.m2/repository</code> dùng chung mọi project (Gradle: <code class="inline">~/.gradle/caches</code>) — jar không nằm trong project</td></tr>
+        <tr><td>Tải dependency</td><td><code class="inline">npm install</code> rồi <code class="inline">node_modules</code> sẵn sàng</td><td>Maven tự tải trong lần build đầu (<code class="inline">mvn compile</code>); không có bước "cài" riêng</td></tr>
+        <tr><td>Thêm thư viện</td><td><code class="inline">npm install lodash</code> — tự ghi <code class="inline">package.json</code></td><td>Sửa <code class="inline">pom.xml</code>/<code class="inline">build.gradle</code> bằng tay hoặc qua IDE; không có lệnh "mvn add" chính thức</td></tr>
+        <tr><td>Chạy tác vụ</td><td><code class="inline">npm run build</code>, <code class="inline">npm test</code> — script shell tự do</td><td><code class="inline">mvn package</code>, <code class="inline">mvn test</code> — phase cố định có ngữ nghĩa, plugin gắn vào phase</td></tr>
+        <tr><td>Ghim phiên bản</td><td><code class="inline">package-lock.json</code> ghi chính xác cả cây; <code class="inline">npm ci</code> tái lập</td><td>Không có lockfile mặc định; BOM/<code class="inline">dependencyManagement</code> + version cứng; wrapper ghim version build tool</td></tr>
+        <tr><td>Version range</td><td><code class="inline">"lodash": "^4.17.21"</code></td><td>Khuyên dùng version cứng; range kiểu <code class="inline">[1.0,2.0)</code> ít dùng</td></tr>
+        <tr><td>Dev dependency</td><td><code class="inline">devDependencies</code></td><td><code class="inline">&lt;scope&gt;test&lt;/scope&gt;</code> / <code class="inline">provided</code>; Gradle: <code class="inline">testImplementation</code></td></tr>
+        <tr><td>Phát hành</td><td><code class="inline">npm publish</code></td><td><code class="inline">mvn deploy</code> (đẩy .jar lên Nexus/Artifactory)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khác biệt dễ nhầm nhất là chữ <strong>install</strong>. Trong npm, <code class="inline">npm install</code> = tải dependency về. Trong Maven, <code class="inline">mvn install</code> = <em>build project rồi copy .jar của bạn vào local repository</em> — không liên quan tới việc tải thư viện (việc đó Maven tự làm khi build). Nói cách khác <code class="inline">mvn install</code> gần với <code class="inline">npm pack</code> + cài bản local hoặc <code class="inline">npm link</code> hơn là <code class="inline">npm install</code>.</p>
+
+    <div class="codeblock">
+      <pre><code>// package.json (rut gon)
+{
+  "name": "quan-ly-don-hang",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies":    { "express": "^4.21.0" },
+  "devDependencies": { "typescript": "^5.7.2" }
+}</code></pre>
+    </div>
+
+    <div class="note"><strong>Chốt gọn:</strong> <code class="inline">package.json</code> ↔ <code class="inline">pom.xml</code>; <code class="inline">node_modules</code> ↔ <code class="inline">~/.m2/repository</code>; <code class="inline">npm scripts</code> ↔ lifecycle + plugin; <code class="inline">package-lock.json</code> ↔ BOM/dependencyManagement (không hoàn toàn tương đương — Maven không có lockfile); <code class="inline">npm install</code> ≠ <code class="inline">mvn install</code>. Hiểu được bảng này là bạn đã nắm một nửa chủ đề.</div>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#cau-truc">Cấu trúc project Maven chuẩn</a></li>
+        <li><a href="#pom">pom.xml — khai báo project &amp; dependency</a></li>
+        <li><a href="#lifecycle">Lifecycle &amp; các lệnh Maven</a></li>
+        <li><a href="#dependency">Dependency &amp; xung đột phiên bản</a></li>
+        <li><a href="#repository">Repository — local, Central &amp; mirror</a></li>
+        <li><a href="#multi-module">Multi-module (mức nhận biết)</a></li>
+        <li><a href="#gradle">Gradle cơ bản</a></li>
+        <li><a href="#gradle-task">Gradle: task, Kotlin DSL &amp; wrapper</a></li>
+        <li><a href="#so-sanh">Maven vs Gradle — chọn công cụ nào?</a></li>
+        <li><a href="#doi-song">Maven trong đời sống: IDE, CI, Spring Boot</a></li>
+        <li><a href="#pitfalls">Pitfalls — lỗi thường gặp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="cau-truc">2. Cấu trúc project Maven chuẩn <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Maven theo triết lý <strong>convention over configuration</strong> (quy ước thay vì cấu hình): bạn đặt file đúng chỗ, Maven tự biết phải làm gì. Mọi project Maven trên đời đều trông gần giống nhau — đó là điểm mạnh lớn nhất:</p>
+
+    <div class="codeblock">
+      <pre><code>quan-ly-don-hang/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── java/            # source chinh (package = thu muc)
+│   │   │   └── vn/hocjava/order/OrderService.java
+│   │   └── resources/       # vao classpath (application.properties, logback.xml)
+│   └── test/
+│       ├── java/            # test source (JUnit o 4.4)
+│       └── resources/       # config rieng cho test
+└── target/                  # output build, KHONG commit
+    ├── classes/             # .class sau khi compile
+    ├── test-classes/
+    ├── surefire-reports/    # bao cao test
+    └── quan-ly-don-hang-1.0-SNAPSHOT.jar</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Thư mục</th><th>Chứa gì</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">src/main/java</code></td><td>Source code chính</td><td>Package <code class="inline">vn.hocjava.order</code> = thư mục <code class="inline">vn/hocjava/order</code>; sai thư mục là compiler không tìm thấy</td></tr>
+        <tr><td><code class="inline">src/main/resources</code></td><td>File cấu hình, SQL, template...</td><td>Được copy vào <code class="inline">target/classes</code>, đọc qua classpath (<code class="inline">getResourceAsStream</code>)</td></tr>
+        <tr><td><code class="inline">src/test/java</code></td><td>Test source</td><td>Không đóng gói vào jar; chạy ở phase <code class="inline">test</code></td></tr>
+        <tr><td><code class="inline">src/test/resources</code></td><td>Config cho test</td><td>Ưu tiên hơn <code class="inline">main/resources</code> khi chạy test</td></tr>
+        <tr><td><code class="inline">target/</code></td><td>Toàn bộ output build</td><td>Xoá bằng <code class="inline">mvn clean</code>; thêm <code class="inline">target/</code> vào <code class="inline">.gitignore</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>File Java phải khai báo package khớp đường dẫn — ví dụ này nằm ở <code class="inline">src/main/java/vn/hocjava/order/OrderService.java</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">package vn.hocjava.order;
+
+public class OrderService {
+    public String taoMaDon(int so) {
+        return String.format("DH-2026-%05d", so);
+    }
+}</code></pre>
+    </div>
+
+    <div class="note">Khi học, bạn chạy <code class="inline">java OrderService.java</code> ở bất kỳ đâu cũng được (single-file source). Nhưng khi đã có Maven, <strong>vị trí file là một phần của hợp đồng</strong>: IDE, compiler, test, đóng gói đều dựa vào đó. Đừng tự nghĩ ra cấu trúc mới.</div>
+
+    <h2 id="pom">3. <code class="inline">pom.xml</code> — khai báo project &amp; dependency <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">pom.xml</code> là <em>Project Object Model</em> — nguồn sự thật duy nhất về project: nó là gì (toạ độ GAV), dùng thư viện gì, build thế nào. File XML nhìn dài nhưng thực chất chỉ có mấy khối:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;project&gt;                            # phan tu goc, kem xmlns
+ ├── modelVersion                    # luon la 4.0.0 - phien ban schema pom
+ ├── parent                          # (tuy chon) ke thua cau hinh tu pom cha
+ ├── groupId / artifactId / version  # GAV - toa do cua project
+ ├── packaging                       # jar (mac dinh) | war | pom
+ ├── properties                      # bien ${...} dung lai nhieu noi
+ ├── dependencyManagement            # ghim version, KHONG them dependency
+ ├── dependencies                    # thu vien that su dung
+ └── build/plugins                   # plugin + cau hinh build</code></pre>
+    </div>
+
+    <p><strong>GAV</strong> (groupId - artifactId - version) là "địa chỉ" của artifact trong mọi repository. Trùng GAV là trùng artifact — đây là lý do không được sửa nội dung một version đã phát hành:</p>
+    <ul>
+      <li><code class="inline">groupId</code> — tổ chức/dự án mẹ, viết ngược domain: <code class="inline">vn.hocjava</code>, <code class="inline">org.springframework.boot</code>.</li>
+      <li><code class="inline">artifactId</code> — tên project/module: <code class="inline">quan-ly-don-hang</code>, <code class="inline">spring-boot-starter-web</code>.</li>
+      <li><code class="inline">version</code> — <code class="inline">1.0-SNAPSHOT</code> (đang phát triển) hoặc <code class="inline">1.0.0</code> (release).</li>
+      <li><code class="inline">packaging</code> — <code class="inline">jar</code> (thư viện/app thường), <code class="inline">war</code> (deploy Tomcat), <code class="inline">pom</code> (project cha/aggregator, mục 7).</li>
+    </ul>
+
+    <h3>Dependency &amp; scope</h3>
+
+    <p><strong>Scope</strong> quyết định dependency có mặt ở giai đoạn nào và có bị đóng gói vào artifact không. Chọn sai scope là lỗi production kinh điển:</p>
+
+    <table>
+      <thead>
+        <tr><th>Scope</th><th>Compile</th><th>Test</th><th>Runtime</th><th>Vào jar?</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">compile</code> (mặc định)</td><td>Có</td><td>Có</td><td>Có</td><td>Có</td><td><code class="inline">slf4j-api</code>, thư viện dùng trong code</td></tr>
+        <tr><td><code class="inline">provided</code></td><td>Có</td><td>Có</td><td>Không</td><td>Không</td><td><code class="inline">jakarta.servlet-api</code> — Tomcat cung cấp lúc chạy</td></tr>
+        <tr><td><code class="inline">runtime</code></td><td>Không</td><td>Có</td><td>Có</td><td>Có</td><td><code class="inline">mysql-connector-j</code>, <code class="inline">logback-classic</code></td></tr>
+        <tr><td><code class="inline">test</code></td><td>Không</td><td>Có</td><td>Không</td><td>Không</td><td><code class="inline">junit-jupiter</code></td></tr>
+        <tr><td><code class="inline">system</code></td><td>Có</td><td>Có</td><td>Có</td><td>Không</td><td>Tránh — phải chỉ đường dẫn jar trên máy, không portable</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ghi nhớ nhanh: <strong>provided</strong> = "lúc build có, lúc chạy thứ khác lo"; <strong>runtime</strong> = "mình không gọi trực tiếp nhưng cần khi chạy"; <strong>test</strong> = "chỉ tồn tại lúc test". Còn <code class="inline">import</code> chỉ dùng trong <code class="inline">dependencyManagement</code> với <code class="inline">type=pom</code> (BOM, mục 5).</p>
+
+    <h3>Một pom.xml hoàn chỉnh (ví dụ minh hoạ)</h3>
+
+    <p>Project "quản lý đơn hàng" với JUnit 5 (test) + SLF4J/Logback (log) — mẫu pom nên có trong đầu:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+  &lt;artifactId&gt;quan-ly-don-hang&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+  &lt;packaging&gt;jar&lt;/packaging&gt;
+
+  &lt;properties&gt;
+    &lt;maven.compiler.release&gt;25&lt;/maven.compiler.release&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+    &lt;junit.version&gt;5.14.4&lt;/junit.version&gt;
+    &lt;slf4j.version&gt;2.0.16&lt;/slf4j.version&gt;
+    &lt;logback.version&gt;1.5.16&lt;/logback.version&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+    &lt;!-- API log: code goi logger qua interface nay --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+      &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+      &lt;version&gt;${slf4j.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Implementation: chi can luc chay --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;ch.qos.logback&lt;/groupId&gt;
+      &lt;artifactId&gt;logback-classic&lt;/artifactId&gt;
+      &lt;version&gt;${logback.version}&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- Test: khong dong goi vao jar --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+      &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+      &lt;version&gt;${junit.version}&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+        &lt;version&gt;3.13.0&lt;/version&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
+&lt;/project&gt;</code></pre>
+    </div>
+
+    <div class="note"><strong>Vì sao gom version vào <code class="inline">&lt;properties&gt;</code>?</strong> Để nâng cấp một chỗ. Nhiều dependency cùng họ (Spring, Jackson...) nên dùng chung một property hoặc BOM. Hardcode version rải rác 30 dòng pom là nguồn gốc của lệch version (mục <a href="#pitfalls">12</a>). Mẹo nhỏ: <code class="inline">maven.compiler.release=25</code> là cách gọn nhất để compiler plugin dùng <code class="inline">--release 25</code>; <code class="inline">project.build.sourceEncoding=UTF-8</code> tránh lỗi font tiếng Việt.</div>
+
+    <h3>Plugins — phần "động cơ" của build</h3>
+
+    <p>Maven bản thân chỉ là bộ khung; mọi việc thật do <strong>plugin</strong> làm: <code class="inline">maven-compiler-plugin</code> gọi <code class="inline">javac</code>, <code class="inline">maven-surefire-plugin</code> chạy test, <code class="inline">maven-jar-plugin</code> đóng gói... Bạn khai báo plugin trong <code class="inline">&lt;build&gt;&lt;plugins&gt;</code> khi cần đổi cấu hình (ví dụ ép Java 25), hoặc gọi goal trực tiếp trên dòng lệnh (<code class="inline">mvn dependency:tree</code>) mà không cần khai báo trong pom.</p>
+
+    <h2 id="lifecycle">4. Lifecycle &amp; các lệnh Maven <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Maven định nghĩa sẵn các bước build gọi là <strong>phase</strong>. Gọi một phase, Maven chạy <em>lần lượt mọi phase đứng trước nó</em> trong cùng lifecycle. Có 3 lifecycle: <strong>clean</strong>, <strong>default</strong> (build chính) và <strong>site</strong> (tài liệu). Chuỗi phase chính của default lifecycle:</p>
+
+    <div class="codeblock">
+      <pre><code>validate → compile → test → package → verify → install → deploy</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Làm gì</th><th>Sản phẩm / chạy gì</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">validate</code></td><td>Kiểm tra pom hợp lệ, thông tin project</td><td>Báo lỗi cấu hình sớm</td></tr>
+        <tr><td><code class="inline">compile</code></td><td>Biên dịch <code class="inline">src/main/java</code></td><td><code class="inline">target/classes/</code></td></tr>
+        <tr><td><code class="inline">test</code></td><td>Biên dịch + chạy <code class="inline">src/test/java</code> (maven-surefire-plugin)</td><td><code class="inline">target/test-classes/</code>, <code class="inline">target/surefire-reports/</code></td></tr>
+        <tr><td><code class="inline">package</code></td><td>Đóng gói artifact</td><td><code class="inline">target/*.jar</code> (hoặc .war)</td></tr>
+        <tr><td><code class="inline">verify</code></td><td>Chạy kiểm tra chất lượng, integration test</td><td>Kết quả verify của các plugin</td></tr>
+        <tr><td><code class="inline">install</code></td><td>Copy artifact + pom vào local repository</td><td><code class="inline">~/.m2/repository/.../*.jar</code></td></tr>
+        <tr><td><code class="inline">deploy</code></td><td>Upload artifact lên remote repository</td><td>Nexus/Artifactory của công ty</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>clean</strong> là lifecycle riêng: <code class="inline">mvn clean</code> xoá thư mục <code class="inline">target/</code>. Vì vậy <code class="inline">mvn clean package</code> = dọn sạch rồi build lại từ đầu — lệnh bạn chạy nhiều nhất đời.</p>
+
+    <h3>Chạy thử trên terminal</h3>
+
+    <div class="note warn"><strong>Về output terminal trong trang:</strong> máy soạn tài liệu <strong>chưa cài sẵn</strong> <code class="inline">mvn</code>/<code class="inline">gradle</code>, nên các khối output Maven/Gradle dưới đây là output điển hình đã lược bớt — số version plugin, đường dẫn, thời gian sẽ khác theo máy và theo version. Các file XML/DSL là cấu hình thật; bạn chạy lại lệnh trên máy mình để thấy output chính xác.</div>
+
+    <p>Kiểm tra phiên bản trước khi build — luôn là bước số 0:</p>
+
+    <div class="codeblock">
+      <pre><code>$ mvn -v
+Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)
+Maven home: /opt/homebrew/Cellar/maven/3.9.9/libexec
+Java version: 25, vendor: Homebrew, runtime: /opt/homebrew/Cellar/openjdk/25/libexec/openjdk.jdk/Contents/Home
+Default locale: en_VN, platform encoding: UTF-8
+OS name: "mac os x", version: "15.5", arch: "aarch64", family: "mac"</code></pre>
+    </div>
+
+    <p>Và lệnh build đầy đủ (dạng output điển hình của Maven 3.9.x):</p>
+
+    <div class="codeblock">
+      <pre><code>$ mvn clean package
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------&lt; vn.hocjava:quan-ly-don-hang &gt;-----------------
+[INFO] Building quan-ly-don-hang 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ quan-ly-don-hang ---
+[INFO] Deleting /Users/sol/projects/quan-ly-don-hang/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ quan-ly-don-hang ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ quan-ly-don-hang ---
+[INFO] Compiling 3 source files with javac [debug release 25] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ quan-ly-don-hang ---
+[INFO] skip non existing resourceDirectory .../src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ quan-ly-don-hang ---
+[INFO] Compiling 2 source files with javac [debug release 25] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ quan-ly-don-hang ---
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ quan-ly-don-hang ---
+[INFO] Building jar: /Users/sol/projects/quan-ly-don-hang/target/quan-ly-don-hang-1.0-SNAPSHOT.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.214 s
+[INFO] Finished at: 2026-10-03T10:15:30+07:00
+[INFO] ------------------------------------------------------------------------</code></pre>
+    </div>
+
+    <p>Đọc output để biết build đang làm gì: mỗi dòng <code class="inline">--- plugin:version:goal (execution-id) ---</code> là một plugin thực thi. Khi build đỏ, dòng lỗi nằm ngay dưới execution tương ứng — đọc từ đó lên để biết phase nào hỏng.</p>
+
+    <table>
+      <thead>
+        <tr><th>Lệnh</th><th>Chạy tới đâu</th><th>Dùng khi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">mvn -v</code></td><td>—</td><td>Kiểm tra version Maven + JDK</td></tr>
+        <tr><td><code class="inline">mvn compile</code></td><td>compile</td><td>Chỉ kiểm tra code biên dịch được</td></tr>
+        <tr><td><code class="inline">mvn test</code></td><td>test</td><td>Chạy unit test</td></tr>
+        <tr><td><code class="inline">mvn package</code></td><td>package</td><td>Đóng gói jar (có chạy test phía trước)</td></tr>
+        <tr><td><code class="inline">mvn clean package</code></td><td>clean + package</td><td>Build sạch từ đầu — lệnh phổ biến nhất</td></tr>
+        <tr><td><code class="inline">mvn package -DskipTests</code></td><td>package, bỏ chạy test</td><td>Build nhanh; test vẫn được biên dịch</td></tr>
+        <tr><td><code class="inline">mvn install</code></td><td>install</td><td>Build + cài vào <code class="inline">~/.m2</code> để project khác dùng</td></tr>
+        <tr><td><code class="inline">mvn deploy</code></td><td>deploy</td><td>Phát hành lên Nexus/repo chung (cần cấu hình <code class="inline">distributionManagement</code>)</td></tr>
+        <tr><td><code class="inline">mvn dependency:tree</code></td><td>goal của plugin dependency</td><td>Xem cây thư viện, gỡ rối xung đột (mục 5)</td></tr>
+        <tr><td><code class="inline">mvn help:effective-pom</code></td><td>goal của plugin help</td><td>Xem pom sau khi merge parent/BOM — cấu hình thật đang chạy</td></tr>
+        <tr><td><code class="inline">mvn -o package</code></td><td>package ở chế độ offline</td><td>Không ra mạng, chỉ dùng đồ đã tải trong <code class="inline">~/.m2</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Plugin vs dependency &amp; plugin goal</h3>
+
+    <p>Phân biệt để trả lời phỏng vấn: <strong>dependency</strong> là thư viện được đưa vào classpath của <em>code bạn</em> (compile/runtime/test). <strong>Plugin</strong> là công cụ được Maven thực thi trong lúc build, chạy trong classloader riêng; nó có <em>goal</em> — đơn vị công việc nhỏ nhất. Phase chỉ là mốc, plugin goal mới là việc thật:</p>
+
+    <ul>
+      <li><code class="inline">mvn clean package</code> — chạy theo phase (đúng quy trình).</li>
+      <li><code class="inline">mvn compiler:compile</code>, <code class="inline">mvn dependency:tree</code> — gọi thẳng <code class="inline">plugin:goal</code> (gọi tắt, không qua lifecycle).</li>
+    </ul>
+
+    <h3>Maven Wrapper — <code class="inline">./mvnw</code> vì sao nên dùng</h3>
+
+    <p>Wrapper gồm script <code class="inline">mvnw</code> (macOS/Linux) + <code class="inline">mvnw.cmd</code> (Windows) + thư mục <code class="inline">.mvn/wrapper/</code> chứa version Maven và URL tải. Ai clone project chỉ cần chạy <code class="inline">./mvnw</code> — không cần cài Maven, và luôn dùng đúng version mà team đã chọn:</p>
+
+    <div class="codeblock">
+      <pre><code>$ mvn wrapper:wrapper -Dmaven=3.9.9
+$ ./mvnw -v                 # tai + dung Maven 3.9.9 trong .mvn/wrapper
+$ ./mvnw clean verify       # thay hon han cho 'mvn clean verify'</code></pre>
+    </div>
+
+    <div class="note"><strong>Vì sao quan trọng?</strong> Máy bạn Maven 3.6, CI Maven 3.9, đồng nghiệp Maven 3.8 — plugin mặc định và cách resolve có thể khác nhau, dẫn tới "máy tôi chạy được". Wrapper ghim version Maven <em>theo project</em>, commit lên git, ai clone cũng giống nhau. Gradle có cơ chế y hệt: <code class="inline">./gradlew</code>.</div>
+
+    <h2 id="dependency">5. Dependency &amp; xung đột phiên bản <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Đây là phần "đau đầu" nhất của build tool và cũng là câu hỏi phỏng vấn yêu thích. Hiểu bản chất trước: Maven không chỉ tải thư viện bạn khai báo, nó tải cả <strong>thư viện của thư viện</strong> — gọi là <em>transitive dependency</em>.</p>
+
+    <div class="codeblock">
+      <pre><code>quan-ly-don-hang
+ ├── spring-web        ──► keo theo spring-core, spring-beans
+ ├── jackson-databind  ──► keo theo jackson-core, jackson-annotations
+ └── company-utils     ──► keo theo guava, commons-lang3</code></pre>
+    </div>
+
+    <h3>Scope của transitive dependency</h3>
+
+    <p>Không phải mọi transitive đều giống nhau — scope của nó phụ thuộc scope của dependency trực tiếp kéo nó về. Bảng dưới theo tài liệu Maven (hàng = scope dependency bạn khai báo, cột = scope mà thư viện đó khai báo cho dependency con):</p>
+
+    <table>
+      <thead>
+        <tr><th>Bạn khai báo ↓ / nó khai báo →</th><th>compile</th><th>runtime</th><th>provided</th><th>test</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">compile</code></td><td>compile</td><td>runtime</td><td>— (bị bỏ)</td><td>— (bị bỏ)</td></tr>
+        <tr><td><code class="inline">runtime</code></td><td>runtime</td><td>runtime</td><td>—</td><td>—</td></tr>
+        <tr><td><code class="inline">provided</code></td><td>provided</td><td>provided</td><td>—</td><td>—</td></tr>
+        <tr><td><code class="inline">test</code></td><td>test</td><td>test</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <p>Đọc bảng này giải thích được nhiều thứ: JUnit (scope test) không bao giờ lọt vào jar production; <code class="inline">provided</code> không truyền tiếp; dependency runtime của thư viện thành runtime của bạn.</p>
+
+    <h3>Xung đột phiên bản — Maven chọn bản nào?</h3>
+
+    <p>Hai thư viện khác nhau kéo về hai version của cùng một artifact (rất hay xảy ra với Guava, SLF4J, Jackson...). Maven giải quyết bằng <strong>nearest definition</strong> (a.k.a. mediation): bản <em>gần project nhất</em> thắng — độ sâu trên cây dependency nhỏ hơn. Nếu hai bản cùng độ sâu, bản <strong>khai báo trước</strong> trong pom thắng. Lưu ý: Maven <strong>không</strong> chọn bản mới nhất theo mặc định:</p>
+
+    <div class="codeblock">
+      <pre><code>[INFO] --- dependency:3.8.1:tree (default-cli) @ quan-ly-don-hang ---
+[INFO] vn.hocjava:quan-ly-don-hang:jar:1.0-SNAPSHOT
+[INFO] +- com.example:company-utils:jar:1.0:compile
+[INFO] |  \- org.slf4j:slf4j-api:jar:1.7.36:compile
+[INFO] +- org.slf4j:slf4j-api:jar:2.0.16:compile
+[INFO] \- ch.qos.logback:logback-classic:jar:1.5.16:runtime
+[INFO]    \- org.slf4j:slf4j-api:jar:2.0.16:runtime
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------</code></pre>
+    </div>
+
+    <p>Ở đây SLF4J 2.0.16 (khai báo trực tiếp, độ sâu 1) thắng 1.7.36 (đi qua <code class="inline">company-utils</code>, độ sâu 2) — dù cả hai đều nằm trên cây. Gradle mặc định khác hẳn: chọn <strong>version cao nhất</strong> (highest version wins). Cùng một project, hai build tool có thể ra classpath khác nhau!</p>
+
+    <h3>Exclusions — loại bỏ có chủ đích</h3>
+
+    <p>Khi biết chắc một transitive không cần (hoặc kéo version cũ làm hại), loại nó ngay tại dependency cha:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+  &lt;version&gt;4.0.0&lt;/version&gt;
+  &lt;exclusions&gt;
+    &lt;!-- bo logging mac dinh de tu chon implementation khac --&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-logging&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+  &lt;/exclusions&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+
+    <div class="note warn">Exclusion là "dao mổ": loại nhầm có thể gây <code class="inline">NoClassDefFoundError</code> lúc chạy. Chỉ loại khi biết chắc thư viện đó không cần, và ghi comment giải thích ngay trong pom.</div>
+
+    <h3>dependencyManagement &amp; BOM — ghim version một chỗ</h3>
+
+    <p><strong><code class="inline">dependencyManagement</code></strong> khai báo version/scope "mặc định" cho dependency nhưng <em>không thêm nó vào project</em> — con/chính project chỉ cần khai báo groupId + artifactId. <strong>BOM</strong> (Bill of Materials) là một pom chỉ chứa <code class="inline">dependencyManagement</code> của cả bộ thư viện, import bằng <code class="inline">type=pom</code> + <code class="inline">scope=import</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;dependencyManagement&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.junit&lt;/groupId&gt;
+      &lt;artifactId&gt;junit-bom&lt;/artifactId&gt;
+      &lt;version&gt;5.14.4&lt;/version&gt;
+      &lt;type&gt;pom&lt;/type&gt;
+      &lt;scope&gt;import&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+  &lt;!-- khong can version: lay tu BOM --&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+    &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+    </div>
+
+    <p>Spring Boot cũng phát hành BOM (<code class="inline">spring-boot-dependencies</code>) để mọi starter tương thích nhau mà không cần ghi version. Nếu bạn khai báo dependency <em>không version</em> mà không được quản lý bởi BOM/dependencyManagement, Maven dừng build ngay từ validate:</p>
+
+    <div class="errblock">
+      <pre>[ERROR] 'dependencies.dependency.version' for org.slf4j:slf4j-api:jar is missing. @ line 14, column 15</pre>
+    </div>
+
+    <h3>Đọc <code class="inline">mvn dependency:tree</code></h3>
+
+    <p>Đây là công cụ số 1 để gỡ rối dependency. Cây in theo thứ tự gốc → lá; mỗi dòng là <code class="inline">groupId:artifactId:jar:version:scope</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>[INFO] vn.hocjava:quan-ly-don-hang:jar:1.0-SNAPSHOT
+[INFO] +- org.junit.jupiter:junit-jupiter:jar:5.14.4:test
+[INFO] |  \- org.junit.jupiter:junit-jupiter-api:jar:5.14.4:test
+[INFO] +- org.slf4j:slf4j-api:jar:2.0.16:compile
+[INFO] \- ch.qos.logback:logback-classic:jar:1.5.16:runtime
+[INFO]    +- ch.qos.logback:logback-core:jar:1.5.16:runtime
+[INFO]    \- org.slf4j:slf4j-api:jar:2.0.16:runtime</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">+-</code> là nhánh còn nữa, <code class="inline">\-</code> là nhánh cuối; đếm dấu <code class="inline">|</code> và khoảng cách để biết độ sâu.</li>
+      <li>Cùng artifact xuất hiện nhiều nhánh với version khác nhau → Maven chỉ dùng <em>một</em> bản (nearest). Muốn thấy các bản bị loại, thêm <code class="inline">-Dverbose</code> (tùy version plugin).</li>
+      <li>Lọc cho gọn: <code class="inline">mvn dependency:tree -Dincludes=org.slf4j</code> hoặc <code class="inline">-Dincludes=com.google.guava:guava</code>.</li>
+      <li>Muốn xem danh sách classpath <em>đã resolve</em> (không phải cây): <code class="inline">mvn dependency:list</code>; hoặc <code class="inline">mvn help:effective-pom</code> để xem pom sau khi merge BOM/parent.</li>
+    </ul>
+
+    <h3>Lỗi runtime do lệch version — vì sao compile qua mà chạy vẫn chết</h3>
+
+    <p>Lúc compile, javac dùng một version của thư viện; lúc chạy, JVM có thể nạp version khác. Class/method không khớp chỉ nổ khi chạm tới, nên build xanh mà production vẫn sập. Ba lỗi phải phân biệt:</p>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Nghĩa</th><th>Nguyên nhân thường gặp</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">NoSuchMethodError</code></td><td>Class có, nhưng bản đang chạy <strong>thiếu method</strong> đã compile</td><td>Hai version của cùng thư viện; bản chạy cũ hơn bản compile</td></tr>
+        <tr><td><code class="inline">NoClassDefFoundError</code></td><td>Class từng có lúc compile, lúc chạy <strong>không tìm thấy</strong> (hoặc khởi tạo tĩnh đã fail trước đó)</td><td>Thiếu jar do scope sai, exclusion quá tay, đóng gói thiếu dependency</td></tr>
+        <tr><td><code class="inline">ClassNotFoundException</code></td><td>Code <strong>chủ động load class theo tên</strong> (<code class="inline">Class.forName</code>, classloader) mà không thấy</td><td>Driver DB khai <code class="inline">provided</code> thay vì <code class="inline">runtime</code>; thiếu jar trong fat jar</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Quy trình gỡ conflict chuẩn:</strong> (1) <code class="inline">mvn dependency:tree -Dverbose</code> tìm artifact và version thực tế; (2) tìm thư viện nào kéo bản độc hại; (3) ưu tiên ghim version đúng bằng <code class="inline">dependencyManagement</code> (một chỗ, ảnh hưởng cả cây) hơn là exclusion lẻ tẻ; (4) chạy lại test + kiểm tra <code class="inline">java -jar</code>. Ghi nhớ: fix dependency không phải sửa code — sửa classpath.</div>
+
+    <h2 id="repository">6. Repository — local, Central &amp; mirror <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Khi cần một artifact, Maven tìm theo thứ tự: <strong>local repository</strong> trước, không có mới ra mạng. Artifact tải về được lưu vĩnh viễn trong local repo nên chỉ tải một lần cho mọi project trên máy.</p>
+
+    <table>
+      <thead>
+        <tr><th>Repository</th><th>Là gì</th><th>Vị trí / ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Local</td><td>Cache trên máy bạn, dùng chung mọi project</td><td><code class="inline">~/.m2/repository</code> (Windows: <code class="inline">C:\Users\ban\.m2\repository</code>); đổi được trong <code class="inline">settings.xml</code></td></tr>
+        <tr><td>Remote công khai</td><td>Maven Central — kho mặc định, chứa gần như mọi thư viện open-source</td><td><code class="inline">https://repo.maven.apache.org/maven2</code>; tra cứu tại central.sonatype.com hoặc search.maven.org</td></tr>
+        <tr><td>Remote nội bộ</td><td>Nexus/Artifactory của công ty — proxy Central + chứa artifact nội bộ</td><td><code class="inline">https://nexus.congty.vn/repository/maven-public/</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Doanh nghiệp thường chặn mạng trực tiếp ra ngoài và bắt mọi request đi qua một <strong>mirror</strong> nội bộ. Khai báo trong <code class="inline">~/.m2/settings.xml</code> (file cấu hình theo máy, không commit vào project):</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;settings&gt;
+  &lt;mirrors&gt;
+    &lt;mirror&gt;
+      &lt;id&gt;cong-ty-nexus&lt;/id&gt;
+      &lt;name&gt;Nexus noi bo&lt;/name&gt;
+      &lt;url&gt;https://nexus.congty.vn/repository/maven-public/&lt;/url&gt;
+      &lt;!-- * : moi repository deu bi thay bang mirror nay --&gt;
+      &lt;mirrorOf&gt;*&lt;/mirrorOf&gt;
+    &lt;/mirror&gt;
+  &lt;/mirrors&gt;
+&lt;/settings&gt;</code></pre>
+    </div>
+
+    <p><strong>Release vs SNAPSHOT</strong> — khái niệm gặp mỗi ngày:</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Release</th><th>SNAPSHOT</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ví dụ version</td><td><code class="inline">1.0.0</code>, <code class="inline">2.3.1</code></td><td><code class="inline">1.0.0-SNAPSHOT</code>, <code class="inline">1.0-SNAPSHOT</code></td></tr>
+        <tr><td>Bản chất</td><td>Bất biến — publish rồi không sửa</td><td>Thay đổi được — mỗi build có thể là jar khác</td></tr>
+        <tr><td>Chính sách cập nhật</td><td>Không kiểm tra lại, trừ khi đổi version</td><td>Maven kiểm tra bản mới (mặc định mỗi ngày) để lấy snapshot mới nhất</td></tr>
+        <tr><td>Dùng ở đâu</td><td>Production, thư viện dùng chung</td><td>Trong lúc phát triển nội bộ; <strong>tránh</strong> trong dependency production</td></tr>
+      </tbody>
+    </table>
+
+    <p>Khi mất mạng hoặc CI bị chặn mạng, chạy chế độ offline <code class="inline">mvn -o package</code> — chỉ dùng đồ đã có trong <code class="inline">~/.m2</code>. Trước đó có thể "ủ" trước toàn bộ dependency bằng <code class="inline">mvn dependency:go-offline</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>$ mvn -o clean package        # offline: thieu jar nao la bao ngay
+$ mvn dependency:go-offline    # tai truoc toan bo dependency cua project</code></pre>
+    </div>
+
+    <h2 id="multi-module">7. Multi-module (mức nhận biết) <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Khi project lớn dần, bạn tách thành nhiều module: <code class="inline">order-core</code> (domain + service), <code class="inline">order-web</code> (REST API), <code class="inline">order-cli</code>... Một <strong>parent pom</strong> đóng vai trò vừa là cha (chia sẻ cấu hình/version) vừa là <strong>aggregator</strong> (liệt kê module con):</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;!-- pom.xml o thu muc goc: packaging=pom --&gt;
+&lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+&lt;artifactId&gt;quan-ly-don-hang&lt;/artifactId&gt;
+&lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;packaging&gt;pom&lt;/packaging&gt;
+
+&lt;modules&gt;
+  &lt;module&gt;order-core&lt;/module&gt;
+  &lt;module&gt;order-web&lt;/module&gt;
+&lt;/modules&gt;</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>&lt;!-- order-web/pom.xml: ke thua parent, phu thuoc module noi bo --&gt;
+&lt;parent&gt;
+  &lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+  &lt;artifactId&gt;quan-ly-don-hang&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;
+
+&lt;artifactId&gt;order-web&lt;/artifactId&gt;
+
+&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+    &lt;artifactId&gt;order-core&lt;/artifactId&gt;
+    &lt;version&gt;${project.version}&lt;/version&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+    </div>
+
+    <ul>
+      <li>Build từ thư mục gốc: Maven dựng <strong>reactor</strong> — sắp thứ tự module theo quan hệ phụ thuộc rồi build lần lượt.</li>
+      <li>Build chọn lọc: <code class="inline">mvn -pl order-web -am package</code> (<code class="inline">-pl</code> chọn module, <code class="inline">-am</code> build kèm các module nó phụ thuộc).</li>
+      <li>Module nội bộ dùng <code class="inline">${project.version}</code> — version được quản lý ở parent.</li>
+    </ul>
+
+    <div class="note"><strong>Khi nào tách?</strong> Khi có code dùng chung giữa nhiều app/service, khi build một khối quá chậm, hoặc khi ranh giới team rõ ràng. Với project học 3–10 class thì <strong>một module là đủ</strong> — đừng tách sớm.</div>
+
+    <h2 id="gradle">8. Gradle cơ bản <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Gradle dùng script thay cho XML. Bạn cần biết 3 file: <code class="inline">settings.gradle(.kts)</code> (tên project + module), <code class="inline">build.gradle(.kts)</code> (cấu hình build), và thư mục <code class="inline">gradle/wrapper/</code>. Script là code Groovy hoặc Kotlin — mỗi dòng là một lời gọi API thật:</p>
+
+    <div class="codeblock">
+      <pre><code>// build.gradle (Groovy DSL)
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'vn.hocjava'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+    runtimeOnly 'ch.qos.logback:logback-classic:1.5.16'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+application {
+    mainClass = 'vn.hocjava.AppConfig'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}</code></pre>
+    </div>
+
+    <p>Cảm giác rất giống Maven: <code class="inline">repositories</code> là kho, <code class="inline">dependencies</code> là dependency. Khác lớn nhất nằm ở <strong>configuration</strong> — tương ứng scope nhưng chi tiết hơn:</p>
+
+    <table>
+      <thead>
+        <tr><th>Gradle configuration</th><th>Gần với Maven scope</th><th>Dùng cho</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">implementation</code></td><td><code class="inline">compile</code> (nhưng che khỏi module dùng bạn)</td><td>Mặc định nên dùng</td></tr>
+        <tr><td><code class="inline">api</code> (cần plugin <code class="inline">java-library</code>)</td><td><code class="inline">compile</code> lộ transitive</td><td>Khi public API của bạn nhắc tới type của thư viện</td></tr>
+        <tr><td><code class="inline">compileOnly</code></td><td><code class="inline">provided</code></td><td>Annotation processor, API do container cung cấp</td></tr>
+        <tr><td><code class="inline">runtimeOnly</code></td><td><code class="inline">runtime</code></td><td>Driver DB, log implementation</td></tr>
+        <tr><td><code class="inline">testImplementation</code></td><td><code class="inline">test</code></td><td>JUnit, Mockito (mục 4.4)</td></tr>
+        <tr><td><code class="inline">testRuntimeOnly</code></td><td>—</td><td>Engine/launcher chỉ cần lúc chạy test</td></tr>
+      </tbody>
+    </table>
+
+    <p>Các lệnh Gradle hay dùng (nhớ thêm <code class="inline">./</code> để dùng wrapper):</p>
+
+    <table>
+      <thead>
+        <tr><th>Lệnh</th><th>Tương đương Maven</th><th>Việc</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">./gradlew build</code></td><td><code class="inline">mvn verify</code></td><td>Compile + test + đóng gói (không clean mặc định)</td></tr>
+        <tr><td><code class="inline">./gradlew test</code></td><td><code class="inline">mvn test</code></td><td>Chạy test</td></tr>
+        <tr><td><code class="inline">./gradlew run</code></td><td><code class="inline">mvn exec:java</code></td><td>Chạy app (plugin <code class="inline">application</code>)</td></tr>
+        <tr><td><code class="inline">./gradlew dependencies</code></td><td><code class="inline">mvn dependency:tree</code></td><td>Xem cây dependency</td></tr>
+        <tr><td><code class="inline">./gradlew tasks</code></td><td><code class="inline">mvn help:describe</code></td><td>Liệt kê task có thể chạy</td></tr>
+        <tr><td><code class="inline">./gradlew clean build</code></td><td><code class="inline">mvn clean package</code></td><td>Build sạch</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Output của <code class="inline">./gradlew build</code> ngắn hơn Maven nhiều: từng dòng <code class="inline">&gt; Task :tenTask</code> là một task đã chạy, kết thúc bằng <code class="inline">BUILD SUCCESSFUL in 2s</code>. Nếu task nào bị <code class="inline">UP-TO-DATE</code> nghĩa là Gradle biết input không đổi nên bỏ qua — đây là nguồn gốc tốc độ của nó.</div>
+
+    <h2 id="gradle-task">9. Gradle: task, Kotlin DSL &amp; wrapper <span class="badge b-prod">Production</span></h2>
+
+    <p>Đơn vị công việc trong Gradle là <strong>task</strong> (tương tự goal của Maven plugin, nhưng bạn tự viết được bằng vài dòng). Ví dụ task in thông tin build:</p>
+
+    <div class="codeblock">
+      <pre><code>tasks.register('inThongTin') {
+    doLast {
+        println "Project : ${project.name} ${project.version}"
+        println "Gradle  : ${gradle.gradleVersion}"
+        println "Java    : ${System.getProperty('java.version')}"
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>$ ./gradlew inThongTin
+
+&gt; Task :inThongTin
+Project : quan-ly-don-hang 1.0-SNAPSHOT
+Gradle  : 8.11.1
+Java    : 25
+
+BUILD SUCCESSFUL in 1s
+1 actionable task: 1 executed</code></pre>
+    </div>
+
+    <p>Hai phase của một build Gradle cần phân biệt:</p>
+    <ul>
+      <li><strong>Configuration phase</strong> — Gradle đọc và "dựng" toàn bộ task graph (code trong <code class="inline">build.gradle</code> chạy ở đây).</li>
+      <li><strong>Execution phase</strong> — task được thực thi; code trong <code class="inline">doLast</code> chạy lúc này.</li>
+    </ul>
+    <p>Đặt logic vào <code class="inline">doLast</code> (hoặc task action) là quy tắc số 1 khi viết task; code nằm ngoài sẽ chạy mỗi lần cấu hình, kể cả khi bạn chỉ gõ <code class="inline">./gradlew tasks</code>. Gradle còn có <strong>daemon</strong> (tiến trình nền giữ JVM ấm) và <strong>build cache</strong> — lý do build lần 2 nhanh hơn hẳn lần 1.</p>
+
+    <p>Cùng nội dung trên viết bằng Kotlin DSL (<code class="inline">build.gradle.kts</code>) — type-safe, được IDE gợi ý tốt, là mặc định của project mới:</p>
+
+    <div class="codeblock">
+      <pre><code>plugins {
+    java
+    application
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.slf4j:slf4j-api:2.0.16")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</code></pre>
+    </div>
+
+    <p>Wrapper của Gradle cũng giống Maven: tạo bằng <code class="inline">gradle wrapper --gradle-version 8.11.1</code>, sinh ra <code class="inline">gradlew</code>, <code class="inline">gradlew.bat</code>, <code class="inline">gradle/wrapper/gradle-wrapper.jar</code> + <code class="inline">.properties</code>. Tất cả các file này <strong>nên commit</strong> — trừ khi công ty có quy định riêng. Khi gỡ conflict trên Gradle, dùng:</p>
+
+    <div class="codeblock">
+      <pre><code>$ ./gradlew dependencyInsight --dependency slf4j --configuration runtimeClasspath
+$ ./gradlew dependencies --configuration runtimeClasspath</code></pre>
+    </div>
+
+    <div class="note"><strong>Góc Node.js:</strong> <code class="inline">./gradlew dependencies</code> giống <code class="inline">npm ls</code> — cả hai cho xem cây tại sao một package có mặt, chỉ khác Gradle chia theo configuration (compile/runtime/test) còn npm chia theo dependency/devDependency.</div>
+
+    <h2 id="so-sanh">10. Maven vs Gradle — chọn công cụ nào? <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Maven</th><th>Gradle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Định dạng</td><td>XML khai báo, tường minh, dài</td><td>Groovy/Kotlin DSL — build script là code</td></tr>
+        <tr><td>Mô hình</td><td>Lifecycle cố định + plugin gắn vào phase</td><td>Task graph linh hoạt; task tự viết dễ</td></tr>
+        <tr><td>Hiệu năng</td><td>Không incremental mạnh; thường chậm hơn ở project lớn</td><td>Daemon + incremental + build cache + parallel → nhanh hơn rõ rệt khi build lại</td></tr>
+        <tr><td>Xung đột version</td><td>Nearest definition (bản gần gốc thắng)</td><td>Mặc định chọn version cao nhất</td></tr>
+        <tr><td>Multi-module</td><td>Parent pom + <code class="inline">&lt;modules&gt;</code>, reactor</td><td><code class="inline">settings.gradle</code> + <code class="inline">project(':order-core')</code></td></tr>
+        <tr><td>Đường cong học</td><td>Dễ hơn lúc đầu; XML nói thẳng mọi thứ</td><td>Dễ "viết code trong build"; mạnh nhưng khó đoán hơn</td></tr>
+        <tr><td>Phổ biến ở VN</td><td>Rất phổ biến ở doanh nghiệp, ngân hàng, dự án Spring Boot truyền thống</td><td>Phổ biến ở công ty mới, Android, dự án cần build phức tạp/tốc độ</td></tr>
+        <tr><td>Spring Boot</td><td><code class="inline">spring-boot-starter-parent</code> + <code class="inline">mvn spring-boot:run</code></td><td>Plugin Gradle + <code class="inline">./gradlew bootRun</code></td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Chọn ai?</strong> Không có "tốt hơn" tuyệt đối. Dự án Spring Boot mới, team quen XML, ưu tiên dễ tuyển người và tra tài liệu → Maven. Android, đa ngôn ngữ (Java + Kotlin + JS), build nhiều bước, cần tốc độ incremental → Gradle. Điều <em>bắt buộc</em> khi phỏng vấn không phải là chọn cái nào, mà là giải thích được sự khác biệt: khai báo vs lập trình, nearest vs highest, wrapper.</p>
+
+    <div class="note">Dù chọn Gradle, bạn vẫn ăn cơm với Maven Central: cả hai giải dependency từ cùng kho, cùng GAV. Hiểu Maven là hiểu nền tảng chung của cả hai.</div>
+
+    <h2 id="doi-song">11. Maven trong đời sống: IDE, CI, Spring Boot <span class="badge b-prod">Production</span></h2>
+
+    <h3>11.1 IntelliJ IDEA</h3>
+    <ul>
+      <li>Mở thư mục có <code class="inline">pom.xml</code> → chọn "Open as Project"/"Maven project"; IDE tự đọc pom và tải dependency (dùng local repo chung).</li>
+      <li>Sau khi sửa pom, bấm nút <strong>Reload Maven Project</strong> (biểu tượng chữ M) — không reload thì IDE vẫn dùng classpath cũ dù dòng lệnh đã thấy dependency mới.</li>
+      <li>Tab Maven cho phép chạy lifecycle trực tiếp: nhấn đúp <code class="inline">clean</code>, <code class="inline">package</code>...; nên cấu hình IDE dùng <strong>wrapper</strong> (Settings → Build Tools → Maven → Maven home: chọn "Use Maven wrapper") để khớp CI.</li>
+    </ul>
+
+    <h3>11.2 CI — GitHub Actions chạy <code class="inline">mvn</code></h3>
+
+    <p>Pipeline tối thiểu cho Java 25 + Maven dùng wrapper (nhớ cache để không tải lại toàn bộ dependency mỗi lần chạy):</p>
+
+    <div class="codeblock">
+      <pre><code>name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - run: ./mvnw --batch-mode --no-transfer-progress clean verify</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">--batch-mode</code> — chế độ CI: không màu mè, log sạch, không chờ tương tác.</li>
+      <li><code class="inline">--no-transfer-progress</code> — bỏ dòng tiến trình tải, log gọn (viết tắt <code class="inline">-ntp</code>).</li>
+      <li><code class="inline">clean verify</code> — build sạch + test + kiểm tra; CI nên dùng <code class="inline">verify</code> thay vì <code class="inline">package</code>.</li>
+      <li>Vì dùng <code class="inline">./mvnw</code>, CI không cần cài Maven — chỉ cần JDK do <code class="inline">setup-java</code> cung cấp.</li>
+    </ul>
+
+    <h3>11.3 Spring Boot parent &amp; starter</h3>
+
+    <p>Project Spring Boot thực tế bắt đầu bằng một parent đặc biệt: nó mang sẵn BOM (quản lý version của cả trăm thư viện), plugin và cấu hình mặc định. Vì thế các starter <strong>không cần version</strong>:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;parent&gt;
+  &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+  &lt;version&gt;4.0.0&lt;/version&gt;
+  &lt;relativePath/&gt;
+&lt;/parent&gt;
+
+&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+    </div>
+
+    <p>Version của parent minh hoạ ở đây — khi làm thật hãy lấy bản mới nhất từ start.spring.io. Project học của khóa (GĐ4) chỉ cần parent này + starter + plugin.</p>
+
+    <h3>11.4 Fat jar / executable jar</h3>
+
+    <p><code class="inline">mvn package</code> mặc định tạo <strong>thin jar</strong>: chỉ chứa class của bạn, không chứa dependency — chạy <code class="inline">java -jar</code> sẽ lỗi vì thiếu classpath. Production cần <strong>fat jar</strong> (uber jar) gồm cả dependency, đóng gói bằng một trong (Spring Boot parent tự gắn sẵn <code class="inline">repackage</code> vào phase <code class="inline">package</code>; còn shade phải khai báo execution trong pom):</p>
+    <ul>
+      <li><code class="inline">spring-boot-maven-plugin</code> — <code class="inline">repackage</code> tạo jar chạy được của Spring Boot; <code class="inline">mvn spring-boot:run</code> chạy trực tiếp khi dev.</li>
+      <li><code class="inline">maven-shade-plugin</code> — cho Java thuần, gộp dependency + đặt <code class="inline">Main-Class</code> trong manifest.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code>$ mvn clean package
+$ java -jar target/quan-ly-don-hang-1.0-SNAPSHOT.jar</code></pre>
+    </div>
+
+    <div class="note">Vì sao thin jar vẫn hữu ích? Khi deploy lên Tomcat/container hoặc khi artifact là thư viện cho project khác, bạn <em>không</em> muốn gộp dependency vào. Fat jar là cho ứng dụng chạy độc lập.</div>
+
+    <h2 id="pitfalls">12. Pitfalls — lỗi thường gặp <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>JUnit (hoặc Mockito) không ghi <code class="inline">&lt;scope&gt;test&lt;/scope&gt;</code></td><td>Thư viện test lọt vào jar production; classpath phình; lộ cả code test</td><td>Mọi thư viện chỉ dùng lúc test đều để scope <code class="inline">test</code> (Gradle: <code class="inline">testImplementation</code>)</td></tr>
+        <tr><td>Dùng <code class="inline">system</code> scope / trỏ jar bằng đường dẫn tuyệt đối</td><td>Máy khác, CI không build được; dependency không được đóng gói</td><td>Cài artifact vào local repo hoặc dùng repo nội bộ; dùng scope chuẩn</td></tr>
+        <tr><td>Hardcode version rải rác khắp pom</td><td>Nâng cấp sót một chỗ → lệch version; pom dài, dễ xung đột khi merge</td><td>Gom vào <code class="inline">&lt;properties&gt;</code>; các bộ thư viện dùng BOM/dependencyManagement</td></tr>
+        <tr><td>Khai báo dependency không version mà không có BOM/dependencyManagement</td><td>Build đỏ ngay: <code class="inline">'dependencies.dependency.version' ... is missing</code></td><td>Hoặc ghi version, hoặc import BOM quản lý nó</td></tr>
+        <tr><td>Để xung đột transitive "mặc định"</td><td>Build xanh nhưng runtime <code class="inline">NoSuchMethodError</code>/<code class="inline">NoClassDefFoundError</code></td><td>Chủ động <code class="inline">dependency:tree</code>; ghim version bằng dependencyManagement; exclusion có chủ đích</td></tr>
+        <tr><td>Quên wrapper, mỗi máy một version Maven/Gradle</td><td>"Máy tôi chạy được" — build CI khác local</td><td>Commit <code class="inline">mvnw</code>/<code class="inline">gradlew</code> + thư mục wrapper; CI và IDE đều dùng wrapper</td></tr>
+        <tr><td>Nghĩ <code class="inline">mvn install</code> là "phát hành" cho team</td><td>Đồng nghiệp và CI không thấy thư viện của bạn</td><td>Chia sẻ qua <code class="inline">mvn deploy</code> lên Nexus hoặc để chung multi-module build</td></tr>
+        <tr><td>Commit <code class="inline">target/</code> (Maven) hoặc <code class="inline">build/</code>, <code class="inline">.gradle/</code> (Gradle)</td><td>Repo phình, conflict rác, artifact lẫn vào git</td><td>Thêm vào <code class="inline">.gitignore</code>; chỉ commit nguồn + wrapper</td></tr>
+        <tr><td>Gradle chọn sai configuration</td><td>Dependency lọt vào runtime production hoặc thiếu lúc chạy</td><td>Map đúng: <code class="inline">implementation</code>/<code class="inline">runtimeOnly</code>/<code class="inline">compileOnly</code>/<code class="inline">testImplementation</code></td></tr>
+        <tr><td>Dùng SNAPSHOT trong dependency production</td><td>Build không tái lập — hôm nay chạy, mai jar đổi</td><td>Release phải dùng version cứng; SNAPSHOT chỉ dùng nội bộ lúc phát triển</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Chốt:</strong> 90% "lỗi build" của người mới đến từ 3 nguồn — chưa reload IDE, scope sai, và xung đột version. Kiểm tra theo thứ tự đó trước khi nghi ngờ code.</div>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Build tool là gì? Maven giải quyết những việc gì?</summary>
+      <div class="answer">Build tool tự động hoá vòng đời project: biên dịch, chạy test, đóng gói artifact, quản lý dependency (kể cả transitive), và phát hành lên repository. Maven còn chuẩn hoá cấu trúc thư mục và vòng đời build, nên bất kỳ dev nào mở project cũng hiểu ngay mà không cần tài liệu riêng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. <code class="inline">pom.xml</code> là gì? GAV là gì?</summary>
+      <div class="answer"><code class="inline">pom.xml</code> (Project Object Model) là file XML mô tả project: toạ độ, dependency, properties, plugin, cách build. GAV là bộ ba <code class="inline">groupId</code> (tổ chức, viết ngược domain), <code class="inline">artifactId</code> (tên project/module), <code class="inline">version</code> — dùng để định danh artifact trong mọi repository. Trùng GAV nghĩa là cùng một artifact.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Transitive dependency là gì? Cho ví dụ thực tế.</summary>
+      <div class="answer">Là dependency mà dependency của bạn kéo theo, ví dụ khai báo <code class="inline">spring-web</code> thì Maven tự thêm <code class="inline">spring-core</code>, <code class="inline">spring-beans</code>; khai báo <code class="inline">jackson-databind</code> thì có <code class="inline">jackson-core</code>, <code class="inline">jackson-annotations</code>. Bạn không phải khai báo chúng, nhưng chúng vẫn nằm trong classpath và có thể gây xung đột version.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Kể tên và giải thích các scope chính của Maven.</summary>
+      <div class="answer"><code class="inline">compile</code> (mặc định) — có ở compile/test/runtime, được đóng gói, lan truyền transitive; <code class="inline">provided</code> — có ở compile/test, không runtime, không đóng gói (ví dụ <code class="inline">jakarta.servlet-api</code> do Tomcat cung cấp); <code class="inline">runtime</code> — không cần compile, có ở runtime/test, được đóng gói (driver DB); <code class="inline">test</code> — chỉ compile/test, không đóng gói (JUnit); <code class="inline">system</code> — như provided nhưng tự trỏ đường dẫn jar, nên tránh. <code class="inline">import</code> là scope đặc biệt chỉ dùng trong <code class="inline">dependencyManagement</code> với <code class="inline">type=pom</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Lifecycle default của Maven gồm các phase nào? Gọi <code class="inline">mvn package</code> thì chạy gì?</summary>
+      <div class="answer">Chuỗi chính: <code class="inline">validate → compile → test → package → verify → install → deploy</code>. Gọi một phase sẽ chạy lần lượt mọi phase trước nó trong cùng lifecycle, nên <code class="inline">mvn package</code> thực ra chạy validate, compile, test rồi mới đóng gói. Ngoài ra còn lifecycle <code class="inline">clean</code> (xoá target) và <code class="inline">site</code> (tài liệu).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. <code class="inline">package</code>, <code class="inline">install</code>, <code class="inline">deploy</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">package</code> tạo artifact trong <code class="inline">target/</code> — chỉ project hiện tại dùng được. <code class="inline">install</code> build rồi copy artifact + pom vào local repository <code class="inline">~/.m2/repository</code> để các project khác trên máy bạn dùng. <code class="inline">deploy</code> upload lên remote repository (Nexus/Artifactory) cho cả team và CI. Nhớ: <code class="inline">install</code> không phải "cài dependency" — nó là bước publish vào local repo.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Maven wrapper là gì? Tạo bằng lệnh nào?</summary>
+      <div class="answer">Là bộ script <code class="inline">mvnw</code>/<code class="inline">mvnw.cmd</code> + cấu hình trong <code class="inline">.mvn/wrapper/</code> cho phép chạy Maven mà không cần cài sẵn, đồng thời ghim đúng version Maven của project. Tạo bằng <code class="inline">mvn wrapper:wrapper -Dmaven=3.9.9</code>, sau đó dùng <code class="inline">./mvnw clean verify</code> thay cho <code class="inline">mvn</code>. Gradle tương tự với <code class="inline">gradle wrapper --gradle-version ...</code> và <code class="inline">./gradlew</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Dependency được tải về đâu? Phân biệt <code class="inline">target/</code> và <code class="inline">~/.m2</code>.</summary>
+      <div class="answer">Dependency tải về <strong>local repository</strong> <code class="inline">~/.m2/repository</code>, dùng chung cho mọi project và giữ lại vĩnh viễn (xoá đi thì Maven tải lại). Còn <code class="inline">target/</code> là output của lần build hiện tại — class đã biên dịch, jar, báo cáo test — có thể xoá bằng <code class="inline">mvn clean</code> và không bao giờ commit. Gradle dùng cache riêng ở <code class="inline">~/.gradle/caches</code> với vai trò tương tự local repo.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Plugin khác dependency thế nào?</summary>
+      <div class="answer">Dependency là thư viện nằm trên classpath của <em>code bạn</em> (compile/runtime/test). Plugin là chương trình mở rộng chính Maven, được Maven thực thi trong lúc build (compiler, surefire, jar, shade...), mỗi plugin có các goal gắn vào phase. Cả hai đều tải từ repository dưới dạng jar, nhưng plugin chạy trong classloader riêng và khai báo ở <code class="inline">&lt;build&gt;&lt;plugins&gt;</code>, không phải <code class="inline">&lt;dependencies&gt;</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. <code class="inline">dependencyManagement</code> khác <code class="inline">dependencies</code> thế nào? BOM là gì?</summary>
+      <div class="answer"><code class="inline">dependencies</code> là thư viện thật sự được thêm vào project. <code class="inline">dependencyManagement</code> chỉ khai báo version/scope mặc định — không thêm gì vào classpath; khi dependency được khai báo ở <code class="inline">dependencies</code> mà thiếu version, Maven lấy từ đây. BOM (Bill of Materials) là một pom chỉ chứa <code class="inline">dependencyManagement</code> cho cả bộ thư viện (ví dụ <code class="inline">junit-bom</code>, <code class="inline">spring-boot-dependencies</code>), import bằng <code class="inline">&lt;type&gt;pom&lt;/type&gt;</code> + <code class="inline">&lt;scope&gt;import&lt;/scope&gt;</code> để mọi version tương thích nhau.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Gradle khác Maven ở triết lý cốt lõi nào?</summary>
+      <div class="answer">Maven là khai báo: XML mô tả project, Maven quyết định cách chạy theo lifecycle cố định. Gradle là lập trình: build script (Groovy/Kotlin) dựng task graph, bạn viết task tuỳ ý. Gradle có daemon + incremental + build cache nên build lại nhanh hơn; đổi lại build script trở thành code, có thể khó debug nếu lạm dụng. Cả hai đều dùng GAV và Maven Central, đều có wrapper.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Hai thư viện kéo hai version của cùng một artifact — Maven chọn bản nào? Gradle thì sao?</summary>
+      <div class="answer">Maven dùng <strong>nearest definition</strong>: bản gần project nhất (độ sâu nhỏ nhất) thắng; cùng độ sâu thì bản khai báo trước thắng. Maven không chọn bản mới nhất tự động. Gradle mặc định ngược lại: <strong>version cao nhất thắng</strong> (có thể ép bằng resolutionStrategy/constraints). Vì vậy cùng dependency nhưng đổi build tool có thể ra classpath khác — nguyên nhân của những lỗi runtime "kỳ lạ".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Làm sao biết version nào đang thực sự được dùng và bị loại?</summary>
+      <div class="answer">Chạy <code class="inline">mvn dependency:tree</code> xem cây; thêm <code class="inline">-Dverbose</code> để thấy node bị loại (tùy version plugin), thêm <code class="inline">-Dincludes=groupId:artifactId</code> để lọc. <code class="inline">mvn dependency:list</code> cho danh sách classpath <em>đã resolve</em>. Với Gradle: <code class="inline">./gradlew dependencies --configuration runtimeClasspath</code> và <code class="inline">./gradlew dependencyInsight --dependency ten --configuration runtimeClasspath</code> để biết chính xác ai kéo nó vào và version cuối cùng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">NoSuchMethodError</code>, <code class="inline">NoClassDefFoundError</code> và <code class="inline">ClassNotFoundException</code> khác nhau thế nào?</summary>
+      <div class="answer"><code class="inline">NoSuchMethodError</code>: class tìm thấy nhưng bản đang chạy thiếu method đã compile — thường do hai version lệch nhau. <code class="inline">NoClassDefFoundError</code>: class đã có lúc compile nhưng JVM không nạp được lúc chạy (thiếu jar, scope sai, exclusion quá tay, hoặc static initializer fail trước đó). <code class="inline">ClassNotFoundException</code>: code chủ động load theo tên (<code class="inline">Class.forName</code>) mà không thấy — ví dụ driver JDBC khai <code class="inline">provided</code> thay vì <code class="inline">runtime</code>. Cả ba đều là lỗi classpath, sửa bằng <code class="inline">dependency:tree</code> + ghim version/chỉnh scope.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Multi-module để làm gì? Parent pom và aggregator khác gì nhau?</summary>
+      <div class="answer">Multi-module tách dự án lớn thành các module (core, web, cli...) để tái sử dụng code, build có thứ tự và giới hạn phụ thuộc giữa các phần. Parent pom chia sẻ cấu hình, version, dependencyManagement cho con qua <code class="inline">&lt;parent&gt;</code> (quan hệ kế thừa). Aggregator là vai trò của pom có <code class="inline">&lt;packaging&gt;pom&lt;/packaging&gt;</code> + <code class="inline">&lt;modules&gt;</code>, cho phép build tất cả từ thư mục gốc qua reactor. Một pom có thể làm cả hai. Dự án nhỏ không cần tách.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Gradle: <code class="inline">implementation</code>, <code class="inline">api</code>, <code class="inline">testImplementation</code> khác nhau ra sao?</summary>
+      <div class="answer">Chúng là các configuration (tương tự scope nhưng phức tạp hơn). <code class="inline">implementation</code>: dùng nội bộ module, không lộ ra compile classpath của module phụ thuộc bạn — mặc định nên dùng. <code class="inline">api</code> (cần plugin <code class="inline">java-library</code>): lộ ra ngoài, dùng khi public API của bạn tham chiếu type của thư viện đó. <code class="inline">compileOnly</code> ≈ <code class="inline">provided</code>, <code class="inline">runtimeOnly</code> ≈ <code class="inline">runtime</code>, <code class="inline">testImplementation</code> ≈ scope <code class="inline">test</code>. Che transitive bằng <code class="inline">implementation</code> giúp build nhanh và tránh vô tình phụ thuộc API nội bộ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. SNAPSHOT là gì? Vì sao không nên dùng trong production?</summary>
+      <div class="answer">Version kết thúc bằng <code class="inline">-SNAPSHOT</code> là bản đang phát triển, có thể bị ghi đè mỗi lần build/publish. Maven coi snapshot là "động" và kiểm tra bản mới theo chính sách (mặc định mỗi ngày), nên cùng một version có thể là jar khác nhau giữa các lần build — build không tái lập được và không audit được. Production chỉ dùng version release cứng; snapshot để dành cho module nội bộ đang phát triển song song.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Vì sao commit file wrapper (<code class="inline">mvnw</code>, <code class="inline">gradlew</code>, <code class="inline">gradle-wrapper.jar</code>) nhưng không commit <code class="inline">target/</code>?</summary>
+      <div class="answer">Wrapper là <em>công cụ build</em>: commit để mọi dev và CI dùng đúng một version Maven/Gradle mà không phải cài đặt gì — đảm bảo build tái lập. <code class="inline">target/</code>/<code class="inline">build/</code> là <em>kết quả build</em>: sinh lại được từ source, commit chỉ làm repo phình và gây conflict rác. Nguyên tắc: commit cấu hình và công cụ ghim version; ignore sản phẩm sinh ra.</div>
+    </details>
+
+    <h3>Gradle &amp; công cụ</h3>
+
+    <details class="qa">
+      <summary>Câu 19. Khi nào nên chọn Gradle thay vì Maven?</summary>
+      <div class="answer">Khi build cần logic tuỳ biến phức tạp, khi cần tốc độ incremental/build cache cho project lớn hoặc đa ngôn ngữ, khi làm Android (bắt buộc Gradle), hoặc team đã quen Kotlin DSL. Chọn Maven khi muốn đơn giản, ổn định, tài liệu và cộng đồng doanh nghiệp VN dày, nhiều người đọc pom hơn đọc build script. Với project Spring Boot học tập, Maven là lựa chọn mặc định hợp lý; biết đọc Gradle vẫn cần vì nhiều dự án tuyển dụng dùng nó.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Vì sao chạy <code class="inline">mvn install</code> trên máy mình rồi mà đồng nghiệp vẫn không dùng được thư viện của mình?</summary>
+      <div class="answer"><code class="inline">install</code> chỉ copy artifact vào local repository của <em>máy bạn</em> (<code class="inline">~/.m2/repository</code>). Đồng nghiệp và CI có local repo riêng nên không thấy. Muốn chia sẻ: (1) <code class="inline">mvn deploy</code> lên Nexus/Artifactory nội bộ, hoặc (2) để chung một multi-module build và build từ gốc (reactor dùng module ngay trong build, không qua repo).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. <code class="inline">mvn clean package</code> khác <code class="inline">mvn package</code> thế nào? <code class="inline">-DskipTests</code> khác <code class="inline">-Dmaven.test.skip=true</code> ra sao?</summary>
+      <div class="answer"><code class="inline">mvn package</code> có thể dùng lại output cũ trong <code class="inline">target/</code> (build tăng dần); <code class="inline">mvn clean package</code> xoá target trước nên chậm hơn nhưng chắc chắn sạch — nên dùng khi nghi ngờ kết quả cũ hoặc trước khi phát hành. <code class="inline">-DskipTests</code> vẫn biên dịch test nhưng không chạy; <code class="inline">-Dmaven.test.skip=true</code> bỏ luôn cả biên dịch test (nhanh hơn, dùng khi test code đang hỏng nhưng vẫn cần đóng gói).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Maven có bắt buộc cấu trúc <code class="inline">src/main/java</code> không?</summary>
+      <div class="answer">Không bắt buộc về mặt kỹ thuật — có thể đổi <code class="inline">sourceDirectory</code>/<code class="inline">testSourceDirectory</code> trong <code class="inline">&lt;build&gt;</code>. Nhưng thực tế nên giữ đúng convention: IDE, plugin, tài liệu, CI và mọi dev đều giả định cấu trúc chuẩn; đổi chỉ để "cho khác" là tự tạo gánh nặng bảo trì. Chỉ single-file <code class="inline">java TenFile.java</code> mới không cần cấu trúc này.</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Đọc pom và trả lời</summary>
+      <div class="codeblock">
+        <pre><code>&lt;project&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+  &lt;artifactId&gt;order-cli&lt;/artifactId&gt;
+  &lt;version&gt;2.1.0&lt;/version&gt;
+  &lt;packaging&gt;jar&lt;/packaging&gt;
+
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+      &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+      &lt;version&gt;5.14.4&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;ch.qos.logback&lt;/groupId&gt;
+      &lt;artifactId&gt;logback-classic&lt;/artifactId&gt;
+      &lt;version&gt;1.5.16&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/project&gt;</code></pre>
+      </div>
+      <div class="answer"><p>artifactId: <code class="inline">order-cli</code>; version: <code class="inline">2.1.0</code>; packaging: <code class="inline">jar</code>. JUnit có scope <code class="inline">test</code> — không vào jar. Logback scope <code class="inline">runtime</code> — không cần lúc compile nhưng có mặt lúc chạy và được đóng gói. Lưu ý cả hai dependency đều ghi version cứng, chưa dùng property/BOM.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Chọn scope đúng cho từng dependency</summary>
+      <div class="answer">
+        <p>Điền scope hợp lý và giải thích một dòng:</p>
+        <ul>
+          <li><code class="inline">org.junit.jupiter:junit-jupiter</code> → <strong>test</strong> — chỉ chạy test, không đóng gói.</li>
+          <li><code class="inline">com.mysql:mysql-connector-j</code> → <strong>runtime</strong> — code không gọi trực tiếp API driver, nhưng cần lúc chạy và khi đóng gói.</li>
+          <li><code class="inline">jakarta.servlet:jakarta.servlet-api</code> → <strong>provided</strong> — Tomcat/container cung cấp lúc chạy, không đóng gói vào war.</li>
+          <li><code class="inline">org.slf4j:slf4j-api</code> → <strong>compile</strong> (mặc định) — code import <code class="inline">Logger</code>/<code class="inline">LoggerFactory</code> nên cần lúc compile.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Ghim version bằng dependencyManagement</summary>
+      <div class="answer">
+        <p>Hai thư viện kéo SLF4J 1.7.36 và 2.0.16; muốn chắc chắn dùng 2.0.16. Thêm vào pom (thường là pom cha):</p>
+        <div class="codeblock">
+          <pre><code>&lt;dependencyManagement&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+      &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+      &lt;version&gt;2.0.16&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;</code></pre>
+        </div>
+        <p>Sau đó các dependency con có thể bỏ <code class="inline">&lt;version&gt;</code>. Kiểm chứng lại bằng <code class="inline">mvn dependency:tree -Dincludes=org.slf4j</code> — mọi nhánh phải hiện 2.0.16.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. Loại một transitive dependency bằng exclusions</summary>
+      <div class="answer">
+        <p>Một thư viện nội bộ kéo <code class="inline">commons-logging</code> làm trùng chức năng với SLF4J. Cách loại:</p>
+        <div class="codeblock">
+          <pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;com.example&lt;/groupId&gt;
+  &lt;artifactId&gt;company-utils&lt;/artifactId&gt;
+  &lt;version&gt;1.0&lt;/version&gt;
+  &lt;exclusions&gt;
+    &lt;exclusion&gt;
+      &lt;groupId&gt;commons-logging&lt;/groupId&gt;
+      &lt;artifactId&gt;commons-logging&lt;/artifactId&gt;
+    &lt;/exclusion&gt;
+  &lt;/exclusions&gt;
+&lt;/dependency&gt;</code></pre>
+        </div>
+        <p>Kiểm tra bằng <code class="inline">mvn dependency:tree</code>: <code class="inline">commons-logging</code> phải biến mất. Nếu project dùng class của nó ở đâu đó thì sẽ lỗi <code class="inline">NoClassDefFoundError</code> lúc chạy — chỉ loại khi chắc chắn.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Viết dependency JUnit 5 đúng chuẩn</summary>
+      <div class="answer">
+        <p>Dùng property cho version và scope test:</p>
+        <div class="codeblock">
+          <pre><code>&lt;properties&gt;
+  &lt;junit.version&gt;5.14.4&lt;/junit.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+    &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+    &lt;version&gt;${junit.version}&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+        </div>
+        <p>Nếu đã import <code class="inline">org.junit:junit-bom</code> thì bỏ luôn <code class="inline">&lt;version&gt;</code> cũng được. Test đặt ở <code class="inline">src/test/java</code>, chạy bằng <code class="inline">mvn test</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. Viết lệnh Maven theo mô tả</summary>
+      <div class="answer">
+        <ul>
+          <li>Build jar sạch, chạy đủ test: <code class="inline">mvn clean package</code></li>
+          <li>Build jar không chạy test: <code class="inline">mvn clean package -DskipTests</code></li>
+          <li>Chỉ chạy unit test: <code class="inline">mvn test</code></li>
+          <li>Xem cây dependency, chỉ lọc SLF4J: <code class="inline">mvn dependency:tree -Dincludes=org.slf4j</code></li>
+          <li>Cài artifact vào local repo: <code class="inline">mvn install</code></li>
+          <li>Build khi không có mạng: <code class="inline">mvn -o clean package</code></li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Phân tích lỗi NoSuchMethodError</summary>
+      <div class="codeblock">
+        <pre><code>Exception in thread "main" java.lang.NoSuchMethodError:
+ 'java.lang.String com.example.utils.JsonUtil.toJson(java.lang.Object, boolean)'
+    at vn.hocjava.order.OrderService.taoBaoCao(OrderService.java:42)</code></pre>
+      </div>
+      <div class="answer">
+        <p>Class <code class="inline">JsonUtil</code> được tìm thấy nhưng bản đang chạy thiếu method <code class="inline">toJson(Object, boolean)</code> — code compile với <code class="inline">company-utils 1.2</code> nhưng runtime lại nạp <code class="inline">company-utils 1.0</code> (bị thư viện khác kéo vào). Cách sửa: (1) <code class="inline">mvn dependency:tree -Dincludes=com.example:company-utils</code>; (2) thấy nhánh nào kéo bản 1.0; (3) ghim 1.2 bằng <code class="inline">dependencyManagement</code> (ưu tiên) hoặc exclusion bản cũ; (4) build lại và test. Đây là lỗi classpath, không phải lỗi code.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Viết Gradle task in thông tin build</summary>
+      <div class="answer">
+        <div class="codeblock">
+          <pre><code>tasks.register('inThongTin') {
+    doLast {
+        println "Project: ${project.name} ${project.version}"
+        println "Gradle : ${gradle.gradleVersion}"
+        println "Java   : ${System.getProperty('java.version')}"
+    }
+}</code></pre>
+        </div>
+        <p>Chạy <code class="inline">./gradlew inThongTin</code>. Điểm quan trọng: logic nằm trong <code class="inline">doLast</code> để chỉ chạy ở execution phase; nếu đặt ngoài, nó chạy ở mọi lần cấu hình build (kể cả <code class="inline">./gradlew tasks</code>).</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. Cùng một dependency, viết bằng Maven và Gradle</summary>
+      <div class="answer">
+        <p>Maven:</p>
+        <div class="codeblock">
+          <pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+  &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+  &lt;version&gt;2.18.2&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+        </div>
+        <p>Gradle (Groovy DSL):</p>
+        <div class="codeblock">
+          <pre><code>dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+}</code></pre>
+        </div>
+        <p>Ánh xạ: <code class="inline">&lt;dependency&gt;</code> ↔ một dòng trong <code class="inline">dependencies</code>; GAV viết liền bằng dấu hai chấm; scope mặc định của Maven (<code class="inline">compile</code>) tương ứng <code class="inline">implementation</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. Đọc dependency:tree và chọn version thực tế</summary>
+      <div class="codeblock">
+        <pre><code>[INFO] vn.hocjava:quan-ly-don-hang:jar:1.0-SNAPSHOT
+[INFO] +- com.example:company-utils:jar:1.0:compile
+[INFO] |  \- org.slf4j:slf4j-api:jar:1.7.36:compile
+[INFO] +- org.slf4j:slf4j-api:jar:2.0.16:compile
+[INFO] \- ch.qos.logback:logback-classic:jar:1.5.16:runtime
+[INFO]    \- org.slf4j:slf4j-api:jar:2.0.16:runtime</code></pre>
+      </div>
+      <div class="answer">
+        <p>Version thực tế là <strong>2.0.16</strong> (khai báo trực tiếp, độ sâu 1) — nearest definition thắng bản 1.7.36 ở độ sâu 2. Nếu muốn thấy rõ bản bị loại, chạy <code class="inline">mvn dependency:tree -Dverbose</code>; muốn kiểm chứng classpath cuối cùng, chạy <code class="inline">mvn dependency:list -Dincludes=org.slf4j</code> — chỉ còn 2.0.16. Trên Gradle cây này sẽ hiện <code class="inline">1.7.36 -&gt; 2.0.16</code> vì Gradle chọn bản cao nhất.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Đúng hay sai? Giải thích</summary>
+      <div class="answer">
+        <ul>
+          <li>"<code class="inline">mvn install</code> đẩy artifact lên Maven Central" — <strong>Sai</strong>. Install chỉ copy vào local repo; muốn lên remote phải <code class="inline">mvn deploy</code> và cấu hình <code class="inline">distributionManagement</code>.</li>
+          <li>"Dependency scope <code class="inline">test</code> không bị đóng gói vào jar" — <strong>Đúng</strong>. Nó chỉ có mặt trên test classpath.</li>
+          <li>"Gradle mặc định chọn version cao nhất khi xung đột" — <strong>Đúng</strong>. Khác Maven (nearest definition).</li>
+          <li>"<code class="inline">dependencyManagement</code> thêm dependency vào project, không cần khai báo lại" — <strong>Sai</strong>. Nó chỉ quản lý version/scope; muốn dùng phải khai báo trong <code class="inline">dependencies</code>.</li>
+          <li>"Dependency scope <code class="inline">provided</code> có mặt lúc runtime" — <strong>Sai</strong>. Nó có lúc compile/test, còn runtime do môi trường cung cấp.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Sửa multi-module pom còn thiếu</summary>
+      <div class="answer">
+        <p>Parent pom thiếu <code class="inline">&lt;packaging&gt;pom&lt;/packaging&gt;</code> và danh sách module:</p>
+        <div class="codeblock">
+          <pre><code>&lt;packaging&gt;pom&lt;/packaging&gt;
+&lt;modules&gt;
+  &lt;module&gt;order-core&lt;/module&gt;
+  &lt;module&gt;order-web&lt;/module&gt;
+&lt;/modules&gt;</code></pre>
+        </div>
+        <p>Child pom thiếu khối <code class="inline">&lt;parent&gt;</code> trỏ về pom gốc:</p>
+        <div class="codeblock">
+          <pre><code>&lt;parent&gt;
+  &lt;groupId&gt;vn.hocjava&lt;/groupId&gt;
+  &lt;artifactId&gt;quan-ly-don-hang&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+&lt;/parent&gt;</code></pre>
+        </div>
+        <p>Build từ thư mục gốc; Maven tự sắp thứ tự (order-core trước order-web). Nếu chỉ muốn build web: <code class="inline">mvn -pl order-web -am package</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13. Cấu hình Gradle: toolchain Java 25, JUnit, logback</summary>
+      <div class="answer">
+        <div class="codeblock">
+          <pre><code>plugins {
+    java
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.slf4j:slf4j-api:2.0.16")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</code></pre>
+        </div>
+        <p>Giải thích: <code class="inline">toolchain</code> yêu cầu Gradle dùng JDK 25 (tự tải nếu máy chưa có); <code class="inline">useJUnitPlatform()</code> bắt buộc để chạy JUnit 5; logback để <code class="inline">runtimeOnly</code> vì code chỉ gọi qua SLF4J; JUnit để <code class="inline">testImplementation</code>.</p>
+      </div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet lệnh Maven</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Lệnh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Kiểm tra version Maven + JDK</td><td><code class="inline">mvn -v</code> (hoặc <code class="inline">./mvnw -v</code>)</td></tr>
+        <tr><td>Chỉ biên dịch</td><td><code class="inline">mvn compile</code></td></tr>
+        <tr><td>Chạy test</td><td><code class="inline">mvn test</code></td></tr>
+        <tr><td>Build sạch ra jar</td><td><code class="inline">mvn clean package</code></td></tr>
+        <tr><td>Build bỏ test</td><td><code class="inline">mvn clean package -DskipTests</code></td></tr>
+        <tr><td>Cài vào local repo</td><td><code class="inline">mvn install</code></td></tr>
+        <tr><td>Phát hành lên remote</td><td><code class="inline">mvn deploy</code> (+ <code class="inline">distributionManagement</code>)</td></tr>
+        <tr><td>Xem cây dependency</td><td><code class="inline">mvn dependency:tree</code></td></tr>
+        <tr><td>Lọc 1 artifact trong cây</td><td><code class="inline">mvn dependency:tree -Dincludes=groupId:artifactId</code></td></tr>
+        <tr><td>Danh sách classpath đã resolve</td><td><code class="inline">mvn dependency:list</code></td></tr>
+        <tr><td>Pom sau khi merge parent/BOM</td><td><code class="inline">mvn help:effective-pom</code></td></tr>
+        <tr><td>Offline</td><td><code class="inline">mvn -o package</code></td></tr>
+        <tr><td>Tải trước mọi dependency</td><td><code class="inline">mvn dependency:go-offline</code></td></tr>
+        <tr><td>Tạo wrapper</td><td><code class="inline">mvn wrapper:wrapper -Dmaven=3.9.9</code></td></tr>
+        <tr><td>Chạy app Spring Boot khi dev</td><td><code class="inline">mvn spring-boot:run</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Cheat sheet lệnh Gradle</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Lệnh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Build + test + đóng gói</td><td><code class="inline">./gradlew build</code></td></tr>
+        <tr><td>Chạy test</td><td><code class="inline">./gradlew test</code></td></tr>
+        <tr><td>Chạy app</td><td><code class="inline">./gradlew run</code></td></tr>
+        <tr><td>Xem cây dependency</td><td><code class="inline">./gradlew dependencies</code></td></tr>
+        <tr><td>Ai kéo dependency này vào?</td><td><code class="inline">./gradlew dependencyInsight --dependency ten --configuration runtimeClasspath</code></td></tr>
+        <tr><td>Danh sách task</td><td><code class="inline">./gradlew tasks</code></td></tr>
+        <tr><td>Tạo wrapper</td><td><code class="inline">gradle wrapper --gradle-version 8.11.1</code></td></tr>
+        <tr><td>Chạy Spring Boot khi dev</td><td><code class="inline">./gradlew bootRun</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Ánh xạ Maven ↔ Gradle trong đầu</h3>
+
+    <table>
+      <thead>
+        <tr><th>Maven</th><th>Gradle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">pom.xml</code></td><td><code class="inline">build.gradle(.kts)</code> + <code class="inline">settings.gradle(.kts)</code></td></tr>
+        <tr><td><code class="inline">mvnw</code></td><td><code class="inline">gradlew</code></td></tr>
+        <tr><td>phase (<code class="inline">test</code>, <code class="inline">package</code>...)</td><td>task (<code class="inline">test</code>, <code class="inline">jar</code>, <code class="inline">build</code>...)</td></tr>
+        <tr><td>scope <code class="inline">compile</code> / <code class="inline">runtime</code> / <code class="inline">provided</code> / <code class="inline">test</code></td><td><code class="inline">implementation</code> / <code class="inline">runtimeOnly</code> / <code class="inline">compileOnly</code> / <code class="inline">testImplementation</code></td></tr>
+        <tr><td><code class="inline">dependencyManagement</code> / BOM</td><td>dependency constraints / platform</td></tr>
+        <tr><td>Nearest definition thắng</td><td>Version cao nhất thắng (mặc định)</td></tr>
+        <tr><td><code class="inline">mvn dependency:tree</code></td><td><code class="inline">./gradlew dependencies</code></td></tr>
+        <tr><td><code class="inline">mvn deploy</code></td><td><code class="inline">./gradlew publish</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Mở và đọc được một project Maven bất kỳ: GAV, packaging, từng dependency + scope.</li>
+      <li>Viết được pom.xml có property, dependency, compiler plugin mà không cần tra mẫu.</li>
+      <li>Giải thích được 5 scope và nói rõ cái nào vào jar production.</li>
+      <li>Kể đúng chuỗi phase lifecycle và nói <code class="inline">mvn package</code> thực sự chạy gì.</li>
+      <li>Phân biệt package / install / deploy kèm ví dụ tình huống dùng.</li>
+      <li>Giải thích vì sao nên commit <code class="inline">mvnw</code>/<code class="inline">gradlew</code> và ignore <code class="inline">target/</code>.</li>
+      <li>Đọc được <code class="inline">mvn dependency:tree</code> và tìm ra version thực tế theo nearest definition.</li>
+      <li>Giải thích BOM và <code class="inline">dependencyManagement</code> khác <code class="inline">dependencies</code> thế nào.</li>
+      <li>Kể 3 lỗi runtime do lệch version và cách xử lý.</li>
+      <li>Nêu được khác biệt nearest definition (Maven) vs highest version (Gradle).</li>
+      <li>Đọc được một <code class="inline">build.gradle</code> cơ bản và map sang khái niệm Maven.</li>
+      <li>Không còn hardcode version rải rác — biết dùng property/BOM.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html" target="_blank" rel="noreferrer">Maven — Introduction to the Build Lifecycle</a></li>
+      <li><a href="https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html" target="_blank" rel="noreferrer">Maven — Introduction to the Dependency Mechanism (scope, mediation, exclusions, BOM)</a></li>
+      <li><a href="https://maven.apache.org/wrapper/" target="_blank" rel="noreferrer">Maven Wrapper</a></li>
+      <li><a href="https://docs.gradle.org/current/userguide/java_plugin.html" target="_blank" rel="noreferrer">Gradle — Java Plugin (configurations)</a></li>
+      <li><a href="https://docs.gradle.org/current/userguide/dependency_constraints_conflicts.html" target="_blank" rel="noreferrer">Gradle — Dependency Constraints and Conflict Resolution</a></li>
+      <li><a href="https://docs.spring.io/spring-boot/maven-plugin/" target="_blank" rel="noreferrer">Spring Boot Maven Plugin</a></li>
+      <li><a href="https://github.com/actions/setup-java" target="_blank" rel="noreferrer">actions/setup-java (GitHub Actions)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Maven &amp; Gradle · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+

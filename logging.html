@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logging — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item active" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="logging">Logging — ghi log trong Java</h1>
+
+    <p class="lead">Logging là cách chương trình <strong>ghi lại sự kiện</strong> — nó đã làm gì, khi nào, với dữ liệu nào và hỏng ở đâu — để bạn đọc lại sau. Production không có debugger gắn vào tiến trình đang chạy, nên log chính là "đôi mắt" giúp điều tra sự cố, giám sát hệ thống và dựng cảnh báo. Trang này đi từ chỗ chống chỉ định <code class="inline">System.out.println</code> tới chuẩn thực tế <strong>SLF4J + Logback</strong>: log level, placeholder, log exception, cấu hình <code class="inline">logback.xml</code>, MDC/correlation id và những bẫy log "phá production".</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="1">
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#slf4j-logback">SLF4J + Logback — facade &amp; implementation</a></li>
+        <li><a href="#log-levels">Log levels</a></li>
+        <li><a href="#placeholder">Placeholder logging</a></li>
+        <li><a href="#log-exception">Log exception đúng cách</a></li>
+        <li><a href="#du-lieu-nhay-cam">Không log dữ liệu nhạy cảm</a></li>
+        <li><a href="#logback-xml">Cấu hình logback.xml</a></li>
+        <li><a href="#structured-logging">Structured logging</a></li>
+        <li><a href="#mdc">MDC &amp; correlation id</a></li>
+        <li><a href="#log-o-tang-nao">Log ở tầng nào</a></li>
+        <li><a href="#production-tips">Production tips</a></li>
+        <li><a href="#pitfalls">Pitfalls — bảng lỗi thường gặp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 4.5 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — tạo <code class="inline">Logger</code> bằng <code class="inline">LoggerFactory.getLogger</code>; dùng placeholder <code class="inline">{}</code>; chọn đúng 5 level; log exception kèm stack trace; viết <code class="inline">logback.xml</code> cơ bản (console + file + rolling); đặt <code class="inline">requestId</code> vào MDC.</li>
+      <li><strong>Phải hiểu</strong> — vì sao production không dùng <code class="inline">System.out.println</code>; SLF4J chỉ là facade nên cần implementation; level theo môi trường; vì sao không log dữ liệu nhạy cảm; vì sao không vừa log vừa ném exception ở mọi tầng.</li>
+      <li><strong>Nhận biết</strong> — structured logging (JSON), hệ thống log tập trung (ELK/Loki), async appender và đánh đổi, alert theo error rate, MDC với thread pool. MDC đặt trong filter servlet sẽ dùng lại khi làm REST API ở giai đoạn 5.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đọc ngay code "trước/sau" bên dưới để thấy khác biệt <code class="inline">System.out</code> vs logger.</li>
+      <li>Nhớ bảng level ở <a href="#log-levels">mục 3</a> — phỏng vấn gần như chắc chắn hỏi.</li>
+      <li>Làm <a href="#bai-tap">Bài tập</a> (sửa log sai, chọn level, viết logback.xml) trước khi mở đáp án.</li>
+      <li>Trước buổi phỏng vấn ôn <a href="#cheat-sheet">Cheat sheet &amp; checklist</a>.</li>
+    </ol>
+
+    <div class="note">Khác các chương trước, ví dụ trong trang này <strong>không chạy single-file</strong> vì cần hai dependency Maven là <code class="inline">slf4j-api</code> và <code class="inline">logback-classic</code>. Cách thêm dependency vào <code class="inline">pom.xml</code> và chạy build học ở <a href="maven-gradle.html">4.3 Maven &amp; Gradle</a>; ở đây bạn chỉ cần hiểu nội dung file cấu hình.</div>
+
+    <p>Góc Node.js ngay từ đầu: nếu từng viết Node, <code class="inline">console.log("Tạo đơn", orderId)</code> chạy được nhưng cũng thiếu level, timestamp và ngữ cảnh y như <code class="inline">System.out.println</code>. Hệ sinh thái Node có <strong>pino</strong>/<strong>winston</strong> (thư viện logging) và <strong>morgan</strong> (log request HTTP) — Java tương ứng là SLF4J/Logback và servlet filter/interceptor. So sánh đầy đủ ở <a href="#goc-nodejs">mục 13</a>.</p>
+
+    <h3>Trước và sau: một dòng log đơn hàng</h3>
+
+    <p>Cách người mới thường viết — không level, không timestamp, không tắt/đổi đích được, và mỗi lần đổi format phải sửa code:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI trong production: System.out.println
+public class OrderService {
+    public void taoDon(String orderId, String user) {
+        System.out.println("Tao don " + orderId + " cho " + user);
+    }
+}</code></pre>
+    </div>
+
+    <p>Cách thực tế — logger qua facade, level rõ ràng, placeholder, output do file cấu hình quyết định:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    public void taoDon(String orderId, String user) {
+        log.info("Tạo đơn {} cho {}", orderId, user);
+    }
+}</code></pre>
+    </div>
+
+    <p>Với cấu hình Logback mặc định (chưa có <code class="inline">logback.xml</code>), dòng <code class="inline">log.info</code> in ra console theo đúng format chuẩn của Logback — thời gian + thread + level + tên logger + message:</p>
+
+    <div class="codeblock">
+      <pre><code>14:32:07.512 [main] INFO  OrderService - Tạo đơn DH-1001 cho an</code></pre>
+    </div>
+
+    <p>Bạn được thêm ngay 4 thứ: <strong>thời gian</strong>, <strong>level</strong>, <strong>tên logger</strong> và khả năng lọc/ghi file/xoay file mà không sửa một dòng code. Phần còn lại của trang mổ xẻ từng mảnh.</p>
+
+    <h2 id="slf4j-logback">2. SLF4J + Logback — facade &amp; implementation <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>SLF4J</strong> (Simple Logging Facade for Java) <em>không phải</em> thư viện ghi log — nó là <strong>facade</strong>: bộ API trung lập mà code bạn gọi vào. Việc ghi log thật do một <strong>implementation</strong> (còn gọi là provider/binding) đảm nhiệm: <strong>Logback</strong>, <strong>Log4j2</strong> hoặc <code class="inline">java.util.logging</code> (JUL).</p>
+
+    <table>
+      <thead>
+        <tr><th>Vai trò</th><th>Artifact Maven</th><th>Trách nhiệm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>API (facade)</td><td><code class="inline">org.slf4j:slf4j-api</code></td><td><code class="inline">Logger</code>, <code class="inline">LoggerFactory</code>, <code class="inline">MDC</code> — code của bạn chỉ phụ thuộc phần này</td></tr>
+        <tr><td>Implementation</td><td><code class="inline">ch.qos.logback:logback-classic</code></td><td>Format, appender, level, rolling — tự được SLF4J tìm thấy khi có trên classpath</td></tr>
+      </tbody>
+    </table>
+
+    <p>Lợi ích của facade: đổi implementation không phải sửa code; mọi thư viện trong hệ sinh thái (Hibernate, Spring, Kafka client...) đều nói tiếng SLF4J nên chúng ghi log về cùng một chỗ với cùng một định dạng, thay vì mỗi thư viện một kiểu.</p>
+
+    <div class="signature">
+      <span class="sig-muted">static</span> <span class="tok-typ">Logger</span> <span class="sig-var">getLogger</span><span class="sig-muted">(</span><span class="tok-typ">Class</span><span class="sig-muted">&lt;?&gt; clazz)</span>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.slf4j&lt;/groupId&gt;
+    &lt;artifactId&gt;slf4j-api&lt;/artifactId&gt;
+    &lt;version&gt;2.0.20&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;ch.qos.logback&lt;/groupId&gt;
+    &lt;artifactId&gt;logback-classic&lt;/artifactId&gt;
+    &lt;version&gt;1.6.5&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+
+    <div class="note">Khai báo tường minh cả hai artifact để kiểm soát version; <code class="inline">logback-classic</code> vốn kéo theo <code class="inline">slf4j-api</code> và <code class="inline">logback-core</code>. Version ở trên là bản ổn định tại thời điểm viết (SLF4J 2.0.20, Logback 1.6.5) — khi làm thật, kiểm tra Maven Central để lấy bản mới nhất. Giữ <code class="inline">slf4j-api</code> 2.0.x đi với <code class="inline">logback-classic</code> 1.5+/1.6+; đừng trộn kiểu slf4j 1.7 với logback 1.6 (lệch provider).</div>
+
+    <h3>Mẫu chuẩn: <code class="inline">LoggingDemo</code></h3>
+
+    <p>Mọi class cần log đều mở đầu bằng đúng hai dòng: khai báo <code class="inline">static final Logger</code> lấy từ <code class="inline">LoggerFactory.getLogger(TenClass.class)</code>. Truyền <code class="inline">.class</code> để tên logger trùng tên đầy đủ của class — nhờ đó cấu hình level theo package (mục 7) hoạt động.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class LoggingDemo {
+    private static final Logger log = LoggerFactory.getLogger(LoggingDemo.class);
+
+    public static void main(String[] args) {
+        String orderId = "DH-1001";
+        String user = "an";
+
+        log.info("Tạo đơn {} cho {}", orderId, user);
+        log.warn("Kho sắp hết hàng: {}", "ao thun");
+
+        try {
+            int soLuong = Integer.parseInt("khong-phai-so");
+            log.info("Số lượng = {}", soLuong);
+        } catch (NumberFormatException ex) {
+            log.error("Không đọc được số lượng cho đơn {}", orderId, ex);
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy với Logback mặc định (chưa cấu hình), output console đúng format chuẩn; stack trace bên dưới đã lược bớt và thay số dòng bằng <code class="inline">...</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>14:32:07.512 [main] INFO  LoggingDemo - Tạo đơn DH-1001 cho an
+14:32:07.514 [main] WARN  LoggingDemo - Kho sắp hết hàng: ao thun
+14:32:07.515 [main] ERROR LoggingDemo - Không đọc được số lượng cho đơn DH-1001
+java.lang.NumberFormatException: For input string: "khong-phai-so"
+    at java.base/java.lang.Integer.parseInt(Integer.java:...)
+    at LoggingDemo.main(LoggingDemo.java:...)</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Vì sao <code class="inline">static final</code>?</strong> Logger là object dùng lại, không cần tạo mới mỗi lần gọi — <code class="inline">static</code> để không tạo thừa và để dùng được trong static method; <code class="inline">final</code> để không ai gán đè. Nhiều bạn viết nhầm <code class="inline">LoggerFactory.getILoggerFactory()</code> (trả về factory chứ không phải logger) — phương thức đúng luôn là <code class="inline">LoggerFactory.getLogger(...)</code>.</div>
+
+    <h3>Hai lỗi setup gặp nhiều nhất</h3>
+
+    <p>Chỉ có <code class="inline">slf4j-api</code> mà thiếu implementation: chương trình vẫn compile và chạy, nhưng log <strong>im lặng biến mất</strong> (SLF4J dùng NOP logger) kèm cảnh báo:</p>
+
+    <div class="errblock">
+      <pre>SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.</pre>
+    </div>
+
+    <p>Import nhầm <code class="inline">java.util.logging.Logger</code> (JUL) trong khi vẫn lấy logger từ SLF4J — lỗi ngay khi compile vì hai kiểu khác nhau:</p>
+
+    <div class="errblock">
+      <pre>LoggingDemo.java:5: error: incompatible types: org.slf4j.Logger cannot be converted to java.util.logging.Logger
+    private static final Logger log = LoggerFactory.getLogger(LoggingDemo.class);
+                                     ^
+1 error</pre>
+    </div>
+
+    <h2 id="log-levels">3. Log levels — TRACE &lt; DEBUG &lt; INFO &lt; WARN &lt; ERROR <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>SLF4J có đúng 5 level, nghiêm trọng tăng dần. Khi đặt level <em>X</em> cho một logger, mọi log có level <strong>thấp hơn X bị tắt</strong>. Ví dụ root để INFO thì TRACE/DEBUG bị bỏ qua, còn WARN/ERROR vẫn in.</p>
+
+    <table>
+      <thead>
+        <tr><th>Level</th><th>Dùng khi</th><th>Ví dụ thực tế</th><th>Môi trường</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>TRACE</strong></td><td>Chi tiết cực mịn, từng bước nhỏ trong thuật toán</td><td>Giá trị từng phần tử khi parse dữ liệu</td><td>Chỉ bật tạm khi điều tra</td></tr>
+        <tr><td><strong>DEBUG</strong></td><td>Thông tin giúp dev hiểu luồng xử lý: nhánh rẽ, giá trị biến, thời gian gọi</td><td><code class="inline">log.debug("Phí vận chuyển = {} cho đơn {}", phi, id)</code></td><td>Dev</td></tr>
+        <tr><td><strong>INFO</strong></td><td>Sự kiện nghiệp vụ quan trọng đã hoàn tất, hoặc trạng thái hệ thống</td><td>Đơn tạo thành công, app khởi động, job chạy xong</td><td>Dev + Prod</td></tr>
+        <tr><td><strong>WARN</strong></td><td>Bất thường nhưng chương trình vẫn xử lý được: retry, fallback, dữ liệu hơi lạ</td><td>Gọi API lỗi lần 1, sẽ retry; config thiếu nên dùng mặc định</td><td>Dev + Prod</td></tr>
+        <tr><td><strong>ERROR</strong></td><td>Thao tác thất bại, cần người xem: exception không xử lý được, mất kết nối DB</td><td>Thanh toán thất bại sau khi đã retry, job crash</td><td>Dev + Prod</td></tr>
+      </tbody>
+    </table>
+
+    <p>Câu thần chú thực dụng: <strong>TRACE</strong> = "đang soi từng bước", <strong>DEBUG</strong> = "dev cần biết", <strong>INFO</strong> = "sếp cần biết", <strong>WARN</strong> = "có gì đó lạ nhưng tôi xử được", <strong>ERROR</strong> = "có người phải mở log ra xem ngay".</p>
+
+    <h3>Đừng log ERROR cho lỗi nghiệp vụ đã xử lý</h3>
+
+    <p>"Email đã tồn tại khi đăng ký" là lỗi <em>dự đoán được</em> và được trả về HTTP 409 cho người dùng — hệ thống không hỏng. Log ERROR cho ca này làm bảng điều khiển đỏ rực, alert kêu sai, và những ERROR thật bị chôn trong tiếng ồn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI: lỗi nghiệp vụ bình thường nhưng gắn ERROR
+if (userRepository.existsByEmail(email)) {
+    log.error("Email {} đã tồn tại", email);
+    throw new IllegalArgumentException("Email đã được đăng ký");
+}
+
+// ĐÚNG: WARN (hoặc INFO tuỳ quy ước), message nói rõ đây là từ chối nghiệp vụ
+if (userRepository.existsByEmail(email)) {
+    log.warn("Từ chối đăng ký: email {} đã tồn tại", email);
+    throw new IllegalArgumentException("Email đã được đăng ký");
+}</code></pre>
+    </div>
+
+    <div class="note">Quy tắc chọn môi trường: <strong>dev</strong> để package của mình ở DEBUG (thấy hết luồng), thư viện framework ở INFO/WARN; <strong>prod</strong> để root ở INFO, chỉ hạ xuống DEBUG cho <em>một package cụ thể</em> khi đang điều tra — hạ cả hệ thống về DEBUG sẽ cực ồn và tốn I/O.</div>
+
+    <h2 id="placeholder">4. Placeholder logging — dùng <code class="inline">{}</code>, đừng cộng chuỗi <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>SLF4J dùng cặp ngoặc <code class="inline">{}</code> làm chỗ trống; giá trị truyền vào sau message theo đúng thứ tự. Đây là cách viết chuẩn thay cho cộng chuỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI: cộng chuỗi
+log.info("Tạo đơn " + orderId + " cho " + user + " với " + items.size() + " mặt hàng");
+
+// ĐÚNG: placeholder
+log.info("Tạo đơn {} cho {} với {} mặt hàng", orderId, user, items.size());</code></pre>
+    </div>
+
+    <h3>Vì sao không cộng chuỗi?</h3>
+
+    <p>Vì phép cộng <strong>luôn được thực hiện trước</strong> khi logger kịp kiểm tra level. Với một dòng DEBUG bị tắt (root đang INFO), bản cộng chuỗi vẫn xây xong String rồi mới bị vứt đi — tốn CPU và tạo rác cho GC:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Root level = INFO -> DEBUG bị tắt.
+// Bản cộng chuỗi vẫn nối và tạo String mới mỗi lần gọi.
+log.debug("payload = " + payload);
+
+// Placeholder: SLF4J kiểm tra level trước, DEBUG tắt thì bỏ qua việc nối chuỗi.
+log.debug("payload = {}", payload);</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Chú ý quan trọng:</strong> placeholder chỉ tránh việc <em>nối chuỗi</em>, còn <strong>tham số vẫn được tính</strong> trước khi gọi (Java đánh giá argument trước). Nếu bản thân giá trị đắt tiền — <code class="inline">toJson(request)</code>, query DB, serialize — hãy chặn bằng <code class="inline">isDebugEnabled()</code>:</div>
+
+    <div class="codeblock">
+      <pre><code class="java">if (log.isDebugEnabled()) {
+    log.debug("payload = {}", toJson(request));
+}</code></pre>
+    </div>
+
+    <p>Ba đến mười tham số vẫn dùng bình thường; chỉ cần đếm đủ cặp <code class="inline">{}</code> khớp với số tham số. Nếu thiếu tham số, phần <code class="inline">{}</code> thừa bị giữ nguyên trong output — lỗi rất khó thấy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">log.info("Tạo đơn {} cho {}", orderId);
+// 14:32:07.512 [main] INFO  OrderService - Tạo đơn DH-1001 cho {}</code></pre>
+    </div>
+
+    <h2 id="log-exception">5. Log exception đúng cách <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Exception có <strong>stack trace</strong> — chuỗi "dấu vết" cho biết lỗi nổ ở đâu, đi qua những method nào. Cách truyền đúng: đặt <code class="inline">ex</code> làm <strong>tham số cuối cùng</strong>, không gọi <code class="inline">getMessage()</code>, không cộng chuỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    public void taoDon(String orderId, PaymentService payment) {
+        try {
+            payment.charge(orderId);
+            log.info("Đơn {} thanh toán xong", orderId);
+        } catch (RuntimeException ex) {
+            // ex là tham số CUỐI -> logback in kèm stack trace
+            log.error("Không tạo được đơn {}", orderId, ex);
+            throw ex;
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Output thật với pattern mặc định (stack trace lược bớt):</p>
+
+    <div class="codeblock">
+      <pre><code>14:33:10.002 [main] ERROR OrderService - Không tạo được đơn DH-1001
+java.lang.IllegalStateException: Cổng thanh toán không phản hồi
+    at PaymentService.charge(PaymentService.java:...)
+    at OrderService.taoDon(OrderService.java:...)</code></pre>
+    </div>
+
+    <h3>Ba kiểu sai thường gặp</h3>
+
+    <ol>
+      <li><strong>Chỉ log <code class="inline">getMessage()</code>:</strong> <code class="inline">log.error("Lỗi: " + ex.getMessage())</code> làm mất loại exception và toàn bộ stack trace — nhận được mỗi câu "Cổng thanh toán không phản hồi" mà không biết nổ ở dòng nào, method nào.</li>
+      <li><strong>Log rồi ném lại ở mọi tầng:</strong> service log ERROR, controller bắt được cũng log ERROR, global handler log thêm lần nữa — một lỗi thành ba dòng ERROR và alert đếm sai. Chọn đúng <em>một</em> tầng chịu trách nhiệm log (thường là tầng xử lý cuối); các tầng dưới chỉ ném tiếp.</li>
+      <li><strong>Nuốt lỗi sau khi log:</strong> <code class="inline">catch (RuntimeException ex) { log.error("Lỗi", ex); }</code> rồi không làm gì tiếp — caller tưởng thành công, dữ liệu rơi vào trạng thái nửa vời.</li>
+    </ol>
+
+    <h3>Log mà không mất dấu — chọn nơi log</h3>
+
+    <p>Nguyên tắc: <strong>log ở nơi quyết định</strong>. Nếu tầng dưới vẫn muốn để lại dấu vết, log ở mức thấp hơn (DEBUG/WARN) hoặc thêm ngữ cảnh rồi ném tiếp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">try {
+    payment.charge(orderId);
+} catch (RuntimeException ex) {
+    log.warn("Thanh toán lần 1 thất bại cho đơn {}, sẽ retry", orderId);
+    throw ex;
+}</code></pre>
+    </div>
+
+    <div class="note">Khi vừa có placeholder vừa có exception, exception vẫn phải nằm <strong>cuối cùng</strong>: <code class="inline">log.error("Không tạo được đơn {}", orderId, ex)</code>. Nếu truyền <code class="inline">ex</code> ở giữa, nó bị coi là tham số thường và chỉ in <code class="inline">toString()</code> — mất stack trace.</div>
+
+    <h2 id="du-lieu-nhay-cam">6. Không log dữ liệu nhạy cảm <span class="badge b-prod">Production</span></h2>
+
+    <p>Log thường được ghi ra file, đẩy lên hệ thống tập trung, giữ hàng tháng và rất nhiều người đọc được. Vì vậy hãy coi log là <strong>dữ liệu nội bộ công khai</strong> — những thứ sau tuyệt đối không đưa vào message:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nhóm</th><th>Ví dụ</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Thông tin xác thực</td><td>password, mã PIN, OTP, API key, JWT/access token, refresh token</td><td>Kể cả token "chỉ để debug" — token trong log là token bị lộ</td></tr>
+        <tr><td>Tài chính</td><td>Số thẻ, CVV, số tài khoản đầy đủ</td><td>Buộc phải đối chiếu thì chỉ log 4 số cuối đã che</td></tr>
+        <tr><td>Định danh cá nhân (PII)</td><td>CMND/CCCD, hộ chiếu, số điện thoại, email, địa chỉ, ngày sinh</td><td>Tuỳ quy định công ty và luật (Nghị định 13, GDPR); ưu tiên log ID nội bộ</td></tr>
+        <tr><td>Dữ liệu y tế, sinh trắc học</td><td>Bệnh án, vân tay, khuôn mặt</td><td>Nhóm đặc biệt nhạy cảm</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI: lộ cả mật khẩu, thẻ và token
+log.info("Đăng nhập user={} password={}", user, password);
+log.info("Thanh toán thẻ {} cvv {}", cardNumber, cvv);
+log.debug("Token gọi API: {}", accessToken);
+
+// ĐÚNG: log sự kiện + định danh đã che
+log.info("Đăng nhập thành công user={}", user);
+log.info("Thanh toán đơn {} bằng thẻ {}", orderId, maskCard(cardNumber));
+log.debug("Bắt đầu gọi cổng thanh toán cho đơn {}", orderId);</code></pre>
+    </div>
+
+    <h3>Che dữ liệu (masking)</h3>
+
+    <p>Masking biến giá trị nhạy cảm thành dạng vẫn đối chiếu được nhưng không đọc được toàn bộ. Hàm mask nên nằm cạnh DTO/tiện ích để không nơi nào quên:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">static String maskCard(String card) {
+    if (card == null || card.length() &lt; 4) {
+        return "***";
+    }
+    return "**** **** **** " + card.substring(card.length() - 4);
+}
+
+static String maskEmail(String email) {
+    int at = email.indexOf('@');
+    if (at &lt;= 1) {
+        return "***";
+    }
+    return email.charAt(0) + "***" + email.substring(at);
+}
+
+public static void main() {
+    IO.println(maskCard("4111111111111111"));
+    IO.println(maskEmail("an.nguyen@shop.vn"));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>**** **** **** 1111
+a***@shop.vn</code></pre>
+    </div>
+
+    <ul>
+      <li>Chỉ log <strong>ID</strong> thay vì dữ liệu: <code class="inline">orderId</code>, <code class="inline">userId</code> thay cho tên/email/số thẻ.</li>
+      <li>Che ngay tại nguồn gần nhất có thể (DTO/tiện ích) — đừng trông chờ người đọc log tự lọc.</li>
+      <li>Review log ngay trong code review: grep các từ khoá <code class="inline">password</code>, <code class="inline">token</code>, <code class="inline">card</code>, <code class="inline">cvv</code> trong diff.</li>
+      <li>Không log cả object DTO có <code class="inline">toString()</code> chứa field nhạy cảm — hoặc override <code class="inline">toString()</code> để che bớt. Xem <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</li>
+    </ul>
+
+    <div class="note warn"><strong>Bẫy <code class="inline">toString()</code>:</strong> <code class="inline">log.info("user = {}", userDto)</code> là cách rất nhanh để rò rỉ mọi field. Kiểm tra <code class="inline">toString()</code> của DTO trước khi log cả object.</div>
+
+    <h2 id="logback-xml">7. Cấu hình <code class="inline">logback.xml</code> <span class="badge b-prod">Production</span></h2>
+
+    <p>Logback tự động tìm file cấu hình trên classpath theo thứ tự: <code class="inline">logback-test.xml</code> (thường ở <code class="inline">src/test/resources</code>) rồi <code class="inline">logback.xml</code> (ở <code class="inline">src/main/resources</code>). Không có file nào thì dùng cấu hình mặc định (console, DEBUG) đúng như output ở mục 2. Có thể chỉ định file khác bằng <code class="inline">-Dlogback.configurationFile=.../logback-dev.xml</code>.</p>
+
+    <h3>Ba khối cần nhớ: appender → logger → root</h3>
+
+    <ul>
+      <li><strong>Appender</strong> — "đích đến" của log: <code class="inline">ConsoleAppender</code> (màn hình), <code class="inline">RollingFileAppender</code> (file xoay vòng), <code class="inline">AsyncAppender</code> (bọc appender khác), appender JSON...</li>
+      <li><strong>Logger</strong> — cấu hình <em>theo tên/package</em>: level riêng, appender riêng, độ kế thừa (<code class="inline">additivity</code>).</li>
+      <li><strong>Root</strong> — logger gốc; mọi logger khác kế thừa từ đây nếu không có cấu hình riêng.</li>
+    </ul>
+
+    <h3>File cấu hình hoàn chỉnh mức cơ bản</h3>
+
+    <div class="codeblock">
+      <pre><code>&lt;configuration&gt;
+    &lt;property name="LOG_DIR" value="logs"/&gt;
+    &lt;property name="PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/&gt;
+
+    &lt;!-- 1. Log ra console --&gt;
+    &lt;appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender"&gt;
+        &lt;encoder&gt;
+            &lt;pattern&gt;${PATTERN}&lt;/pattern&gt;
+        &lt;/encoder&gt;
+    &lt;/appender&gt;
+
+    &lt;!-- 2. Log ra file, xoay vong theo ngay + dung luong --&gt;
+    &lt;appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender"&gt;
+        &lt;file&gt;${LOG_DIR}/app.log&lt;/file&gt;
+        &lt;rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"&gt;
+            &lt;fileNamePattern&gt;${LOG_DIR}/app.%d{yyyy-MM-dd}.%i.log&lt;/fileNamePattern&gt;
+            &lt;maxFileSize&gt;10MB&lt;/maxFileSize&gt;
+            &lt;maxHistory&gt;30&lt;/maxHistory&gt;
+            &lt;totalSizeCap&gt;1GB&lt;/totalSizeCap&gt;
+        &lt;/rollingPolicy&gt;
+        &lt;encoder&gt;
+            &lt;pattern&gt;${PATTERN}&lt;/pattern&gt;
+        &lt;/encoder&gt;
+    &lt;/appender&gt;
+
+    &lt;!-- 3. Level theo package: code cua minh DEBUG, framework WARN --&gt;
+    &lt;logger name="com.shop" level="DEBUG"/&gt;
+    &lt;logger name="org.hibernate" level="WARN"/&gt;
+
+    &lt;!-- 4. Mac dinh cho toan bo ung dung --&gt;
+    &lt;root level="INFO"&gt;
+        &lt;appender-ref ref="CONSOLE"/&gt;
+        &lt;appender-ref ref="FILE"/&gt;
+    &lt;/root&gt;
+&lt;/configuration&gt;</code></pre>
+    </div>
+
+    <p>Ý nghĩa các mảnh pattern hay dùng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Mảnh</th><th>Ý nghĩa</th><th>Ví dụ output</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">%d{...}</code></td><td>Thời gian theo format</td><td><code class="inline">2026-10-03 14:32:07.512</code></td></tr>
+        <tr><td><code class="inline">[%thread]</code></td><td>Tên thread đang chạy</td><td><code class="inline">[main]</code>, <code class="inline">[http-nio-8080-exec-3]</code></td></tr>
+        <tr><td><code class="inline">%-5level</code></td><td>Level, canh trái trong 5 ký tự</td><td><code class="inline">INFO </code>, <code class="inline">ERROR</code></td></tr>
+        <tr><td><code class="inline">%logger{36}</code></td><td>Tên logger, rút gọn nếu quá 36 ký tự</td><td><code class="inline">c.s.OrderService</code></td></tr>
+        <tr><td><code class="inline">%msg</code></td><td>Nội dung message</td><td><code class="inline">Tạo đơn DH-1001 cho an</code></td></tr>
+        <tr><td><code class="inline">%n</code></td><td>Xuống dòng</td><td>—</td></tr>
+        <tr><td><code class="inline">%X{requestId}</code></td><td>Giá trị lấy từ MDC (mục 9)</td><td><code class="inline">req-a1b2c3</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Rolling policy — vì sao bắt buộc ở production</h3>
+
+    <p>Nếu chỉ ghi mãi vào một file, file sẽ phình tới hàng GB, khó mở và có ngày đầy ổ đĩa. <code class="inline">RollingFileAppender</code> + <code class="inline">SizeAndTimeBasedRollingPolicy</code> tự cắt file theo ngày và theo dung lượng, đồng thời xoá bản cũ:</p>
+
+    <ul>
+      <li><code class="inline">fileNamePattern ...%d{yyyy-MM-dd}.%i.log</code> — ngày + số thứ tự khi vượt <code class="inline">maxFileSize</code>.</li>
+      <li><code class="inline">maxHistory 30</code> — giữ log 30 ngày rồi xoá dần.</li>
+      <li><code class="inline">totalSizeCap 1GB</code> — trần tổng dung lượng cả thư mục log.</li>
+    </ul>
+
+    <div class="note"><strong>Level hoạt động theo cây tên logger:</strong> <code class="inline">com.shop</code> là cha của <code class="inline">com.shop.OrderService</code>, nên logger con kế thừa level DEBUG. Vì vậy đặt level theo package luôn linh hoạt hơn từng class — và đây chính là lý do nên lấy logger bằng <code class="inline">getLogger(TenClass.class)</code>.</div>
+
+    <div class="note warn"><strong>Đừng quên <code class="inline">additivity</code> khi tự gắn appender:</strong> nếu gắn appender cho logger <code class="inline">com.shop</code> mà không đặt <code class="inline">additivity="false"</code>, log vẫn chảy tiếp lên root và bị ghi <strong>hai lần</strong>. Thấy file log trùng dòng thì kiểm tra chỗ này trước khi nghi ngờ code.</div>
+
+    <h2 id="structured-logging">8. Structured logging — log cho máy đọc <span class="badge b-prod">Production</span></h2>
+
+    <p>Log text truyền thống tốt cho mắt người nhưng khó cho máy: muốn lọc "tất cả đơn của user X trong 1 giờ" bạn phải regex. <strong>Structured logging</strong> ghi mỗi sự kiện thành một object có khoá rõ ràng — thường là JSON mỗi dòng (JSON Lines) — để hệ thống tập trung (ELK, Loki, Datadog...) đánh index và truy vấn. Output thật là <em>một dòng</em>; ở đây xuống dòng cho dễ đọc:</p>
+
+    <div class="codeblock">
+      <pre><code>{
+  "@timestamp": "2026-10-03T14:32:07.512+07:00",
+  "level": "INFO",
+  "logger": "com.shop.OrderService",
+  "thread": "main",
+  "requestId": "req-a1b2c3",
+  "message": "Tạo đơn DH-1001 cho an",
+  "orderId": "DH-1001",
+  "userId": "an",
+  "total": 396000
+}</code></pre>
+    </div>
+
+    <p>Trong Java, structured logging thường làm bằng encoder JSON như <code class="inline">logstash-logback-encoder</code> (artifact <code class="inline">net.logstash.logback:logstash-logback-encoder</code>, bản 9.0 tại thời điểm viết), hoặc JSON layout của Log4j2. Mức tối thiểu cần biết — thêm appender JSON bên cạnh appender text:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender"&gt;
+    &lt;file&gt;logs/app.json&lt;/file&gt;
+    &lt;encoder class="net.logstash.logback.encoder.LogstashEncoder"&gt;
+        &lt;customFields&gt;{"service":"order-service"}&lt;/customFields&gt;
+    &lt;/encoder&gt;
+&lt;/appender&gt;</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Message ổn định, dữ liệu động vào field:</strong> message nên là câu cố định để nhóm/đếm; <code class="inline">orderId</code>, <code class="inline">userId</code>, <code class="inline">requestId</code> đưa vào MDC hoặc structured argument để filter chính xác.</li>
+      <li><strong>Đừng nhồi mọi thứ vào message</strong> rồi lại phải regex — mất hết lợi ích của JSON.</li>
+      <li><strong>Khi nào đáng làm:</strong> nhiều service, cần dashboard/alert theo field, truy vấn log thường xuyên. App nhỏ một service thì log text + grep là đủ.</li>
+      <li><strong>Mức nhận biết là đủ cho Junior+</strong> — biết nó là gì, vì sao dùng, và rằng dev vẫn thường giữ song song console text cho dễ đọc khi phát triển.</li>
+    </ul>
+
+    <h2 id="mdc">9. MDC &amp; correlation id <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>MDC</strong> (Mapped Diagnostic Context) là một map gắn theo <em>thread</em>; mọi dòng log trong thread đó tự động mang theo các cặp key-value mà không phải truyền qua tham số. Pattern <code class="inline">%X{key}</code> sẽ in giá trị tương ứng. Dùng phổ biến nhất là <strong>requestId</strong> (correlation id / trace id): một request đi qua nhiều class, nhiều service — cùng một <code class="inline">requestId</code> giúp nối toàn bộ log của nó lại.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    public void xuLy(String requestId, String orderId) {
+        MDC.put("requestId", requestId);
+        try {
+            log.info("Bắt đầu xử lý đơn {}", orderId);
+            log.info("Xử lý đơn {} xong", orderId);
+        } finally {
+            MDC.remove("requestId");
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Với pattern có <code class="inline">[%X{requestId}]</code>, hai dòng trên ra:</p>
+
+    <div class="codeblock">
+      <pre><code>14:35:01.120 [http-nio-8080-exec-3] INFO  OrderService [req-a1b2c3] - Bắt đầu xử lý đơn DH-1001
+14:35:01.450 [http-nio-8080-exec-3] INFO  OrderService [req-a1b2c3] - Xử lý đơn DH-1001 xong</code></pre>
+    </div>
+
+    <p>Đặt <code class="inline">requestId</code> một lần ở <strong>filter servlet</strong> — nơi mọi request đều đi qua (học đầy đủ ở giai đoạn 5). Đoạn code trong <code class="inline">doFilter</code> trông như sau:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Trong doFilter cua servlet filter (giai doan 5)
+String requestId = request.getHeader("X-Request-Id");
+if (requestId == null || requestId.isBlank()) {
+    requestId = UUID.randomUUID().toString();
+}
+MDC.put("requestId", requestId);
+response.setHeader("X-Request-Id", requestId);
+try {
+    chain.doFilter(request, response);
+} finally {
+    MDC.remove("requestId");
+}</code></pre>
+    </div>
+
+    <h3>MDC và thread pool / bất đồng bộ</h3>
+
+    <p>MDC là thread-local: khi công việc nhảy sang thread khác (ExecutorService, CompletableFuture, message listener), context <strong>không tự lan theo</strong>. Phải copy và đặt lại ở thread mới:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">Map&lt;String, String&gt; context = MDC.getCopyOfContextMap();
+
+executor.submit(() -&gt; {
+    if (context != null) {
+        MDC.setContextMap(context);
+    }
+    try {
+        log.info("Chạy trong thread khác, vẫn có requestId");
+    } finally {
+        MDC.clear();
+    }
+});</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Luôn <code class="inline">remove</code>/<code class="inline">clear</code> trong <code class="inline">finally</code>:</strong> thread được tái sử dụng (đặc biệt trong web server), quên xoá thì request sau mang nhầm <code class="inline">requestId</code> của request trước — cực khó debug.</li>
+      <li><strong>AsyncAppender của Logback:</strong> event log được tạo trên thread gọi nên đã "chụp" sẵn giá trị MDC lúc đó; vì vậy log vẫn đúng context dù việc ghi file diễn ra trên thread nền. Vấn đề MDC mất context chủ yếu là khi <em>code nghiệp vụ</em> chạy trên thread khác, không phải appender.</li>
+      <li>Correlation id còn được truyền giữa các service qua HTTP header (ví dụ <code class="inline">X-Request-Id</code>) để nối log liên service — hướng tới distributed tracing (OpenTelemetry) ở giai đoạn sau.</li>
+    </ul>
+
+    <h2 id="log-o-tang-nao">10. Log ở tầng nào <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Nguyên tắc chung: log ở <strong>biên (boundary)</strong> — nơi dữ liệu vào/ra hệ thống và nơi quyết định kết quả — thay vì rắc log khắp các dòng nội bộ. Một sự kiện quan trọng nên có <em>một</em> dòng log chính.</p>
+
+    <table>
+      <thead>
+        <tr><th>Tầng</th><th>Nên log gì</th><th>Level thường dùng</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Entry point (controller/filter/consumer)</td><td>Request đến, kết quả trả về, requestId</td><td>INFO</td><td>Không log toàn bộ body; access log của server có thể đã log sẵn — tránh trùng</td></tr>
+        <tr><td>Service (nghiệp vụ)</td><td>Bắt đầu/kết thúc xử lý, quyết định quan trọng, retry nghiệp vụ</td><td>INFO / WARN</td><td>Kèm orderId/userId — nơi đặt log giá trị nhất</td></tr>
+        <tr><td>Repository / Integration (DB, HTTP ra ngoài)</td><td>Lỗi kết nối, timeout, retry kỹ thuật, fallback</td><td>WARN / ERROR</td><td>Nhiều framework đã log sẵn; thêm log là thành double log</td></tr>
+        <tr><td>Global exception handler</td><td>Exception cuối cùng chưa xử lý</td><td>ERROR + stack trace</td><td>Log đúng một lần tại đây cho mỗi request hỏng</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    public void taoDon(String orderId, User user) {
+        log.info("Bắt đầu tạo đơn {} cho user {}", orderId, user.id());
+        // ... xu ly ...
+        log.info("Tạo đơn {} thành công, tổng tiền {} VND", orderId, total);
+    }
+}</code></pre>
+    </div>
+
+    <p>Vài quy tắc thực dụng:</p>
+    <ul>
+      <li>Log <strong>kết quả nghiệp vụ</strong> ("tạo đơn thành công", "thanh toán bị từ chối") hơn là từng bước kỹ thuật.</li>
+      <li>Không log ở cả service lẫn controller cho cùng một sự kiện — chọn tầng nào có đủ ngữ cảnh nhất.</li>
+      <li>Lỗi kỹ thuật ở tầng integration chỉ log khi <em>bạn</em> xử lý (retry/fallback); còn để exception nổi lên thì handler cuối log kèm stack trace.</li>
+      <li>Ở giai đoạn 5 (Spring/REST), các ý này áp dụng nguyên vẹn: filter cho requestId, service cho nghiệp vụ, <code class="inline">@ControllerAdvice</code> cho exception cuối.</li>
+    </ul>
+
+    <h2 id="production-tips">11. Production tips <span class="badge b-prod">Production</span></h2>
+
+    <h3>11.1 Log phải có ngữ cảnh</h3>
+
+    <p>"Đã tạo đơn" là dòng log vô dụng khi có sự cố. Người đọc log cần trả lời được: đơn nào, user nào, request nào:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI: khong truy vet duoc gi
+log.info("Đã tạo đơn");
+
+// ĐÚNG: ngữ cảnh cụ thể
+log.info("Đã tạo đơn {} cho user {} với tổng tiền {}", orderId, userId, total);</code></pre>
+    </div>
+
+    <h3>11.2 Không log trong vòng lặp dày</h3>
+
+    <p>Một job xử lý 100.000 bản ghi mà log từng bản ghi sẽ tạo 100.000 dòng — chậm, ngốn đĩa, và không ai đọc. Log mốc đầu/cuối kèm số liệu tổng kết; chi tiết từng phần tử chỉ để DEBUG và nên lấy mẫu:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// SAI: 1 dong log cho moi phan tu
+for (Order order : orders) {
+    log.info("Đang xử lý đơn {}", order.id());
+    xuLy(order);
+}
+
+// ĐÚNG: moc dau/cuoi + tong ket
+log.info("Bắt đầu xử lý {} đơn", orders.size());
+int ok = 0;
+int failed = 0;
+for (Order order : orders) {
+    // ... xu ly, dem ok/failed ...
+}
+log.info("Xử lý xong: {} thành công, {} lỗi", ok, failed);</code></pre>
+    </div>
+
+    <h3>11.3 Đừng dùng log thay debugger</h3>
+
+    <p>Debugger (breakpoint, step, watch) trả lời câu hỏi "tại sao giá trị này bằng 3" nhanh hơn hàng trăm dòng log. Log để lại <strong>dấu vết vận hành</strong>: sự kiện đã xảy ra ở production, khi bạn không ngồi trước máy. Khi điều tra, dùng debugger/test; khi chạy thật, dùng log có chủ đích.</p>
+
+    <h3>11.4 Alert từ log phải "hành động được"</h3>
+
+    <ul>
+      <li>Alert nên dựa trên <strong>tỉ lệ/tần suất</strong> (error rate, số ERROR mỗi phút) chứ không phải từng dòng log.</li>
+      <li>Mỗi ERROR phải ứng với việc có người cần làm gì đó; lỗi nghiệp vụ đã xử lý để WARN/INFO (mục 3).</li>
+      <li>Đặt log message ổn định, có "mã" nhận dạng nếu cần (<code class="inline">ORDER_PAYMENT_FAILED</code>) để hệ thống alert đếm chính xác thay vì regex câu tiếng Việt.</li>
+    </ul>
+
+    <h3>11.5 Async appender — biết mình đánh đổi gì</h3>
+
+    <p>Khi log I/O thành nút cổ chai, bọc appender trong <code class="inline">AsyncAppender</code> để thread nghiệp vụ không chờ ghi file:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender"&gt;
+    &lt;queueSize&gt;1024&lt;/queueSize&gt;
+    &lt;discardingThreshold&gt;0&lt;/discardingThreshold&gt;
+    &lt;appender-ref ref="FILE"/&gt;
+&lt;/appender&gt;</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Lợi:</strong> throughput cao hơn, độ trễ ghi log không ảnh hưởng request.</li>
+      <li><strong>Hại:</strong> khi process chết đột ngột, log còn trong queue có thể mất. Vì vậy đừng dùng async cho log audit/bảo mật/bắt buộc đầy đủ.</li>
+      <li><code class="inline">discardingThreshold 0</code> để không tự động vứt bớt message khi queue gần đầy; theo dõi cảnh báo "appender queue full".</li>
+    </ul>
+
+    <h3>11.6 Checklist vận hành</h3>
+
+    <ul>
+      <li>Log có rotation và trần dung lượng (mục 7) — ổ đĩa đầy là sự cố production kinh điển.</li>
+      <li>Sau mỗi deploy, thử một request và đọc log xem có đủ ngữ cảnh, đúng level, không lộ dữ liệu.</li>
+      <li>Đồng bộ format giữa các service để hệ thống log tập trung parse được.</li>
+      <li>Ghi cả <em>duration</em> cho các tác vụ dài (gọi API ngoài, job) để trả lời "chậm ở đâu".</li>
+    </ul>
+
+    <h2 id="pitfalls">12. Pitfalls — bảng lỗi thường gặp <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Ví dụ</th><th>Hậu quả</th><th>Cách đúng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dùng <code class="inline">System.out.println</code> thay logger</td><td><code class="inline">System.out.println("Tạo đơn " + id)</code></td><td>Không level/timestamp/thread, không cấu hình, không rolling, không tắt được theo môi trường</td><td>Dùng <code class="inline">log.info("Tạo đơn {}", id)</code></td></tr>
+        <tr><td>Cộng chuỗi trong log</td><td><code class="inline">log.debug("data = " + toJson(x))</code></td><td>Xây chuỗi mỗi lần gọi dù DEBUG tắt; tốn CPU/GC</td><td>Placeholder <code class="inline">{}</code>; <code class="inline">isDebugEnabled()</code> nếu tham số đắt</td></tr>
+        <tr><td>Level sai</td><td>ERROR cho email trùng khi đăng ký; INFO cho mọi request</td><td>Alert nhiễu, ERROR thật bị chôn trong tiếng ồn</td><td>Chọn theo bảng ở mục 3</td></tr>
+        <tr><td>Log dữ liệu nhạy cảm</td><td>password, token, số thẻ, CVV, PII</td><td>Rò rỉ dữ liệu, vi phạm quy định</td><td>Log ID + masking (mục 6)</td></tr>
+        <tr><td>Chỉ log <code class="inline">getMessage()</code></td><td><code class="inline">log.error("Lỗi: " + ex.getMessage())</code></td><td>Mất stack trace và loại exception</td><td>Truyền <code class="inline">ex</code> làm tham số cuối</td></tr>
+        <tr><td>Vừa log vừa ném ở nhiều tầng</td><td>Service + controller + handler cùng log ERROR</td><td>Một lỗi thành nhiều log, đếm alert sai</td><td>Log đúng một nơi (tầng xử lý cuối)</td></tr>
+        <tr><td>Nuốt exception sau khi log</td><td><code class="inline">catch { log.error(...); }</code> rồi thôi</td><td>Caller tưởng thành công, dữ liệu nửa vời</td><td>Xử lý hoặc ném tiếp</td></tr>
+        <tr><td>Log trong vòng lặp dày</td><td>Log từng item của 100.000 bản ghi</td><td>I/O nặng, file log phình, không ai đọc</td><td>Log mốc + tổng kết, để chi tiết ở DEBUG</td></tr>
+        <tr><td>Thiếu ngữ cảnh</td><td><code class="inline">log.info("Đã tạo đơn")</code></td><td>Không truy vết được đơn/user nào</td><td>Thêm orderId/userId/requestId</td></tr>
+        <tr><td>MDC không remove</td><td><code class="inline">MDC.put</code> mà quên xoá</td><td>Thread tái sử dụng mang requestId cũ sang request mới</td><td><code class="inline">finally { MDC.remove(...); }</code></td></tr>
+        <tr><td>Không cấu hình rolling</td><td>Ghi mãi một file <code class="inline">app.log</code></td><td>Đầy ổ đĩa, service chết</td><td>RollingFileAppender + <code class="inline">maxHistory</code>/<code class="inline">totalSizeCap</code></td></tr>
+        <tr><td>Gắn appender trùng</td><td>Logger riêng + root cùng appender, thiếu <code class="inline">additivity="false"</code></td><td>Mỗi dòng log hai lần, alert đếm sai</td><td><code class="inline">additivity="false"</code> hoặc để root giữ appender</td></tr>
+        <tr><td>Bật DEBUG toàn hệ thống trên prod</td><td>root level DEBUG trong <code class="inline">logback.xml</code> production</td><td>Log ồn, tốn I/O, có thể lộ chi tiết nội bộ</td><td>Root INFO; hạ DEBUG theo package khi cần điều tra</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">13. Góc Node.js — console.log, pino/winston, morgan</h2>
+
+    <p>Nếu bạn đến từ Node.js, các khái niệm gần như ánh xạ 1-1 — chỉ khác tên thư viện:</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>Node.js</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>In cơ bản</td><td><code class="inline">console.log(...)</code> — không level, không cấu hình</td><td><code class="inline">System.out.println(...)</code> — cùng vấn đề; dùng SLF4J Logger</td></tr>
+        <tr><td>Thư viện logging</td><td><strong>winston</strong> (transports/formats), <strong>pino</strong> (JSON, nhanh)</td><td><strong>Logback</strong>/<strong>Log4j2</strong> (implementation) sau facade SLF4J</td></tr>
+        <tr><td>Level</td><td>pino numeric: 10 trace, 20 debug, 30 info, 40 warn, 50 error, 60 fatal; winston dùng npm levels</td><td>TRACE, DEBUG, INFO, WARN, ERROR (SLF4J không có FATAL)</td></tr>
+        <tr><td>Log có cấu trúc</td><td><code class="inline">log.info({ orderId }, "Tạo đơn")</code> — pino structured mặc định</td><td><code class="inline">log.info("Tạo đơn {}", orderId)</code> + encoder JSON</td></tr>
+        <tr><td>Context theo request</td><td><code class="inline">AsyncLocalStorage</code>, hoặc child logger <code class="inline">log.child({ requestId })</code></td><td><strong>MDC</strong> + pattern <code class="inline">%X{requestId}</code>; thread pool phải copy context</td></tr>
+        <tr><td>Request logging</td><td>middleware <strong>morgan</strong>: <code class="inline">app.use(morgan("combined"))</code></td><td>servlet filter / interceptor (giai đoạn 5), access log của server</td></tr>
+        <tr><td>Xoay log</td><td><code class="inline">pino-roll</code> hoặc <code class="inline">logrotate</code> của OS</td><td><code class="inline">RollingFileAppender</code> có sẵn trong Logback</td></tr>
+        <tr><td>Đổi implementation</td><td>Đổi thư viện logging là sửa code khắp nơi</td><td>Đổi provider (Logback → Log4j2) không sửa code nhờ facade SLF4J</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code>// JS
+console.log("Tao don", orderId);                    // tuong duong System.out
+const log = pino({ level: "info" });
+log.info({ orderId, userId }, "Tạo đơn");           // structured ngay từ đầu
+
+// Express: request logging middleware + requestId
+app.use(morgan("combined"));
+app.use((req, res, next) =&gt; {
+    req.log = log.child({ requestId: req.headers["x-request-id"] });
+    next();
+});</code></pre>
+    </div>
+
+    <div class="note"><strong>Khác biệt lớn nhất:</strong> Node log mặc định dạng structured + async, Java truyền thống log text + sync rồi mới thêm JSON/async khi cần. Bù lại, Java có facade SLF4J và cấu hình level theo package bằng file — thứ Node không có sẵn. Khi làm dự án thật, format log của hai hệ sinh thái cần được đồng bộ nếu chạy chung hệ thống log tập trung.</div>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Logging là gì? Vì sao production không dùng <code class="inline">System.out.println</code>?</summary>
+      <div class="answer">Logging là ghi lại sự kiện của chương trình (thời gian, mức độ, nguồn, nội dung) để đọc lại sau. <code class="inline">System.out.println</code> không có level để lọc, không timestamp/tên logger/thread, không cấu hình được đích ghi hay format, không xoay file, không tắt theo môi trường, và tuỳ tiện về luồng. Logger giải quyết tất cả và còn hỗ trợ MDC, rolling, appender. Trong production, log là công cụ điều tra chính vì không gắn được debugger.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. SLF4J là gì? Vì sao dùng facade thay vì gọi trực tiếp Logback/Log4j2?</summary>
+      <div class="answer">SLF4J là một facade (API) trung lập cho logging; nó không ghi log mà chuyển lời gọi tới implementation có trên classpath (Logback, Log4j2, JUL). Dùng facade giúp code không phụ thuộc implementation — đổi thư viện logging không phải sửa code; mọi thư viện trong hệ sinh thái cùng ghi về một chỗ với một định dạng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Vì sao khai báo <code class="inline">private static final Logger log = LoggerFactory.getLogger(TenClass.class)</code>?</summary>
+      <div class="answer"><code class="inline">static</code> vì logger dùng lại, không cần tạo theo từng object, và để gọi được từ static method; <code class="inline">final</code> để không bị gán đè. Truyền <code class="inline">TenClass.class</code> để tên logger là tên đầy đủ của class — nhờ đó cấu hình level theo package hoạt động và log biết nguồn phát sinh.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Kể tên 5 level của SLF4J theo thứ tự. Khi nào dùng từng level?</summary>
+      <div class="answer">TRACE &lt; DEBUG &lt; INFO &lt; WARN &lt; ERROR. TRACE: chi tiết cực mịn để soi thuật toán. DEBUG: thông tin cho dev (giá trị biến, nhánh xử lý). INFO: sự kiện nghiệp vụ quan trọng đã hoàn tất. WARN: bất thường nhưng xử lý được (retry, fallback). ERROR: thao tác thất bại cần người xem. Đặt level X cho logger nghĩa là mọi log thấp hơn X bị tắt.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Nên đặt level gì cho dev và production?</summary>
+      <div class="answer">Dev: package của mình DEBUG (thấy hết luồng), framework để INFO/WARN. Production: root INFO để ổn định và tiết kiệm I/O; khi điều tra thì hạ DEBUG cho một package cụ thể rồi trả lại. Bật DEBUG toàn hệ thống ở prod gây ồn, chậm và có thể lộ chi tiết nội bộ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Khi nào KHÔNG nên log ERROR?</summary>
+      <div class="answer">Khi lỗi là nghiệp vụ bình thường và đã được xử lý/từ chối có chủ đích — ví dụ email trùng khi đăng ký, hết hàng, sai OTP. Đây là tình huống dự đoán được, trả về lỗi rõ ràng cho người dùng; log WARN (hoặc INFO theo quy ước) là đủ. ERROR dành cho thứ cần người vận hành xem, nếu không alert sẽ nhiễu và ERROR thật bị chôn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Placeholder <code class="inline">{}</code> của SLF4J là gì? Lợi ích chính?</summary>
+      <div class="answer">Là chỗ trống trong message, được thay bằng tham số theo thứ tự: <code class="inline">log.info("Tạo đơn {} cho {}", id, user)</code>. Lợi ích: tránh nối chuỗi khi level bị tắt (SLF4J kiểm tra level trước khi format), code gọn và an toàn hơn cộng chuỗi. Lưu ý: tham số vẫn được tính trước khi gọi — nếu tính toán đắt, chặn bằng <code class="inline">isDebugEnabled()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Vì sao không nên cộng chuỗi khi log?</summary>
+      <div class="answer">Vì phép cộng luôn chạy trước khi logger kiểm tra level: <code class="inline">log.debug("x = " + tinhToan())</code> vẫn xây chuỗi (và gọi <code class="inline">tinhToan</code>) dù DEBUG đang tắt — tốn CPU, tạo rác cho GC. Placeholder giải quyết phần nối chuỗi; với tham số đắt còn cần <code class="inline">isDebugEnabled()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Log exception đúng cách là thế nào?</summary>
+      <div class="answer">Truyền exception làm <strong>tham số cuối cùng</strong> của lời gọi: <code class="inline">log.error("Không tạo được đơn {}", orderId, ex)</code>. Logback/SLF4J nhận ra và in kèm stack trace. Không gọi <code class="inline">getMessage()</code>, không cộng chuỗi <code class="inline">"Lỗi: " + ex</code>, không truyền <code class="inline">ex</code> ở giữa các tham số.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Vì sao <code class="inline">log.error(ex.getMessage())</code> là sai?</summary>
+      <div class="answer">Vì message chỉ là một câu mô tả, còn stack trace mới cho biết lỗi nổ ở class/dòng nào và đi qua đường nào. Bỏ stack trace khiến điều tra gần như mất manh mối, đặc biệt với lỗi sâu trong framework. Ngoài ra còn mất loại exception (NullPointerException vs IllegalArgumentException...).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Có nên vừa log vừa ném lại exception (log and rethrow) không?</summary>
+      <div class="answer">Không nên làm ở <em>mọi</em> tầng. Nếu mỗi tầng đều <code class="inline">catch → log.error → throw</code>, một lỗi sinh ra nhiều dòng ERROR trùng, alert đếm sai. Chọn một nơi log (thường là tầng xử lý cuối hoặc global exception handler); tầng dưới nếu cần dấu vết thì log WARN/DEBUG hoặc chỉ thêm ngữ cảnh rồi ném tiếp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Những dữ liệu nào tuyệt đối không được log? Che thế nào?</summary>
+      <div class="answer">Password, PIN/OTP, API key, JWT/token, số thẻ + CVV, số tài khoản đầy đủ, giấy tờ tuỳ thân và PII (số điện thoại, email, địa chỉ... tuỳ quy định). Cách làm: log ID nội bộ thay cho dữ liệu; nếu buộc phải đối chiếu thì masking (chỉ giữ 4 số cuối của thẻ, <code class="inline">a***@shop.vn</code> cho email); kiểm tra cả <code class="inline">toString()</code> của DTO trước khi log cả object; review diff để bắt các từ khoá nhạy cảm.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 13. <code class="inline">logback.xml</code> gồm những khối nào? Logback load file này thế nào?</summary>
+      <div class="answer">Ba khối chính: <strong>appender</strong> (đích ghi: console, file rolling, async, JSON...), <strong>logger</strong> (cấu hình theo tên/package: level, appender, additivity), <strong>root</strong> (logger gốc, mặc định cho toàn ứng dụng). Logback tự tìm <code class="inline">logback-test.xml</code> rồi <code class="inline">logback.xml</code> trên classpath; không có thì dùng cấu hình mặc định. Có thể chỉ định file khác bằng <code class="inline">-Dlogback.configurationFile=...</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. RollingFileAppender và rolling policy để làm gì? Cấu hình tối thiểu?</summary>
+      <div class="answer">Để log không phình mãi một file và đầy ổ đĩa: cắt file theo thời gian/dung lượng và xoá bản cũ theo chính sách. Tối thiểu: <code class="inline">fileNamePattern</code> (ví dụ <code class="inline">app.%d{yyyy-MM-dd}.%i.log</code>), <code class="inline">maxFileSize</code> (10MB), <code class="inline">maxHistory</code> (giữ bao nhiêu ngày), <code class="inline">totalSizeCap</code> (trần tổng dung lượng).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Level theo package hoạt động thế nào? <code class="inline">additivity</code> là gì?</summary>
+      <div class="answer">Tên logger tạo thành cây: <code class="inline">com.shop</code> là cha của <code class="inline">com.shop.OrderService</code>; logger con kế thừa cấu hình (level, appender) từ cha gần nhất nếu không tự đặt. Nhờ đó <code class="inline">&lt;logger name="com.shop" level="DEBUG"/&gt;</code> áp cho cả package. <code class="inline">additivity="false"</code> chặn log lan tiếp lên root — dùng khi logger con tự gắn appender để tránh ghi trùng hai lần.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. MDC là gì? Vì sao cần correlation id?</summary>
+      <div class="answer">MDC là map key-value gắn theo thread; mọi log trong thread đó in kèm giá trị qua pattern <code class="inline">%X{key}</code>. Correlation id (requestId/traceId) đặt một lần ở filter/entry point giúp nối toàn bộ log của cùng một request — kể cả khi nó đi qua nhiều class — và truyền qua header giữa các service. Nhờ đó grep một requestId là ra cả hành trình xử lý.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. MDC có vấn đề gì với thread pool và bất đồng bộ?</summary>
+      <div class="answer">MDC là thread-local nên không tự lan sang thread khác: khi submit việc cho ExecutorService/CompletableFuture, thread mới không có context. Phải <code class="inline">MDC.getCopyOfContextMap()</code> ở thread gọi rồi <code class="inline">setContextMap</code> ở thread mới và <code class="inline">clear()</code> khi xong. Với Logback <code class="inline">AsyncAppender</code>, event đã chụp MDC lúc tạo nên log vẫn đúng context dù việc ghi file chạy trên thread nền. Luôn remove/clear trong finally vì web server tái sử dụng thread.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Nên đặt log ở tầng nào trong ứng dụng?</summary>
+      <div class="answer">Ở biên và nơi quyết định: entry point log request/response + requestId; service log mốc nghiệp vụ với orderId/userId; integration log retry/timeout khi tự xử lý; global exception handler log ERROR + stack trace đúng một lần. Tránh log trùng cùng một sự kiện ở nhiều tầng và tránh rắc log từng dòng nội bộ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Structured logging là gì? Khi nào nên dùng?</summary>
+      <div class="answer">Là ghi log dưới dạng có cấu trúc (thường JSON mỗi dòng) với các field rõ ràng — level, logger, requestId, orderId... — để hệ thống log tập trung (ELK, Loki, Datadog) index và truy vấn thay vì regex text. Nên dùng khi có nhiều service, cần dashboard/alert theo field hoặc truy vấn log thường xuyên; app nhỏ một service có thể chỉ cần log text.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Làm sao tránh log quá nhiều khi xử lý vòng lặp lớn?</summary>
+      <div class="answer">Không log từng phần tử ở INFO. Log mốc bắt đầu và kết thúc kèm số liệu tổng kết (số thành công/lỗi, thời gian). Chi tiết từng phần tử chỉ để DEBUG, có thể lấy mẫu (log mỗi N phần tử) khi cần điều tra. Với job dài, log tiến độ theo lô thay vì từng bản ghi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. AsyncAppender đánh đổi điều gì?</summary>
+      <div class="answer">Đổi độ trễ của thread nghiệp vụ lấy rủi ro mất log: log được đưa vào queue và ghi bởi thread nền nên request không chờ I/O; nhưng nếu process chết hoặc queue đầy, message trong queue có thể mất. Vì vậy không dùng async cho log audit/bảo mật; cấu hình queue hợp lý và theo dõi cảnh báo queue full.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Làm sao dùng log để alert hiệu quả?</summary>
+      <div class="answer">Alert dựa trên tỉ lệ/tần suất (error rate, số ERROR mỗi phút theo message/pattern) thay vì từng dòng. Điều kiện tiên quyết là level đúng: lỗi nghiệp vụ đã xử lý để WARN/INFO, chỉ ERROR cho thứ cần hành động. Message nên ổn định, có mã nhận dạng để đếm chính xác; kết hợp metric để tránh alert trùng lặp.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Sửa log cộng chuỗi thành placeholder</summary>
+      <div class="codeblock">
+        <pre><code class="java">log.info("Tạo đơn " + orderId + " cho " + user + " tổng " + total + " VND");
+log.debug("Số item = " + items.size());</code></pre>
+      </div>
+      <div class="answer">
+        <p><code class="inline">log.info("Tạo đơn {} cho {} tổng {} VND", orderId, user, total);</code> và <code class="inline">log.debug("Số item = {}", items.size());</code>. Placeholder tránh nối chuỗi khi level bị tắt; <code class="inline">items.size()</code> là tham số rẻ nên không cần <code class="inline">isDebugEnabled</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Chọn level cho từng tình huống</summary>
+      <div class="answer">
+        <p>1) Ứng dụng khởi động xong, lắng nghe cổng 8080 → <strong>INFO</strong>.<br>
+        2) Gọi API đối tác timeout lần 1, sẽ retry → <strong>WARN</strong>.<br>
+        3) Job đồng bộ chạy xong 12.000 bản ghi → <strong>INFO</strong> (kèm số liệu).<br>
+        4) Không kết nối được DB sau 3 lần retry → <strong>ERROR</strong>.<br>
+        5) Giá trị từng phần tử khi parse file cấu hình → <strong>TRACE</strong> (hoặc DEBUG).<br>
+        6) User đăng ký email đã tồn tại, đã trả lỗi 409 cho người dùng → <strong>WARN</strong>, không phải ERROR.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Viết <code class="inline">logback.xml</code> mức cơ bản</summary>
+      <div class="answer">
+        <p>Yêu cầu: console + file rolling theo ngày 10MB, giữ 14 ngày; package <code class="inline">com.shop</code> ở DEBUG, root INFO.</p>
+        <div class="codeblock">
+          <pre><code>&lt;configuration&gt;
+    &lt;appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender"&gt;
+        &lt;encoder&gt;
+            &lt;pattern&gt;%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n&lt;/pattern&gt;
+        &lt;/encoder&gt;
+    &lt;/appender&gt;
+
+    &lt;appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender"&gt;
+        &lt;file&gt;logs/app.log&lt;/file&gt;
+        &lt;rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"&gt;
+            &lt;fileNamePattern&gt;logs/app.%d{yyyy-MM-dd}.%i.log&lt;/fileNamePattern&gt;
+            &lt;maxFileSize&gt;10MB&lt;/maxFileSize&gt;
+            &lt;maxHistory&gt;14&lt;/maxHistory&gt;
+        &lt;/rollingPolicy&gt;
+        &lt;encoder&gt;
+            &lt;pattern&gt;%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n&lt;/pattern&gt;
+        &lt;/encoder&gt;
+    &lt;/appender&gt;
+
+    &lt;logger name="com.shop" level="DEBUG"/&gt;
+
+    &lt;root level="INFO"&gt;
+        &lt;appender-ref ref="CONSOLE"/&gt;
+        &lt;appender-ref ref="FILE"/&gt;
+    &lt;/root&gt;
+&lt;/configuration&gt;</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. Tìm lỗi log dữ liệu nhạy cảm</summary>
+      <div class="codeblock">
+        <pre><code class="java">log.info("Đăng nhập: user={} pass={}", username, password);
+log.info("Thanh toán thẻ {} cvv={}", cardNumber, cvv);
+log.debug("Header Authorization: {}", authHeader);
+log.info("User {} - CCCD {} - sdt {}", userId, cccd, phone);</code></pre>
+      </div>
+      <div class="answer">
+        <p>Cả bốn dòng đều sai. Sửa: chỉ log sự kiện + định danh an toàn — <code class="inline">log.info("Đăng nhập thành công user={}", username);</code>; <code class="inline">log.info("Thanh toán đơn {} bằng thẻ {}", orderId, maskCard(cardNumber));</code>; không log Authorization/token (<code class="inline">log.debug("Gọi API với token đã cấp cho user {}", userId);</code>); CCCD/số điện thoại là PII — chỉ log <code class="inline">userId</code>, nếu buộc đối chiếu thì masking theo quy định công ty.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Sửa log exception</summary>
+      <div class="codeblock">
+        <pre><code class="java">try {
+    paymentService.charge(order);
+} catch (RuntimeException ex) {
+    log.error("Thanh toán lỗi: " + ex.getMessage());
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Hai lỗi: cộng chuỗi và chỉ lấy message (mất stack trace). Sửa tối thiểu:</p>
+        <div class="codeblock">
+          <pre><code class="java">try {
+    paymentService.charge(order);
+} catch (RuntimeException ex) {
+    log.error("Thanh toán thất bại cho đơn {}", order.id(), ex);
+    throw ex;   // hoac xu ly theo nghiep vu
+}</code></pre>
+        </div>
+        <p>Nếu tầng trên đã log rồi thì có thể chỉ log WARN ở đây để tránh trùng; nhưng tuyệt đối không nuốt lỗi im lặng.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. Thêm ngữ cảnh vào log</summary>
+      <div class="codeblock">
+        <pre><code class="java">log.info("Đã tạo đơn");
+log.info("Cập nhật trạng thái thất bại");</code></pre>
+      </div>
+      <div class="answer">
+        <p><code class="inline">log.info("Đã tạo đơn {} cho user {} tổng {} VND", orderId, userId, total);</code> và <code class="inline">log.warn("Cập nhật trạng thái thất bại cho đơn {}: trạng thái hiện tại {}", orderId, currentStatus);</code>. Ngoài ra nên có <code class="inline">requestId</code> trong MDC để nối các log cùng request.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Đoán log nào xuất hiện với cấu hình level</summary>
+      <div class="codeblock">
+        <pre><code>root level = INFO
+&lt;logger name="com.shop" level="DEBUG"/&gt;
+&lt;logger name="com.shop.db" level="WARN"/&gt;</code></pre>
+      </div>
+      <div class="codeblock">
+        <pre><code class="java">// com.shop.OrderService
+log.debug("debug order");       // (1)
+log.info("info order");         // (2)
+
+// com.shop.db.OrderRepository
+log.debug("debug db");          // (3)
+log.info("info db");            // (4)
+log.warn("warn db");            // (5)
+
+// com.other.PaymentService
+log.info("info payment");       // (6)</code></pre>
+      </div>
+      <div class="answer">
+        <p>In ra: (2), (5), (6). Giải thích: <code class="inline">com.shop.OrderService</code> kế thừa DEBUG từ <code class="inline">com.shop</code> nên (1) và (2) đều in. <code class="inline">com.shop.db</code> có level riêng WARN nên (3), (4) bị tắt, chỉ (5) in. <code class="inline">com.other.PaymentService</code> không có cấu hình riêng, kế thừa root INFO nên (6) in.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Đặt <code class="inline">requestId</code> bằng MDC (mô tả)</summary>
+      <div class="answer">
+        <p>Viết trong filter (mọi request đi qua), đảm bảo luôn xoá trong <code class="inline">finally</code>:</p>
+        <div class="codeblock">
+          <pre><code class="java">String requestId = request.getHeader("X-Request-Id");
+if (requestId == null || requestId.isBlank()) {
+    requestId = UUID.randomUUID().toString();
+}
+MDC.put("requestId", requestId);
+response.setHeader("X-Request-Id", requestId);
+try {
+    chain.doFilter(request, response);
+} finally {
+    MDC.remove("requestId");
+}</code></pre>
+        </div>
+        <p>Pattern cần có <code class="inline">%X{requestId}</code>, ví dụ: <code class="inline">%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId}] - %msg%n</code>. Nếu xử lý bất đồng bộ, phải copy MDC sang thread mới (mục 9).</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. Sửa log trong vòng lặp</summary>
+      <div class="codeblock">
+        <pre><code class="java">for (Order order : orders) {
+    log.info("Đang xử lý đơn {}", order.id());
+    xuLy(order);
+}
+log.info("Xong");</code></pre>
+      </div>
+      <div class="answer">
+        <p>Giữ 2 dòng cho toàn bộ lô, thêm số liệu tổng kết và chuyển chi tiết sang DEBUG:</p>
+        <div class="codeblock">
+          <pre><code class="java">log.info("Bắt đầu xử lý {} đơn", orders.size());
+int ok = 0;
+int failed = 0;
+for (Order order : orders) {
+    log.debug("Xử lý đơn {}", order.id());
+    if (xuLy(order)) {
+        ok++;
+    } else {
+        failed++;
+        log.warn("Xử lý đơn {} thất bại", order.id());
+    }
+}
+log.info("Xử lý xong {} đơn: {} thành công, {} lỗi", orders.size(), ok, failed);</code></pre>
+        </div>
+        <p>Log WARN cho từng đơn lỗi là hợp lý vì số lỗi thường ít và cần truy vết; log DEBUG chi tiết vẫn tắt ở prod.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. Sửa double log</summary>
+      <div class="codeblock">
+        <pre><code class="java">// OrderService
+try {
+    payment.charge(orderId);
+} catch (RuntimeException ex) {
+    log.error("Thanh toán lỗi", ex);
+    throw ex;
+}
+
+// Controller
+try {
+    orderService.taoDon(orderId);
+} catch (RuntimeException ex) {
+    log.error("Tạo đơn lỗi", ex);
+    throw ex;
+}
+
+// GlobalExceptionHandler
+log.error("Unhandled", ex);</code></pre>
+      </div>
+      <div class="answer">
+        <p>Một lỗi đang bị log 3 lần. Giữ <strong>một</strong> nơi log ERROR — thường là global handler (nơi biết request đầy đủ ngữ cảnh) — và để các tầng dưới chỉ ném tiếp:</p>
+        <div class="codeblock">
+          <pre><code class="java">// OrderService
+try {
+    payment.charge(orderId);
+} catch (RuntimeException ex) {
+    throw ex; // hoac boc them context roi nem tiep
+}
+
+// Controller: chi goi service, khong catch
+
+// GlobalExceptionHandler
+log.error("Xử lý request thất bại cho đơn {}", orderId, ex);</code></pre>
+        </div>
+        <p>Nếu service cần dấu vết retry thì log WARN ở đó, nhưng không log ERROR lặp lại.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Chọn cách log phù hợp</summary>
+      <div class="answer">
+        <p>1) Ghi lại mã đơn trong mọi dòng log của một request → <strong>MDC</strong> (<code class="inline">MDC.put("orderId", ...)</code> + <code class="inline">%X{orderId}</code>).<br>
+        2) In giá trị tạm <code class="inline">total</code> khi tính phí để debug → <strong>placeholder</strong> ở DEBUG: <code class="inline">log.debug("Phí = {} cho đơn {}", phi, orderId)</code>.<br>
+        3) Hệ thống log tập trung cần lọc theo <code class="inline">userId</code>, <code class="inline">orderId</code>, <code class="inline">duration</code> → <strong>structured logging</strong> (JSON) với các field đó (MDC/structured arguments).</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Đoán output khi placeholder thiếu tham số, rồi sửa</summary>
+      <div class="codeblock">
+        <pre><code class="java">String orderId = "DH-1001";
+log.info("Tạo đơn {} cho {}", orderId);</code></pre>
+      </div>
+      <div class="answer">
+        <p>Output (Logback, pattern mặc định): <code class="inline">... INFO LoggingDemo - Tạo đơn DH-1001 cho {}</code> — tham số thứ hai thiếu nên placeholder còn lại được giữ nguyên là <code class="inline">{}</code> (SLF4J không ném lỗi, nên bẫy này rất dễ lọt). Sửa: truyền đủ tham số <code class="inline">log.info("Tạo đơn {} cho {}", orderId, user);</code> — hoặc bỏ placeholder thừa nếu không cần.</p>
+      </div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Khai báo logger</td><td><code class="inline">private static final Logger log = LoggerFactory.getLogger(TenClass.class);</code></td></tr>
+        <tr><td>Dependency</td><td><code class="inline">slf4j-api</code> 2.0.x + <code class="inline">logback-classic</code> 1.5/1.6.x (xem <a href="maven-gradle.html">4.3 Maven &amp; Gradle</a>)</td></tr>
+        <tr><td>5 level</td><td><code class="inline">TRACE &lt; DEBUG &lt; INFO &lt; WARN &lt; ERROR</code></td></tr>
+        <tr><td>Level theo môi trường</td><td>dev DEBUG, prod INFO; hạ DEBUG theo package khi điều tra</td></tr>
+        <tr><td>Placeholder</td><td><code class="inline">log.info("Tạo đơn {} cho {}", orderId, user)</code> — không cộng chuỗi</td></tr>
+        <tr><td>Argument đắt</td><td><code class="inline">if (log.isDebugEnabled()) { log.debug("{}", toJson(x)); }</code></td></tr>
+        <tr><td>Log exception</td><td><code class="inline">log.error("Không tạo được đơn {}", orderId, ex)</code> — ex là tham số cuối</td></tr>
+        <tr><td>Không log</td><td>password, token, OTP, số thẻ/CVV, PII — dùng ID + masking</td></tr>
+        <tr><td>logback.xml</td><td>appender → logger → root; file đặt ở <code class="inline">src/main/resources</code></td></tr>
+        <tr><td>Rolling</td><td><code class="inline">SizeAndTimeBasedRollingPolicy</code> + <code class="inline">maxFileSize</code>/<code class="inline">maxHistory</code>/<code class="inline">totalSizeCap</code></td></tr>
+        <tr><td>Level theo package</td><td><code class="inline">&lt;logger name="com.shop" level="DEBUG"/&gt;</code> (cây logger kế thừa)</td></tr>
+        <tr><td>Tránh ghi 2 lần</td><td><code class="inline">additivity="false"</code> khi logger tự gắn appender</td></tr>
+        <tr><td>Correlation id</td><td><code class="inline">MDC.put("requestId", id)</code> + <code class="inline">%X{requestId}</code>; luôn <code class="inline">remove</code> trong finally</td></tr>
+        <tr><td>Thread khác</td><td>copy <code class="inline">MDC.getCopyOfContextMap()</code> sang thread mới rồi <code class="inline">clear()</code></td></tr>
+        <tr><td>Vòng lặp lớn</td><td>log mốc + tổng kết; chi tiết để DEBUG</td></tr>
+        <tr><td>Nâng cao</td><td>JSON log (logstash encoder), AsyncAppender (đánh đổi mất log), alert theo error rate</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Tạo logger đúng mẫu <code class="inline">static final</code> + <code class="inline">getLogger(TenClass.class)</code> mà không cần tra cứu.</li>
+      <li>Giải thích SLF4J là facade, vì sao code không phụ thuộc Logback.</li>
+      <li>Kể đúng thứ tự 5 level và cho ví dụ dùng từng level.</li>
+      <li>Giải thích khi nào lỗi nghiệp vụ không nên log ERROR.</li>
+      <li>Viết được log dùng placeholder thay cho cộng chuỗi và giải thích lợi ích.</li>
+      <li>Nói được vì sao placeholder không giải quyết hết và khi nào cần <code class="inline">isDebugEnabled()</code>.</li>
+      <li>Log exception kèm stack trace đúng cách, giải thích vì sao không dùng <code class="inline">getMessage()</code> trần.</li>
+      <li>Nêu nguyên tắc "log một nơi" và tránh double log khi rethrow.</li>
+      <li>Liệt kê được dữ liệu không bao giờ log và cách masking.</li>
+      <li>Viết được <code class="inline">logback.xml</code> cơ bản với console + rolling file + level theo package.</li>
+      <li>Giải thích MDC, correlation id, và bẫy với thread pool.</li>
+      <li>Biết log ở tầng nào và tránh log vòng lặp dày, log thiếu ngữ cảnh.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://www.slf4j.org/manual.html" target="_blank" rel="noreferrer">SLF4J — Manual</a></li>
+      <li><a href="https://www.slf4j.org/faq.html" target="_blank" rel="noreferrer">SLF4J — FAQ (placeholders, exception handling)</a></li>
+      <li><a href="https://logback.qos.ch/manual/configuration.html" target="_blank" rel="noreferrer">Logback — Configuration</a></li>
+      <li><a href="https://logback.qos.ch/manual/appenders.html" target="_blank" rel="noreferrer">Logback — Appenders (rolling policy, async)</a></li>
+      <li><a href="https://logback.qos.ch/manual/mdc.html" target="_blank" rel="noreferrer">Logback — MDC</a></li>
+      <li><a href="https://github.com/logfellow/logstash-logback-encoder" target="_blank" rel="noreferrer">logstash-logback-encoder — Structured logging cho Logback</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Logging · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

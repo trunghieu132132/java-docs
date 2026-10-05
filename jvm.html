@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JVM cơ bản — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item active" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="jvm">JVM cơ bản — cỗ máy chạy Java</h1>
+
+    <p class="lead">JVM (Java Virtual Machine) là chương trình đọc file <code class="inline">.class</code> chứa bytecode rồi thực thi nó — nhờ vậy cùng một file build chạy được trên macOS, Linux, Windows. Trang này giải thích JVM từ con số 0: JDK/JRE/JVM, cách class được nạp, stack/heap/metaspace, GC, các lỗi bộ nhớ kinh điển (<code class="inline">StackOverflowError</code>, <code class="inline">OutOfMemoryError</code>), flags, đọc stack trace và bộ công cụ chẩn đoán — đủ để debug một sự cố production và trả lời phỏng vấn.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#jdk-jre-jvm">JDK, JRE, JVM &amp; bytecode</a></li>
+        <li><a href="#class-loading">Class loading — nạp class</a></li>
+        <li><a href="#bo-nho">Memory areas — stack, heap, metaspace</a></li>
+        <li><a href="#gc">Heap &amp; GC cơ bản</a></li>
+        <li><a href="#loi-bo-nho">Lỗi bộ nhớ: StackOverflow &amp; OutOfMemory</a></li>
+        <li><a href="#flags">JVM flags &amp; container</a></li>
+        <li><a href="#stack-trace">Đọc stack trace như thế nào</a></li>
+        <li><a href="#cong-cu">Công cụ chẩn đoán mức nhận biết</a></li>
+        <li><a href="#production">JVM trong production</a></li>
+        <li><a href="#pitfalls">Pitfalls tổng hợp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Bạn không cần biết JVM ở mức đọc mã C++ của HotSpot. Nhưng khi production có sự cố — service chậm, CPU cao, bị kill đột ngột, log chỉ có một dòng <code class="inline">OutOfMemoryError</code> — người hiểu JVM sẽ biết ngay phải xem gì: heap hay metaspace đầy? GC pause hay thread treo? Container thiếu RAM hay code giữ reference? Mức độ bắt buộc của chủ đề 4.1 (phỏng vấn: trung bình–cao · production: nên biết):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — phân biệt JDK/JRE/JVM; chạy <code class="inline">java TenFile.java</code>; đọc được stack trace để tìm class + dòng lỗi; hiểu <code class="inline">-Xmx</code> đang đặt bao nhiêu; phân biệt lỗi stack với lỗi heap.</li>
+      <li><strong>Phải hiểu</strong> — bytecode và vai trò JVM; classloader và delegation; stack (per-thread) vs heap (dùng chung) vs metaspace; GC roots; minor/full GC và stop-the-world; vì sao giữ reference trong static collection gây leak.</li>
+      <li><strong>Nhận biết</strong> — các flag tuning, container awareness; bộ công cụ <code class="inline">jps</code>/<code class="inline">jstack</code>/<code class="inline">jcmd</code>/<code class="inline">jmap</code>/<code class="inline">jstat</code>, VisualVM, JFR; khi nào cần heap dump. Các phần này trang chỉ giới thiệu đủ để biết tên và khi nào dùng — không đào sâu tuning GC.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đoán output của ví dụ <strong>trước khi</strong> nhìn kết quả (kết quả thật, chạy bằng JDK 25 trên máy này).</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập đoán output</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+      <li>Gặp câu lạ, tra ở mục <a href="#qa">Interview Q&amp;A</a>.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512, lớp <code class="inline">java.lang.IO</code>), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong đề phỏng vấn và codebase cũ. Stack của thread và pass-by-value đã học ở <a href="index.html#stack-heap">Biến trong Java — mục 7</a>; trang này đi sâu vào phía JVM.</div>
+
+    <h3>Góc Node.js — V8 vs JVM, event loop vs thread</h3>
+
+    <p>Bạn đã quen Node.js: một process có <strong>event loop</strong> chạy JS trên một thread, việc nặng đẩy cho libuv worker pool. Java thì khác căn bản: một JVM process có thể chạy <strong>nhiều thread cùng lúc</strong>, mỗi thread có stack riêng và chia sẻ heap — đó là lý do phải học concurrency (xem <a href="concurrency.html#thread">Concurrency — mục 2</a>). Về bộ nhớ, cả hai đều có GC và đều có giới hạn heap riêng:</p>
+
+    <table>
+      <thead>
+        <tr><th>Khía cạnh</th><th>Node.js / V8</th><th>JVM (HotSpot)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đơn vị thực thi</td><td>Event loop 1 thread + worker pool cho I/O, crypto</td><td>Nhiều thread thật, chạy song song trên nhiều core</td></tr>
+        <tr><td>Giới hạn heap</td><td>V8 có heap limit riêng: máy này Node v22 báo <code class="inline">heap_size_limit</code> 4144 MB; chỉnh bằng <code class="inline">--max-old-space-size</code></td><td>Mặc định <strong>25% RAM</strong> (<code class="inline">MaxRAMPercentage=25</code>); máy này Xmx = 4096 MB; chỉnh bằng <code class="inline">-Xmx</code></td></tr>
+        <tr><td>Chia sẻ state</td><td>Mặc định không chia sẻ giữa các process (cluster/worker); <code class="inline">SharedArrayBuffer</code> cho trường hợp đặc biệt</td><td>Chia sẻ qua heap; race condition là vấn đề thật</td></tr>
+        <tr><td>GC</td><td>V8 generational: Scavenger (young) + Mark-Compact (old)</td><td>HotSpot generational: G1 mặc định từ JDK 9, ZGC cho độ trễ thấp</td></tr>
+        <tr><td>Debug bộ nhớ</td><td><code class="inline">--inspect</code>, heap snapshot trong Chrome DevTools</td><td>Heap dump + <code class="inline">jcmd</code>/<code class="inline">jstack</code>, đọc bằng MAT/VisualVM</td></tr>
+        <tr><td>Scale theo core</td><td>Thường 1 process / core (cluster, pm2)</td><td>1 JVM / máy với thread pool; hoặc nhiều instance trong container</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Điểm chung đáng nhớ: GC chỉ thu hồi được object <strong>không còn ai tham chiếu tới</strong>. Trong Node, biến module-level giữ reference là leak; trong Java, static field/collection giữ reference cũng leak y hệt. Phần còn lại của trang sẽ cho bạn bộ từ vựng và công cụ để nói về chuyện đó một cách chính xác.</div>
+
+    <h2 id="jdk-jre-jvm">2. JDK, JRE, JVM &amp; bytecode <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Ba khái niệm lồng nhau, hay bị hỏi đầu tiên khi phỏng vấn Java:</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Là gì</th><th>Chứa gì</th><th>Ai cần</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>JVM</strong></td><td>Máy ảo thực thi bytecode; bản phổ biến là HotSpot trong OpenJDK</td><td>Interpreter, JIT compiler, GC, classloader, quản lý thread</td><td>Tự động có khi bạn cài Java</td></tr>
+        <tr><td><strong>JRE</strong></td><td>Môi trường chạy = JVM + thư viện chuẩn</td><td><code class="inline">java.base</code>, <code class="inline">java.sql</code>... và JVM</td><td>Máy chỉ chạy app. Từ JDK 9 không phát hành JRE riêng — cần thì <code class="inline">jlink</code> tạo runtime gọn</td></tr>
+        <tr><td><strong>JDK</strong></td><td>Bộ phát triển = JRE + công cụ</td><td><code class="inline">javac</code>, <code class="inline">javap</code>, <code class="inline">jshell</code>, <code class="inline">jcmd</code>, <code class="inline">jstack</code>, <code class="inline">jps</code>...</td><td>Lập trình viên — cài JDK là đủ mọi thứ</td></tr>
+      </tbody>
+    </table>
+
+    <p>Kiểm tra máy đang chạy gì — dòng thứ ba chính là JVM:</p>
+
+    <div class="codeblock">
+      <pre><code>$ java --version
+openjdk version "25.0.4" 2026-07-21 LTS
+OpenJDK Runtime Environment Temurin-25.0.4+7 (build 25.0.4+7-LTS)
+OpenJDK 64-Bit Server VM Temurin-25.0.4+7 (build 25.0.4+7-LTS, mixed mode, sharing)</code></pre>
+    </div>
+
+    <h3>javac → bytecode .class → JVM</h3>
+
+    <p>Quy trình hai bước kinh điển: <code class="inline">javac</code> dịch mã nguồn thành <strong>bytecode</strong> trong file <code class="inline">.class</code>; JVM chạy bytecode đó. Bytecode là "ngôn ngữ trung gian" không phụ thuộc CPU — mỗi hệ điều hành chỉ cần một bản JVM riêng, còn file <code class="inline">.class</code> dùng chung. Đây là nền tảng của khẩu hiệu "write once, run anywhere".</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class JdkHierarchyDemo {
+    static int binhPhuong(int x) {
+        return x * x;
+    }
+
+    public static void main() {
+        IO.println(binhPhuong(7));
+    }
+}</code></pre>
+    </div>
+
+    <p>Biên dịch rồi chạy (chú ý: chạy class <code class="inline">.class</code> thì gõ <strong>tên class</strong>, không có đuôi <code class="inline">.java</code>):</p>
+
+    <div class="codeblock">
+      <pre><code>$ javac JdkHierarchyDemo.java
+$ java JdkHierarchyDemo
+49</code></pre>
+    </div>
+
+    <p>File <code class="inline">.class</code> đúng là định dạng nhị phân có version. JDK 25 tạo ra major version 69:</p>
+
+    <div class="codeblock">
+      <pre><code>$ file JdkHierarchyDemo.class
+JdkHierarchyDemo.class: compiled Java class data, version 69.0
+
+$ javap -verbose JdkHierarchyDemo.class | head -6
+Classfile /.../JdkHierarchyDemo.class
+  compiled from "JdkHierarchyDemo.java"
+public class JdkHierarchyDemo
+  minor version: 0
+  major version: 69</code></pre>
+    </div>
+
+    <p>Xem bytecode thật bên trong bằng <code class="inline">javap -c</code> — đây là thứ JVM thực sự đọc, không phải mã Java của bạn:</p>
+
+    <div class="codeblock">
+      <pre><code>$ javap -c JdkHierarchyDemo
+Compiled from "JdkHierarchyDemo.java"
+public class JdkHierarchyDemo {
+  public JdkHierarchyDemo();
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."&lt;init&gt;":()V
+         4: return
+
+  static int binhPhuong(int);
+    Code:
+         0: iload_0
+         1: iload_0
+         2: imul
+         3: ireturn
+
+  public static void main();
+    Code:
+         0: bipush        7
+         2: invokestatic  #7                  // Method binhPhuong:(I)I
+         5: invokestatic  #13                 // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+         8: invokestatic  #19                 // Method java/lang/IO.println:(Ljava/lang/Object;)V
+        11: return
+}</code></pre>
+    </div>
+
+    <p>Đọc vài dòng là thấy: <code class="inline">binhPhuong</code> chỉ gồm 4 lệnh (nạp biến, nhân, trả về); <code class="inline">main</code> đẩy số 7, gọi <code class="inline">binhPhuong</code>, boxing thành <code class="inline">Integer</code> rồi gọi <code class="inline">IO.println</code>. Trình biên dịch JIT (Just-In-Time) bên trong JVM sẽ dịch bytecode "nóng" (chạy nhiều lần) thành mã máy để nhanh dần theo thời gian.</p>
+
+    <div class="note">Chạy file nguồn trực tiếp: từ JDK 11 có single-file source launcher (JEP 330), JDK 25 thêm compact source file + instance main (JEP 512). <code class="inline">java JdkHierarchyDemo.java</code> sẽ tự biên dịch trong bộ nhớ rồi chạy — không sinh file <code class="inline">.class</code>, không cần <code class="inline">javac</code>. Tiện để học và viết script nhỏ; build production vẫn đi qua <code class="inline">javac</code>/Maven/Gradle (<a href="roadmap.html#phase-4">4.3</a>).</div>
+
+    <p>Nếu chỉ có file <code class="inline">.java</code> mà chạy sai cách, JVM báo lỗi rất rõ ràng — class không tồn tại trong classpath:</p>
+
+    <div class="errblock">
+      <pre>$ java JdkHierarchyDemo
+Error: Could not find or load main class JdkHierarchyDemo
+Caused by: java.lang.ClassNotFoundException: JdkHierarchyDemo</pre>
+    </div>
+
+    <div class="note warn"><strong>Nhầm lẫn hay gặp:</strong> cài JDK nhưng bảo "máy cần JRE thôi" — với Java hiện đại bạn cài JDK, chạy bằng <code class="inline">java</code>; khi deploy container thì thường dùng image JRE/jlink cho nhẹ hoặc image JDK nếu cần công cụ. Nhưng đừng nói "JVM là JRE" trong phỏng vấn: JVM chỉ là cỗ máy thực thi, JRE là JVM + thư viện, JDK là JRE + công cụ.</div>
+
+    <h2 id="class-loading">3. Class loading — class được nạp thế nào <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Trước khi chạy được, class phải được classloader tìm, đọc file <code class="inline">.class</code> và định nghĩa thành một <code class="inline">Class&lt;?&gt;</code> trong bộ nhớ. Có 3 classloader chính trong JDK hiện đại:</p>
+
+    <table>
+      <thead>
+        <tr><th>Classloader</th><th>Nạp gì</th><th>Ví dụ</th><th><code class="inline">getClassLoader()</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bootstrap</td><td>Lõi <code class="inline">java.base</code> — được viết bằng native code</td><td><code class="inline">String</code>, <code class="inline">Object</code>, <code class="inline">Integer</code></td><td><code class="inline">null</code></td></tr>
+        <tr><td>Platform</td><td>Các module JDK khác ngoài java.base</td><td><code class="inline">java.sql.Connection</code>, <code class="inline">java.xml</code>...</td><td><code class="inline">PlatformClassLoader</code></td></tr>
+        <tr><td>Application (System)</td><td>Class trên classpath (code của bạn, thư viện trong <code class="inline">pom.xml</code>)</td><td><code class="inline">ClassLoaderDemo</code>, Spring, Jackson...</td><td><code class="inline">AppClassLoader</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code class="java">class Init {
+    static {
+        IO.println("  &gt;&gt; static block cua Init chay (initialize)");
+    }
+
+    static final String NHAN = "hang so compile-time";
+    static int dem = 0;
+
+    static int tang() {
+        return ++dem;
+    }
+}
+
+public class ClassLoaderDemo {
+    public static void main() {
+        IO.println("String          : " + String.class.getClassLoader());
+        IO.println("Connection      : " + java.sql.Connection.class.getClassLoader());
+        IO.println("ClassLoaderDemo : " + ClassLoaderDemo.class.getClassLoader());
+
+        ClassLoader app = ClassLoaderDemo.class.getClassLoader();
+        IO.println("parent cua app  : " + app.getParent());
+        IO.println("parent cua parent: " + app.getParent().getParent());
+
+        IO.println("--- load vs initialize ---");
+        IO.println("1. Truoc khi cham Init");
+        Class&lt;?&gt; c = Init.class;
+        IO.println("2. Da lay Class object: " + c.getSimpleName());
+        IO.println("3. Doc hang so: " + Init.NHAN);
+        IO.println("4. Goi method: " + Init.tang());
+        IO.println("5. Goi lai: " + Init.tang());
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy bản đã biên dịch (<code class="inline">javac ClassLoaderDemo.java &amp;&amp; java ClassLoaderDemo</code>) — địa chỉ hash phía sau mỗi loader thay đổi mỗi lần chạy:</p>
+
+    <div class="codeblock error">
+      <pre>String          : null
+Connection      : jdk.internal.loader.ClassLoaders$PlatformClassLoader@14dad5dc
+ClassLoaderDemo : jdk.internal.loader.ClassLoaders$AppClassLoader@7a8c5397
+parent cua app  : jdk.internal.loader.ClassLoaders$PlatformClassLoader@14dad5dc
+parent cua parent: null
+--- load vs initialize ---
+1. Truoc khi cham Init
+2. Da lay Class object: Init
+3. Doc hang so: hang so compile-time
+  &gt;&gt; static block cua Init chay (initialize)
+4. Goi method: 1
+5. Goi lai: 2</pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">String</code> trả về <code class="inline">null</code></strong> — không phải lỗi: bootstrap loader không có Java object đại diện, quy ước trả null. Đây là câu hỏi phỏng vấn quen thuộc.</li>
+      <li><strong>Chuỗi cha-con</strong> cho thấy Application → Platform → Bootstrap là một cây. Loader cha của AppClassLoader là PlatformClassLoader; cha của PlatformClassLoader là null (bootstrap).</li>
+      <li><strong>Load vs initialize:</strong> lấy <code class="inline">Init.class</code> (class literal) chỉ nạp class, <em>không</em> chạy static block. Đọc hằng số compile-time <code class="inline">Init.NHAN</code> cũng không — giá trị đã bị compiler nội suy (inlined) từ trước. Chỉ tới lúc gọi method <code class="inline">Init.tang()</code> class mới được <strong>khởi tạo</strong> và static block chạy. Quy tắc này ở JLS §12.4.1, và có ví dụ liên quan ở <a href="index.html#final">Biến trong Java — mục 10</a>, <a href="classes-objects.html#khoi-tao">Classes &amp; Objects — mục 6</a>.</li>
+    </ul>
+
+    <h3>Delegation model — luôn hỏi cha trước</h3>
+
+    <p>Khi bạn gọi <code class="inline">ClassLoader.loadClass("X")</code>, loader không tự tìm ngay mà theo trình tự:</p>
+    <ol>
+      <li>Kiểm tra class đã được loader này nạp chưa; nếu rồi thì trả lại.</li>
+      <li>Nhờ <strong>loader cha</strong> nạp trước (đệ quy lên tới bootstrap).</li>
+      <li>Cha thất bại thì loader mới tự tìm trong classpath/nguồn của mình.</li>
+    </ol>
+
+    <p>Mục đích là an toàn và nhất quán: bạn không thể "tráo" <code class="inline">java.lang.String</code> bằng class của mình, vì mọi request đều bị đẩy lên bootstrap. Đổi lại, các hệ sinh thái như Servlet container (Tomcat) hay plugin có thể cố tình phá thứ tự "parent-first" để mỗi webapp có bản thư viện riêng — đó cũng là nguồn gốc của <em>classloader leak</em> khi redeploy (metaspace không được thu hồi, xem <a href="#loi-bo-nho">mục 6</a>).</p>
+
+    <p><strong>Classpath</strong> là danh sách thư mục/JAR để Application classloader tìm class. Khi trùng tên class ở nhiều nơi, thứ tự classpath quyết định bản nào được dùng — lý do lỗi "NoSuchMethodError" sau khi nâng cấp thư viện thường là class cũ còn sót trên classpath. Từ JDK 9, code JDK được tổ chức thành <strong>module</strong>, nhưng code thường của bạn vẫn chạy theo cơ chế classpath quen thuộc.</p>
+
+    <h2 id="bo-nho">4. Memory areas — stack, heap, metaspace <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>JVM chia bộ nhớ cần quản lý thành các vùng với đặc điểm rất khác nhau. Hiểu bảng này là hiểu một nửa các lỗi bộ nhớ:</p>
+
+    <table>
+      <thead>
+        <tr><th>Vùng</th><th>Phạm vi</th><th>Chứa gì</th><th>Điều chỉnh</th><th>Lỗi khi đầy</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Stack</strong></td><td>Mỗi thread một stack</td><td>Stack frame: biến local primitive, tham số, reference trỏ xuống heap</td><td><code class="inline">-Xss</code></td><td><code class="inline">StackOverflowError</code></td></tr>
+        <tr><td><strong>Heap</strong></td><td>Dùng chung mọi thread</td><td>Object, mảng — mọi thứ tạo bằng <code class="inline">new</code></td><td><code class="inline">-Xms</code> / <code class="inline">-Xmx</code></td><td><code class="inline">OutOfMemoryError: Java heap space</code></td></tr>
+        <tr><td><strong>Metaspace</strong></td><td>Dùng chung; nằm ngoài heap Java</td><td>Metadata class: tên, method, bytecode, constant pool</td><td><code class="inline">-XX:MaxMetaspaceSize</code></td><td><code class="inline">OutOfMemoryError: Metaspace</code></td></tr>
+        <tr><td><strong>PC register</strong></td><td>Mỗi thread một cái</td><td>Địa chỉ lệnh đang chạy của thread</td><td>—</td><td>—</td></tr>
+        <tr><td><strong>Native stack</strong></td><td>Mỗi thread một cái</td><td>Lời gọi native/JNI</td><td>—</td><td>Lỗi native</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nhắc lại ngắn từ <a href="index.html#stack-heap">Biến trong Java — mục 7</a>: biến local kiểu primitive (<code class="inline">int x = 10</code>) nằm ngay trên stack; object thì trên heap, còn biến giữ <em>reference</em> (địa chỉ) nằm trên stack. Vì vậy truyền primitive vào method là sao chép giá trị, truyền object là sao chép địa chỉ. Bốn câu trong ví dụ sau minh hoạ trực tiếp:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class MemoryDemo {
+    record DonHang(int id, String ten) {}
+
+    public static void main() {
+        Runtime rt = Runtime.getRuntime();
+        long mb = 1024 * 1024;
+        IO.println("Xmx (maxMemory) = " + rt.maxMemory() / mb + " MB");
+
+        DonHang a = new DonHang(1, "DH-1");
+        DonHang b = a;
+        IO.println("a == b          = " + (a == b));
+        IO.println("a.equals(b)     = " + a.equals(b));
+
+        int x = 10;
+        tang(x);
+        IO.println("x sau tang()    = " + x);
+    }
+
+    static void tang(int n) {
+        n++;
+        IO.println("n trong method  = " + n);
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy mặc định và chạy với <code class="inline">-Xmx256m</code> (máy 16 GB RAM nên mặc định là 25% = 4096 MB):</p>
+
+    <div class="codeblock error">
+      <pre>$ java MemoryDemo.java
+Xmx (maxMemory) = 4096 MB
+a == b          = true
+a.equals(b)     = true
+n trong method  = 11
+x sau tang()    = 10
+
+$ java -Xmx256m MemoryDemo.java
+Xmx (maxMemory) = 256 MB
+a == b          = true
+a.equals(b)     = true
+n trong method  = 11
+x sau tang()    = 10</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">maxMemory()</code> trả về <code class="inline">-Xmx</code> hiệu dụng — 4096 MB mặc định, 256 MB khi chỉnh flag. Đây là cách nhanh nhất để kiểm tra flag có ăn hay không lúc vận hành.</li>
+      <li><code class="inline">a == b</code> là <code class="inline">true</code> vì <code class="inline">b = a</code> chỉ sao chép reference — cả hai biến trỏ tới <strong>một</strong> object trên heap.</li>
+      <li><code class="inline">n++</code> trong method sửa bản sao trên stack frame mới, không ảnh hưởng <code class="inline">x</code>. Đúng tinh thần pass-by-value.</li>
+    </ul>
+
+    <div class="note"><strong>Metaspace không nằm trong heap:</strong> tăng <code class="inline">-Xmx</code> không giúp gì nếu OOM là <code class="inline">Metaspace</code>. Từ JDK 8 vùng này thay cho PermGen cũ, nằm trong bộ nhớ native của process, mặc định không giới hạn — nhưng trong container nó vẫn tính vào tổng RAM.</div>
+
+    <h2 id="gc">5. Heap &amp; GC cơ bản <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Bạn không cấp phát/giải phóng bộ nhớ bằng tay: JVM cấp phát object trên heap và <strong>Garbage Collector (GC)</strong> tự thu hồi object không còn được tham chiếu. Heap theo mô hình <em>generational</em> — chia theo tuổi thọ object:</p>
+
+    <ul>
+      <li><strong>Young generation</strong> — gồm <strong>Eden</strong> và hai <strong>Survivor</strong> (S0, S1). Object mới sinh ra ở Eden; phần lớn object chết trẻ.</li>
+      <li><strong>Old generation</strong> (tenured) — object sống qua nhiều lần dọn young sẽ được "thăng cấp" lên đây.</li>
+      <li><strong>Minor GC</strong> dọn young: copy object còn sống từ Eden sang Survivor, thường rất nhanh. <strong>Full GC</strong> dọn cả old: nặng hơn nhiều.</li>
+    </ul>
+
+    <h3>GC roots — bắt đầu từ đâu để biết object còn sống</h3>
+
+    <p>GC không "đếm reference" thủ công; nó duyệt đồ thị object bắt đầu từ các <strong>GC root</strong>. Object nào <em>reachable</em> (đi tới được) từ root thì còn sống. Các root chính:</p>
+    <ul>
+      <li>Biến local và tham số đang nằm trong stack frame của các thread đang chạy.</li>
+      <li><code class="inline">static</code> field của class đã nạp — ví dụ một <code class="inline">static final List</code> cache.</li>
+      <li>Thread đang sống, đối tượng JNI, classloader đang hoạt động.</li>
+    </ul>
+
+    <div class="note warn">Đây là lời giải thích cho "memory leak trong ngôn ngữ có GC": nếu bạn <strong>giữ reference</strong> tới object trong static collection không bao giờ clear, object đó vẫn reachable từ root — GC không thể thu hồi. Leak trong Java hầu như luôn là "còn tham chiếu", không phải "quên free".</div>
+
+    <h3>Stop-the-world và G1</h3>
+
+    <p>Ở một số pha, GC phải dừng toàn bộ thread ứng dụng — gọi là <strong>stop-the-world (STW)</strong>. Minor GC thường chỉ vài ms; Full GC có thể hàng trăm ms tới vài giây, gây spike latency. Từ <strong>JDK 9, G1 là GC mặc định</strong> (JEP 248, thay cho Parallel GC trước đó): G1 chia heap thành các region nhỏ và ưu tiên dọn region "rác nhiều" trước, cho phép nhắm mục tiêu thời gian pause. Các collector khác vẫn tồn tại cho mục đích riêng: ZGC/Shenandoah cho độ trễ cực thấp (mức nhận biết), Parallel/Serial cho batch nhỏ, ZGC là lựa chọn phổ biến cho service yêu cầu p99 thấp ở JDK 21+.</p>
+
+    <p>Xem GC làm việc thật bằng <code class="inline">-Xlog:gc</code> (lần chạy này cấp phát mảng 1 MB nên bạn thấy G1 ghi "Humongous Allocation" — object lớn hơn nửa region được xử lý riêng):</p>
+
+    <div class="codeblock">
+      <pre><code>$ java -Xlog:gc -Xmx64m HeapOomDemo 2&gt;&amp;1 | head -9
+[0.003s][info][gc] Using G1
+[0.015s][info][gc] GC(0) Pause Young (Concurrent Start) (G1 Humongous Allocation) 28M-&gt;27M(64M) 0.251ms
+[0.015s][info][gc] GC(1) Concurrent Undo Cycle
+[0.015s][info][gc] GC(1) Concurrent Undo Cycle 0.024ms
+[0.016s][info][gc] GC(2) Pause Young (Concurrent Start) (G1 Humongous Allocation) 28M-&gt;28M(64M) 0.122ms
+[0.016s][info][gc] GC(3) Concurrent Mark Cycle
+[0.017s][info][gc] GC(3) Pause Remark 40M-&gt;40M(64M) 0.056ms
+[0.017s][info][gc] GC(3) Pause Cleanup 45M-&gt;45M(64M) 0.004ms
+[0.017s][info][gc] GC(5) Pause Full (G1 Compaction Pause) 61M-&gt;61M(64M) 0.723ms</code></pre>
+    </div>
+
+    <p>Cách đọc một dòng GC: <code class="inline">Pause Young</code> = minor GC (STW ngắn); <code class="inline">Pause Full</code> = full GC (nặng); <code class="inline">28M-&gt;27M(64M)</code> = trước GC dùng 28 MB, sau GC còn 27 MB, tổng heap 64 MB (dấu hiệu gần như không giải phóng được gì — object vẫn được giữ); số cuối là thời gian pause. Thời gian và con số thay đổi mỗi lần chạy, chỉ hình dạng dòng là cố định.</p>
+
+    <div class="note"><strong>Đừng tối ưu GC sớm:</strong> G1 mặc định đủ tốt cho phần lớn service. Chỉ tuning khi có bằng chứng: log GC cho thấy full GC thường xuyên, pause vượt mục tiêu latency, hoặc heap liên tục gần đầy sau full GC (dấu hiệu leak). Chỉnh flag mù không làm nhanh hơn — thường chỉ che triệu chứng.</div>
+
+    <h2 id="loi-bo-nho">6. Lỗi bộ nhớ: StackOverflowError &amp; OutOfMemoryError <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Cả hai đều là <code class="inline">Error</code> (không phải <code class="inline">Exception</code>), nhưng nguyên nhân và cách xử lý hoàn toàn khác nhau. Phân biệt đúng là kỹ năng production cơ bản.</p>
+
+    <h3>StackOverflowError — stack của thread đầy</h3>
+
+    <p>Mỗi lời gọi method đẩy thêm một frame lên stack. Đệ quy không có base case (hoặc sâu quá giới hạn) làm stack đầy — JVM ném lỗi thay vì treo máy:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class StackOverflowDemo {
+    static int dem = 0;
+
+    static int truoc(int n) {
+        dem++;
+        return sau(n + 1);
+    }
+
+    static int sau(int n) {
+        return truoc(n);
+    }
+
+    public static void main() {
+        IO.println("bat dau");
+        truoc(0);
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy thật — JVM in ra stack trace bắt đầu bằng <code class="inline">Exception in thread "main"</code> rồi lặp hai frame mãi (lần chạy này tổng cộng 1026 dòng):</p>
+
+    <div class="codeblock error">
+      <pre>$ java StackOverflowDemo
+bat dau
+Exception in thread "main" java.lang.StackOverflowError
+	at StackOverflowDemo.sau(StackOverflowDemo.java:10)
+	at StackOverflowDemo.truoc(StackOverflowDemo.java:6)
+	at StackOverflowDemo.sau(StackOverflowDemo.java:10)
+	at StackOverflowDemo.truoc(StackOverflowDemo.java:6)
+	at StackOverflowDemo.sau(StackOverflowDemo.java:10)
+	at StackOverflowDemo.truoc(StackOverflowDemo.java:6)
+	... (lặp lại khoảng 500 cặp frame tương tự, tổng 1026 dòng)</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">StackOverflowError</code> không có message (thường là <code class="inline">null</code>) — chính stack trace là thông tin.</li>
+      <li>Top frame cho biết method nào đang chạy lúc stack đầy; các frame lặp lại chỉ ra vòng đệ quy. Ở đây <code class="inline">truoc</code> ↔ <code class="inline">sau</code> gọi nhau không điểm dừng.</li>
+      <li>Trong production <strong>không bắt</strong> <code class="inline">Error</code> để "chữa cháy" — phải sửa thuật toán (thêm base case, chuyển vòng lặp, giới hạn độ sâu). <code class="inline">-Xss</code> tăng stack chỉ làm lỗi chậm tới, không sửa gốc. Xem thêm <a href="methods.html#recursion">Methods — mục 7</a>.</li>
+    </ul>
+
+    <h3>OutOfMemoryError: Java heap space — hết chỗ chứa object</h3>
+
+    <p>Heap đầy vì object vẫn được giữ reference. Ví dụ kinh điển: một collection static tích lũy mãi không xóa (cache không giới hạn, buffer không clear):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class HeapOomDemo {
+    static final List&lt;byte[]&gt; CACHE = new ArrayList&lt;&gt;();
+
+    public static void main() {
+        try {
+            while (true) {
+                CACHE.add(new byte[1_000_000]);
+            }
+        } catch (OutOfMemoryError e) {
+            int soMb = CACHE.size();
+            CACHE.clear();
+            IO.println("class  : " + e.getClass().getName());
+            IO.println("message: " + e.getMessage());
+            IO.println("giu lai : " + soMb + " MB");
+        }
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy với heap nhỏ <code class="inline">-Xmx64m</code> để thấy lỗi nhanh (số MB giữ được thay đổi đôi chút mỗi lần chạy):</p>
+
+    <div class="codeblock error">
+      <pre>$ java -Xmx64m HeapOomDemo
+class  : java.lang.OutOfMemoryError
+message: Java heap space
+giu lai : 62 MB</pre>
+    </div>
+
+    <p>Dấu hiệu nhận biết: log có <code class="inline">OutOfMemoryError: Java heap space</code>, GC chạy liên tục mà heap sau full GC vẫn gần đầy, service chậm dần rồi chết. Cách điều tra: lấy heap dump (<a href="#cong-cu">mục 9</a>) và tìm ai đang giữ nhiều object nhất — thường là cache, collection, session map (<a href="collections.html#map">Collections — mục 5</a>).</p>
+
+    <h3>OutOfMemoryError: Metaspace — hết chỗ chứa metadata class</h3>
+
+    <p>Metaspace đầy khi chương trình <strong>định nghĩa class mới liên tục</strong> và không cho class cũ được unload. Ví dụ thực tế: sinh proxy/class động mỗi request, hoặc hot-redeploy trong app server để lại classloader cũ. Demo dưới tạo liên tục dynamic proxy class qua các classloader mới và giữ reference để class không bị thu hồi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MetaspaceOomDemo {
+    public interface XuLy {
+        void chay();
+    }
+
+    public static void main() {
+        List&lt;Object&gt; giu = new ArrayList&lt;&gt;();
+        long dem = 0;
+        OutOfMemoryError loi = null;
+        try {
+            while (true) {
+                ClassLoader parent = MetaspaceOomDemo.class.getClassLoader();
+                ClassLoader loader = new ClassLoader(parent) {};
+                Object proxy = Proxy.newProxyInstance(
+                        loader, new Class&lt;?&gt;[] {XuLy.class}, (p, m, a) -&gt; null);
+                giu.add(proxy);
+                dem++;
+            }
+        } catch (OutOfMemoryError e) {
+            loi = e;
+        }
+        giu.clear();
+        System.gc();
+        IO.println("class  : " + loi.getClass().getName());
+        IO.println("message: " + loi.getMessage());
+        IO.println("so class: " + dem);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre>$ java -XX:MaxMetaspaceSize=32m MetaspaceOomDemo
+class  : java.lang.OutOfMemoryError
+message: Metaspace
+so class: 5260</pre>
+    </div>
+
+    <p>Một lần chạy thật giới hạn metaspace 32 MB: sau khoảng 5260 class động thì hết chỗ (số này phụ thuộc máy và phiên bản JDK). Chú ý sau khi <code class="inline">giu.clear()</code> và <code class="inline">System.gc()</code>, chương trình mới in được message — vì lúc metaspace đầy thì cả việc nội suy chuỗi cũng có thể thất bại nếu chưa giải phóng. Đây là lý do trong code thật, sau khi bắt <code class="inline">OutOfMemoryError</code> nên giải phóng reference trước khi log.</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">StackOverflowError</code></th><th><code class="inline">OutOfMemoryError: Java heap space</code></th><th><code class="inline">OutOfMemoryError: Metaspace</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Vùng đầy</td><td>Stack của <strong>một thread</strong></td><td>Heap (dùng chung)</td><td>Metadata class (ngoài heap)</td></tr>
+        <tr><td>Nguyên nhân thường gặp</td><td>Đệ quy vô hạn/quá sâu</td><td>Giữ reference (cache, collection, leak)</td><td>Sinh class động liên tục, classloader leak</td></tr>
+        <tr><td>Message</td><td><code class="inline">null</code></td><td><code class="inline">Java heap space</code></td><td><code class="inline">Metaspace</code></td></tr>
+        <tr><td>Tác động</td><td>Chỉ thread gặp lỗi chết</td><td>Toàn bộ ứng dụng hết bộ nhớ</td><td>Toàn bộ ứng dụng không nạp được class mới</td></tr>
+        <tr><td>Hướng xử lý</td><td>Sửa thuật toán</td><td>Tìm object bị giữ; sửa cache; tăng heap có kiểm soát</td><td>Tìm classloader bị giữ; giới hạn sinh class động</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn">Trong code production, đừng <code class="inline">catch (Error)</code> rồi tiếp tục chạy như không có gì — trạng thái JVM sau OOM có thể không nhất quán. Các ví dụ trên bắt <code class="inline">OutOfMemoryError</code> chỉ để in message cho bạn thấy, còn hành vi đúng là: log, thoát process, để orchestrator restart (cân nhắc <code class="inline">-XX:+ExitOnOutOfMemoryError</code>).</div>
+
+    <h2 id="flags">7. JVM flags &amp; container <span class="badge b-prod">Production</span></h2>
+
+    <p>JVM nhận flag ngay sau lệnh <code class="inline">java</code> và <strong>trước</strong> tên class/file:</p>
+
+    <div class="signature">
+      <span class="sig-muted">java</span> <span class="sig-var">-Xms256m</span> <span class="sig-var">-Xmx1g</span> <span class="sig-muted">[-XX:...] [-Xlog:...]</span> <span class="tok-typ">TenFile.java</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Flag</th><th>Ý nghĩa</th><th>Ghi chú dùng thực tế</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">-Xms</code></td><td>Kích thước heap ban đầu</td><td>Đặt bằng <code class="inline">-Xmx</code> nếu muốn tránh resize; không bắt buộc</td></tr>
+        <tr><td><code class="inline">-Xmx</code></td><td>Kích thước heap <strong>tối đa</strong></td><td>Flag được hỏi nhiều nhất; phải nhỏ hơn giới hạn container</td></tr>
+        <tr><td><code class="inline">-Xss</code></td><td>Kích thước stack mỗi thread</td><td>Mặc định ~512 KB–1 MB; tăng chỉ khi hiểu rõ, vì mỗi thread tốn thêm RAM</td></tr>
+        <tr><td><code class="inline">-XX:MaxMetaspaceSize</code></td><td>Giới hạn metaspace</td><td>Mặc định không giới hạn; production nên đặt để phát hiện leak sớm</td></tr>
+        <tr><td><code class="inline">-XX:+UseG1GC</code></td><td>Chọn G1</td><td>Mặc định từ JDK 9 — thường không cần ghi</td></tr>
+        <tr><td><code class="inline">-XX:+HeapDumpOnOutOfMemoryError</code></td><td>Tự ghi heap dump khi OOM</td><td>Kèm <code class="inline">-XX:HeapDumpPath=/dumps</code>; cực hữu ích khi debug production</td></tr>
+        <tr><td><code class="inline">-Xlog:gc*</code></td><td>Bật log GC</td><td>Chi tiết vừa đủ, overhead thấp; nên bật ở production</td></tr>
+        <tr><td><code class="inline">-XX:MaxRAMPercentage</code></td><td>% RAM làm heap tối đa</td><td>Mặc định 25; dùng khi không muốn hardcode <code class="inline">-Xmx</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Xem toàn bộ flag hiệu dụng (đã lọc cho gọn) — chú ý G1 là mặc định và heap mặc định đúng 25% RAM:</p>
+
+    <div class="codeblock">
+      <pre><code>$ java -XX:+PrintFlagsFinal -version | grep -E 'UseG1GC|MaxHeapSize|MaxRAMPercentage|HeapDump'
+     bool HeapDumpOnOutOfMemoryError               = false                                  {manageable} {default}
+   size_t MaxHeapSize                              = 4294967296                             {product} {ergonomic}
+   double MaxRAMPercentage                         = 25.000000                              {product} {default}
+     bool UseG1GC                                  = true                                   {product} {ergonomic}</code></pre>
+    </div>
+
+    <p>Đổi tỉ lệ RAM cho heap cũng quan sát được ngay bằng <code class="inline">MemoryDemo</code> (máy này khoảng 16 GB RAM):</p>
+
+    <div class="codeblock">
+      <pre><code>$ java -XX:MaxRAMPercentage=10.0 MemoryDemo.java
+Xmx (maxMemory) = 1640 MB</code></pre>
+    </div>
+
+    <h3>Container awareness — chỗ hay chết production</h3>
+
+    <p>Từ JDK 10+, JVM tự đọc giới hạn bộ nhớ của container (cgroup) thay vì nhìn RAM của host (<code class="inline">UseContainerSupport</code> mặc định bật). Nếu container limit 1 GB thì heap mặc định khoảng 25% × 1 GB = 256 MB, chứ không phải 25% × RAM của server vật lý. Tuy nhiên <strong>heap không phải toàn bộ bộ nhớ process</strong>: metaspace, stack các thread, code cache, direct buffer, thư viện native đều nằm ngoài <code class="inline">-Xmx</code>. Vì vậy đặt <code class="inline">-Xmx</code> bằng đúng container limit gần như chắc chắn bị kernel kill, chứ chưa kịp thấy <code class="inline">OutOfMemoryError</code>.</p>
+
+    <div class="signature">
+      <span class="sig-var">-XX:MaxRAMPercentage</span><span class="sig-muted">=75.0</span> <span class="sig-muted">(an toàn hơn hardcode -Xmx khi chạy đa môi trường)</span>
+    </div>
+
+    <div class="note warn"><strong>Không tune mù:</strong> đừng copy các bộ flag dài trên mạng vào service của bạn. Thứ tự đúng: (1) quan sát — GC log, p99 latency, RSS; (2) tìm nguyên nhân — leak hay chỉ thiếu heap; (3) thay đổi <em>một</em> thứ, đo lại. JVM mặc định của JDK 25 đã rất tốt cho đa số workload.</div>
+
+    <h2 id="stack-trace">8. Đọc stack trace như thế nào <span class="badge b-prod">Production</span></h2>
+
+    <p>Stack trace là "ảnh chụp" các lời gọi method tại thời điểm lỗi. Đọc đúng giúp bạn nhảy tới dòng gây lỗi trong vài giây. Cấu trúc một trace chưa bắt lỗi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.List;
+
+public class StackTraceDemo {
+    static int tinhTong(List&lt;Integer&gt; tien) {
+        int tong = 0;
+        for (int x : tien) {
+            tong += x;
+        }
+        return tong;
+    }
+
+    static void inTong() {
+        IO.println(tinhTong(null));
+    }
+
+    public static void main() {
+        inTong();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre>Exception in thread "main" java.lang.NullPointerException: Cannot invoke "java.util.List.iterator()" because "&lt;parameter1&gt;" is null
+	at StackTraceDemo.tinhTong(StackTraceDemo.java:6)
+	at StackTraceDemo.inTong(StackTraceDemo.java:13)
+	at StackTraceDemo.main(StackTraceDemo.java:17)</pre>
+    </div>
+
+    <p>Đọc từng phần:</p>
+    <ul>
+      <li><strong>Dòng đầu</strong> — loại lỗi + message. Ở đây <code class="inline">NullPointerException</code> với message "helpful NPE" của JDK hiện đại: nói luôn biến nào null (<code class="inline">parameter1</code>) và method nào bị gọi trên nó (<code class="inline">List.iterator()</code>).</li>
+      <li><strong>Frame đầu tiên</strong> — <code class="inline">at StackTraceDemo.tinhTong(StackTraceDemo.java:6)</code> chỉ đúng dòng 6 (vòng lặp for) ném lỗi. Đây là nơi bắt đầu điều tra.</li>
+      <li><strong>Các frame tiếp theo</strong> — chuỗi lời gọi dẫn tới đó: <code class="inline">main</code> (dòng 17) gọi <code class="inline">inTong</code> (dòng 13) gọi <code class="inline">tinhTong</code>. Đọc từ dưới lên là đường đi của chương trình; frame của code thư viện (bắt đầu <code class="inline">java.base/...</code>, <code class="inline">jdk...</code>) thường bỏ qua cho tới frame đầu tiên thuộc code của bạn.</li>
+    </ul>
+
+    <h3>"Caused by" — nguyên nhân gốc</h3>
+
+    <p>Khi exception bị bọc trong exception khác, trace có thêm khối <code class="inline">Caused by</code>. Lỗi nhìn thấy ở dòng đầu chỉ là triệu chứng; nguyên nhân gốc nằm ở khối cuối:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ChainCauseDemo {
+    static int docCauHinh() {
+        try {
+            return Integer.parseInt("khong-phai-so");
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Cau hinh PORT sai", e);
+        }
+    }
+
+    public static void main() {
+        IO.println("PORT = " + docCauHinh());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre>Exception in thread "main" java.lang.IllegalStateException: Cau hinh PORT sai
+	at ChainCauseDemo.docCauHinh(ChainCauseDemo.java:6)
+	at ChainCauseDemo.main(ChainCauseDemo.java:11)
+Caused by: java.lang.NumberFormatException: For input string: "khong-phai-so"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:565)
+	at java.base/java.lang.Integer.parseInt(Integer.java:662)
+	at ChainCauseDemo.docCauHinh(ChainCauseDemo.java:4)
+	... 1 more</pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">IllegalStateException</code> là cái code của bạn ném ra ("Cấu hình PORT sai"); nguyên nhân gốc là <code class="inline">NumberFormatException</code> ở <code class="inline">docCauHinh(ChainCauseDemo.java:4)</code>.</li>
+      <li><code class="inline">... 1 more</code> nghĩa là frame còn lại (<code class="inline">main</code>) giống hệt khối phía trên, không in lặp cho gọn.</li>
+      <li>Production: <strong>luôn giữ cause</strong> khi bọc exception (<code class="inline">throw new X("...", e)</code>) — mất cause là mất manh mối. Chi tiết exception chaining ở <a href="exceptions.html#throw-throws">Exceptions — mục 5</a>.</li>
+    </ul>
+
+    <h3>Bảng đọc nhanh</h3>
+
+    <table>
+      <thead>
+        <tr><th>Thành phần</th><th>Nghĩa</th><th>Dùng để</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">Exception in thread "main"</code></td><td>Lỗi không được bắt ở thread chính</td><td>Biết thread nào chết</td></tr>
+        <tr><td><code class="inline">java.lang.X: message</code></td><td>Loại lỗi + mô tả</td><td>Phân loại lỗi ngay từ dòng đầu</td></tr>
+        <tr><td><code class="inline">at Class.method(File.java:line)</code></td><td>Một frame: class, method, file, dòng</td><td>Nhảy tới đúng dòng trong IDE</td></tr>
+        <tr><td>Frame đầu tiên</td><td>Nơi lỗi phát sinh</td><td>Điểm bắt đầu điều tra</td></tr>
+        <tr><td><code class="inline">Caused by:</code></td><td>Exception gốc được bọc</td><td>Tìm root cause</td></tr>
+        <tr><td><code class="inline">... N more</code></td><td>N frame chung với khối trên</td><td>Không phải lỗi, chỉ là viết gọn</td></tr>
+        <tr><td><code class="inline">Suppressed:</code></td><td>Lỗi phụ khi đóng tài nguyên (try-with-resources)</td><td>Đừng bỏ qua khi debug I/O</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="cong-cu">9. Công cụ chẩn đoán mức nhận biết <span class="badge b-prod">Production</span></h2>
+
+    <p>Bộ công cụ đi kèm JDK, chạy trực tiếp trên máy hoặc exec vào container. Biết tên và dùng đúng lúc là đủ ở mức Junior+:</p>
+
+    <table>
+      <thead>
+        <tr><th>Công cụ</th><th>Làm gì</th><th>Dùng khi nào</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">jps -l</code></td><td>Liệt kê tiến trình Java + main class</td><td>Lấy PID trước khi dùng tool khác</td></tr>
+        <tr><td><code class="inline">jstack &lt;pid&gt;</code></td><td>Thread dump: mọi thread + stack hiện tại</td><td>App treo, nghi deadlock, CPU 100%</td></tr>
+        <tr><td><code class="inline">jcmd &lt;pid&gt; &lt;command&gt;</code></td><td>"Dao đa năng": <code class="inline">VM.flags</code>, <code class="inline">GC.heap_info</code>, <code class="inline">GC.heap_dump</code>, <code class="inline">Thread.print</code>, JFR</td><td>Hầu hết tình huống; là cách hiện đại thay <code class="inline">jmap</code>/<code class="inline">jstack</code></td></tr>
+        <tr><td><code class="inline">jmap</code></td><td>Heap info/dump (legacy)</td><td>Code cũ/tài liệu cũ nhắc; ưu tiên <code class="inline">jcmd</code></td></tr>
+        <tr><td><code class="inline">jstat -gc &lt;pid&gt; 1000</code></td><td>Thống kê GC theo chu kỳ</td><td>Theo dõi tần suất/hiệu quả GC realtime</td></tr>
+        <tr><td>VisualVM / JMC</td><td>GUI: memory, thread, GC, heap dump, JFR</td><td>Phân tích sâu hơn, xem biểu đồ</td></tr>
+      </tbody>
+    </table>
+
+    <p>Minh hoạ thật trên một tiến trình đang chạy (PID và số liệu thay đổi mỗi lần; <code class="inline">ProductionDemo</code> chỉ ngủ để giả lập service):</p>
+
+    <div class="codeblock">
+      <pre><code>$ jps -l
+69043 ProductionDemo
+69047 jdk.jcmd/sun.tools.jps.Jps
+
+$ jcmd 69043 GC.heap_info
+69043:
+garbage-first heap   total reserved 131072K, committed 131072K, used 3198K [0x0000000478000000, 0x0000000480000000)
+ region size 1024K, 2 young (2048K), 0 survivors (0K)</code></pre>
+    </div>
+
+    <p>Thread dump (lược bớt phần đầu và các thread khác) cho thấy thread <code class="inline">main</code> đang ngủ ở đâu — đây là cách tìm thread treo/kẹt:</p>
+
+    <div class="codeblock">
+      <pre><code>$ jstack 69043
+2026-10-06 01:24:39
+Full thread dump OpenJDK 64-Bit Server VM (25.0.4+7-LTS mixed mode, sharing):
+... (nhiều thread nền: GC, JIT, Reference Handler...)
+"main" #3 [10243] prio=5 os_prio=31 ... waiting on condition  [0x000000016f2fe000]
+   java.lang.Thread.State: TIMED_WAITING (sleeping)
+	at java.base/java.lang.Thread.sleepNanos0(Native Method)
+	at java.base/java.lang.Thread.sleepNanos(Thread.java:509)
+	at java.base/java.lang.Thread.sleep(Thread.java:540)
+	at ProductionDemo.main(ProductionDemo.java:4)</code></pre>
+    </div>
+
+    <div class="note"><strong>Heap dump:</strong> là file ảnh chụp toàn bộ object trên heap, để phân tích ai giữ bộ nhớ. Hai cách phổ biến: bật sẵn <code class="inline">-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dumps</code> (không cần can thiệp lúc sự cố), hoặc chủ động <code class="inline">jcmd &lt;pid&gt; GC.heap_dump /dumps/app.hprof</code>. File có thể rất lớn (bằng heap) và chứa dữ liệu nhạy cảm — cân nhắc khi copy ra ngoài. Phân tích bằng VisualVM hoặc Eclipse MAT. Nếu container bị kill (OOMKilled), bạn không kịp dump — xem mục <a href="#production">10</a>.</div>
+
+    <h2 id="production">10. JVM trong production <span class="badge b-prod">Production</span></h2>
+
+    <h3>Container memory limit vs -Xmx</h3>
+
+    <p>Đây là cặp khái niệm dễ gây chết service nhất khi lên container/Kubernetes:</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>OOMKilled (kernel)</th><th>OutOfMemoryError (JVM)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ai quyết định</td><td>Kernel khi tổng RSS của process vượt limit của container/cgroup</td><td>JVM khi một vùng nhớ do JVM quản lý hết chỗ</td></tr>
+        <tr><td>Dấu hiệu</td><td>Container exit code <strong>137</strong>; log app không có gì; <code class="inline">kubectl describe pod</code> ghi <code class="inline">OOMKilled</code></td><td>Log có <code class="inline">java.lang.OutOfMemoryError: ...</code> kèm stack trace</td></tr>
+        <tr><td>Bộ nhớ liên quan</td><td>Heap + metaspace + stack thread + code cache + native/direct</td><td>Thường chỉ một vùng: heap hoặc metaspace</td></tr>
+        <tr><td>Cách xử lý</td><td>Hạ <code class="inline">-Xmx</code>/RAM percentage, tăng limit, tìm leak/native buffer</td><td>Tìm leak, sửa cache, tăng vùng tương ứng có kiểm soát</td></tr>
+      </tbody>
+    </table>
+
+    <p>Quy tắc an toàn: để heap chiếm khoảng 60–75% limit, chừa phần còn lại cho metaspace, stack, code cache và native. Nếu thấy app bị kill mà log trống trơn, nghĩ ngay tới OOMKilled — đừng chỉ nhìn <code class="inline">OutOfMemoryError</code>.</p>
+
+    <h3>GC pause ảnh hưởng latency thế nào</h3>
+
+    <p>Mỗi lần GC stop-the-world, mọi request đang xử lý đều đứng im. Minor GC vài ms hầu như không ai thấy; Full GC vài trăm ms tạo spike p99 rõ rệt — đúng lúc traffic cao lại càng tệ. Vì vậy ở production nên bật log GC với rotation, để khi có sự cố latency còn dữ liệu phân tích:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">java '-Xlog:gc*:file=gc.log:time,uptime:filecount=5,filesize=10M' TenFile.java</code></pre>
+    </div>
+
+    <p>Log này overhead thấp, ghi ra file xoay vòng 5 file × 10 MB. Khi cần đào sâu, Java Flight Recorder (<code class="inline">jcmd &lt;pid&gt; JFR.start</code>) ghi lại sự kiện GC, allocation, thread — mức nhận biết ở giai đoạn này.</p>
+
+    <h3>Checklist khi service có sự cố bộ nhớ</h3>
+
+    <ol>
+      <li>Xác định <em>ai giết</em>: exit code 137 + không có log OOM → nghi OOMKilled (mục này); có log OOM → đọc message (mục <a href="#loi-bo-nho">6</a>).</li>
+      <li>Đọc stack trace và GC log; xác định vùng đầy (heap hay metaspace).</li>
+      <li>Lấy heap dump nếu kịp (đã bật flag từ trước thì luôn kịp).</li>
+      <li>Phân tích bằng MAT/VisualVM: object nào chiếm nhiều nhất, ai giữ reference (thường là static collection).</li>
+      <li>Tạm thời: tăng limit/hạ Xmx hợp lý để hồi phục; dài hạn: sửa leak hoặc giới hạn cache.</li>
+      <li>Thêm giám sát: RSS, heap sau full GC, tần suất full GC, p99 latency.</li>
+    </ol>
+
+    <h2 id="pitfalls">11. Pitfalls tổng hợp</h2>
+
+    <table>
+      <thead>
+        <tr><th>Hiểu sai / thói quen</th><th>Thực tế</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>"JDK, JRE, JVM là một"</td><td>JVM là cỗ máy thực thi; JRE = JVM + thư viện; JDK = JRE + công cụ</td><td>Nhớ sơ đồ lồng nhau ở <a href="#jdk-jre-jvm">mục 2</a></td></tr>
+        <tr><td>Đặt <code class="inline">-Xmx</code> bằng đúng limit container</td><td>Heap + metaspace + stack + native vượt limit → kernel kill (137), không có log JVM</td><td>Chừa 25–40% headroom hoặc dùng <code class="inline">-XX:MaxRAMPercentage</code></td></tr>
+        <tr><td>Gọi <code class="inline">System.gc()</code> để "dọn ngay"</td><td>Chỉ là gợi ý; JVM có thể bỏ qua, ép full GC còn gây pause nặng</td><td>Không gọi trong code production; để GC tự quyết định</td></tr>
+        <tr><td>Nghĩ GC dọn object khi biến ra khỏi scope</td><td>GC chỉ thu hồi khi object <em>không còn reachable</em> từ GC root</td><td>Xem lại GC roots ở <a href="#gc">mục 5</a></td></tr>
+        <tr><td>Cache/static collection không giới hạn</td><td>Object vẫn reachable mãi → heap tăng dần tới OOM</td><td>Giới hạn size/TTL (<a href="collections.html#map">Collections — mục 5</a>); clear khi cần</td></tr>
+        <tr><td>Đệ quy sâu/không base case</td><td><code class="inline">StackOverflowError</code>, không có message</td><td>Thêm base case hoặc chuyển vòng lặp</td></tr>
+        <tr><td>Chỉ đọc dòng đầu stack trace rồi kết luận</td><td>Nguyên nhân gốc nằm ở khối <code class="inline">Caused by</code></td><td>Đọc tới cause cuối cùng (<a href="#stack-trace">mục 8</a>)</td></tr>
+        <tr><td>Copy một bộ flag tuning dài trên mạng</td><td>Không đo thì không biết tốt hơn hay chỉ đổi chỗ nghẽn</td><td>Đo trước — sửa một biến — đo lại (mục <a href="#flags">7</a>)</td></tr>
+        <tr><td>Bắt <code class="inline">Error</code> để app "sống tiếp"</td><td>Trạng thái sau OOM/SOE không đảm bảo; che mất sự cố</td><td>Log đầy đủ, để process thoát và restart</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="qa">12. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. JVM, JRE và JDK khác nhau thế nào?</summary>
+      <div class="answer">JVM là máy ảo thực thi bytecode (interpreter + JIT + GC + classloader). JRE = JVM + thư viện chuẩn, đủ để chạy app. JDK = JRE + công cụ phát triển (<code class="inline">javac</code>, <code class="inline">javap</code>, <code class="inline">jcmd</code>...). Từ JDK 9 không còn bản JRE phát hành riêng; muốn runtime gọn thì dùng <code class="inline">jlink</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Bytecode là gì? Vì sao Java độc lập nền tảng?</summary>
+      <div class="answer">Bytecode là tập lệnh trung gian trong file <code class="inline">.class</code>, không gắn với CPU cụ thể (khác mã máy). <code class="inline">javac</code> dịch source thành bytecode; mỗi nền tảng có bản JVM riêng đọc cùng bytecode đó — nên "write once, run anywhere". Xem thật bằng <code class="inline">javap -c</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. JVM thông dịch hay biên dịch?</summary>
+      <div class="answer">Cả hai. HotSpot bắt đầu bằng interpreter (khởi động nhanh), đồng thời theo dõi method "nóng"; method chạy nhiều được JIT biên dịch thành mã máy tối ưu (C1/C2), có thể deoptimize nếu giả định sai. Nhờ vậy vừa khởi động nhanh vừa đạt hiệu năng cao về sau.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Kể 3 classloader chính và mỗi loại nạp gì?</summary>
+      <div class="answer">Bootstrap (native, nạp lõi <code class="inline">java.base</code> như <code class="inline">String</code>; <code class="inline">getClassLoader()</code> trả <code class="inline">null</code>), Platform (các module JDK khác như <code class="inline">java.sql</code>), và Application/System (classpath: code của bạn + thư viện). Chúng tạo thành cây cha-con App → Platform → Bootstrap.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Delegation model của classloader là gì? Vì sao cần?</summary>
+      <div class="answer">Khi nạp class, loader hỏi loader cha trước, chỉ tự nạp khi cha thất bại (parent-first). Mục đích: đảm bảo class lõi như <code class="inline">java.lang.String</code> luôn do bootstrap nạp — không thể bị "tráo" bởi class của ứng dụng, và tránh nạp trùng class trong cùng hệ thống. App server đôi khi cố tình đảo ngược để cô lập thư viện giữa các webapp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Load và initialize class khác nhau thế nào? Static block chạy khi nào?</summary>
+      <div class="answer">Load là đọc và định nghĩa class trong bộ nhớ; initialize (chạy <code class="inline">&lt;clinit&gt;</code> + static block) xảy ra ở lần <em>dùng chủ động</em> đầu tiên: tạo instance, gọi static method, ghi/đọc static field không phải hằng, hoặc reflection có yêu cầu init. Class literal (<code class="inline">X.class</code>) và hằng số compile-time <code class="inline">static final</code> (đã inline) <strong>không</strong> kích hoạt init — JLS §12.4.1.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Classpath là gì? Vì sao thứ tự quan trọng?</summary>
+      <div class="answer">Là danh sách thư mục/JAR để Application classloader tìm class (qua <code class="inline">-cp</code> hoặc biến <code class="inline">CLASSPATH</code>). Khi nhiều nguồn có cùng tên class, nguồn xuất hiện trước thắng — nguyên nhân kinh điển của <code class="inline">NoSuchMethodError</code> khi có hai phiên bản thư viện trên classpath.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Stack và heap khác nhau thế nào?</summary>
+      <div class="answer">Stack: mỗi thread một cái, chứa frame với biến local primitive và reference; tự giải phóng khi method return; đầy → <code class="inline">StackOverflowError</code>; điều chỉnh bằng <code class="inline">-Xss</code>. Heap: dùng chung mọi thread, chứa object/mảng; GC quản lý; đầy → <code class="inline">OutOfMemoryError: Java heap space</code>; điều chỉnh bằng <code class="inline">-Xms/-Xmx</code>. Object luôn nằm trên heap, biến giữ object chỉ là reference trên stack.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Metaspace là gì? Khác gì heap?</summary>
+      <div class="answer">Metaspace chứa metadata class (tên class, method, bytecode, constant pool), thay PermGen từ JDK 8, nằm trong bộ nhớ native chứ không phải heap Java. Vì vậy tăng <code class="inline">-Xmx</code> không giúp lỗi <code class="inline">OutOfMemoryError: Metaspace</code>. Mặc định không giới hạn; production nên đặt <code class="inline">-XX:MaxMetaspaceSize</code> để phát hiện classloader leak sớm.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 10. GC roots gồm những gì?</summary>
+      <div class="answer">Các điểm bắt đầu để GC duyệt đồ thị object: biến local/tham số trong stack frame của thread đang chạy, static field của class đã nạp, thread đang sống, tham chiếu JNI/native, và classloader đang hoạt động. Object reachable từ root là còn sống; ngược lại mới bị thu hồi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Minor GC và Full GC khác nhau thế nào? Young/Old generation là gì?</summary>
+      <div class="answer">Heap chia young (Eden + 2 Survivor) và old. Object mới ở Eden; minor GC dọn young, object sống sót được copy qua Survivor rồi thăng cấp lên old sau vài lần. Full GC dọn cả old (và thường cả young) — nặng hơn hẳn, pause dài. Nếu sau Full GC heap vẫn gần đầy, nhiều khả năng có object bị giữ (leak).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Stop-the-world là gì? G1 mặc định từ khi nào?</summary>
+      <div class="answer">STW là pha GC dừng toàn bộ thread ứng dụng để dọn an toàn — dài thì request bị treo. Từ JDK 9 (JEP 248), G1 là GC mặc định: chia heap thành region, ưu tiên vùng nhiều rác, hướng tới mục tiêu pause. Các collector khác: ZGC/Shenandoah cho độ trễ rất thấp, Parallel/Serial cho workload nhỏ hoặc batch.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. StackOverflowError và OutOfMemoryError khác nhau ra sao?</summary>
+      <div class="answer"><code class="inline">StackOverflowError</code>: stack của một thread đầy, thường do đệ quy vô hạn/quá sâu; message null; chỉ thread đó chết. <code class="inline">OutOfMemoryError</code>: một vùng nhớ dùng chung hết chỗ; message cho biết vùng (<code class="inline">Java heap space</code>, <code class="inline">Metaspace</code>...); ảnh hưởng cả ứng dụng. Cả hai là <code class="inline">Error</code> — sửa nguyên nhân, không bắt để chạy tiếp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">-Xms</code> và <code class="inline">-Xmx</code> là gì? Nên đặt thế nào?</summary>
+      <div class="answer"><code class="inline">-Xms</code> là heap ban đầu, <code class="inline">-Xmx</code> là heap tối đa. Mặc định JVM tính theo 25% RAM (MaxRAMPercentage) và tự resize; production thường đặt <code class="inline">-Xmx</code> rõ ràng (hoặc MaxRAMPercentage) để tránh bất ngờ, và phải để headroom cho metaspace/stack/native. Đặt <code class="inline">-Xms = -Xmx</code> giúp tránh chi phí resize nhưng không bắt buộc.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Vì sao <code class="inline">-Xmx</code> phải nhỏ hơn container limit? OOMKilled là gì?</summary>
+      <div class="answer">Vì process còn dùng bộ nhớ ngoài heap: metaspace, stack các thread, code cache, direct buffer, thư viện native. Nếu tổng RSS vượt limit cgroup, kernel giết process — container exit code 137, gọi là OOMKilled, và log ứng dụng thường không có dòng <code class="inline">OutOfMemoryError</code> nào. Vì vậy để heap ~60–75% limit hoặc dùng <code class="inline">-XX:MaxRAMPercentage</code> phù hợp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Đọc stack trace: cần nhìn những gì?</summary>
+      <div class="answer">Dòng đầu (loại exception + message), frame đầu tiên (nơi lỗi phát sinh, có tên file + dòng), và khối <code class="inline">Caused by</code> cuối cùng (nguyên nhân gốc). Các frame <code class="inline">java.base/...</code> là thư viện — tìm frame đầu tiên thuộc code của bạn. <code class="inline">... N more</code> chỉ là viết gọn, không phải lỗi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Khi nào dùng <code class="inline">jstack</code>, khi nào dùng <code class="inline">jcmd</code>?</summary>
+      <div class="answer"><code class="inline">jstack</code> để lấy thread dump khi app treo, nghi deadlock hoặc CPU cao — xem thread nào đang chạy/chờ gì. <code class="inline">jcmd</code> là dao đa năng: xem flags (<code class="inline">VM.flags</code>), heap (<code class="inline">GC.heap_info</code>, <code class="inline">GC.heap_dump</code>), thread (<code class="inline">Thread.print</code>), JFR. Thực tế chỉ cần <code class="inline">jcmd</code> là làm được phần lớn việc của bộ tool cũ.</div>
+    </details>
+
+    <h3>Production</h3>
+
+    <details class="qa">
+      <summary>Câu 18. <code class="inline">System.gc()</code> có ép GC chạy ngay không? Có nên gọi?</summary>
+      <div class="answer">Không đảm bảo — chỉ là gợi ý, JVM có thể bỏ qua (nhất là khi bật <code class="inline">-XX:+DisableExplicitGC</code>). Nếu chạy, nó thường kích hoạt Full GC gây pause lớn. Không gọi trong code production; chỉ dùng trong demo/đo đạc có kiểm soát.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Vì sao static collection gây memory leak dù Java có GC?</summary>
+      <div class="answer">Vì static field là GC root: mọi object được collection đó tham chiếu vẫn reachable mãi, GC không thu hồi được. Cache/session map/list "tạm" không giới hạn size sẽ phình heap tới <code class="inline">OutOfMemoryError: Java heap space</code>. Cách tránh: giới hạn size/TTL, dùng cache có eviction, hoặc <code class="inline">WeakHashMap</code> khi phù hợp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Heap dump là gì? Lấy thế nào và đọc bằng gì?</summary>
+      <div class="answer">Là file ảnh chụp toàn bộ object trên heap (định dạng .hprof). Lấy bằng <code class="inline">-XX:+HeapDumpOnOutOfMemoryError</code> (tự động lúc OOM) hoặc <code class="inline">jcmd &lt;pid&gt; GC.heap_dump &lt;path&gt;</code> lúc đang chạy. Phân tích bằng Eclipse MAT hoặc VisualVM để tìm loại object chiếm nhiều nhất và chuỗi reference đang giữ chúng. Lưu ý file lớn và chứa dữ liệu nhạy cảm.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Vì sao không nên tối ưu GC/flags sớm?</summary>
+      <div class="answer">Vì default của JDK hiện đại (G1, ergonomics theo RAM) đã tốt cho phần lớn service; tuning mù dựa trên cảm giác có thể làm chậm, tăng pause hoặc che leak. Quy trình đúng: đo (GC log, latency, RSS) → xác định nguyên nhân (thiếu heap hay leak) → sửa một thứ → đo lại. Tối ưu chỉ khi có số liệu chứng minh.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Từ Node.js nhìn sang: V8 và JVM khác nhau ở điểm nào quan trọng nhất?</summary>
+      <div class="answer">V8 chạy JS trên event loop một thread (thêm worker pool cho I/O), còn JVM là nền tảng đa luồng thật — nhiều thread chia sẻ heap nên phải học race condition. Về bộ nhớ, cả hai đều có giới hạn heap riêng và GC phân thế hệ: V8 chỉnh bằng <code class="inline">--max-old-space-size</code>, JVM chỉnh bằng <code class="inline">-Xmx</code> (mặc định 25% RAM). Debug bộ nhớ cũng tương tự: bên Node là heap snapshot, bên JVM là heap dump.</div>
+    </details>
+
+    <h2 id="bai-tap">13. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int f(int n) {
+    return f(n + 1);
+}
+
+public static void main() {
+    IO.println(f(0));
+}</code></pre>
+      </div>
+      <div class="answer">Không in gì ngoài trace; kết thúc bằng <strong>StackOverflowError</strong>: <code class="inline">Exception in thread "main" java.lang.StackOverflowError</code> (message null). Hàm không có base case nên mỗi lời gọi đẩy thêm frame tới khi stack đầy. Chạy thử với <code class="inline">-Xss256k</code> sẽ nổ sớm hơn (ít frame hơn) — vẫn cùng lỗi.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2</summary>
+      <div class="codeblock">
+        <pre><code>Exception in thread "main" java.lang.NullPointerException: Cannot invoke "java.util.List.iterator()" because "&lt;parameter1&gt;" is null
+	at StackTraceDemo.tinhTong(StackTraceDemo.java:6)
+	at StackTraceDemo.inTong(StackTraceDemo.java:13)
+	at StackTraceDemo.main(StackTraceDemo.java:17)</code></pre>
+      </div>
+      <div class="answer">Lỗi phát sinh ở <code class="inline">StackTraceDemo.tinhTong</code> dòng <strong>6</strong> (vòng lặp for) vì tham số <code class="inline">tien</code> nhận <code class="inline">null</code>; các frame dưới là đường gọi: <code class="inline">main</code> (17) → <code class="inline">inTong</code> (13) → <code class="inline">tinhTong</code>. Không có <code class="inline">Caused by</code> nghĩa là lỗi gốc chính là NPE này.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Init {
+    static {
+        IO.println("static block chay");
+    }
+
+    static final int MAX = 100;
+    static int dem = 0;
+
+    static int tang() {
+        return ++dem;
+    }
+}
+
+public static void main() {
+    IO.println("1. " + Init.MAX);
+    IO.println("2. " + Init.class.getSimpleName());
+    IO.println("3. " + Init.tang());
+}</code></pre>
+      </div>
+      <div class="answer">In ra:
+<code class="inline">1. 100</code>, <code class="inline">2. Init</code>, <code class="inline">static block chay</code>, <code class="inline">3. 1</code>. Đọc hằng số compile-time <code class="inline">MAX</code> (đã inline) và class literal không kích hoạt initialize; tới lời gọi <code class="inline">Init.tang()</code> class mới được khởi tạo nên static block xuất hiện trước kết quả <code class="inline">1</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println(String.class.getClassLoader());
+IO.println(ClassLoaderDemo.class.getClassLoader());
+IO.println(ClassLoaderDemo.class.getClassLoader().getParent());</code></pre>
+      </div>
+      <div class="answer">Dòng 1 in <code class="inline">null</code> — <code class="inline">String</code> do bootstrap loader nạp và loader này được biểu diễn bằng null. Dòng 2 in <code class="inline">jdk.internal.loader.ClassLoaders$AppClassLoader@...</code> (hash thay đổi mỗi lần chạy). Dòng 3 in <code class="inline">jdk.internal.loader.ClassLoaders$PlatformClassLoader@...</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5</summary>
+      <div class="codeblock">
+        <pre><code>java -Xmx256m MemoryDemo.java</code></pre>
+      </div>
+      <div class="answer">Dòng đầu in <code class="inline">Xmx (maxMemory) = 256 MB</code> — <code class="inline">Runtime.maxMemory()</code> phản ánh đúng flag. Nếu bỏ flag trên máy 16 GB RAM, kết quả là <code class="inline">4096 MB</code> (mặc định 25%).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class HeapOomDemo {
+    static final List&lt;byte[]&gt; CACHE = new ArrayList&lt;&gt;();
+
+    public static void main() {
+        while (true) {
+            CACHE.add(new byte[1_000_000]);
+        }
+    }
+}</code></pre>
+      </div>
+      <div class="answer">Chạy <code class="inline">java -Xmx64m HeapOomDemo.java</code> sẽ ném <code class="inline">java.lang.OutOfMemoryError: Java heap space</code> và process thoát. Không có stack trace hữu ích ở đây vì lỗi xảy ra trong vòng lặp cấp phát — muốn đọc message, phải bắt <code class="inline">OutOfMemoryError</code> và in <code class="inline">getMessage()</code> (demo đầy đủ ở mục <a href="#loi-bo-nho">6</a>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7</summary>
+      <div class="codeblock">
+        <pre><code>Yêu cầu: heap tối đa 1 GB, tự ghi heap dump khi OOM,
+và log GC vào file xoay vòng.</code></pre>
+      </div>
+      <div class="answer">Một đáp án đúng:
+<code class="inline">java -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/dumps '-Xlog:gc*:file=gc.log:time,uptime:filecount=5,filesize=10M' TenFile.java</code>.
+Ghi chú: flag phải đứng trước tên file; nhớ tạo sẵn thư mục <code class="inline">/dumps</code> và đảm bảo còn đủ dung lượng đĩa cho file dump.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8</summary>
+      <div class="codeblock">
+        <pre><code>Exception in thread "main" java.lang.IllegalStateException: Cau hinh PORT sai
+	at ChainCauseDemo.docCauHinh(ChainCauseDemo.java:6)
+	at ChainCauseDemo.main(ChainCauseDemo.java:11)
+Caused by: java.lang.NumberFormatException: For input string: "khong-phai-so"
+	at java.base/java.lang.Integer.parseInt(Integer.java:565)
+	at ChainCauseDemo.docCauHinh(ChainCauseDemo.java:4)
+	... 1 more</code></pre>
+      </div>
+      <div class="answer">Nguyên nhân gốc là <code class="inline">NumberFormatException: For input string: "khong-phai-so"</code> tại <code class="inline">ChainCauseDemo.docCauHinh(ChainCauseDemo.java:4)</code> — chuỗi cấu hình không phải số. <code class="inline">IllegalStateException</code> ở dòng đầu chỉ là exception bọc ngoài do code chủ động ném. <code class="inline">... 1 more</code> nghĩa là frame <code class="inline">main</code> giống với khối trên.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9</summary>
+      <div class="codeblock">
+        <pre><code>java -Xss256k StackOverflowDemo.java</code></pre>
+      </div>
+      <div class="answer">Vẫn <code class="inline">StackOverflowError</code>, nhưng stack mỗi thread nhỏ hơn nên số frame trước khi lỗi ít hơn. Đây là minh hoạ: tăng/giảm <code class="inline">-Xss</code> chỉ dịch chuyển ngưỡng — muốn hết lỗi phải sửa thuật toán (thêm base case hoặc chuyển vòng lặp).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10</summary>
+      <div class="codeblock">
+        <pre><code>java -XX:MaxMetaspaceSize=32m MetaspaceOomDemo.java</code></pre>
+      </div>
+      <div class="answer">Chương trình bắt được OOM và in ra:
+<code class="inline">class  : java.lang.OutOfMemoryError</code>
+<code class="inline">message: Metaspace</code>
+<code class="inline">so class: 5260</code> (số thay đổi theo lần chạy).
+Message quan trọng là <code class="inline">Metaspace</code> — không phải heap. Tăng <code class="inline">-Xmx</code> sẽ vô ích.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11</summary>
+      <div class="codeblock">
+        <pre><code>[0.017s][info][gc] GC(5) Pause Full (G1 Compaction Pause) 61M-&gt;61M(64M) 0.723ms</code></pre>
+      </div>
+      <div class="answer">Đây là một <strong>Full GC</strong> (stop-the-world): trước GC heap dùng 61 MB, sau GC <strong>vẫn 61 MB</strong> (không giải phóng được gì — object vẫn được giữ), tổng heap 64 MB, pause 0.723 ms. Heap gần đầy và không giảm sau full GC là dấu hiệu cần tìm object bị giữ reference.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12</summary>
+      <div class="codeblock">
+        <pre><code class="java">record Don(int id) {}
+
+Don a = new Don(1);
+Don b = a;
+Don c = new Don(1);
+IO.println(a == b);
+IO.println(a == c);
+IO.println(a.equals(c));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">true</code>, <code class="inline">false</code>, <code class="inline">true</code>. <code class="inline">b = a</code> sao chép reference nên cùng object. <code class="inline">c</code> là object mới cùng giá trị: <code class="inline">==</code> so địa chỉ nên <code class="inline">false</code>, còn record tự sinh <code class="inline">equals</code> theo component nên <code class="inline">true</code>. (Đào sâu ở <a href="object-contract.html#so-bang">Object contract — mục 3</a>.)</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13</summary>
+      <div class="codeblock">
+        <pre><code>Container limit: 1024Mi
+JVM flags:      -Xmx1024m</code></pre>
+      </div>
+      <div class="answer">Rủi ro rất cao bị <strong>OOMKilled</strong>: heap tối đa bằng đúng limit, cộng metaspace, stack thread, code cache, native/direct → tổng RSS vượt 1024Mi, kernel kill process (exit 137) và log app có thể không có dòng OOM nào. Cấu hình an toàn hơn: <code class="inline">-XX:MaxRAMPercentage=70</code> (heap ~700 MB chừa headroom) hoặc <code class="inline">-Xmx768m</code>; đồng thời đặt <code class="inline">-XX:MaxMetaspaceSize</code> để kiểm soát vùng ngoài heap.</div>
+    </details>
+
+    <h2 id="cheat-sheet">14. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần nhớ</th><th>Cách viết / câu trả lời</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bộ ba khái niệm</td><td>JVM = máy thực thi bytecode · JRE = JVM + thư viện · JDK = JRE + công cụ</td></tr>
+        <tr><td>Biên dịch &amp; chạy</td><td><code class="inline">javac TenFile.java</code> → <code class="inline">java TenClass</code>; hoặc <code class="inline">java TenFile.java</code> (single-file, JDK 11+)</td></tr>
+        <tr><td>Xem bytecode</td><td><code class="inline">javap -c TenClass</code>; version class: <code class="inline">javap -verbose | grep major</code> (JDK 25 = 69)</td></tr>
+        <tr><td>3 classloader</td><td>Bootstrap (null, java.base) → Platform (module JDK khác) → Application (classpath); parent-first</td></tr>
+        <tr><td>Initialize khi nào</td><td>new / static method / static field không phải hằng; KHÔNG do <code class="inline">X.class</code> hay hằng compile-time</td></tr>
+        <tr><td>Vùng nhớ</td><td>Stack per-thread (<code class="inline">-Xss</code>) · Heap chung (<code class="inline">-Xms/-Xmx</code>) · Metaspace metadata (<code class="inline">-XX:MaxMetaspaceSize</code>)</td></tr>
+        <tr><td>Lỗi bộ nhớ</td><td>SOE: stack đầy, message null · OOM heap: <code class="inline">Java heap space</code> · OOM metaspace: <code class="inline">Metaspace</code></td></tr>
+        <tr><td>Heap mặc định</td><td>25% RAM (<code class="inline">MaxRAMPercentage=25</code>); kiểm tra bằng <code class="inline">Runtime.maxMemory()</code> hoặc <code class="inline">jcmd &lt;pid&gt; VM.flags</code></td></tr>
+        <tr><td>GC mặc định</td><td>G1 từ JDK 9; log bằng <code class="inline">-Xlog:gc*</code>; full GC không giảm heap = nghi leak</td></tr>
+        <tr><td>Flags production</td><td><code class="inline">-Xmx</code>/<code class="inline">-XX:MaxRAMPercentage</code>, <code class="inline">-XX:+HeapDumpOnOutOfMemoryError</code> + <code class="inline">HeapDumpPath</code>, <code class="inline">-Xlog:gc*:file=gc.log:...:filecount=5,filesize=10M</code></td></tr>
+        <tr><td>Đọc stack trace</td><td>Dòng đầu = loại lỗi + message; frame đầu = nơi phát sinh (file:line); cuối cùng = <code class="inline">Caused by</code> (root cause)</td></tr>
+        <tr><td>Tool theo tình huống</td><td>PID: <code class="inline">jps -l</code> · treo/deadlock: <code class="inline">jstack</code> · heap: <code class="inline">jcmd GC.heap_info</code>/<code class="inline">GC.heap_dump</code> · GC realtime: <code class="inline">jstat -gc</code> · GUI: VisualVM/MAT</td></tr>
+        <tr><td>OOMKilled vs OOM</td><td>Kernel kill (137, không log JVM) vs JVM báo <code class="inline">OutOfMemoryError</code> (có log); xử lý khác nhau</td></tr>
+        <tr><td>Quy tắc vàng</td><td>Cache/static collection phải có giới hạn; đo trước khi tune; không bắt <code class="inline">Error</code> để chạy tiếp</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Phân biệt JDK / JRE / JVM và nói được cái nào chứa <code class="inline">javac</code>.</li>
+      <li>Giải thích bytecode là gì và vì sao Java chạy được mọi nền tảng.</li>
+      <li>Nêu 3 classloader, loader nào trả <code class="inline">null</code>, và delegation model parent-first.</li>
+      <li>Giải thích load vs initialize, khi nào static block chạy (kèm ví dụ hằng compile-time).</li>
+      <li>So sánh stack / heap / metaspace: phạm vi, chứa gì, flag, lỗi khi đầy.</li>
+      <li>Kể được GC roots và giải thích vì sao static collection gây leak.</li>
+      <li>Phân biệt minor GC / full GC / stop-the-world; biết G1 mặc định từ JDK 9.</li>
+      <li>Phân biệt <code class="inline">StackOverflowError</code> vs 3 loại <code class="inline">OutOfMemoryError</code> theo message.</li>
+      <li>Đặt được bộ flag cơ bản: <code class="inline">-Xmx</code>, heap dump khi OOM, log GC.</li>
+      <li>Đọc một stack trace thật: chỉ ra dòng lỗi và root cause <code class="inline">Caused by</code>.</li>
+      <li>Biết khi nào dùng <code class="inline">jps</code>, <code class="inline">jstack</code>, <code class="inline">jcmd</code>, <code class="inline">jstat</code>; biết heap dump để làm gì.</li>
+      <li>Giải thích OOMKilled khác <code class="inline">OutOfMemoryError</code> và cách chọn <code class="inline">-Xmx</code> trong container.</li>
+    </ul>
+
+    <h2 id="nguon">15. Nguồn tham khảo</h2>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/javase/specs/jvms/se25/html/" target="_blank" rel="noreferrer">Java Virtual Machine Specification — SE 25</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-12.html" target="_blank" rel="noreferrer">JLS §12 — Execution (load/link/initialize class)</a></li>
+      <li><a href="https://openjdk.org/jeps/248" target="_blank" rel="noreferrer">JEP 248 — Make G1 the Default Garbage Collector (JDK 9)</a></li>
+      <li><a href="https://openjdk.org/jeps/330" target="_blank" rel="noreferrer">JEP 330 — Launch Single-File Source-Code Programs</a></li>
+      <li><a href="https://openjdk.org/jeps/512" target="_blank" rel="noreferrer">JEP 512 — Compact Source Files and Instance Main Methods (JDK 25)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/gctuning/" target="_blank" rel="noreferrer">Oracle — Java Platform, Standard Edition HotSpot Virtual Machine Garbage Collection Tuning Guide</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/troubleshoot/" target="_blank" rel="noreferrer">Oracle — Java Troubleshooting Guide (jcmd, jstack, heap dump)</a></li>
+      <li><a href="https://dev.java/learn/jvm/" target="_blank" rel="noreferrer">dev.java — JVM (series)</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · JVM · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

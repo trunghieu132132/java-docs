@@ -45,7 +45,7 @@
         <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
         <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
       </details>
-      <details class="group">
+      <details class="group" open>
         <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
         <a class="item" href="exceptions.html">Exceptions</a>
         <a class="item" href="generics.html">Generics</a>
@@ -55,6 +55,16 @@
         <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
         <a class="item" href="optional.html">Optional</a>
         <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
       </details>
     </nav>
   </aside>
@@ -136,14 +146,14 @@
         <tr><td>1. Java Core</td><td>7</td><td>0</td><td>7</td><td>Ngôn ngữ nền tảng</td></tr>
         <tr><td>2. OOP</td><td>9</td><td>0</td><td>9</td><td>Trái tim Java, phỏng vấn nặng nhất</td></tr>
         <tr><td>3. Dữ liệu &amp; lỗi</td><td>8</td><td>0</td><td>8</td><td>Exceptions, Generics, Collections, Streams</td></tr>
-        <tr><td>4. Production essentials</td><td>7</td><td>0</td><td>0</td><td>JVM, Concurrency, Maven, Testing, Logging</td></tr>
+        <tr><td>4. Production essentials</td><td>7</td><td>0</td><td>7</td><td>JVM, Concurrency, Maven, Testing, Logging</td></tr>
         <tr><td>5. Backend stack</td><td>9</td><td>0</td><td>0</td><td>SQL, Spring, JPA, Docker</td></tr>
         <tr><td>6. Interview prep</td><td>6</td><td>0</td><td>0</td><td>DSA, Q&amp;A, mock, project</td></tr>
-        <tr><td><strong>Tổng</strong></td><td><strong>51</strong></td><td><strong>3</strong></td><td><strong>24</strong></td><td>~9 tháng với 10–15 giờ/tuần</td></tr>
+        <tr><td><strong>Tổng</strong></td><td><strong>51</strong></td><td><strong>3</strong></td><td><strong>31</strong></td><td>~9 tháng với 10–15 giờ/tuần</td></tr>
       </tbody>
     </table>
 
-    <p>"Có sẵn" = công cụ/môi trường đã cài (0.1–0.3); "Doc đã viết" = doc học hoàn chỉnh (1.1–1.7, 2.1–2.9 và 3.1–3.8). Đã cài công cụ chưa có nghĩa là đã học xong chủ đề.</p>
+    <p>"Có sẵn" = công cụ/môi trường đã cài (0.1–0.3); "Doc đã viết" = doc học hoàn chỉnh (1.1–1.7, 2.1–2.9, 3.1–3.8 và 4.1–4.7). Đã cài công cụ chưa có nghĩa là đã học xong chủ đề.</p>
 
     <h2 id="phase-0">Giai đoạn 0 — Chuẩn bị môi trường</h2>
 
@@ -467,13 +477,13 @@
 
     <div class="note"><strong>Milestone giai đoạn 3:</strong> trên project "quản lý đơn hàng": đọc file CSV bằng NIO, xử lý/thống kê bằng Stream + Collectors, exception handling đầy đủ; so sánh hiệu năng ArrayList vs LinkedList đơn giản.</div>
 
-    <h2 id="phase-4">Giai đoạn 4 — Production essentials</h2>
+        <h2 id="phase-4">Giai đoạn 4 — Production essentials</h2>
 
     <div class="note"><strong>Góc Node.js:</strong> JavaScript thông thường chạy trên thread của event loop, còn Node.js có thêm worker pool cho một số tác vụ như file I/O, crypto và nén (tác vụ tính toán nặng trong JS không tự chuyển sang pool); trong Java nhiều request chạy song song trên nhiều thread và cùng truy cập object, nên phải học bảo vệ shared state. <code class="inline">Promise</code> + chuỗi xử lý bất đồng bộ tương ứng <code class="inline">CompletableFuture</code> (callback hell là vấn đề tổ chức code, không có API tương ứng). Virtual threads cho phép viết code blocking mà vẫn scale. npm scripts/CI tương ứng Maven lifecycle + GitHub Actions.</div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.1 JVM cơ bản</span><span class="badge b-next">Tiếp theo</span></div>
-      <div class="topic-meta">Phỏng vấn: trung bình–cao · Production: nên biết — học trước concurrency để hiểu memory model</div>
+      <div class="topic-head"><span class="topic-name">4.1 JVM cơ bản</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="jvm.html">JVM cơ bản</a> — 15 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: trung bình–cao · Production: nên biết — học trước concurrency để hiểu memory model</div>
       <ul class="topic-sub">
         <li>JDK vs JRE vs JVM; bytecode; classloader</li>
         <li>Memory areas: stack, heap, metaspace; GC cơ bản (G1, khi nào full GC)</li>
@@ -483,8 +493,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.2 Concurrency cơ bản</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">4.2 Concurrency cơ bản</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="concurrency.html">Concurrency</a> — 18 mục, 20 Q&amp;A, 12 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Thread, Runnable/Callable, lifecycle, join/sleep</li>
         <li>Race condition, deadlock; synchronized, volatile vs Atomic; JMM &amp; happens-before mức nhận biết</li>
@@ -496,8 +506,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.3 Maven &amp; Gradle</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">4.3 Maven &amp; Gradle</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="maven-gradle.html">Maven &amp; Gradle</a> — 15 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: trung bình · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Cấu trúc pom.xml; dependency &amp; scope (compile/test/provided/runtime)</li>
         <li>Lifecycle: compile/test/package/install; plugin; wrapper</li>
@@ -507,8 +517,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.4 Testing</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">4.4 Testing</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="testing.html">Testing</a> — 16 mục, 22 Q&amp;A, 13 bài tập · Phỏng vấn: cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>JUnit 5: annotations, assertions, parameterized test, lifecycle</li>
         <li>Mockito: mock, stub, verify (<code class="inline">@MockitoBean</code> — thay <code class="inline">@MockBean</code> đã bị loại bỏ ở Spring Boot 4); AssertJ</li>
@@ -518,8 +528,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.5 Logging</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: trung bình · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">4.5 Logging</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="logging.html">Logging</a> — 16 mục, 22 Q&amp;A, 12 bài tập · Phỏng vấn: trung bình · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>SLF4J + Logback; log level; placeholder logging (không cộng chuỗi)</li>
         <li>Không dùng System.out.println trong production</li>
@@ -529,8 +539,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.6 Code quality &amp; quy trình team</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: thấp–trung bình · Production: bắt buộc — Git căn bản đã học ở 0.4</div>
+      <div class="topic-head"><span class="topic-name">4.6 Code quality &amp; quy trình team</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="code-quality.html">Code quality &amp; quy trình team</a> — 16 mục, 19 Q&amp;A, 12 bài tập · Phỏng vấn: thấp–trung bình · Production: bắt buộc — Git căn bản đã học ở 0.4</div>
       <ul class="topic-sub">
         <li>Quy trình team: Agile/Scrum, Jira, estimate, definition of done</li>
         <li>PR review: checklist, cách nhận và trả feedback</li>
@@ -540,8 +550,8 @@
     </div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">4.7 Debugging</span><span class="badge b-todo">Chưa học</span></div>
-      <div class="topic-meta">Phỏng vấn: thấp · Production: bắt buộc</div>
+      <div class="topic-head"><span class="topic-name">4.7 Debugging</span><span class="badge b-done">Đã xong</span></div>
+      <div class="topic-meta">Doc: <a href="debugging.html">Debugging</a> — 15 mục, 20 Q&amp;A, 14 bài tập · Phỏng vấn: thấp · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>IntelliJ debugger: breakpoint, step over/into, watch, evaluate expression</li>
         <li>Đọc stack trace thành thạo; xác định root cause</li>
@@ -551,12 +561,12 @@
 
     <div class="note"><strong>Milestone giai đoạn 4:</strong> project "quản lý đơn hàng" lên Maven có JUnit test + logging chuẩn + build pipeline GitHub Actions (build + test), không dùng System.out trong code chính; chủ động dùng debugger khi test đỏ.</div>
 
-    <h2 id="phase-5">Giai đoạn 5 — Backend stack (đích công việc)</h2>
+<h2 id="phase-5">Giai đoạn 5 — Backend stack (đích công việc)</h2>
 
     <div class="note"><strong>Góc Node.js:</strong> Express router ↔ Spring controller; middleware ↔ filter/interceptor (khác về thứ tự và scope); <code class="inline">JSON.parse</code> ↔ Jackson; ORM kiểu Mongoose/Prisma ↔ JPA/Hibernate (khác ở transaction và lazy loading). Đừng mang tư duy "mọi thứ async" sang Java — ở đây luồng chạy tuần tự trong một request cho tới khi bạn chủ động tách thread.</div>
 
     <div class="topic">
-      <div class="topic-head"><span class="topic-name">5.1 HTTP &amp; REST</span><span class="badge b-todo">Chưa học</span></div>
+      <div class="topic-head"><span class="topic-name">5.1 HTTP &amp; REST</span><span class="badge b-next">Tiếp theo</span></div>
       <div class="topic-meta">Phỏng vấn: cao · Production: bắt buộc</div>
       <ul class="topic-sub">
         <li>Request/response, methods, status codes, headers, cookies</li>

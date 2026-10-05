@@ -56,6 +56,16 @@
         <a class="item" href="optional.html">Optional</a>
         <a class="item" href="streams.html">Stream API</a>
       </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
     </nav>
   </aside>
 
@@ -173,9 +183,11 @@
         <tr><td><code class="inline">float</code></td><td>32-bit</td><td>IEEE 754</td><td><code class="inline">0.0f</code></td><td><code class="inline">Float</code></td><td>Hiếm dùng, cần hậu tố <code class="inline">f</code></td></tr>
         <tr><td><code class="inline">double</code></td><td>64-bit</td><td>IEEE 754</td><td><code class="inline">0.0d</code></td><td><code class="inline">Double</code></td><td>Tính toán thập phân (không dùng cho tiền)</td></tr>
         <tr><td><code class="inline">char</code></td><td>16-bit</td><td>0 → 65.535 (UTF-16)</td><td><code class="inline">'\u0000'</code></td><td><code class="inline">Character</code></td><td>Một ký tự, nháy đơn</td></tr>
-        <tr><td><code class="inline">boolean</code></td><td>1-bit logic</td><td>true / false</td><td><code class="inline">false</code></td><td><code class="inline">Boolean</code></td><td>Điều kiện, cờ bật/tắt</td></tr>
+        <tr><td><code class="inline">boolean</code></td><td>Không quy định</td><td>true / false</td><td><code class="inline">false</code></td><td><code class="inline">Boolean</code></td><td>Điều kiện, cờ bật/tắt</td></tr>
       </tbody>
     </table>
+
+    <div class="note"><strong>Riêng <code class="inline">boolean</code>:</strong> Java chỉ quy định nó có hai giá trị <code class="inline">true</code>/<code class="inline">false</code> — biểu diễn 1 bit thông tin về mặt logic — nhưng <strong>không quy định kích thước bộ nhớ</strong>. Kích thước thực tế phụ thuộc JVM và ngữ cảnh (biến local, field hay từng phần tử mảng). Đừng dựa vào <code class="inline">boolean</code> để tính toán kích thước cấu trúc dữ liệu.</div>
 
     <h3>Giá trị mặc định: field có, biến local không</h3>
 
@@ -929,7 +941,7 @@ for (let j = 0; j &lt; 3; j++) setTimeout(() =&gt; console.log("let " + j), 0);
 
     <h2 id="stack-heap">7. Stack vs Heap &amp; pass-by-value <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
 
-    <p>Hiểu chỗ này thì mọi câu hỏi "biến lưu ở đâu", "truyền tham số thế nào" đều giải được. JVM chia bộ nhớ thành hai vùng chính:</p>
+    <p>Hiểu chỗ này thì mọi câu hỏi "biến lưu ở đâu", "truyền tham số thế nào" đều giải được. Đặc tả JVM có nhiều vùng runtime (PC register, JVM stack, heap, method area...); dưới đây là <strong>mô hình rút gọn stack/heap</strong> dùng để học — chi tiết đầy đủ ở <a href="roadmap.html#phase-4">4.1 JVM cơ bản</a>. Mô hình hai vùng chính:</p>
 
     <ul>
       <li><strong>Stack</strong> — mỗi thread có stack riêng. Chứa biến local primitive (<code class="inline">int x = 5</code> lưu thẳng số 5) và <strong>địa chỉ</strong> của object. Tổ chức theo kiểu LIFO như chồng đĩa; nhanh, nhỏ; hết thì <code class="inline">StackOverflowError</code>.</li>
@@ -1735,19 +1747,21 @@ IO.println("intValue: " + c);   // 10</code></pre>
 
     <h3>12.2 Cache — vì sao <code class="inline">==</code> "đôi khi đúng"</h3>
 
-    <p>Wrapper không phải lúc nào cũng tạo object mới. <code class="inline">Integer.valueOf</code> trả instance từ cache cho khoảng <strong>-128..127</strong>; ngoài khoảng mới tạo mới. Vì vậy hai biến cùng giá trị có thể là <em>cùng object</em> (<code class="inline">==</code> true) hoặc <em>khác object</em> (<code class="inline">==</code> false) tuỳ giá trị — cực kỳ dễ sinh bug:</p>
+    <p>Wrapper không phải lúc nào cũng tạo object mới. <strong>JLS chỉ bảo đảm</strong> các giá trị <strong>-128..127</strong> được cache khi boxing — tức <code class="inline">Integer.valueOf(x)</code> với <code class="inline">x</code> trong khoảng này chắc chắn trả cùng một instance. Ngoài khoảng đó, JVM <em>được phép nhưng không bắt buộc</em> cache thêm, nên kết quả <code class="inline">==</code> chỉ là chi tiết triển khai, không phải quy tắc ngôn ngữ. Trên HotSpot mặc định (javac/JDK 25) các dòng dưới in đúng như comment; đừng xem đó là bảo đảm của Java:</p>
 
     <div class="codeblock">
       <pre><code class="java">Integer a = 127, b = 127;
 Integer c = 128, d = 128;
 
-IO.println("127 == 127   : " + (a == b));  // true
-IO.println("128 == 128   : " + (c == d));  // false
+IO.println("127 == 127   : " + (a == b));  // true  - trong khoang duoc bao dam cache
+IO.println("128 == 128   : " + (c == d));  // false - tren HotSpot mac dinh
 IO.println("128 equals   : " + c.equals(d)); // true
 
 Integer m = 1000, n = 1000;
-IO.println("1000 == 1000 : " + (m == n)); // false</code></pre>
+IO.println("1000 == 1000 : " + (m == n)); // false - tren HotSpot mac dinh, khong duoc doan</code></pre>
     </div>
+
+    <div class="note warn"><strong>Đừng đoán <code class="inline">==</code> ngoài khoảng cache:</strong> JLS chỉ bắt buộc cache -128..127; implementation có thể cache thêm (HotSpot có cờ chỉnh trần cho <code class="inline">Integer</code>). Vì vậy <code class="inline">128 == 128</code> có thể là <code class="inline">true</code> hoặc <code class="inline">false</code> tuỳ JVM/cấu hình — luôn so sánh wrapper bằng <code class="inline">equals</code> hoặc <code class="inline">Integer.compare</code>.</div>
 
     <table>
       <thead>
@@ -1762,7 +1776,7 @@ IO.println("1000 == 1000 : " + (m == n)); // false</code></pre>
       </tbody>
     </table>
 
-    <p>Trần cache của <code class="inline">Integer</code> chỉnh được bằng cờ JVM lúc khởi động: <code class="inline">java -XX:AutoBoxCacheMax=2000 TenFile.java</code> — khi đó dòng <code class="inline">1000 == 1000</code> ở trên in ra <code class="inline">true</code> thay vì <code class="inline">false</code>. Đừng bao giờ để tính đúng/sai của chương trình phụ thuộc vào cờ này: <strong>luôn so sánh wrapper bằng <code class="inline">equals</code> hoặc <code class="inline">Integer.compare</code></strong>.</p>
+    <p>Trên HotSpot, trần cache của <code class="inline">Integer</code> chỉnh được bằng cờ JVM lúc khởi động: <code class="inline">java -XX:AutoBoxCacheMax=2000 TenFile.java</code> — khi đó dòng <code class="inline">1000 == 1000</code> ở trên in ra <code class="inline">true</code> thay vì <code class="inline">false</code>. Đây là cờ implementation (HotSpot), không phải API Java; JDK khác có thể không có. Đừng bao giờ để tính đúng/sai của chương trình phụ thuộc vào cờ này: <strong>luôn so sánh wrapper bằng <code class="inline">equals</code> hoặc <code class="inline">Integer.compare</code></strong>.</p>
 
     <h3>12.3 Bẫy so sánh &amp; NullPointerException</h3>
 
@@ -2114,7 +2128,7 @@ IO.println("s1.equals(s3)   : " + s1.equals(s3));  // s1.equals(s3)   : true</co
 
     <h3>14.4 <code class="inline">switch</code> trên String hoạt động thế nào (Java 7+)</h3>
 
-    <p>Java 7 cho <code class="inline">switch</code> trên String. Bên dưới compiler làm hai bước: lấy <code class="inline">hashCode()</code> để nhảy nhanh tới nhóm case, rồi so <code class="inline">equals()</code> để chốt. Chạy thử với một String tạo bằng <code class="inline">new</code> (ngoài pool) vẫn khớp bình thường:</p>
+    <p>Java 7 cho <code class="inline">switch</code> trên String nhờ <strong>ngữ nghĩa tương đương chuỗi if-else dùng <code class="inline">equals</code></strong> (JLS 14.11.2). Cụ thể javac/OpenJDK tối ưu thêm: lấy <code class="inline">hashCode()</code> để nhảy nhanh tới nhóm case, rồi so <code class="inline">equals()</code> để chốt — đây là <strong>chi tiết triển khai của javac</strong>, không phải quy định ngôn ngữ. Chạy thử với một String tạo bằng <code class="inline">new</code> (ngoài pool) vẫn khớp bình thường:</p>
 
     <div class="codeblock">
       <pre><code class="java">public class StrSwitch {
@@ -2220,7 +2234,7 @@ console.log(u === v);           // true - JS so gia tri, khong lo pool ra ngoai<
       <li>Nối chuỗi trong vòng lặp của JS cũng tạo rác; engine tối ưu ropes/cons-string, còn Java có <code class="inline">StringBuilder</code> tường minh. Gặp <code class="inline">+=</code> trong vòng lặp Java, đổi sang <a href="strings.html#stringbuilder">StringBuilder</a>.</li>
     </ul>
 
-    <div class="note"><strong>Chốt gọn:</strong> String là reference type bất biến — <code class="inline">s += "b"</code> tạo object mới rồi gán lại biến (nên <code class="inline">==</code> thấy khác pool) → so sánh luôn dùng <code class="inline">equals</code> → <code class="inline">null + "x"</code> thành <code class="inline">"nullx"</code> chứ không ném NPE → <code class="inline">switch</code> trên String dùng <code class="inline">hashCode</code> để nhảy nhánh rồi <code class="inline">equals</code> để chốt (ổn định nhờ String final, hashCode cache) → nối chuỗi trong vòng lặp đổi sang <code class="inline">StringBuilder</code> → text block gán biến như chuỗi thường.</div>
+    <div class="note"><strong>Chốt gọn:</strong> String là reference type bất biến — <code class="inline">s += "b"</code> tạo object mới rồi gán lại biến (nên <code class="inline">==</code> thấy khác pool) → so sánh luôn dùng <code class="inline">equals</code> → <code class="inline">null + "x"</code> thành <code class="inline">"nullx"</code> chứ không ném NPE → <code class="inline">switch</code> trên String (javac) dùng <code class="inline">hashCode</code> để nhảy nhánh rồi <code class="inline">equals</code> để chốt (ổn định nhờ String final, hashCode cache) → nối chuỗi trong vòng lặp đổi sang <code class="inline">StringBuilder</code> → text block gán biến như chuỗi thường.</div>
 
     <h2 id="production">15. Production patterns <span class="badge b-prod">Production</span></h2>
 
@@ -2929,8 +2943,8 @@ IO.println(Arrays.deepToString(y));</code></pre>
       <li><a href="https://docs.oracle.com/javase/tutorial/java/data/autoboxing.html" target="_blank" rel="noreferrer">Oracle Tutorial — Autoboxing and Unboxing</a></li>
       <li><a href="https://dev.java/learn/numbers-strings/autoboxing/" target="_blank" rel="noreferrer">Dev.java — Autoboxing and Unboxing</a></li>
       <li><a href="https://openjdk.org/jeps/286" target="_blank" rel="noreferrer">JEP 286 — Local-Variable Type Inference (var)</a></li>
-      <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html" target="_blank" rel="noreferrer">Javadoc — java.math.BigDecimal</a></li>
-      <li><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/package-summary.html" target="_blank" rel="noreferrer">Javadoc — java.util.concurrent.atomic</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/math/BigDecimal.html" target="_blank" rel="noreferrer">Javadoc — java.math.BigDecimal</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/atomic/package-summary.html" target="_blank" rel="noreferrer">Javadoc — java.util.concurrent.atomic</a></li>
     </ul>
 
     <p class="footer">Java Docs · Biến trong Java · JDK 25 · Cập nhật 18/09/2026</p>

@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debugging — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item active" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="debugging">Debugging — tìm và sửa bug trong Java</h1>
+
+    <p class="lead">Viết code chạy được là chuyện thường; tìm ra vì sao code chạy <em>sai</em> mới là kỹ năng được trả lương cao nhất của lập trình viên. Debugging không phải là ngồi đoán mò rồi sửa thử — đó là một quy trình có phương pháp: tái hiện, khoanh vùng, sửa gốc, kiểm chứng, phòng ngừa. Trang này dạy bạn dùng IntelliJ debugger, đọc stack trace (kể cả NPE helpful message của JDK 25), debug race condition và debug production nơi không có debugger — kèm các kỹ thuật không cần công cụ nào.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#quy-trinh">Quy trình tìm bug: reproduce → isolate → fix → verify → prevent</a></li>
+        <li><a href="#intellij">Debug với IntelliJ debugger</a></li>
+        <li><a href="#breakpoint-nang-cao">Breakpoint nâng cao</a></li>
+        <li><a href="#watch-evaluate">Watch &amp; Evaluate Expression</a></li>
+        <li><a href="#stack-trace">Đọc stack trace thành thạo</a></li>
+        <li><a href="#loi-kinh-dien">Các lỗi kinh điển khi debug</a></li>
+        <li><a href="#khong-debugger">Kỹ thuật debug không cần debugger</a></li>
+        <li><a href="#production">Debug production không có debugger</a></li>
+        <li><a href="#dump-cong-cu">Thread dump, heap dump &amp; công cụ dòng lệnh</a></li>
+        <li><a href="#reproduce">Reproduce bug &amp; viết test tái hiện</a></li>
+        <li><a href="#pitfalls">Pitfalls — sai lầm thường gặp</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập tìm bug &amp; đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 4.7 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — đặt breakpoint và step qua code trong IntelliJ; đọc stack trace tìm đúng dòng gây lỗi; tái hiện bug bằng một ví dụ nhỏ; sửa <em>một</em> thứ rồi chạy lại kiểm chứng; viết test tái hiện trước khi fix.</li>
+      <li><strong>Phải hiểu</strong> — quy trình 5 bước reproduce → isolate → fix → verify → prevent; conditional breakpoint/logpoint/exception breakpoint; vì sao <code class="inline">println</code> rải khắp nơi là cách debug tồi; vì sao race condition "không thấy" khi chạy máy mình; helpful NullPointerException (JEP 358) đọc thế nào.</li>
+      <li><strong>Nhận biết</strong> — thread dump/heap dump và các lệnh <code class="inline">jps</code>/<code class="inline">jstack</code>/<code class="inline">jcmd</code>; remote debug (JDWP) và lý do không bật trên production; debugger của Node.js (<code class="inline">node --inspect</code> + Chrome DevTools) để so sánh.</li>
+    </ul>
+
+    <p>Quy trình chuẩn mà mọi kỹ sư giỏi đều dùng (chi tiết ở <a href="#quy-trinh">mục 2</a>):</p>
+    <ol>
+      <li><strong>Reproduce</strong> — làm bug xuất hiện lại một cách ổn định, với ví dụ nhỏ nhất có thể.</li>
+      <li><strong>Isolate</strong> — thu hẹp phạm vi: dòng code nào, điều kiện nào, dữ liệu nào gây ra.</li>
+      <li><strong>Fix</strong> — sửa nguyên nhân gốc, mỗi lần chỉ đổi một thứ.</li>
+      <li><strong>Verify</strong> — chạy test tái hiện + toàn bộ test cũ để chắc không làm vỡ chỗ khác.</li>
+      <li><strong>Prevent</strong> — thêm test, thêm validate/log, rút ra bài học để bug không quay lại.</li>
+    </ol>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đọc xong mục <a href="#stack-trace">6 — Đọc stack trace</a> rồi quay lại thử đọc mọi trace trong trang này <em>trước khi</em> xem phần giải thích.</li>
+      <li>Tự chạy lại các ví dụ trong IDE/terminal, cố tình tạo lỗi rồi sửa — debug là kỹ năng tay chân, không phải lý thuyết.</li>
+      <li>Làm <a href="#bai-tap">Bài tập tìm bug</a> trước, chỉ mở đáp án sau khi đã đoán.</li>
+      <li>Ôn nhanh <a href="#cheat-sheet">Cheat sheet</a> (shortcut + lệnh dòng lệnh) trước buổi phỏng vấn.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> mà bạn sẽ thấy trong tài liệu cũ. Output trong trang là kết quả chạy thật: stack trace lấy từ class biên dịch với <code class="inline">javac -g</code> (đủ debug info), các ví dụ khác chạy bằng <code class="inline">java TenFile.java</code>.</div>
+
+    <h3>Góc Node.js — debugger Node khác debugger Java thế nào?</h3>
+
+    <p>Bạn đã quen <code class="inline">console.log</code> và Chrome DevTools; Java có đúng những khái niệm đó. Điểm khác lớn nhất: Node.js chạy một event loop trên một luồng chính (async/await tạo <em>async stack trace</em>), còn Java có nhiều thread thật, mỗi thread một stack riêng — debugger phải cho bạn chọn thread và xem từng stack.</p>
+
+    <table>
+      <thead>
+        <tr><th>Chủ đề</th><th>Node.js</th><th>Java / IntelliJ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Công cụ</td><td><code class="inline">node --inspect</code> + Chrome DevTools (hoặc <code class="inline">node --inspect-brk</code> để dừng ngay dòng đầu)</td><td>IntelliJ debugger (chạy qua JDWP), hoặc attach vào tiến trình đang chạy</td></tr>
+        <tr><td>Đặt điểm dừng</td><td>Câu lệnh <code class="inline">debugger;</code> hoặc click số dòng trong tab Sources</td><td>Click gutter hoặc <code class="inline">Ctrl/Cmd+F8</code>; conditional breakpoint mạnh hơn</td></tr>
+        <tr><td>Bước chạy</td><td>F10 step over, F11 step into, Shift+F11 step out, F8 resume</td><td>F8 step over, F7 step into, Shift+F8 step out, F9/&#8997;&#8984;R resume</td></tr>
+        <tr><td>Xem giá trị</td><td>Scope panel, Watch, gõ biểu thức ở Console</td><td>Variables, Watches, Evaluate Expression (<code class="inline">Alt/&#8997;+F8</code>)</td></tr>
+        <tr><td>Stack</td><td>Call Stack panel; async stack nối qua await</td><td>Frames panel; mỗi thread một stack riêng, chọn thread ở dropdown</td></tr>
+        <tr><td>In dấu vết</td><td><code class="inline">console.trace()</code></td><td><code class="inline">Thread.dumpStack()</code>, log có cấu trúc, hoặc đọc stack trace của exception</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ chạy thật <code class="inline">console.trace</code> bằng Node v22 (đường dẫn rút gọn):</p>
+
+    <div class="codeblock">
+      <pre><code>function tinhTien(n) {
+  kiemTra(n);
+}
+
+function kiemTra(n) {
+  console.trace("n=" + n);
+}
+
+tinhTien(5);</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Trace: n=5
+    at kiemTra (.../trace.js:6:11)
+    at tinhTien (.../trace.js:2:3)
+    at Object.&lt;anonymous&gt; (.../trace.js:9:1)
+    ...</code></pre>
+    </div>
+
+    <p><code class="inline">console.trace</code> in ra chuỗi lời gọi ngay tại thời điểm gọi — giống hệt stack trace của Java, chỉ khác là của JavaScript. Khi debug Node, hãy dùng <code class="inline">--inspect-brk</code> để dừng ngay dòng đầu tiên thay vì đặt <code class="inline">debugger;</code> khắp code.</p>
+
+    <h2 id="quy-trinh">2. Quy trình tìm bug: reproduce → isolate → fix → verify → prevent <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Người mới thường nhảy thẳng vào bước "fix" khi chưa hiểu bug. Người có kinh nghiệm đi tuần tự qua 5 bước — mỗi bước trả lời một câu hỏi cụ thể:</p>
+
+    <table>
+      <thead>
+        <tr><th>Bước</th><th>Câu hỏi cần trả lời</th><th>Công cụ / cách làm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1. Reproduce</strong></td><td>Làm sao lỗi xuất hiện lại? Có ổn định không?</td><td>Chạy lại đúng input; viết test nhỏ; đọc bug report; giảm input về mức tối thiểu</td></tr>
+        <tr><td><strong>2. Isolate</strong></td><td>Dòng nào, điều kiện nào, dữ liệu nào gây lỗi?</td><td>Breakpoint/step; chia đôi dữ liệu; comment bớt code; <code class="inline">git bisect</code>; so sánh với code chạy đúng</td></tr>
+        <tr><td><strong>3. Fix</strong></td><td>Nguyên nhân gốc là gì? Sửa chỗ nào?</td><td>Sửa <em>một</em> thay đổi mỗi lần; ưu tiên sửa gốc thay vì che triệu chứng</td></tr>
+        <tr><td><strong>4. Verify</strong></td><td>Bug hết chưa? Có làm vỡ chỗ khác không?</td><td>Chạy test tái hiện + toàn bộ test cũ; thử các ca biên; chạy lại nhiều lần với bug race</td></tr>
+        <tr><td><strong>5. Prevent</strong></td><td>Làm sao để bug này không tái diễn?</td><td>Giữ test tái hiện làm regression test; thêm validate/log; review lại thiết kế</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ thực tế với project "quản lý đơn hàng": khách báo phí vận chuyển của đơn 600.000đ bị tính sai.</p>
+    <ul>
+      <li><strong>Reproduce:</strong> tạo đơn có tổng tiền đúng 600.000đ, chạy lại — luôn ra 30.000đ, có thể tái hiện 100%.</li>
+      <li><strong>Isolate:</strong> breakpoint ở <code class="inline">OrderService.tinhPhi</code>; thấy biến <code class="inline">tongTien</code> = 600000 nhưng điều kiện miễn phí không kích hoạt — vì code viết <code class="inline">if (tongTien &gt; 500_000)</code> (sai: phải là <code class="inline">&gt;=</code>).</li>
+      <li><strong>Fix:</strong> sửa một ký tự: <code class="inline">&gt;</code> thành <code class="inline">&gt;=</code>. Không sửa gì thêm.</li>
+      <li><strong>Verify:</strong> chạy lại 600.000đ → 0đ; thử 499.999đ → 30.000đ; chạy các test cũ của OrderService.</li>
+      <li><strong>Prevent:</strong> thêm test biên <code class="inline">tinhPhi(500_000) == 0</code> và <code class="inline">tinhPhi(499_999) == 30_000</code> để lần sau sửa code không âm thầm phá mốc này.</li>
+    </ul>
+
+    <div class="note warn"><strong>Bug không reproduce được là bug chưa hiểu.</strong> Nếu bạn không làm lỗi xuất hiện lại, mọi "fix" chỉ là đoán. Trường hợp xấu nhất — bug production không tái hiện ở local — hãy đọc tiếp <a href="#production">mục 9</a> (log, metrics, dump) thay vì sửa mù.</div>
+
+    <h2 id="intellij">3. Debug với IntelliJ debugger <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Nếu chưa quen project IntelliJ, xem trước <a href="roadmap.html#phase-0">Giai đoạn 0 — Chuẩn bị môi trường</a> (mục 0.2 IntelliJ IDEA). Dưới đây là vòng lặp debug cơ bản mà bạn sẽ dùng hằng ngày.</p>
+
+    <h3>3.1 Đặt breakpoint và chạy Debug</h3>
+    <ol>
+      <li>Click vào <strong>gutter</strong> (lề trái cạnh số dòng) để đặt breakpoint — chấm đỏ xuất hiện. Phím tắt: <code class="inline">Ctrl+F8</code> (Windows/Linux) / <code class="inline">Cmd+F8</code> (macOS).</li>
+      <li>Chạy chương trình bằng nút <strong>Debug</strong> (con bọ) thay vì Run: <code class="inline">Shift+F9</code> (Win/Linux) / <code class="inline">Ctrl+D</code> (macOS).</li>
+      <li>Chương trình dừng <em>trước khi</em> dòng có breakpoint được thực thi. Dòng hiện tại được tô sáng.</li>
+      <li>Cửa sổ <strong>Debug</strong> mở ra với các panel: <strong>Frames</strong> (call stack), <strong>Variables</strong> (biến của frame đang chọn), <strong>Watches</strong>, <strong>Console</strong>.</li>
+    </ol>
+
+    <p>Breakpoint dòng là loại đơn giản nhất: cứ chạy tới dòng đó là dừng. Nhược điểm: nếu dòng nằm trong vòng lặp 1 triệu lần, bạn phải bấm Resume 1 triệu lần — đó là lý do có <a href="#breakpoint-nang-cao">breakpoint nâng cao</a> ở mục sau.</p>
+
+    <h3>3.2 Step — điều khiển từng bước chạy</h3>
+
+    <table>
+      <thead>
+        <tr><th>Thao tác</th><th>Win/Linux</th><th>macOS (keymap mặc định)</th><th>Ý nghĩa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Step Over</td><td><code class="inline">F8</code></td><td><code class="inline">F8</code></td><td>Chạy xong dòng hiện tại, <em>không</em> nhảy vào method được gọi. Dùng khi tin method đó đúng.</td></tr>
+        <tr><td>Step Into</td><td><code class="inline">F7</code></td><td><code class="inline">F7</code></td><td>Nhảy vào bên trong method được gọi. Dùng khi nghi method đó trả sai.</td></tr>
+        <tr><td>Smart Step Into</td><td><code class="inline">Shift+F7</code></td><td><code class="inline">Shift+F7</code></td><td>Dòng có nhiều lời gọi — IntelliJ hỏi bạn muốn vào method nào.</td></tr>
+        <tr><td>Step Out</td><td><code class="inline">Shift+F8</code></td><td><code class="inline">Shift+F8</code></td><td>Chạy nốt method hiện tại và quay về nơi gọi nó.</td></tr>
+        <tr><td>Resume</td><td><code class="inline">F9</code></td><td><code class="inline">&#8997;&#8984;R</code></td><td>Chạy tiếp tới breakpoint kế tiếp (hoặc hết chương trình).</td></tr>
+        <tr><td>Run to Cursor</td><td><code class="inline">Alt+F9</code></td><td><code class="inline">&#8997;F9</code></td><td>Chạy tới vị trí con trỏ đang đứng — nhanh hơn đặt breakpoint tạm.</td></tr>
+        <tr><td>Evaluate Expression</td><td><code class="inline">Alt+F8</code></td><td><code class="inline">&#8997;F8</code></td><td>Chạy biểu thức bất kỳ trong ngữ cảnh hiện tại (mục 5).</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Trên macOS:</strong> nếu phím F7/F8 không ăn, bật "Use F1, F2, etc. keys as standard function keys" trong System Settings, hoặc giữ phím <code class="inline">fn</code> khi bấm. Nút <strong>Mute Breakpoints</strong> trong cửa sổ Debug tạm bỏ qua mọi breakpoint mà không xóa chúng — rất tiện khi muốn chạy nhanh một đoạn.</div>
+
+    <div class="note warn"><strong>Breakpoint không dừng ở code cũ:</strong> nếu bạn sửa code mà debugger vẫn dừng ở dòng cũ/sai, gần như chắc chắn class chưa được biên dịch lại — bấm <strong>Build</strong> (hoặc build lại module) rồi chạy Debug lại. Đây là "bug ma" phổ biến nhất của người mới dùng IDE.</div>
+
+    <h2 id="breakpoint-nang-cao">4. Breakpoint nâng cao <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Ba loại breakpoint sau giải quyết 90% tình huống mà breakpoint dòng thường bó tay. Mở hộp thoại quản lý bằng <code class="inline">Ctrl+Shift+F8</code> (Win/Linux) / <code class="inline">Cmd+Shift+F8</code> (macOS) — <strong>View Breakpoints</strong>.</p>
+
+    <h3>4.1 Conditional breakpoint — chỉ dừng khi điều kiện đúng</h3>
+
+    <p>Chuột phải vào breakpoint → gõ vào ô <strong>Condition</strong> một biểu thức boolean. Debugger chỉ dừng khi biểu thức trả <code class="inline">true</code>. Ví dụ cho vòng lặp <code class="inline">for (int i = 0; i &lt; 1_000_000; i++)</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>i == 987_654                  // chi dung o lan lap thu 987.654
+donHang.size() &gt; 100          // chi dung khi gio hang lon
+"DH-001".equals(don.getCode()) // chi dung voi don hang dich
+tongTien % 1000 == 0          // chi dung khi tong la boi so cua 1000</code></pre>
+    </div>
+
+    <ul>
+      <li>Điều kiện được <strong>đánh giá mỗi lần chạy qua dòng</strong> — đừng viết biểu thức có side effect (ví dụ <code class="inline">list.add(x) == 5</code>), vì nó sẽ chạy cả triệu lần và làm hỏng chương trình.</li>
+      <li>Biểu thức chạy trong ngữ cảnh frame hiện tại nên gọi được method của object: <code class="inline">don.getTongTien() &gt; 1_000_000</code>.</li>
+      <li>Dùng khi bug chỉ xảy ra với một dòng dữ liệu đặc biệt giữa hàng nghìn dòng bình thường.</li>
+    </ul>
+
+    <h3>4.2 Logpoint — in log mà không dừng chương trình</h3>
+
+    <p>Chuột phải breakpoint → bỏ tick <strong>Suspend</strong> → tick <strong>Evaluate and log</strong> và nhập message. Cách nhanh khác: giữ <code class="inline">Shift</code> và click gutter. Logpoint in ra Console đúng như <code class="inline">println</code> nhưng <strong>không dừng</strong> chương trình, nên vòng lặp 1 triệu lần chạy hết tốc lực. Trong ô message có thể chèn biểu thức bằng cặp ngoặc nhọn:</p>
+
+    <div class="codeblock">
+      <pre><code>i = {i}, tong = {tongTien}, don = {don.getCode()}</code></pre>
+    </div>
+
+    <p>Logpoint là cách "trung dung" giữa <code class="inline">println</code> (phải sửa code, xóa sau khi xong) và breakpoint thường (dừng quá nhiều). Nhớ tắt/xóa logpoint trước khi commit — nó chỉ là công cụ debug, không phải logging production (xem <a href="logging.html">4.5 Logging</a>).</p>
+
+    <h3>4.3 Exception breakpoint — dừng tại nơi exception được ném</h3>
+
+    <p>Vào <strong>View Breakpoints → + → Java Exception Breakpoint</strong>, chọn:</p>
+    <ul>
+      <li><strong>Any Exception</strong> — dừng ở mọi exception, kể cả những exception bị nuốt im lặng trong <code class="inline">try/catch</code>. Rất mạnh nhưng ồn (JDK ném exception nội bộ liên tục), nên dùng khi bí.</li>
+      <li><strong>Exception cụ thể</strong> — ví dụ <code class="inline">NullPointerException</code>, <code class="inline">IllegalStateException</code>. Cân bằng nhất, dùng thường xuyên.</li>
+      <li><strong>Caught / Uncaught</strong> — chọn chỉ dừng ở exception bị bắt (caught) hay chỉ ở exception thoát ra ngoài (uncaught). Bug production thường là exception bị <code class="inline">catch</code> rồi nuốt — khi đó exception breakpoint với "Caught exception" là công cụ duy nhất tìm ra.</li>
+      <li><strong>On throw / On catch</strong> — dừng ngay lúc ném (thấy được cả stack lúc tạo exception, tốt nhất để truy nguồn) hay lúc bắt.</li>
+    </ul>
+
+    <p>So sánh nhanh khi nào dùng loại nào:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tình huống</th><th>Dùng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bug ở lần lặp thứ N của vòng lặp lớn</td><td>Conditional breakpoint (<code class="inline">i == N</code>)</td></tr>
+        <tr><td>Muốn xem giá trị qua hàng nghìn lần lặp</td><td>Logpoint (Suspend off + Evaluate and log)</td></tr>
+        <tr><td>Exception bị nuốt trong <code class="inline">catch</code>, không biết nguồn</td><td>Exception breakpoint (Caught, On throw)</td></tr>
+        <tr><td>Biết chính xác dòng cần xem, chỉ chạy vài lần</td><td>Breakpoint dòng thường</td></tr>
+        <tr><td>Đang gỡ bug ở thư viện/khung, không muốn dừng ở code mình</td><td>Breakpoint có filter theo class (trường Class filter)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="watch-evaluate">5. Watch &amp; Evaluate Expression</h2>
+
+    <p>Khi chương trình đã dừng, bạn có ba cách quan sát dữ liệu, mỗi cách hợp một việc:</p>
+
+    <ul>
+      <li><strong>Variables</strong> — toàn bộ biến của frame đang chọn, cập nhật sau mỗi bước. Click mũi tên để mở <em>object tree</em>; <code class="inline">Collection</code> (List/Set/Map) có chế độ xem dạng bảng (gõ tên class vào ô search để tìm phần tử, xem size).</li>
+      <li><strong>Watches</strong> — ghim một biểu thức để xem lại ở mọi lần dừng. Ví dụ watch <code class="inline">don.getItems().size()</code>, <code class="inline">tong % 100</code>, <code class="inline">list.contains(don)</code>. Biến ở frame khác vẫn xem được nếu còn trong scope.</li>
+      <li><strong>Evaluate Expression</strong> (<code class="inline">Alt/&#8997;+F8</code>) — chạy biểu thức tùy ý trong ngữ cảnh frame hiện tại, kể cả gọi method. Đây là cách nhanh nhất để trả lời "nếu gọi method này ngay bây giờ thì kết quả là gì?".</li>
+    </ul>
+
+    <div class="note warn"><strong>Evaluate Expression có thể thay đổi chương trình.</strong> Biểu thức bạn gõ chạy thật trong process đang debug: <code class="inline">list.remove(0)</code>, <code class="inline">don.setTrangThai(...)</code>, hay gọi một API HTTP đều gây tác dụng phụ và làm sai lệch điều tra. Muốn xem giá trị thuần túy thì ưu tiên getter không side effect. Tương tự, chức năng <strong>Set Value</strong> (sửa biến ngay lúc debug) rất tiện để thử nhánh khác, nhưng nhớ restart trước khi kết luận kết quả.</div>
+
+    <p>Thứ tự thực hành tốt khi vừa dừng ở một điểm nghi ngờ:</p>
+    <ol>
+      <li>Nhìn <strong>Frames</strong> — mình đang ở đâu, ai gọi mình tới đây (xem <a href="#stack-trace">mục 6</a>).</li>
+      <li>Nhìn <strong>Variables</strong> — so giá trị thực tế với giá trị bạn kỳ vọng khi đọc code.</li>
+      <li>Điểm khác biệt đầu tiên giữa "kỳ vọng" và "thực tế" <em>chính là</em> bug hoặc nằm ngay trước đó.</li>
+    </ol>
+
+    <h2 id="stack-trace">6. Đọc stack trace thành thạo <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Stack trace không đáng sợ — nó là bản đồ chỉ đường có sẵn mà nhiều người mới chỉ đọc mỗi dòng đầu rồi... bỏ qua. Quy tắc đọc:</p>
+    <ol>
+      <li>Dòng đầu: <strong>loại exception + message</strong> — đọc kỹ, message thường nói thẳng vấn đề.</li>
+      <li>Các dòng <code class="inline">at ...</code>: chuỗi lời gọi từ nơi ném exception đi ra ngoài. Dòng trên cùng là nơi exception phát sinh.</li>
+      <li>Tìm frame đầu tiên thuộc <strong>code của bạn</strong> (bỏ qua <code class="inline">java.base/...</code>, <code class="inline">org.springframework...</code>). Đó là điểm bắt đầu điều tra.</li>
+      <li>Nếu có nhiều khối, khối <strong>"Caused by"</strong> bên dưới mới là nguyên nhân gốc; exception phía trên chỉ là lớp bọc.</li>
+      <li><code class="inline">... N more</code> nghĩa là N frame bị lặp lại so với khối trên — không phải lỗi.</li>
+    </ol>
+
+    <p>Ví dụ chạy thật (class <code class="inline">BugDemo</code> biên dịch với <code class="inline">javac -g</code>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    static int chia(int a, int b) {
+        return a / b;
+    }
+
+    static int tinhTrungBinh(int tong, int soMon) {
+        return chia(tong, soMon);
+    }
+
+    public static void main() {
+        IO.println(tinhTrungBinh(10, 0));
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.ArithmeticException: / by zero
+	at BugDemo.chia(BugDemo.java:3)
+	at BugDemo.tinhTrungBinh(BugDemo.java:7)
+	at BugDemo.main(BugDemo.java:11)</pre>
+    </div>
+
+    <p>Đọc trace này trong 10 giây: lỗi chia cho 0 tại <code class="inline">BugDemo.java:3</code> (method <code class="inline">chia</code>), được gọi từ dòng 7 (<code class="inline">tinhTrungBinh</code>), rồi từ dòng 11 (<code class="inline">main</code>). Bạn biết chính xác cần xem dòng 3 và câu hỏi tiếp theo: "vì sao <code class="inline">b</code> lại bằng 0?" — câu trả lời nằm ở dòng 7 và 11, nơi truyền tham số.</p>
+
+    <h3>6.1 "Caused by" — nguyên nhân gốc nằm ở dưới</h3>
+
+    <p>Khi exception được gói lại kèm nguyên nhân (<em>exception chaining</em>), trace có hai khối. Ví dụ chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    static int docSoLuong(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("du lieu khong hop le: " + s, e);
+        }
+    }
+
+    public static void main() {
+        IO.println(docSoLuong("12a"));
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.IllegalStateException: du lieu khong hop le: 12a
+	at BugDemo.docSoLuong(BugDemo.java:6)
+	at BugDemo.main(BugDemo.java:11)
+Caused by: java.lang.NumberFormatException: For input string: "12a"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:565)
+	at java.base/java.lang.Integer.parseInt(Integer.java:662)
+	at BugDemo.docSoLuong(BugDemo.java:4)
+	... 1 more</pre>
+    </div>
+
+    <p>Đừng dừng ở <code class="inline">IllegalStateException</code> — đó chỉ là thông điệp nghiệp vụ. Dòng <code class="inline">Caused by: NumberFormatException: For input string: "12a"</code> mới nói sự thật: chuỗi <code class="inline">"12a"</code> không parse được thành số, ném từ dòng 4. Cách viết <code class="inline">throw new ...("mô tả", e)</code> như trên là chuẩn mực: giữ ngữ cảnh nghiệp vụ ở lớp ngoài, giữ nguyên nhân gốc ở lớp trong. Chi tiết về <code class="inline">try/catch/finally</code>, custom exception và exception chaining ở <a href="exceptions.html">3.1 Exception Handling</a>.</p>
+
+    <h3>6.2 Helpful NullPointerException — JEP 358</h3>
+
+    <p>Từ JDK 14 (JEP 358, bật mặc định từ JDK 15), <code class="inline">NullPointerException</code> nói rõ <em>cái gì</em> null thay vì chỉ có chữ "null". Ví dụ chạy thật — mã nguồn:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    static class Order {
+        String code;
+    }
+
+    static int doDaiMa(Order don) {
+        return don.code.length();
+    }
+
+    public static void main() {
+        Order don = null;
+        IO.println(doDaiMa(don));
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.NullPointerException: Cannot read field "code" because "don" is null
+	at BugDemo.doDaiMa(BugDemo.java:7)
+	at BugDemo.main(BugDemo.java:12)</pre>
+    </div>
+
+    <p>Message <code class="inline">Cannot read field "code" because "don" is null</code> chỉ đích danh biến <code class="inline">don</code> — không cần debugger cũng biết thủ phạm. Ba dạng message thường gặp (chạy thật, bắt exception để in message):</p>
+
+    <div class="codeblock error">
+      <pre><code>1: Cannot read field "code" because "don" is null
+2: Cannot invoke "String.length()" because "ten" is null
+3: Cannot read the array length because "a" is null</code></pre>
+    </div>
+
+    <p>Vài lưu ý thực chiến:</p>
+    <ul>
+      <li><strong>Tắt được:</strong> chạy <code class="inline">java -XX:-ShowCodeDetailsInExceptionMessages BugDemo</code> sẽ chỉ còn <code class="inline">java.lang.NullPointerException</code> trần — hữu ích khi bạn muốn message gọn, nhưng đừng tắt trong lúc debug.</li>
+      <li><strong>Thấy <code class="inline">&lt;local0&gt;</code>/<code class="inline">&lt;parameter1&gt;</code>?</strong> Nghĩa là class thiếu debug info về tên biến. Chế độ chạy file đơn <code class="inline">java BugDemo.java</code> hoặc <code class="inline">javac</code> mặc định (không có <code class="inline">-g</code>) sẽ hiển thị tên slot thay vì tên biến; biên dịch với <code class="inline">javac -g</code> (IntelliJ luôn bật) sẽ hiện đúng tên như ví dụ trên.</li>
+      <li><strong>ArrayIndexOutOfBoundsException</strong> cũng có message chi tiết từ JDK 9: <code class="inline">Index 3 out of bounds for length 3</code> — thấy ngay index nào vượt biên (dùng ở <a href="#loi-kinh-dien">mục 7.2</a>).</li>
+    </ul>
+
+    <div class="note"><strong>Tự luyện:</strong> với mỗi trace bạn gặp trong công việc, viết ra giấy 3 câu trả lời — (1) exception gì, (2) frame đầu tiên thuộc code mình ở dòng nào, (3) câu hỏi cần trả lời tiếp theo. Sau vài chục lần, bạn sẽ đọc trace nhanh như đọc tiêu đề báo.</div>
+
+    <h2 id="loi-kinh-dien">7. Các lỗi kinh điển khi debug <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Sáu nhóm lỗi dưới đây chiếm phần lớn thời gian debug của một Java backend developer. Nhận diện được chúng từ triệu chứng sẽ tiết kiệm cho bạn rất nhiều giờ.</p>
+
+    <h3>7.1 NullPointerException — vẫn là "vua" của mọi bug</h3>
+
+    <p>NPE xảy ra khi bạn gọi method/đọc field trên reference đang là <code class="inline">null</code>. Các nguồn null phổ biến:</p>
+    <ul>
+      <li><strong>Method trả null:</strong> <code class="inline">map.get(key)</code> không có key, <code class="inline">findById(...)</code> không tìm thấy, API trả null.</li>
+      <li><strong>Field chưa khởi tạo</strong> (object tạo ra nhưng field còn null) — khác JavaScript, field object mặc định là <code class="inline">null</code>, còn field primitive mặc định là 0/false.</li>
+      <li><strong>Autoboxing:</strong> <code class="inline">Integer</code> null bị unbox thành <code class="inline">int</code> (ví dụ cộng vào biến int) → NPE ngay tại phép toán.</li>
+      <li><strong>Chuỗi method:</strong> một mắt xích trả <code class="inline">null</code> làm cả chain nổ (xem <a href="methods.html#chaining">Methods — mục 10</a>).</li>
+    </ul>
+
+    <p>Cách xử lý theo thứ tự ưu tiên: validate sớm bằng guard clause, dùng <code class="inline">Objects.requireNonNull</code> để fail fast, trả collection rỗng thay vì null, và chỉ dùng <code class="inline">Optional</code> cho giá trị "có thể không có" ở return type — không lạm dụng <code class="inline">Optional</code> cho field/tham số. Chi tiết ở <a href="exceptions.html">3.1 Exception Handling</a> và <a href="optional.html">3.7 Optional</a>. NPE helpful message đã học cách đọc ở <a href="#stack-trace">mục 6.2</a>.</p>
+
+    <h3>7.2 Off-by-one — sai lệch đúng một đơn vị</h3>
+
+    <p>Triệu chứng kinh điển: <code class="inline">ArrayIndexOutOfBoundsException</code> với message <em>"Index N out of bounds for length N"</em>. Đoạn code chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    static int tong(int[] a) {
+        int s = 0;
+        for (int i = 0; i &lt;= a.length; i++) {
+            s += a[i];
+        }
+        return s;
+    }
+
+    public static void main() {
+        IO.println(tong(new int[] {1, 2, 3}));
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at BugDemo.tong(BugDemo.java:5)
+	at BugDemo.main(BugDemo.java:11)</pre>
+    </div>
+
+    <p>Mảng có index hợp lệ 0..length-1, nên điều kiện đúng là <code class="inline">i &lt; a.length</code>. Nhưng tai hại nhất là off-by-one <strong>không hề crash</strong> — chỉ trả kết quả sai. Ví dụ chạy thật, tính tổng 1..n với điều kiện <code class="inline">i &lt; n</code> (thiếu số cuối):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    static int tongTu1Den(int n) {
+        int s = 0;
+        for (int i = 1; i &lt; n; i++) {
+            s += i;
+        }
+        return s;
+    }
+
+    public static void main() {
+        IO.println("tongTu1Den(10) = " + tongTu1Den(10));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>tongTu1Den(10) = 45</code></pre>
+    </div>
+
+    <p>Đáp án đúng phải là 55 (1+2+...+10). Bug kiểu này lọt qua mọi buổi review vì code "chạy được". Các dạng off-by-one bạn sẽ gặp: truy cập mảng bằng <code class="inline">&lt;= length</code>; tính tổng 1..n bằng <code class="inline">&lt; n</code>; <code class="inline">substring(0, s.length() - 1)</code> mất ký tự cuối; vòng lặp cần chạy <code class="inline">hi - lo + 1</code> lần (fencepost — số hàng rào nhiều hơn số khoảng một đơn vị). Cách debug hiệu quả: đặt conditional breakpoint ở lần lặp cuối (<code class="inline">i == a.length - 1</code>, <code class="inline">i == n - 1</code>) và kiểm tra giá trị ngay trước/sau biên. Link ôn mảng: <a href="arrays.html">1.6 Arrays</a>.</p>
+
+    <h3>7.3 ConcurrentModificationException — sửa collection giữa lúc đang duyệt</h3>
+
+    <p>Đoạn code chạy thật — định xóa số chẵn khỏi danh sách:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.ArrayList;
+import java.util.List;
+
+public class BugDemo {
+    public static void main() {
+        List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(1, 2, 3, 4));
+        for (int n : nums) {
+            if (n % 2 == 0) {
+                nums.remove(Integer.valueOf(n));
+            }
+        }
+        IO.println(nums);
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>Exception in thread "main" java.util.ConcurrentModificationException
+	at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1096)
+	at java.base/java.util.ArrayList$Itr.next(ArrayList.java:1050)
+	at BugDemo.main(BugDemo.java:7)</pre>
+    </div>
+
+    <p>Vòng <code class="inline">for-each</code> thực chất dùng <code class="inline">Iterator</code> nội bộ. Khi <code class="inline">nums.remove(...)</code> thay đổi danh sách, Iterator phát hiện <code class="inline">modCount</code> thay đổi và ném CME ở lần <code class="inline">next()</code> kế tiếp. Cách sửa đúng — chạy thật cho kết quả <code class="inline">[1, 3]</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(1, 2, 3, 4));
+nums.removeIf(n -&gt; n % 2 == 0);   // dung: xoa qua removeIf
+IO.println(nums);
+// [1, 3]</code></pre>
+    </div>
+
+    <p>Ba cách sửa hợp lệ: <code class="inline">removeIf(...)</code> (gọn nhất), <code class="inline">iterator.remove()</code> khi đang duyệt bằng Iterator, hoặc duyệt trên bản copy. Chi tiết Iterator/collection và bẫy này ở <a href="collections.html">3.3 Collections Framework</a>.</p>
+
+    <h3>7.4 Race condition — bug "tuần trăng" chỉ hiện khi đúng thời điểm</h3>
+
+    <p>Race condition xảy ra khi nhiều thread đọc/ghi cùng state mà không đồng bộ. Đặc trưng: <strong>kết quả thay đổi giữa các lần chạy</strong>, càng ít thread/CPU càng khó thấy, và bug thường biến mất khi bạn... gắn debugger (vì debugger làm chậm mọi thứ, đổi thứ tự thực thi). Ví dụ chạy thật dùng <code class="inline">CountDownLatch</code> để cả hai thread cùng đọc số dư trước khi ghi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.CountDownLatch;
+
+public class BugDemo {
+    static int balance = 1000;
+    static final CountDownLatch DA_DOC = new CountDownLatch(2);
+
+    static void rut(int soTien) throws InterruptedException {
+        int hienTai = balance;     // ca hai cung doc 1000
+        DA_DOC.countDown();
+        DA_DOC.await();
+        balance = hienTai - soTien; // ghi de len nhau
+    }
+
+    public static void main() throws InterruptedException {
+        Thread t1 = new Thread(() -&gt; {
+            try { rut(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        });
+        Thread t2 = new Thread(() -&gt; {
+            try { rut(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        });
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("balance = " + balance);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>balance = 900</code></pre>
+    </div>
+
+    <p>Đúng ra phải rút được 300 và còn 700. Thực tế mỗi thread tính từ 1000 rồi ghi đè: kết quả là 900 hoặc 800 tùy thread nào ghi sau (8 lần chạy thử đều ra 900) — <strong>không bao giờ đúng 700</strong>. Cách điều tra: không tin một lần chạy, hãy chạy lặp nhiều lần/ nhiều thread; dùng thread dump khi treo (<a href="#dump-cong-cu">mục 10</a>); khoanh vùng shared mutable state. Cách sửa: <code class="inline">synchronized</code>/khóa, lớp atomic (<code class="inline">AtomicInteger</code>, <code class="inline">LongAdder</code>), bất biến, hoặc concurrent collections. Toàn bộ chủ đề ở <a href="concurrency.html">4.2 Concurrency</a>.</p>
+
+    <div class="note warn">Bug race còn có anh em sinh đôi là <strong>visibility</strong>: thread A ghi <code class="inline">balance</code> nhưng thread B vẫn mãi đọc giá trị cũ do không có <code class="inline">volatile</code>/happens-before. Triệu chứng cũng là "lúc được lúc không" — debug y hệt bằng cách chạy lặp và đọc thread dump. Đừng "sửa" bằng cách thêm <code class="inline">Thread.sleep</code>.</div>
+
+    <h3>7.5 equals/hashCode sai — Set/Map "mất" phần tử</h3>
+
+    <p>Bug này rất hay gặp khi bạn tạo class nghiệp vụ (ví dụ <code class="inline">Order</code>) rồi đưa vào <code class="inline">HashSet</code>/<code class="inline">HashMap</code>. Chạy thật — class <code class="inline">Order</code> chưa override <code class="inline">equals</code>/<code class="inline">hashCode</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.HashSet;
+import java.util.Set;
+
+public class BugDemo {
+    static class Order {
+        final String code;
+
+        Order(String code) {
+            this.code = code;
+        }
+    }
+
+    public static void main() {
+        Set&lt;Order&gt; donHang = new HashSet&lt;&gt;();
+        donHang.add(new Order("DH-001"));
+        IO.println("contains: " + donHang.contains(new Order("DH-001")));
+        IO.println("remove  : " + donHang.remove(new Order("DH-001")));
+        IO.println("size    : " + donHang.size());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>contains: false
+remove  : false
+size    : 1</code></pre>
+    </div>
+
+    <p>Hai object có cùng <code class="inline">code = "DH-001"</code> nhưng <code class="inline">equals</code> mặc định so sánh địa chỉ, nên <code class="inline">HashSet</code> coi là hai object khác nhau — phần tử tưởng chừng "biến mất". Sửa bằng <code class="inline">record</code> (tự sinh <code class="inline">equals</code>/<code class="inline">hashCode</code>), chạy thật cho kết quả đúng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Order(String code) {}
+// contains: true
+// remove  : true
+// size    : 0</code></pre>
+    </div>
+
+    <p>Quy tắc hợp đồng: <code class="inline">equals</code> bằng nhau thì <code class="inline">hashCode</code> <strong>bắt buộc</strong> bằng nhau (ngược lại không cần). <code class="inline">hashCode</code> quyết định bucket, <code class="inline">equals</code> quyết định phần tử trong bucket — thiếu một trong hai là bug âm thầm. Nếu không dùng record, IntelliJ có generator (Code → Generate → equals() and hashCode()) nhưng hãy chọn đủ field đúng nghiệp vụ. Đào sâu ở <a href="object-contract.html">2.6 equals / hashCode / toString</a>.</p>
+
+    <h3>7.6 Logic sai — code chạy hoàn hảo nhưng cho kết quả sai</h3>
+
+    <p>Loại khó debug nhất vì không có exception nào chỉ đường. Hai thủ phạm phổ biến:</p>
+
+    <p><strong>So sánh bằng <code class="inline">==</code> thay vì <code class="inline">equals</code></strong> — chạy thật:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    public static void main() {
+        String a = new String("DH-001");
+        String b = new String("DH-001");
+        IO.println("a == b          : " + (a == b));
+        IO.println("a.equals(b)     : " + a.equals(b));
+
+        Integer x = Integer.valueOf(127);
+        Integer y = Integer.valueOf(127);
+        IO.println("127 == 127      : " + (x == y));
+
+        Integer m = Integer.valueOf(128);
+        Integer n = Integer.valueOf(128);
+        IO.println("128 == 128      : " + (m == n));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>a == b          : false
+a.equals(b)     : true
+127 == 127      : true
+128 == 128      : false</code></pre>
+    </div>
+
+    <p><code class="inline">==</code> so sánh reference (địa chỉ), còn <code class="inline">equals</code> so sánh giá trị. Riêng wrapper có <em>cache</em> −128..127 nên <code class="inline">127 == 127</code> đúng nhưng <code class="inline">128 == 128</code> sai — cực kỳ dễ lừa. Quy tắc: luôn dùng <code class="inline">equals</code> cho object (và nhớ <code class="inline">null</code>: gọi <code class="inline">"DH-001".equals(code)</code> thay vì <code class="inline">code.equals("DH-001")</code>).</p>
+
+    <p><strong>Điều kiện boolean sai</strong> — nhầm <code class="inline">&amp;&amp;</code> với <code class="inline">||</code>. Ví dụ <code class="inline">soLuong &gt; 0 || soLuong &lt; 100</code> luôn <code class="inline">true</code> với mọi giá trị (vì không số nào vừa ≤0 vừa ≥100 — một trong hai vế luôn đúng); điều kiện đúng phải là <code class="inline">&amp;&amp;</code>. Xem bài tập <a href="#bai-tap">Bài 5</a> để thấy test tái hiện phát hiện lỗi này. Cách debug logic sai: đừng đọc code thêm — hãy cho chương trình in ra giá trị thật tại điểm quyết định, so với giá trị bạn kỳ vọng, hoặc viết test nhỏ với bảng giá trị.</p>
+
+    <h2 id="khong-debugger">8. Kỹ thuật debug không cần debugger <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Debugger chỉ chạy được ở môi trường local/IDE. Khi bug nằm ở CI, ở môi trường test, hay trong code không chạy lại được, bạn cần các kỹ thuật "chay tay" sau.</p>
+
+    <h3>8.1 Logging có chủ đích — thay cho println rải rác</h3>
+
+    <p>Khác biệt giữa log tốt và <code class="inline">println</code> rải khắp nơi:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th><code class="inline">println</code> rải rác</th><th>Logging có chủ đích</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mục đích</td><td>Đoán xem code chạy tới đâu</td><td>Ghi lại <em>biên giới</em>: giá trị vào/ra của method quan trọng, trạng thái trước/sau bước nghi vấn</td></tr>
+        <tr><td>Thông tin</td><td><code class="inline">"toi day"</code>, <code class="inline">"i = " + i</code></td><td>Có ngữ cảnh: id đơn hàng, tham số, kết quả, thời điểm</td></tr>
+        <tr><td>Sau khi xong</td><td>Phải nhớ xóa, dễ commit nhầm</td><td>Giữ lại có mức log (DEBUG/INFO/WARN/ERROR) và có thể tắt theo cấu hình</td></tr>
+        <tr><td>Production</td><td>Vô dụng, gây nhiễu</td><td>Là công cụ điều tra duy nhất khi không có debugger (<a href="#production">mục 9</a>)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Mẹo thực dụng: đừng log "chạy tới đây" — hãy log <strong>giá trị mà bạn đang nghi ngờ là sai</strong>. Ví dụ thay vì <code class="inline">log("vao tinhPhi")</code>, hãy log <code class="inline">log("tinhPhi tongTien={} hang={}", tongTien, hangThanhVien)</code> tại đúng nhánh rẽ. Logging framework, log level, log có cấu trúc học ở <a href="logging.html">4.5 Logging</a>.</p>
+
+    <h3>8.2 Chia đôi dữ liệu — binary search bug</h3>
+
+    <p>Khi bug chỉ xuất hiện với dữ liệu lớn (1000 đơn hàng, file 2GB), đừng debug cả tập dữ liệu. Hãy <strong>chia đôi</strong> liên tục để khoanh vùng:</p>
+    <ol>
+      <li>Chạy với 1000 bản ghi → lỗi xuất hiện? Nếu có, thử 500 bản ghi đầu tiên.</li>
+      <li>Nếu 500 đầu <em>không</em> lỗi, bug nằm ở nửa sau → thử 250 bản ghi tiếp theo, cứ thế.</li>
+      <li>Sau ~10 lần chia, bạn tìm ra bản ghi (hoặc tổ hợp bản ghi) gây lỗi — nhanh hơn nhiều so với đọc code mò.</li>
+    </ol>
+    <p>Kỹ thuật này áp dụng được cho cả <em>code</em>: comment/disable một nửa số method để xem lỗi còn không (đừng quên bật lại), và cho cả <em>lịch sử git</em> bằng <code class="inline">git bisect</code> — git tự tìm commit gây bug qua các lần chia đôi.</p>
+
+    <h3>8.3 Viết test nhỏ tái hiện</h3>
+
+    <p>Một test 5 dòng tái hiện bug có giá trị hơn 30 phút đọc code. Nguyên tắc: dùng input <strong>nhỏ nhất</strong> làm lỗi xuất hiện. Ví dụ bug off-by-one chỉ cần mảng 3 phần tử; bug equals/hashCode chỉ cần 1 phần tử. Khi đã có test tái hiện, mỗi lần sửa code bạn chạy test để biết ngay đã hết bug chưa — đây chính là quy trình <a href="#reproduce">red → fix → green ở mục 11</a>. Cách viết test bằng JUnit: <a href="testing.html">4.4 Testing (JUnit)</a>.</p>
+
+    <h3>8.4 So sánh với code chạy đúng</h3>
+
+    <p>Khi khó hiểu vì sao một đoạn code cho kết quả sai, hãy đặt cạnh một đoạn code <em>tương tự đã chạy đúng</em> (phiên bản cũ, module khác, code mẫu) rồi so từng dòng. Kỹ thuật <em>differential debugging</em>: chạy cùng input trên hai phiên bản, log ra điểm khác biệt đầu tiên — bug nằm ngay đó. Với code trong git, <code class="inline">git log -p -- file.java</code> và <code class="inline">git bisect</code> thường chỉ ra commit làm hỏng hành vi nhanh đến mức ngạc nhiên.</p>
+
+    <h3>8.5 Rubber duck — giải thích cho... con vịt nhựa</h3>
+
+    <p>Nhiều bug biến mất ngay khi bạn phải diễn đạt thành lời: "method này nhận danh sách đơn, nếu... à, mình đang sửa danh sách <em>gốc</em> thay vì bản copy!". Hãy giải thích code từng dòng cho đồng nghiệp (hoặc một món đồ vô tri) trước khi gọi trợ giúp. Nếu không ai nghe, viết lại luồng chạy ra giấy — làm chậm quá trình suy nghĩ chính là mục đích.</p>
+
+    <h2 id="production">9. Debug production không có debugger <span class="badge b-prod">Production</span></h2>
+
+    <p>Trên production bạn <strong>không</strong> có breakpoint, không step được, và mọi hành động đều ảnh hưởng người dùng thật. Thứ tự ưu tiên khác hẳn local: ổn định hệ thống trước, tìm nguyên nhân sau.</p>
+
+    <ol>
+      <li><strong>Giảm thiệt hại trước:</strong> rollback phiên bản vừa deploy, tắt tính năng lỗi bằng feature flag, mở rộng tài nguyên nếu nghẽn — rồi mới điều tra. Không có gì tệ hơn vừa sập vừa loay hoay tìm bug.</li>
+      <li><strong>Đọc log có cấu trúc:</strong> tìm theo <code class="inline">requestId</code>/<code class="inline">correlationId</code> để gom toàn bộ log của một request; xem <code class="inline">timestamp</code> để biết bắt đầu từ đâu (thường ngay sau một deploy/ thay đổi cấu hình). Log tốt được ghi từ trước — nếu hệ thống không có correlation id, đó là việc cần bổ sung ngay (<a href="logging.html">4.5 Logging</a>).</li>
+      <li><strong>Nhìn metrics:</strong> error rate, latency p95/p99, số request, CPU/RAM, kích thước queue, GC. Metrics cho biết <em>cái gì</em> và <em>từ khi nào</em>; log cho biết <em>vì sao</em>.</li>
+      <li><strong>Reproduce ở local với dữ liệu thật đã che:</strong> lấy payload/request thật (đã loại bỏ thông tin cá nhân), replay lại ở môi trường dev. Nếu không replay được, dựng test từ dữ liệu đó hoặc từ log.</li>
+      <li><strong>Thu thập dump khi cần:</strong> thread dump (treo, deadlock), heap dump (OOM, memory leak) — xem <a href="#dump-cong-cu">mục 10</a>.</li>
+    </ol>
+
+    <p>Những điều <strong>không</strong> được làm trên production:</p>
+    <ul>
+      <li><strong>Bọc <code class="inline">try/catch</code> mù để "hết lỗi":</strong> lỗi chỉ bị nuốt, dữ liệu có thể sai âm thầm. Catch phải đi kèm xử lý hoặc log đầy đủ.</li>
+      <li><strong>Bật remote debug (JDWP) trên production:</strong> mở cổng debug là rủi ro bảo mật; dừng chương trình tại breakpoint có thể treo cả hệ thống.</li>
+      <li><strong>Sửa file/thay cấu hình bằng tay không qua quy trình:</strong> lần sau không ai biết đã sửa gì ("configuration drift").</li>
+      <li><strong>Restart mù:</strong> restart có thể "hết bệnh" tạm thời nhưng xóa sạch bằng chứng (dump, trạng thái) — hãy thu thập dump trước nếu nghi treo/leak.</li>
+    </ul>
+
+    <p>Ví dụ một dòng log có cấu trúc (minh hoạ định dạng, không phải output chạy):</p>
+
+    <div class="codeblock">
+      <pre><code>2026-10-03T14:21:07.412Z ERROR [order-service,trace=9f2c1a] orderId=DH-001 step=tinhPhi msg="tinh phi that bai" total=600000 ex="ArithmeticException: / by zero"</code></pre>
+    </div>
+
+    <h2 id="dump-cong-cu">10. Thread dump, heap dump &amp; công cụ dòng lệnh <span class="badge b-prod">Production</span></h2>
+
+    <p>JDK đi kèm sẵn bộ công cụ chẩn đoán, không cần cài gì thêm. Bốn lệnh bạn phải biết: <code class="inline">jps</code>, <code class="inline">jstack</code>, <code class="inline">jcmd</code>, <code class="inline">jmap</code>.</p>
+
+    <h3>10.1 <code class="inline">jps -l</code> — tìm process Java đang chạy</h3>
+
+    <p>Trước khi chẩn đoán, cần biết PID. Output chạy thật trên máy này:</p>
+
+    <div class="codeblock">
+      <pre><code>$ jps -l
+68872 BugDemo
+68877 jdk.jcmd/sun.tools.jps.Jps</code></pre>
+    </div>
+
+    <p>Cột trái là PID, cột phải là class chính. <code class="inline">jps</code> tự liệt kê cả chính nó — bỏ qua dòng cuối. Trên production container, PID có thể là 1; đôi khi phải dùng <code class="inline">jcmd -l</code> tương đương.</p>
+
+    <h3>10.2 Thread dump — chụp ảnh mọi thread</h3>
+
+    <p>Thread dump là danh sách toàn bộ thread kèm trạng thái và call stack tại một thời điểm. Lấy bằng <code class="inline">jstack &lt;pid&gt;</code> hoặc <code class="inline">jcmd &lt;pid&gt; Thread.print</code> (jcmd hiện đại hơn, cùng định dạng). Ví dụ với chương trình có một worker đang ngủ:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BugDemo {
+    public static void main() throws Exception {
+        Runnable congViec = new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(120_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        };
+        Thread worker = new Thread(congViec, "worker-xu-ly-don");
+        worker.start();
+        IO.println("pid: " + ProcessHandle.current().pid());
+        Thread.sleep(120_000);
+    }
+}</code></pre>
+    </div>
+
+    <div class="errblock">
+      <pre>"worker-xu-ly-don" #25 [27395] prio=5 os_prio=31 cpu=0.12ms elapsed=2.17s tid=0x0000000945103000 nid=27395 waiting on condition  [0x000000016d7be000]
+   java.lang.Thread.State: TIMED_WAITING (sleeping)
+	at java.lang.Thread.sleepNanos0(java.base@25.0.4/Native Method)
+	at java.lang.Thread.sleepNanos(java.base@25.0.4/Thread.java:509)
+	at java.lang.Thread.sleep(java.base@25.0.4/Thread.java:540)
+	at BugDemo$1.run(BugDemo.java:6)
+	at java.lang.Thread.runWith(java.base@25.0.4/Thread.java:1487)
+	at java.lang.Thread.run(java.base@25.0.4/Thread.java:1474)</pre>
+    </div>
+
+    <p>Đây là một lần chạy thật; các con số (id, địa chỉ, elapsed) thay đổi mỗi lần. Cách đọc: dòng đầu là tên thread + trạng thái, dòng <code class="inline">java.lang.Thread.State</code> cho biết thread đang làm gì, các dòng <code class="inline">at ...</code> là stack. Trạng thái thường gặp:</p>
+
+    <table>
+      <thead>
+        <tr><th>Trạng thái</th><th>Nghĩa</th><th>Nghi vấn gì</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">RUNNABLE</code></td><td>Đang chạy hoặc chờ I/O/CPU</td><td>Nếu giữ khóa lâu hoặc CPU 100% — tìm vòng lặp vô tận/query nặng</td></tr>
+        <tr><td><code class="inline">BLOCKED</code></td><td>Chờ vào <code class="inline">synchronized</code> bị thread khác giữ</td><td>Dấu hiệu tranh chấp khóa (lock contention)</td></tr>
+        <tr><td><code class="inline">WAITING</code></td><td>Chờ vô hạn (<code class="inline">wait()</code>, <code class="inline">join()</code>, <code class="inline">park()</code>)</td><td>AI gọi notify/giải phóng? Có deadlock không?</td></tr>
+        <tr><td><code class="inline">TIMED_WAITING</code></td><td>Chờ có hạn (<code class="inline">sleep</code>, <code class="inline">await(timeout)</code>)</td><td>Bình thường nếu có timeout — xem nó chờ gì lâu bất thường</td></tr>
+      </tbody>
+    </table>
+
+    <p>Deadlock là trường hợp đặc biệt: <code class="inline">jstack</code> <strong>tự phát hiện và báo</strong>. Chạy thật hai thread khóa chéo nhau <code class="inline">A → B</code> và <code class="inline">B → A</code>:</p>
+
+    <div class="errblock">
+      <pre>Found one Java-level deadlock:
+=============================
+"thread-1":
+  waiting to lock monitor ... (object ..., a java.lang.Object),
+  which is held by "thread-2"
+
+"thread-2":
+  waiting to lock monitor ... (object ..., a java.lang.Object),
+  which is held by "thread-1"
+
+Found 1 deadlock.</pre>
+    </div>
+
+    <p>Địa chỉ monitor đã được lược bớt cho gọn; điều quan trọng là chu trình "thread-1 chờ thread-2, thread-2 chờ thread-1". Điều tra deadlock và cách phòng tránh (khóa theo thứ tự cố định, timeout) ở <a href="concurrency.html">4.2 Concurrency</a>.</p>
+
+    <h3>10.3 Heap dump — tìm memory leak và OOM</h3>
+
+    <p>Heap dump là ảnh chụp toàn bộ object trên heap. Lấy bằng:</p>
+
+    <div class="codeblock">
+      <pre><code>jcmd &lt;pid&gt; GC.heap_info                                  # xem nhanh heap dang dung bao nhieu
+jcmd &lt;pid&gt; GC.heap_dump /tmp/heap.hprof                  # ghi heap dump ra file
+jmap -dump:live,format=b,file=/tmp/heap.hprof &lt;pid&gt;      # lua chon nang cao (live: ep Full GC)</code></pre>
+    </div>
+
+    <p>Phân tích file <code class="inline">.hprof</code> bằng Eclipse MAT hoặc VisualVM (xem retained size, dominator tree, tìm class nhiều instance bất thường). Dùng khi: <code class="inline">OutOfMemoryError</code>, memory tăng dần đều không giảm, GC chạy liên tục. Cảnh báo production: file dump có thể nặng bằng vài lần heap thật, <code class="inline">jmap -dump:live</code> gây Full GC (dừng ứng dụng một nhịp), và heap dump chứa dữ liệu nhạy cảm — phải xoá/chuyển an toàn sau khi phân tích. Đọc thêm về heap, GC và OOM ở <a href="jvm.html">4.1 JVM cơ bản</a>.</p>
+
+    <h3>10.4 <code class="inline">jstat</code> và JFR — nhìn nhanh sức khỏe JVM</h3>
+
+    <p><code class="inline">jstat -gcutil &lt;pid&gt; 1000</code> in mỗi giây tỷ lệ sử dụng các vùng heap và số lần GC — thấy ngay GC có đang bất thường. Muốn chẩn đoán sâu hơn (latency, allocation, lock), dùng Java Flight Recorder: <code class="inline">jcmd &lt;pid&gt; JFR.start duration=60s filename=/tmp/record.jfr</code> rồi mở bằng JDK Mission Control. Đây là bộ ba kinh điển khi production "chậm mà không lỗi": thread dump + heap dump + JFR.</p>
+
+    <h2 id="reproduce">11. Reproduce bug &amp; viết test tái hiện <span class="badge b-prod">Production</span></h2>
+
+    <p>Quy tắc vàng: <strong>viết test làm bug tái hiện TRƯỚC khi sửa</strong> (red → fix → green). Test đỏ chứng minh bạn đã hiểu bug và sẽ chuyển thành test xanh để chứng minh đã sửa đúng — đồng thời trở thành regression test chặn bug tái phát. Ví dụ chạy thật với validator đơn hàng có bug điều kiện:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class OrderValidator {
+    static boolean hopLe(int soLuong) {
+        return soLuong &gt; 0 || soLuong &lt; 100;   // BUG: || luon dung
+    }
+
+    static void check(int soLuong, boolean mongDoi) {
+        boolean thucTe = hopLe(soLuong);
+        IO.println((thucTe == mongDoi ? "PASS" : "FAIL")
+                + " soLuong=" + soLuong
+                + " -&gt; " + thucTe
+                + " (mong doi " + mongDoi + ")");
+    }
+
+    public static void main() {
+        check(10, true);
+        check(0, false);
+        check(-5, false);
+        check(150, false);
+    }
+}</code></pre>
+    </div>
+
+    <p>Chạy lần đầu — test đỏ (1 PASS, 3 FAIL) cho thấy bug thật sự tồn tại:</p>
+
+    <div class="codeblock error">
+      <pre><code>PASS soLuong=10 -&gt; true (mong doi true)
+FAIL soLuong=0 -&gt; true (mong doi false)
+FAIL soLuong=-5 -&gt; true (mong doi false)
+FAIL soLuong=150 -&gt; true (mong doi false)</code></pre>
+    </div>
+
+    <p>Sửa đúng <strong>một chỗ</strong> — đổi <code class="inline">||</code> thành <code class="inline">&amp;&amp;</code> — rồi chạy lại; tất cả PASS:</p>
+
+    <div class="codeblock error">
+      <pre><code>PASS soLuong=10 -&gt; true (mong doi true)
+PASS soLuong=0 -&gt; false (mong doi false)
+PASS soLuong=-5 -&gt; false (mong doi false)
+PASS soLuong=150 -&gt; false (mong doi false)</code></pre>
+    </div>
+
+    <p>Đây chính là chu trình red → fix → green mà JUnit chuẩn hoá: viết <code class="inline">assertEquals(false, hopLe(0))</code> làm test đỏ, sửa code đến khi xanh, giữ test lại mãi mãi. Sang <a href="testing.html">4.4 Testing (JUnit)</a> bạn sẽ viết đúng những test này bằng JUnit thay vì <code class="inline">check</code> thủ công.</p>
+
+    <h3>11.1 Một bug report tốt gồm gì?</h3>
+
+    <p>Khi bạn là người nhận bug (từ QA, khách hàng, đồng nghiệp), chất lượng báo cáo quyết định tốc độ sửa. Một bug report tốt gồm:</p>
+
+    <table>
+      <thead>
+        <tr><th>Thành phần</th><th>Câu hỏi nó trả lời</th><th>Ví dụ xấu → tốt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bước tái hiện</td><td>Làm sao tạo lại lỗi?</td><td>"App lỗi" → "1. Tạo đơn tổng 600.000đ; 2. Bấm Thanh toán; 3. Xem phí"</td></tr>
+        <tr><td>Mong đợi vs thực tế</td><td>Thế nào là đúng?</td><td>"Sai tiền" → "Mong đợi phí 0đ (đơn ≥500.000đ), thực tế 30.000đ"</td></tr>
+        <tr><td>Môi trường</td><td>Ở đâu, phiên bản nào?</td><td>"Không chạy" → "prod v1.4.2, JDK 25, macOS + Chrome"</td></tr>
+        <tr><td>Log / screenshot / id</td><td>Bằng chứng runtime</td><td>Kèm <code class="inline">traceId</code>, stack trace, ảnh màn hình</td></tr>
+        <tr><td>Mức ảnh hưởng</td><td>Sửa gấp cỡ nào?</td><td>"Ảnh hưởng tất cả đơn ≥500.000đ, khách thấy sai tiền"</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nếu bug không tái hiện được ở local, quay lại <a href="#production">mục 9</a> (đọc log/metrics, replay dữ liệu thật đã che) thay vì sửa mò. Và nhớ: mỗi bug được sửa mà không có test tái hiện là một bug <em>đã hẹn ngày quay lại</em>.</p>
+
+    <h2 id="pitfalls">12. Pitfalls — sai lầm thường gặp <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Sai lầm</th><th>Vì sao tệ</th><th>Cách đúng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Sửa triệu chứng, không sửa gốc</td><td>Ví dụ bọc <code class="inline">try/catch</code> nuốt lỗi hoặc <code class="inline">Thread.sleep</code> để "hết race"; bug quay lại kèm dữ liệu sai âm thầm</td><td>Tìm nguyên nhân gốc bằng quy trình 5 bước; sửa tại nguồn</td></tr>
+        <tr><td>Đổi nhiều thứ cùng lúc</td><td>Không biết thay đổi nào sửa được bug, thay đổi nào tạo bug mới</td><td>Mỗi lần một thay đổi nhỏ, chạy test sau mỗi bước</td></tr>
+        <tr><td>Debug bằng cách rải <code class="inline">println</code> khắp nơi</td><td>Phải sửa code, dễ commit nhầm, không xem được state phức tạp; không dùng được ở production</td><td>Breakpoint/logpoint ở local; logging có cấu trúc ở mọi nơi</td></tr>
+        <tr><td>Chỉ đọc dòng đầu của stack trace</td><td>Bỏ qua "Caused by" — nguyên nhân gốc nằm dưới cùng; sửa sai lớp exception</td><td>Đọc cả chuỗi, tìm frame code mình và khối Caused by</td></tr>
+        <tr><td>Nhảy vào sửa code ngay khi nghe bug</td><td>Không tái hiện được thì không biết mình đã sửa đúng hay chỉ đổi hành vi ngẫu nhiên</td><td>Reproduce + viết test tái hiện trước</td></tr>
+        <tr><td>Không chạy lại test sau khi fix</td><td>Fix có thể phá vỡ chỗ khác (regression) mà không ai biết</td><td>Chạy test tái hiện + toàn bộ test liên quan</td></tr>
+        <tr><td>Tự tin thái quá: "chắc do máy/cache"</td><td>Bỏ qua bằng chứng, bug thật vẫn còn; niềm tin không phải dữ liệu</td><td>Thu thập bằng chứng: log, dump, test tái hiện; kiểm chứng giả thuyết</td></tr>
+        <tr><td>Copy fix từ Internet không hiểu</td><td>Fix có thể đúng với ngữ cảnh khác, sai với code của bạn; không giải thích được khi bị hỏi</td><td>Hiểu cơ chế, viết test tái hiện, chỉ áp dụng khi giải thích được vì sao đúng</td></tr>
+        <tr><td>Đoán mò bằng cách "thử xem sao"</td><td>Mỗi lần thử là một biến số mới, bug ngày càng rối</td><td>Một giả thuyết — một phép thử — một kết luận</td></tr>
+        <tr><td>Không ghi lại cách tái hiện</td><td>Bug quay lại sau nhiều tháng, không ai nhớ nổi</td><td>Test tái hiện + ticket mô tả bước; coi đó là tài liệu</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="qa">13. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Quy trình debug của bạn gồm những bước nào?</summary>
+      <div class="answer">Năm bước: (1) <strong>Reproduce</strong> — tái hiện lỗi ổn định với ví dụ nhỏ nhất; (2) <strong>Isolate</strong> — khoanh vùng dòng code/điều kiện/dữ liệu gây lỗi; (3) <strong>Fix</strong> — sửa nguyên nhân gốc, mỗi lần một thay đổi; (4) <strong>Verify</strong> — chạy test tái hiện và test cũ; (5) <strong>Prevent</strong> — giữ regression test, thêm validate/log. Nếu chưa reproduce được thì chưa được phép sửa.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. Step Over, Step Into, Step Out khác nhau thế nào? Khi nào dùng cái nào?</summary>
+      <div class="answer"><strong>Step Over</strong> (F8): chạy hết dòng hiện tại mà không đi vào method được gọi — dùng khi tin method đó đúng. <strong>Step Into</strong> (F7): nhảy vào bên trong method — dùng khi nghi method trả sai và muốn xem chi tiết. <strong>Step Out</strong> (Shift+F8): chạy nốt method hiện tại rồi quay về caller — dùng khi đã hiểu method hoặc lỡ step vào quá sâu. Bổ sung: <strong>Smart Step Into</strong> (Shift+F7) khi dòng có nhiều lời gọi, <strong>Run to Cursor</strong> (Alt/&#8997;F9) khi chỉ muốn tới một dòng cụ thể.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Conditional breakpoint là gì? Cho ví dụ thực tế.</summary>
+      <div class="answer">Là breakpoint chỉ dừng khi một biểu thức boolean trả <code class="inline">true</code>. Chuột phải breakpoint → nhập <strong>Condition</strong>. Ví dụ: bug chỉ xảy ra với đơn hàng mã <code class="inline">"DH-001"</code> → condition <code class="inline">"DH-001".equals(don.getCode())</code>; vòng lặp 1 triệu lần mà bug ở lần 987.654 → <code class="inline">i == 987_654</code>. Lưu ý condition được đánh giá mỗi lần qua dòng nên tuyệt đối không viết biểu thức có side effect.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Logpoint là gì, khác gì println và breakpoint thường?</summary>
+      <div class="answer">Logpoint là breakpoint không dừng chương trình: bỏ tick <strong>Suspend</strong>, tick <strong>Evaluate and log</strong> (hoặc Shift+click gutter), rồi nhập message, có thể chèn biểu thức bằng <code class="inline">{...}</code>. So với <code class="inline">println</code>: không cần sửa code, không sợ commit nhầm, đổi/xóa dễ. So với breakpoint thường: chương trình chạy hết tốc lực nên hợp với vòng lặp lớn. Logpoint chỉ để debug local — production dùng logging framework có cấu trúc.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Exception breakpoint là gì? "Any Exception" khác exception cụ thể thế nào, caught và uncaught khác gì?</summary>
+      <div class="answer">Là breakpoint dừng ngay khi exception được ném, thêm qua <strong>View Breakpoints → + → Java Exception Breakpoint</strong>. <strong>Any Exception</strong> bắt mọi exception (kể cả cái bị nuốt trong <code class="inline">try/catch</code>) nhưng rất ồn vì JDK ném exception nội bộ liên tục; nên chọn <strong>exception cụ thể</strong> như NullPointerException. Tùy chọn <strong>Caught</strong> chỉ dừng ở exception bị bắt — cực hữu ích khi bug là exception bị nuốt im lặng; <strong>Uncaught</strong> chỉ dừng ở exception thoát ra ngoài; <strong>On throw</strong> dừng tại nơi ném (thấy đủ stack lúc tạo), <strong>On catch</strong> dừng tại nơi bắt.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Watch khác Variables thế nào?</summary>
+      <div class="answer"><strong>Variables</strong> tự động hiển thị mọi biến trong frame đang chọn, cập nhật sau mỗi bước. <strong>Watches</strong> là danh sách biểu thức bạn tự ghim, xem lại ở mọi lần dừng, kể cả biến không còn trong frame scope (nếu object còn sống) — ví dụ <code class="inline">don.getItems().size()</code> hoặc <code class="inline">list.contains(don)</code>. Thực hành tốt: dùng Variables để khảo sát nhanh, ghim các giá trị then chốt vào Watches để so sánh giữa các lần dừng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Evaluate Expression dùng làm gì? Nguy hiểm ở đâu?</summary>
+      <div class="answer">Evaluate Expression (<code class="inline">Alt/&#8997;+F8</code>) chạy một biểu thức Java tùy ý trong ngữ cảnh frame hiện tại — trả lời nhanh câu hỏi "gọi method này thì ra gì?". Nguy hiểm vì nó chạy <em>thật</em> trong process đang debug: gọi method có side effect có thể sửa state (<code class="inline">list.remove</code>, setter), gọi API/IO gây chậm hoặc sai lệch dữ liệu. Chỉ nên evaluate getter/biểu thức thuần túy; nhớ rằng chức năng Set Value cũng tương tự — dùng xong nên restart trước khi kết luận.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Đọc stack trace bắt đầu từ đâu? Frame nào là code của bạn?</summary>
+      <div class="answer">Đọc dòng đầu để biết loại exception + message, sau đó đọc các frame <code class="inline">at ...</code> từ trên xuống: frame đầu tiên là nơi exception phát sinh. Bỏ qua các frame thư viện (<code class="inline">java.base/...</code>, <code class="inline">org.springframework...</code>) và tìm <strong>frame đầu tiên thuộc package của bạn</strong> — đó là điểm bắt đầu điều tra. Số sau tên file (ví dụ <code class="inline">BugDemo.java:3</code>) là số dòng chính xác, dùng ngay được thay vì dò tay.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. "Caused by" nghĩa là gì? Vì sao phải đọc khối bên dưới?</summary>
+      <div class="answer">"Caused by" xuất hiện khi exception được gói kèm nguyên nhân gốc (<em>exception chaining</em>). Exception in phía trên là lớp bọc nghiệp vụ (ví dụ <code class="inline">IllegalStateException: du lieu khong hop le</code>), còn khối dưới mới chứa nguyên nhân kỹ thuật thật (ví dụ <code class="inline">NumberFormatException: For input string: "12a"</code>). Bỏ qua khối dưới là nguyên nhân phổ biến của việc sửa sai chỗ. Dòng <code class="inline">... N more</code> chỉ là N frame lặp lại, không phải lỗi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Helpful NullPointerException (JEP 358) cho biết gì? Khi nào thấy <code class="inline">&lt;local0&gt;</code> thay vì tên biến?</summary>
+      <div class="answer">JEP 358 (JDK 14, bật mặc định từ JDK 15) làm NPE nói rõ phần tử nào null: <code class="inline">Cannot read field "code" because "don" is null</code>, <code class="inline">Cannot invoke "String.length()" because "ten" is null</code>, <code class="inline">Cannot read the array length because "a" is null</code>. Tắt bằng <code class="inline">-XX:-ShowCodeDetailsInExceptionMessages</code>. Nếu thấy <code class="inline">&lt;local0&gt;</code>/<code class="inline">&lt;parameter1&gt;</code>, class thiếu debug info về tên biến — thường do chạy file đơn hoặc <code class="inline">javac</code> không có <code class="inline">-g</code>; biên dịch với <code class="inline">javac -g</code> (IntelliJ mặc định) sẽ hiện tên thật.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 11. Vì sao không nên debug bằng cách rải <code class="inline">println</code> khắp nơi?</summary>
+      <div class="answer">Vì phải sửa code (dễ commit nhầm, quên xóa), chỉ thấy được giá trị đơn giản, không xem được object tree/collection, không dừng được ở đúng thời điểm, và hoàn toàn vô dụng ở production. Thay thế: breakpoint/logpoint ở local; logging có cấu trúc (có ngữ cảnh, mức log) ở mọi nơi. Nếu buộc phải in, hãy in <em>giá trị đang nghi ngờ</em> kèm ngữ cảnh thay vì "chạy tới đây".</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Làm sao tìm race condition? Vì sao nó khó?</summary>
+      <div class="answer">Khó vì phụ thuộc thời điểm: càng ít thread/CPU càng khó thấy, và gắn debugger (làm chậm mọi thứ) thường làm bug biến mất. Cách tìm: chạy lặp rất nhiều lần với nhiều thread; kiểm tra mọi shared mutable state không đồng bộ; đọc thread dump khi treo (<code class="inline">jstack</code>, tìm BLOCKED/deadlock); dùng công cụ stress test. Cách sửa: <code class="inline">synchronized</code>/khóa, atomic, bất biến, concurrent collections — tuyệt đối không "sửa" bằng <code class="inline">Thread.sleep</code>. Chi tiết ở <a href="concurrency.html">4.2 Concurrency</a>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Debug production không có debugger thì làm thế nào?</summary>
+      <div class="answer">Ưu tiên ổn định hệ thống trước (rollback, tắt feature flag), rồi mới điều tra: đọc log có cấu trúc theo <code class="inline">correlationId</code>, xem metrics (error rate, latency, GC) để biết thời điểm bắt đầu, reproduce ở local bằng dữ liệu thật đã che, và thu thập thread dump/heap dump khi cần. Không bọc try/catch mù, không bật remote debug JDWP trên production, không restart mù trước khi thu thập bằng chứng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Vì sao phải viết test tái hiện TRƯỚC khi fix?</summary>
+      <div class="answer">Vì test đỏ chứng minh bạn đã hiểu bug (reproduce được), test xanh sau fix chứng minh đã sửa đúng, và test đó ở lại làm regression test chặn bug tái phát. Nếu viết test sau khi fix, bạn có thể vô tình viết test "khớp" với hành vi mới mà không biết hành vi nào là đúng. Đây là chu trình red → fix → green của TDD, áp dụng cho riêng việc sửa bug.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. Một bug report tốt gồm những thành phần nào?</summary>
+      <div class="answer">(1) Bước tái hiện cụ thể (từng bước, dữ liệu); (2) mong đợi vs thực tế; (3) môi trường (phiên bản, JDK, OS, trình duyệt); (4) bằng chứng runtime: log, stack trace, <code class="inline">traceId</code>, screenshot; (5) mức ảnh hưởng. Người nhận bug report tốt có thể tái hiện trong vài phút thay vì hỏi lại mười câu. Khi bạn là người báo bug cũng nên viết đủ những mục này.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Bug không reproduce được thì làm gì?</summary>
+      <div class="answer">Đừng sửa mù. Tìm thêm dữ liệu: log xung quanh thời điểm lỗi, metrics, dump, khác biệt môi trường (phiên bản, cấu hình, dữ liệu, tải). Thử replay request/dữ liệu thật ở local, bật thêm log có mục tiêu, hoặc viết test giả lập đúng điều kiện nghi ngờ. Hỏi người báo bug thêm bước tái hiện. Nếu vẫn không được, đặt "bẫy" quan sát (log/metric) để lần sau bug nổ thì có đủ dữ liệu.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Thread dump dùng khi nào, đọc thế nào?</summary>
+      <div class="answer">Dùng khi ứng dụng treo, chậm bất thường, deadlock, hoặc CPU cao. Lấy bằng <code class="inline">jstack &lt;pid&gt;</code> hoặc <code class="inline">jcmd &lt;pid&gt; Thread.print</code>. Đọc: tên thread + trạng thái (<code class="inline">RUNNABLE</code>, <code class="inline">BLOCKED</code>, <code class="inline">WAITING</code>, <code class="inline">TIMED_WAITING</code>) + stack. Nhiều thread BLOCKED trên cùng một monitor → lock contention; chu trình chờ nhau → deadlock (jstack tự báo "Found one Java-level deadlock"); thread RUNNABLE trong vòng lặp/query lâu → điều tra logic.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Heap dump dùng khi nào và cần chú ý gì?</summary>
+      <div class="answer">Dùng khi <code class="inline">OutOfMemoryError</code>, nghi memory leak (bộ nhớ tăng đều không giảm), hoặc GC chạy quá nhiều. Lấy bằng <code class="inline">jcmd &lt;pid&gt; GC.heap_dump file</code> hoặc <code class="inline">jmap -dump:live,format=b,file=... &lt;pid&gt;</code>, phân tích bằng Eclipse MAT/VisualVM (retained size, dominator tree). Chú ý: file có thể rất nặng, <code class="inline">-dump:live</code> ép Full GC (dừng ứng dụng một nhịp), và dump chứa dữ liệu nhạy cảm — phải bảo vệ và xóa an toàn sau khi dùng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Off-by-one là gì? Kể các dạng thường gặp.</summary>
+      <div class="answer">Là lỗi sai lệch đúng một đơn vị ở biên. Dạng thường gặp: duyệt mảng bằng <code class="inline">i &lt;= a.length</code> (phải là <code class="inline">&lt;</code>) → <code class="inline">ArrayIndexOutOfBoundsException</code>; tính tổng 1..n bằng <code class="inline">i &lt; n</code> (thiếu số cuối) → kết quả sai âm thầm; <code class="inline">substring(0, s.length() - 1)</code> mất ký tự; fencepost — số lần lặp/số hàng rào nhiều hơn số khoảng một đơn vị; <code class="inline">mid = (lo + hi) / 2</code> trong binary search khi <code class="inline">hi = a.length</code>. Debug bằng cách kiểm tra giá trị ngay trước và tại biên (conditional breakpoint ở lần lặp cuối).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Tại sao "đổi nhiều thứ cùng lúc" khi debug là sai lầm?</summary>
+      <div class="answer">Vì bạn không biết thay đổi nào sửa được bug — nếu hết bug thì không rõ cái nào có tác dụng (có thể cái đúng lẫn cái sai), nếu còn bug thì càng rối. Quy tắc: một giả thuyết — một thay đổi — chạy test — kết luận; sau đó mới sang thay đổi tiếp theo. Cách này còn giúp bạn hiểu <em>vì sao</em> bug được sửa, chứ không chỉ "thấy hết lỗi".</div>
+    </details>
+
+    <h2 id="bai-tap">14. Bài tập tìm bug &amp; đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1 — Đọc stack trace tìm dòng lỗi</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class BugDemo {
+    static int chia(int a, int b) {
+        return a / b;
+    }
+
+    static int tinhTrungBinh(int tong, int soMon) {
+        return chia(tong, soMon);
+    }
+
+    public static void main() {
+        IO.println(tinhTrungBinh(10, 0));
+    }
+}</code></pre>
+      </div>
+      <div class="errblock">
+        <pre>Exception in thread "main" java.lang.ArithmeticException: / by zero
+	at BugDemo.chia(BugDemo.java:3)
+	at BugDemo.tinhTrungBinh(BugDemo.java:7)
+	at BugDemo.main(BugDemo.java:11)</pre>
+      </div>
+      <div class="answer">Lỗi ném tại <code class="inline">BugDemo.java:3</code> (phép <code class="inline">a / b</code> trong <code class="inline">chia</code>). Frame <code class="inline">tinhTrungBinh(BugDemo.java:7)</code> cho biết <code class="inline">b</code> được truyền từ dòng 7, và frame <code class="inline">main(BugDemo.java:11)</code> cho biết <code class="inline">soMon = 0</code> được truyền từ dòng 11. Chuỗi đọc: main truyền 0 → chia nhận b = 0 → nổ ở dòng 3. Dòng cần sửa tùy nghiệp vụ: validate <code class="inline">soMon != 0</code> trước khi chia.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2 — Off-by-one gây crash</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int tong(int[] a) {
+    int s = 0;
+    for (int i = 0; i &lt;= a.length; i++) {
+        s += a[i];
+    }
+    return s;
+}
+
+IO.println(tong(new int[] {1, 2, 3}));</code></pre>
+      </div>
+      <div class="answer">Ném <code class="inline">ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3</code> tại dòng <code class="inline">s += a[i];</code> — khi <code class="inline">i = 3</code>, mảng chỉ có index 0..2. Sửa điều kiện thành <code class="inline">i &lt; a.length</code>, kết quả đúng là 6. Đây là off-by-one "ồn ào" — dễ thấy nhờ message của JDK.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3 — Off-by-one im lặng (không crash)</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int tongTu1Den(int n) {
+    int s = 0;
+    for (int i = 1; i &lt; n; i++) {
+        s += i;
+    }
+    return s;
+}
+
+IO.println(tongTu1Den(10));</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">45</code> (chạy thật), trong khi đáp án đúng là 55 — vòng lặp dừng trước khi cộng <code class="inline">n = 10</code>. Đây là loại bug nguy hiểm hơn vì không có exception. Sửa thành <code class="inline">i &lt;= n</code>. Test bắt lỗi: <code class="inline">assertEquals(55, tongTu1Den(10))</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4 — Đoán output NPE helpful message</summary>
+      <div class="codeblock">
+        <pre><code class="java">try {
+    Order don = null;
+    IO.println(don.code);
+} catch (NullPointerException e) {
+    IO.println("1: " + e.getMessage());
+}
+try {
+    String ten = null;
+    IO.println(ten.length());
+} catch (NullPointerException e) {
+    IO.println("2: " + e.getMessage());
+}
+try {
+    int[] a = null;
+    IO.println(a.length);
+} catch (NullPointerException e) {
+    IO.println("3: " + e.getMessage());
+}</code></pre>
+      </div>
+      <div class="answer">Viết đủ 3 dòng (chạy thật với class biên dịch <code class="inline">javac -g</code>):
+        <div class="codeblock error"><pre><code>1: Cannot read field "code" because "don" is null
+2: Cannot invoke "String.length()" because "ten" is null
+3: Cannot read the array length because "a" is null</code></pre></div>
+        Nếu chạy file đơn không có debug info, tên biến có thể hiện thành <code class="inline">&lt;local0&gt;</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5 — Dự đoán output trước và sau khi fix</summary>
+      <div class="codeblock">
+        <pre><code class="java">public class OrderValidator {
+    static boolean hopLe(int soLuong) {
+        return soLuong &gt; 0 || soLuong &lt; 100;   // BUG
+    }
+
+    public static void main() {
+        check(10, true);
+        check(0, false);
+        check(-5, false);
+        check(150, false);
+    }
+}</code></pre>
+      </div>
+      <div class="answer"><strong>Trước fix:</strong> <code class="inline">PASS soLuong=10</code>, <code class="inline">FAIL soLuong=0</code>, <code class="inline">FAIL soLuong=-5</code>, <code class="inline">FAIL soLuong=150</code> — vì <code class="inline">||</code> làm điều kiện luôn true (mọi số hoặc &gt; 0 hoặc &lt; 100). <strong>Sau fix</strong> (đổi thành <code class="inline">&amp;&amp;</code>): cả 4 dòng PASS. Test tái hiện chính là 4 dòng <code class="inline">check</code> này; sửa xong chạy lại thấy xanh mới kết luận.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6 — Bug so sánh <code class="inline">==</code></summary>
+      <div class="codeblock">
+        <pre><code class="java">String a = new String("DH-001");
+String b = new String("DH-001");
+IO.println(a == b);
+IO.println(a.equals(b));
+
+Integer x = Integer.valueOf(127);
+Integer y = Integer.valueOf(127);
+IO.println(x == y);
+
+Integer m = Integer.valueOf(128);
+Integer n = Integer.valueOf(128);
+IO.println(m == n);</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">true</code>, <code class="inline">true</code>, <code class="inline">false</code> (chạy thật). <code class="inline">==</code> so địa chỉ nên hai <code class="inline">new String</code> khác nhau là false; wrapper có cache −128..127 nên 127 bằng nhau còn 128 thì không. Sửa: dùng <code class="inline">equals</code> cho mọi so sánh giá trị object, viết <code class="inline">"DH-001".equals(code)</code> để an toàn với null.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7 — ConcurrentModificationException</summary>
+      <div class="codeblock">
+        <pre><code class="java">List&lt;Integer&gt; nums = new ArrayList&lt;&gt;(List.of(1, 2, 3, 4));
+for (int n : nums) {
+    if (n % 2 == 0) {
+        nums.remove(Integer.valueOf(n));
+    }
+}
+IO.println(nums);</code></pre>
+      </div>
+      <div class="answer">Ném <code class="inline">java.util.ConcurrentModificationException</code> tại <code class="inline">ArrayList$Itr.checkForComodification</code> — không in gì cả. Sửa bằng <code class="inline">nums.removeIf(n -&gt; n % 2 == 0);</code> (hoặc <code class="inline">iterator.remove()</code>) — chạy thật in ra <code class="inline">[1, 3]</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8 — equals/hashCode làm Set "mất" phần tử</summary>
+      <div class="codeblock">
+        <pre><code class="java">static class Order {
+    final String code;
+    Order(String code) { this.code = code; }
+}
+
+Set&lt;Order&gt; donHang = new HashSet&lt;&gt;();
+donHang.add(new Order("DH-001"));
+IO.println(donHang.contains(new Order("DH-001")));
+IO.println(donHang.remove(new Order("DH-001")));
+IO.println(donHang.size());</code></pre>
+      </div>
+      <div class="answer">In ra <code class="inline">false</code>, <code class="inline">false</code>, <code class="inline">1</code> (chạy thật) vì <code class="inline">Order</code> chưa override <code class="inline">equals</code>/<code class="inline">hashCode</code> — hai object cùng code vẫn là hai định danh khác nhau. Sửa bằng <code class="inline">record Order(String code) {}</code>: in ra <code class="inline">true</code>, <code class="inline">true</code>, <code class="inline">0</code>. Chi tiết hợp đồng ở <a href="object-contract.html">2.6</a>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9 — Đặt conditional breakpoint</summary>
+      <div class="answer">Tình huống: vòng lặp <code class="inline">for (int i = 0; i &lt; 1_000_000; i++)</code> xử lý đơn hàng, bug chỉ xảy ra ở lần lặp thứ 987.654, và chỉ khi đơn có tổng tiền lớn hơn 1.000.000. Cách làm: chuột phải breakpoint → Condition nhập <code class="inline">i == 987_654 &amp;&amp; don.getTongTien() &gt; 1_000_000</code>. Debugger chạy qua ~987 nghìn lần lặp trong nháy mắt và chỉ dừng ở đúng lần cần xem. Nếu muốn xem giá trị qua nhiều lần lặp mà không dừng, chuyển sang logpoint với message <code class="inline">i = {i}, tong = {don.getTongTien()}</code>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10 — Sửa test tái hiện</summary>
+      <div class="codeblock">
+        <pre><code class="java">// Test dang sai: khong the hien dung yeu cau nghiep vu
+static void check(int soLuong, boolean mongDoi) { ... }
+
+check(10, false);   // ?
+check(0, true);     // ?
+check(100, false);  // ?</code></pre>
+      </div>
+      <div class="answer">Với nghiệp vụ "số lượng hợp lệ khi 0 &lt; soLuong &lt; 100", ba test trên đang mong đợi ngược: phải là <code class="inline">check(10, true)</code>, <code class="inline">check(0, false)</code>, <code class="inline">check(100, false)</code> — chú ý biên: 100 không hợp lệ vì điều kiện là <code class="inline">&lt; 100</code> (bài học fencepost). Test tái hiện phải mô tả đúng yêu cầu trước khi dùng nó làm thước đo cho bug.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11 — Off-by-one trong binary search</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int timKiem(int[] a, int x) {
+    int lo = 0;
+    int hi = a.length;          // sai
+    while (lo &lt;= hi) {
+        int mid = (lo + hi) / 2;
+        if (a[mid] == x) return mid;
+        if (a[mid] &lt; x) lo = mid + 1;
+        else hi = mid - 1;
+    }
+    return -1;
+}
+
+IO.println(timKiem(new int[] {10, 20, 30}, 99));</code></pre>
+      </div>
+      <div class="answer">Ném <code class="inline">ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3</code> tại dòng <code class="inline">if (a[mid] == x)</code> (chạy thật). Với <code class="inline">hi = a.length</code>, khi tìm số lớn hơn mọi phần tử thì <code class="inline">lo</code> đạt 3 và <code class="inline">mid = (3 + 3) / 2 = 3</code> → truy cập <code class="inline">a[3]</code>. Sửa: <code class="inline">hi = a.length - 1</code> (giữ <code class="inline">lo &lt;= hi</code>), hoặc giữ <code class="inline">hi = a.length</code> nhưng dùng vòng lặp nửa mở <code class="inline">while (lo &lt; hi)</code> với cách cập nhật khác.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12 — Race condition: giá trị nào có thể xảy ra?</summary>
+      <div class="codeblock">
+        <pre><code class="java">static int balance = 1000;
+static final CountDownLatch DA_DOC = new CountDownLatch(2);
+
+static void rut(int soTien) throws InterruptedException {
+    int hienTai = balance;
+    DA_DOC.countDown();
+    DA_DOC.await();
+    balance = hienTai - soTien;
+}
+// t1 rut 100, t2 rut 200, cung doc 1000 truoc khi ghi
+IO.println("balance = " + balance);</code></pre>
+      </div>
+      <div class="answer">Kết quả in ra có thể là <code class="inline">900</code> hoặc <code class="inline">800</code> (chạy thử 8 lần đều ra 900), tùy thread nào ghi sau — vì cả hai đều tính từ 1000. <strong>Không bao giờ</strong> ra 700 dù đúng ra phải là 700 (1000 − 100 − 200). Đây là dấu hiệu kinh điển của lost update; sửa bằng <code class="inline">synchronized</code> hoặc <code class="inline">AtomicInteger</code>. Xem <a href="concurrency.html">4.2 Concurrency</a>.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13 — Cấu hình logpoint</summary>
+      <div class="answer">Muốn xem <code class="inline">tongTien</code> và <code class="inline">maDon</code> qua 1 triệu lần lặp mà không dừng chương trình: đặt breakpoint ở dòng cần xem → chuột phải → bỏ tick <strong>Suspend</strong> → tick <strong>Evaluate and log</strong> → nhập <code class="inline">maDon = {maDon}, tongTien = {tongTien}</code>. Chương trình chạy hết tốc lực và in ra Console từng dòng log — giống hệt logging nhưng không cần sửa code. Nhớ xóa logpoint trước khi commit.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 14 — Đọc "Caused by" tìm nguyên nhân gốc</summary>
+      <div class="errblock">
+        <pre>Exception in thread "main" java.lang.IllegalStateException: du lieu khong hop le: 12a
+	at BugDemo.docSoLuong(BugDemo.java:6)
+	at BugDemo.main(BugDemo.java:11)
+Caused by: java.lang.NumberFormatException: For input string: "12a"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:565)
+	at java.base/java.lang.Integer.parseInt(Integer.java:662)
+	at BugDemo.docSoLuong(BugDemo.java:4)
+	... 1 more</pre>
+      </div>
+      <div class="answer">Exception gốc là <code class="inline">NumberFormatException: For input string: "12a"</code> — chuỗi <code class="inline">"12a"</code> không phải số hợp lệ, ném từ <code class="inline">Integer.parseInt</code> được gọi tại <code class="inline">BugDemo.java:4</code>. <code class="inline">IllegalStateException</code> ở trên chỉ là lớp bọc nghiệp vụ do code tự ném ở dòng 6. Sửa: validate chuỗi trước khi parse (hoặc bắt <code class="inline">NumberFormatException</code> và trả lỗi rõ ràng cho người dùng) — đừng đi tìm bug ở dòng 6. <code class="inline">... 1 more</code> chỉ là frame lặp, không phải lỗi.</div>
+    </details>
+
+    <h2 id="cheat-sheet">15. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet — shortcut IntelliJ debugger</h3>
+
+    <table>
+      <thead>
+        <tr><th>Thao tác</th><th>Windows/Linux</th><th>macOS (keymap mặc định)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đặt/xóa breakpoint dòng</td><td><code class="inline">Ctrl+F8</code></td><td><code class="inline">Cmd+F8</code></td></tr>
+        <tr><td>Xem tất cả breakpoint</td><td><code class="inline">Ctrl+Shift+F8</code></td><td><code class="inline">Cmd+Shift+F8</code></td></tr>
+        <tr><td>Step Over</td><td><code class="inline">F8</code></td><td><code class="inline">F8</code></td></tr>
+        <tr><td>Step Into</td><td><code class="inline">F7</code></td><td><code class="inline">F7</code></td></tr>
+        <tr><td>Smart Step Into</td><td><code class="inline">Shift+F7</code></td><td><code class="inline">Shift+F7</code></td></tr>
+        <tr><td>Step Out</td><td><code class="inline">Shift+F8</code></td><td><code class="inline">Shift+F8</code></td></tr>
+        <tr><td>Resume</td><td><code class="inline">F9</code></td><td><code class="inline">&#8997;&#8984;R</code></td></tr>
+        <tr><td>Run to Cursor</td><td><code class="inline">Alt+F9</code></td><td><code class="inline">&#8997;F9</code></td></tr>
+        <tr><td>Evaluate Expression</td><td><code class="inline">Alt+F8</code></td><td><code class="inline">&#8997;F8</code></td></tr>
+        <tr><td>Debug file hiện tại</td><td><code class="inline">Shift+F9</code></td><td><code class="inline">Ctrl+D</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Cheat sheet — công cụ &amp; cấu hình</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách dùng</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Conditional breakpoint</td><td>Chuột phải breakpoint → Condition: <code class="inline">i == 987_654</code>, <code class="inline">"DH-001".equals(don.getCode())</code></td></tr>
+        <tr><td>Logpoint (không dừng)</td><td>Bỏ tick Suspend + tick Evaluate and log: <code class="inline">i = {i}, tong = {tongTien}</code></td></tr>
+        <tr><td>Exception breakpoint</td><td>View Breakpoints (Ctrl/Cmd+Shift+F8) → + → Java Exception Breakpoint → Caught/Uncaught, On throw/On catch</td></tr>
+        <tr><td>Tìm process Java</td><td><code class="inline">jps -l</code></td></tr>
+        <tr><td>Thread dump</td><td><code class="inline">jstack &lt;pid&gt;</code> hoặc <code class="inline">jcmd &lt;pid&gt; Thread.print</code></td></tr>
+        <tr><td>Heap info / heap dump</td><td><code class="inline">jcmd &lt;pid&gt; GC.heap_info</code> / <code class="inline">jcmd &lt;pid&gt; GC.heap_dump file.hprof</code></td></tr>
+        <tr><td>GC theo thời gian thực</td><td><code class="inline">jstat -gcutil &lt;pid&gt; 1000</code></td></tr>
+        <tr><td>Ghi JFR</td><td><code class="inline">jcmd &lt;pid&gt; JFR.start duration=60s filename=record.jfr</code></td></tr>
+        <tr><td>Tắt NPE helpful message</td><td><code class="inline">java -XX:-ShowCodeDetailsInExceptionMessages TenFile.java</code></td></tr>
+        <tr><td>Hiện tên biến trong NPE</td><td>Biên dịch với <code class="inline">javac -g</code> (IntelliJ mặc định bật)</td></tr>
+        <tr><td>Debug Node.js</td><td><code class="inline">node --inspect-brk app.js</code> → mở <code class="inline">chrome://inspect</code>; <code class="inline">console.trace(...)</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Nêu được quy trình 5 bước reproduce → isolate → fix → verify → prevent kèm ví dụ.</li>
+      <li>Đọc một stack trace bất kỳ: chỉ ra exception, frame code mình, dòng cụ thể, và "Caused by".</li>
+      <li>Giải thích 3 dạng NPE helpful message và cách tắt/mở JEP 358.</li>
+      <li>Phân biệt Step Over / Step Into / Step Out và biết dùng khi nào.</li>
+      <li>Viết được condition cho conditional breakpoint trong vòng lặp lớn.</li>
+      <li>Giải thích logpoint khác println và breakpoint thường ở đâu.</li>
+      <li>Cấu hình exception breakpoint cho exception bị nuốt trong catch.</li>
+      <li>Biết nguy cơ side effect của Evaluate Expression và Set Value.</li>
+      <li>Nhận diện off-by-one im lặng (kết quả sai nhưng không crash).</li>
+      <li>Giải thích vì sao ConcurrentModificationException xảy ra và 2 cách sửa.</li>
+      <li>Nêu cách điều tra race condition và vì sao không được sửa bằng Thread.sleep.</li>
+      <li>Giải thích hợp đồng equals/hashCode và vì sao thiếu hashCode làm mất phần tử trong HashSet.</li>
+      <li>Kể được 4 lệnh chẩn đoán jps/jstack/jcmd/jmap và dùng khi nào.</li>
+      <li>Viết test tái hiện trước khi fix theo chu trình red → fix → green.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://openjdk.org/jeps/358" target="_blank" rel="noreferrer">JEP 358 — Helpful NullPointerExceptions</a></li>
+      <li><a href="https://www.jetbrains.com/help/idea/debugging-code.html" target="_blank" rel="noreferrer">IntelliJ IDEA — Debugging code</a></li>
+      <li><a href="https://www.jetbrains.com/help/idea/breakpoints.html" target="_blank" rel="noreferrer">IntelliJ IDEA — Breakpoints</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/specs/man/jcmd.html" target="_blank" rel="noreferrer">Oracle — jcmd man page (JDK 25)</a></li>
+      <li><a href="https://nodejs.org/api/debugger.html" target="_blank" rel="noreferrer">Node.js — Debugger (node --inspect)</a></li>
+      <li><a href="https://nodejs.org/api/console.html#consoletracemessage-args" target="_blank" rel="noreferrer">Node.js — console.trace()</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Debugging · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item active" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="testing">Testing — kiểm thử trong Java</h1>
+
+    <p class="lead">Testing là kỹ năng tách người viết code "chạy được" khỏi người viết code <strong>đáng tin</strong>. Trang này học JUnit 5, Mockito và AssertJ — bộ ba tiêu chuẩn của mọi dự án Java backend: viết unit test, giả lập dependency, khẳng định kết quả dễ đọc, rồi đưa test vào CI. Code test trong trang là <strong>snippet cần project Maven/Gradle</strong> (không chạy được bằng <code class="inline">java File.java</code>); không có transcript chạy thật — phần output chỉ mô tả đúng dạng chuẩn của Maven Surefire.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#junit-co-ban">JUnit 5 cơ bản — @Test &amp; assertions</a></li>
+        <li><a href="#parameterized-test">Parameterized test — một test, nhiều bộ dữ liệu</a></li>
+        <li><a href="#test-tot">Viết test tốt — AAA &amp; F.I.R.S.T.</a></li>
+        <li><a href="#mockito">Mockito — mock &amp; verify</a></li>
+        <li><a href="#assertj">AssertJ — assertion dễ đọc</a></li>
+        <li><a href="#tdd">TDD — red-green-refactor</a></li>
+        <li><a href="#coverage">Coverage &amp; JaCoCo</a></li>
+        <li><a href="#unit-integration">Unit test vs Integration test</a></li>
+        <li><a href="#production">Testing trong production</a></li>
+        <li><a href="#pitfalls">Pitfalls — lỗi thường gặp khi viết test</a></li>
+        <li><a href="#to-chuc-test">Tổ chức test &amp; dependency Maven</a></li>
+        <li><a href="#vi-du">Ví dụ đầy đủ — Calculator &amp; OrderService</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 4.4 (phỏng vấn: rất cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — viết test JUnit 5 với <code class="inline">@Test</code>, assertion, <code class="inline">@BeforeEach</code>; parameterized test; mock dependency bằng Mockito và verify tương tác; chạy test bằng Maven trong IDE/CI.</li>
+      <li><strong>Phải hiểu</strong> — vì sao mỗi test phải độc lập; AAA; vòng đời test instance; test double (mock/stub/spy/fake); unit test vs integration test; coverage nói gì và không nói gì; TDD.</li>
+      <li><strong>Nhận biết</strong> — AssertJ nâng cao, JaCoCo, Testcontainers, Spring Boot slice test, <code class="inline">@MockitoBean</code> thay <code class="inline">@MockBean</code>, Awaitility cho test bất đồng bộ.</li>
+    </ul>
+
+    <h3>Vì sao phải viết test?</h3>
+
+    <ul>
+      <li><strong>Bắt regression</strong> — sửa chỗ này làm vỡ chỗ khác là chuyện thường ngày; test chạy trong vài giây sẽ chỉ ra ngay thay vì để bug ra production.</li>
+      <li><strong>Tự tin refactor</strong> — không có test, "dọn code" là canh bạc. Có test, bạn đổi cấu trúc bên trong thoải mái miễn hành vi không đổi.</li>
+      <li><strong>Tài liệu sống</strong> — test mô tả chính xác method nhận gì, trả gì, ném lỗi khi nào; khác comment, test cũ đi là fail ngay nên không thể "nói dối".</li>
+      <li><strong>Cổng chất lượng cho CI</strong> — pipeline chạy <code class="inline">mvn test</code>; test đỏ thì không cho merge. Đây là cách duy nhất để một nhóm nhiều người giữ chất lượng.</li>
+      <li><strong>Thiết kế tốt hơn</strong> — code khó test thường là code dính chặt (hard-coded <code class="inline">new</code>, static, thời gian hệ thống). Viết test trước buộc bạn tách dependency ra, thường là thiết kế tốt hơn.</li>
+    </ul>
+
+    <h3>Test pyramid — phân tầng test</h3>
+
+    <p>Ba tầng test với tỷ lệ và chi phí rất khác nhau. Viết nhiều test ở tầng rẻ, nhanh; chỉ giữ một ít test đầu-cuối:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tầng</th><th>Tỷ lệ gợi ý</th><th>Tốc độ</th><th>Kiểm tra gì</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Unit test</strong></td><td>~70%</td><td>mili-giây</td><td>Một method/class, mọi dependency được mock</td><td><code class="inline">CalculatorTest</code>, <code class="inline">OrderServiceTest</code></td></tr>
+        <tr><td><strong>Integration test</strong></td><td>~20%</td><td>giây</td><td>Nhiều tầng thật: service + DB/HTTP/file</td><td>Service chạy với DB thật (H2/Testcontainers)</td></tr>
+        <tr><td><strong>End-to-end (e2e)</strong></td><td>~10%</td><td>phút</td><td>Cả hệ thống từ ngoài vào, qua API/UI</td><td>Gọi REST API như client thật</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nghịch lý "ice cream cone" — rất nhiều e2e, ít unit — là thảm hoạ vận hành: bộ test chậm, fail lung tung và không ai dám sửa. Nguyên tắc: càng lên cao càng ít test, càng xuống thấp càng nhiều test.</p>
+
+    <div class="note warn"><strong>Code trong trang này không chạy bằng <code class="inline">java Testing.java</code>.</strong> JUnit/Mockito/AssertJ là thư viện ngoài — cần project Maven/Gradle với dependency ở scope <code class="inline">test</code> (xem mục 12 và <a href="maven-gradle.html">4.3 Maven &amp; Gradle</a>). Các snippet viết đúng API JUnit 5 / Mockito 5 / AssertJ 3, để bạn đọc và áp dụng vào dự án. Vì không có project thật trong trang nên không có output chạy thật; chỗ nào ghi <code class="inline">Tests run: …</code> là mô tả dạng dòng tổng kết của Maven Surefire khi mọi test pass.</div>
+
+    <h3>Cách học hiệu quả nhất</h3>
+    <ol>
+      <li>Đọc mục 2–3 rồi tự viết test cho đúng những method bạn từng viết ở các chủ đề trước (<code class="inline">Calculator</code>, tính tiền đơn hàng).</li>
+      <li>Làm mục <a href="#bai-tap">Bài tập</a> theo thứ tự; mỗi bài tự viết trước khi mở đáp án.</li>
+      <li>Học Mockito (mục 5) bằng cách lấy chính <code class="inline">OrderService</code> của dự án "quản lý đơn hàng" ra mock repository.</li>
+      <li>Trước phỏng vấn, ôn <a href="#cheat-sheet">Cheat sheet</a> và các câu ở <a href="#qa">Interview Q&amp;A</a>.</li>
+      <li>Bật coverage (mục 8) một lần để thấy chỗ trống — nhưng đừng lấy nó làm mục tiêu.</li>
+    </ol>
+
+    <h3 id="goc-nodejs">Góc Node.js — Jest/Mocha vs JUnit</h3>
+
+    <p>Nếu bạn đến từ Node.js, bạn đã quen viết test với Jest/Mocha và <code class="inline">describe/it</code>. JUnit 5 giữ ý tưởng tương tự nhưng khác cách tổ chức: test là method trong class, vòng đời do framework quản lý, mock là <em>object</em> chứ không phải module.</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>Jest / Mocha (Node.js)</th><th>JUnit 5 (Java)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Runner</td><td><code class="inline">jest</code>/<code class="inline">mocha</code> cài qua npm, chạy <code class="inline">npm test</code></td><td>JUnit là thư viện; Maven Surefire (hoặc Gradle Test) là runner — chạy <code class="inline">mvn test</code></td></tr>
+        <tr><td>Nhóm test</td><td><code class="inline">describe()</code>/<code class="inline">it()</code> lồng nhau</td><td>Class + <code class="inline">@Test</code>; nhóm bằng <code class="inline">@Nested</code> + <code class="inline">@DisplayName</code></td></tr>
+        <tr><td>Setup mỗi test</td><td><code class="inline">beforeEach</code>/<code class="inline">afterEach</code></td><td><code class="inline">@BeforeEach</code>/<code class="inline">@AfterEach</code></td></tr>
+        <tr><td>Setup một lần</td><td><code class="inline">beforeAll</code>/<code class="inline">afterAll</code></td><td><code class="inline">@BeforeAll</code>/<code class="inline">@AfterAll</code> (phải <code class="inline">static</code> mặc định)</td></tr>
+        <tr><td>Mock module/object</td><td><code class="inline">jest.mock("./orderRepository")</code>, <code class="inline">jest.spyOn()</code></td><td><code class="inline">Mockito.mock(OrderRepository.class)</code> / <code class="inline">@Mock</code> — mock <strong>object theo class/interface</strong>, không có khái niệm mock module</td></tr>
+        <tr><td>Stub kết quả</td><td><code class="inline">mockResolvedValue()</code>, <code class="inline">mockReturnValue()</code></td><td><code class="inline">when(repo.save(any())).thenReturn(order)</code></td></tr>
+        <tr><td>Assertion</td><td><code class="inline">expect().toBe/toEqual</code>; <code class="inline">chai</code>; <code class="inline">node:assert</code></td><td><code class="inline">Assertions</code> của JUnit (cơ bản) + AssertJ (fluent, gần với <code class="inline">expect</code>)</td></tr>
+        <tr><td>Bộ dữ liệu</td><td><code class="inline">it.each</code>/<code class="inline">test.each</code></td><td><code class="inline">@ParameterizedTest</code> + <code class="inline">@CsvSource</code>/<code class="inline">@MethodSource</code></td></tr>
+        <tr><td>Bất đồng bộ</td><td><code class="inline">async/await</code>, <code class="inline">await expect(...).rejects</code></td><td>Test chạy sync; async phải chờ <code class="inline">CompletableFuture</code>/Awaitility (nhận biết)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="codeblock">
+      <pre><code>// Jest / Mocha - cau truc quen thuoc
+describe("Calculator", () =&gt; {
+  let calculator;
+  beforeEach(() =&gt; { calculator = new Calculator(); });
+
+  it("cong hai so", () =&gt; {
+    expect(calculator.add(2, 3)).toBe(5);
+  });
+
+  it("nem loi khi chia cho 0", () =&gt; {
+    expect(() =&gt; calculator.divide(10, 0)).toThrow("chia cho 0");
+  });
+});
+
+// Mock module
+jest.mock("./orderRepository");
+const repository = require("./orderRepository");
+repository.save.mockResolvedValue({ id: 1 });</code></pre>
+    </div>
+
+    <div class="note"><strong>Khác biệt lớn nhất về tư duy:</strong> Jest mock <em>module</em> (cả file), Mockito mock <em>object</em> (một class/interface) — nên code Java cần dependency được tiêm qua constructor thay vì <code class="inline">require</code> trực tiếp. Java cũng không có "matcher" kiểu <code class="inline">expect(...).toEqual</code> tự động in diff đẹp; AssertJ (mục 6) cho cảm giác gần nhất. Chi tiết so sánh <code class="inline">describe/it</code> với <code class="inline">@Nested</code> nằm trong <a href="#qa">Q&amp;A</a> câu 2.</div>
+
+    <h2 id="junit-co-ban">2. JUnit 5 cơ bản — <code class="inline">@Test</code> &amp; assertions <span class="badge b-junior">Junior+</span></h2>
+
+    <p>JUnit 5 là thư viện test chuẩn của Java hiện đại, gồm 3 phần: <strong>JUnit Platform</strong> (nền tảng chạy test), <strong>JUnit Jupiter</strong> (API mới với <code class="inline">@Test</code>, assertions — phần bạn dùng hằng ngày) và <strong>JUnit Vintage</strong> (chạy test JUnit 4 cũ, mức nhận biết). Maven chỉ cần đúng artifact tổng <code class="inline">junit-jupiter</code> là có đủ.</p>
+
+    <p>Một test method có dạng tối giản sau — không cần <code class="inline">main</code>, không cần in ra gì:</p>
+
+    <div class="signature">
+      <span class="sig-muted">@Test</span> <span class="sig-muted">@DisplayName("mô tả")</span> <span class="tok-typ">void</span> <span class="sig-var">tenMethod</span><span class="sig-muted">() { /* Arrange - Act - Assert */ }</span>
+    </div>
+
+    <h3>Test đầu tiên — Calculator &amp; CalculatorTest</h3>
+
+    <p>Quy ước: code cần test nằm ở <code class="inline">src/main/java</code>, test nằm ở <code class="inline">src/test/java</code> cùng package (chi tiết ở <a href="#to-chuc-test">mục 12</a>). Class dưới test:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+class Calculator {
+    int add(int a, int b) {
+        return a + b;
+    }
+
+    int divide(int a, int b) {
+        if (b == 0) {
+            throw new ArithmeticException("chia cho 0");
+        }
+        return a / b;
+    }
+
+    BigDecimal giaSauGiam(BigDecimal gia, int phanTramGiam) {
+        if (gia == null || gia.signum() &lt; 0) {
+            throw new IllegalArgumentException("gia khong hop le");
+        }
+        if (phanTramGiam &lt; 0 || phanTramGiam &gt; 100) {
+            throw new IllegalArgumentException("phan tram giam khong hop le: " + phanTramGiam);
+        }
+        BigDecimal giam = gia.multiply(BigDecimal.valueOf(phanTramGiam))
+                .divide(BigDecimal.valueOf(100));
+        return gia.subtract(giam);
+    }
+}</code></pre>
+    </div>
+
+    <p>Và test tương ứng. Chú ý test class để package-private, tên method là câu mô tả hành vi:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    @DisplayName("2 + 3 = 5")
+    void add_haiSoDuong_traVeTong() {
+        assertEquals(5, calculator.add(2, 3));
+    }
+
+    @Test
+    void divide_chiaChoKhong_nemArithmeticException() {
+        ArithmeticException ex = assertThrows(
+                ArithmeticException.class,
+                () -&gt; calculator.divide(10, 0));
+        assertEquals("chia cho 0", ex.getMessage());
+    }
+
+    @Test
+    void giaSauGiam_10PhanTram_traVe180000() {
+        BigDecimal ketQua = calculator.giaSauGiam(new BigDecimal("200000"), 10);
+        assertEquals(0, new BigDecimal("180000").compareTo(ketQua));
+    }
+}
+// mvn test -&gt; Tests run: 3, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+    </div>
+
+    <p>Ba điều cần nhớ ngay từ ví dụ:</p>
+    <ul>
+      <li><code class="inline">assertEquals(expected, actual)</code> — <strong>expected đứng trước</strong>. Đặt ngược vẫn pass/fail đúng nhưng khi fail message sẽ ngược (expected: giá trị thực tế), gây hoang mang.</li>
+      <li>Với <code class="inline">BigDecimal</code>, <code class="inline">assertEquals</code> so sánh cả <em>scale</em>: <code class="inline">180000</code> không equals <code class="inline">180000.0</code>. Cách đúng là so bằng <code class="inline">compareTo(...) == 0</code>, hoặc dùng AssertJ <code class="inline">isEqualByComparingTo</code> (mục 6).</li>
+      <li><code class="inline">assertThrows(LoạiLỗi.class, lambda)</code> trả về exception để bạn kiểm tra tiếp <code class="inline">getMessage()</code>. Lambda phải là biểu thức không trả về gì (kiểu <code class="inline">Executable</code>) — đừng truyền method có return.</li>
+    </ul>
+
+    <h3>Các assertion hay dùng</h3>
+
+    <table>
+      <thead>
+        <tr><th>Assertion</th><th>Kiểm tra</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">assertEquals(expected, actual)</code></td><td>Bằng nhau (dùng <code class="inline">equals</code>)</td><td><code class="inline">assertEquals(5, calculator.add(2, 3))</code></td></tr>
+        <tr><td><code class="inline">assertNotEquals(a, b)</code></td><td>Khác nhau</td><td><code class="inline">assertNotEquals(0, order.tongTien().signum())</code></td></tr>
+        <tr><td><code class="inline">assertTrue / assertFalse</code></td><td>Đúng/sai</td><td><code class="inline">assertTrue(gia.signum() &gt;= 0)</code></td></tr>
+        <tr><td><code class="inline">assertNull / assertNotNull</code></td><td>Null hay không</td><td><code class="inline">assertNotNull(order.user())</code></td></tr>
+        <tr><td><code class="inline">assertSame / assertNotSame</code></td><td>Cùng một object (so reference)</td><td><code class="inline">assertSame(user, order.user())</code></td></tr>
+        <tr><td><code class="inline">assertThrows</code></td><td>Có ném đúng loại exception</td><td><code class="inline">assertThrows(ArithmeticException.class, () -&gt; ...)</code></td></tr>
+        <tr><td><code class="inline">assertDoesNotThrow</code></td><td>Chạy êm, không ném gì</td><td><code class="inline">assertDoesNotThrow(() -&gt; calculator.divide(10, 2))</code></td></tr>
+        <tr><td><code class="inline">assertAll</code></td><td>Chạy hết nhiều assertion, báo đủ lỗi</td><td>Xem ví dụ bên dưới</td></tr>
+        <tr><td><code class="inline">assertArrayEquals</code></td><td>So từng phần tử mảng</td><td><code class="inline">assertArrayEquals(new int[]{1, 2}, mang)</code></td></tr>
+        <tr><td><code class="inline">assertInstanceOf</code></td><td>Đúng kiểu (Java 16+ nhận cả biến)</td><td><code class="inline">assertInstanceOf(Money.class, ketQua)</code></td></tr>
+      </tbody>
+    </table>
+
+    <p><code class="inline">assertAll</code> đặc biệt hữu ích khi một kết quả có nhiều thứ để kiểm tra: nếu không gộp, assertion đầu fail sẽ dừng test ngay và bạn phải sửa rồi chạy lại mới thấy lỗi tiếp theo.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@Test
+void giaSauGiam_giaAm_thongTinLoiDayDu() {
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -&gt; calculator.giaSauGiam(new BigDecimal("-1"), 10));
+
+    assertAll(
+            () -&gt; assertEquals("gia khong hop le", ex.getMessage()),
+            () -&gt; assertNull(ex.getCause()),
+            () -&gt; assertTrue(ex.getMessage().contains("gia")));
+}</code></pre>
+    </div>
+
+    <h3>Vòng đời test: @BeforeEach, @AfterEach, @BeforeAll, @AfterAll</h3>
+
+    <p>Bốn annotation lo phần setup/cleanup. Điểm phải nhớ: <code class="inline">@BeforeAll</code>/<code class="inline">@AfterAll</code> chạy <strong>một lần</strong> cho cả class nên phải là <code class="inline">static</code> (trừ khi dùng <code class="inline">@TestInstance(PER_CLASS)</code>); còn <code class="inline">@BeforeEach</code>/<code class="inline">@AfterEach</code> chạy quanh <strong>từng</strong> test.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class LifecycleTest {
+    @BeforeAll
+    static void chayMotLanTruocTatCa() {
+        // mo tai nguyen dung chung: connection, file mau, server test (phai static)
+    }
+
+    @BeforeEach
+    void chayTruocMoiTest() {
+        // tao du lieu sach cho tung test: list rong, object moi
+    }
+
+    @AfterEach
+    void chaySauMoiTest() {
+        // don dep: xoa file tam, reset state
+    }
+
+    @AfterAll
+    static void chayMotLanSauTatCa() {
+        // dong tai nguyen dung chung
+    }
+
+    @Test
+    void testThuNhat() { }
+
+    @Test
+    @Disabled("Cho tinh nang moi, bat lai khi lam xong")
+    void testChuaLam() { }
+}</code></pre>
+    </div>
+
+    <h3>Vòng đời mặc định: mỗi test một instance mới</h3>
+
+    <p>Đây là điều nhiều bạn mới học JUnit bất ngờ: JUnit <strong>không dùng chung một object test</strong>. Mặc định (<code class="inline">PER_METHOD</code>), mỗi test method JUnit tạo một instance mới của test class. Vì vậy field instance luôn là dữ liệu sạch cho từng test — bạn không cần "reset" gì cả:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class FreshInstanceTest {
+    List&lt;String&gt; items = new ArrayList&lt;&gt;();
+
+    @Test
+    void test1_themPhanTu() {
+        items.add("a");
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    void test2_khongThayDuLieuCuaTestKhac() {
+        // JUnit tao instance MOI cho moi test -&gt; items luon rong
+        assertEquals(0, items.size());
+    }
+}
+// mvn test -&gt; Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+    </div>
+
+    <p>Hệ quả thực chiến: <strong>đừng dùng field <code class="inline">static</code> mutable trong test class</strong> — nó phá vỡ cơ chế cách ly này và tạo ra test phụ thuộc thứ tự (xem <a href="#pitfalls">mục 11</a>). Muốn chia sẻ state tốn kém giữa các test (hiếm khi cần), dùng <code class="inline">@TestInstance(TestInstance.Lifecycle.PER_CLASS)</code> — khi đó <code class="inline">@BeforeAll</code> không cần <code class="inline">static</code> nữa.</p>
+
+    <p>Hai lỗi compile rất hay gặp khi mới dùng JUnit 5 — thiếu static import:</p>
+
+    <div class="errblock">
+      <pre>CalculatorTest.java:9: error: cannot find symbol
+        assertEquals(5, calculator.add(2, 3));
+        ^
+  symbol:   method assertEquals(int,int)
+  location: class CalculatorTest
+1 error</pre>
+    </div>
+
+    <p>Sửa bằng <code class="inline">import static org.junit.jupiter.api.Assertions.assertEquals;</code>. Và cẩn thận trộn JUnit 4 với JUnit 5 — import <code class="inline">org.junit.Test</code> sẽ không tồn tại nếu project chỉ có Jupiter:</p>
+
+    <div class="errblock">
+      <pre>CalculatorTest.java:3: error: package org.junit does not exist
+import org.junit.Test;
+                  ^
+1 error</pre>
+    </div>
+
+    <div class="note">JUnit 5 dùng <code class="inline">org.junit.jupiter.api.Test</code>, còn JUnit 4 dùng <code class="inline">org.junit.Test</code>. Đây là câu hỏi phỏng vấn phổ biến: <code class="inline">@Before</code>/<code class="inline">@After</code> của JUnit 4 đã đổi tên thành <code class="inline">@BeforeEach</code>/<code class="inline">@AfterEach</code>, mở rộng bằng <code class="inline">@ExtendWith</code> thay vì <code class="inline">@RunWith</code>.</div>
+
+    <h2 id="parameterized-test">3. Parameterized test — một test, nhiều bộ dữ liệu <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Khi nhiều case chỉ khác nhau ở <strong>dữ liệu</strong> mà logic kiểm tra giống hệt, đừng copy-paste nhiều test method — hãy dùng <code class="inline">@ParameterizedTest</code>. Mỗi bộ dữ liệu là một lần chạy riêng, fail ở case nào Surefire chỉ đúng case đó, và tên test hiển thị đủ tham số để bạn biết ngay.</p>
+
+    <p>Ba nguồn dữ liệu dùng nhiều nhất:</p>
+    <ul>
+      <li><strong><code class="inline">@ValueSource</code></strong> — một danh sách giá trị cùng kiểu (int, long, String, char, boolean...). Hợp với kiểm tra "mọi giá trị X đều chạy êm/đúng tính chất".</li>
+      <li><strong><code class="inline">@CsvSource</code></strong> — nhiều cột, mỗi dòng một case; giá trị được <strong>tự chuyển kiểu</strong> sang tham số method (String → <code class="inline">int</code>, <code class="inline">BigDecimal</code> nếu bạn khai báo <code class="inline">BigDecimal</code>...). Tiện nhất cho bảng dữ liệu nhỏ. Dùng nháy đơn <code class="inline">'...'</code> nếu giá trị chứa dấu phẩy.</li>
+      <li><strong><code class="inline">@MethodSource</code></strong> — trỏ tới một method <code class="inline">static</code> trả về <code class="inline">Stream</code>/<code class="inline">Collection</code> các <code class="inline">Arguments</code>. Dùng khi dữ liệu phức tạp, cần tính toán, hoặc muốn đặt tên case.</li>
+    </ul>
+
+    <p>Ví dụ với chính <code class="inline">Calculator.giaSauGiam</code> — dùng bảng giá/giảm giá, đúng tinh thần "tính tiền đơn hàng":</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.math.BigDecimal;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @ParameterizedTest(name = "giam {0}% khong nem loi")
+    @ValueSource(ints = {0, 1, 50, 100})
+    void giaSauGiam_phanTramHopLe_chayEm(int phanTram) {
+        assertDoesNotThrow(() -&gt;
+                calculator.giaSauGiam(new BigDecimal("100000"), phanTram));
+    }
+
+    @ParameterizedTest(name = "{0} giam {1}% = {2}")
+    @CsvSource({
+            "200000, 10, 180000",
+            "120000, 25,  90000",
+            "100000,  0, 100000",
+            "100000, 100, 0"
+    })
+    void giaSauGiam_traVeDung(String gia, int phanTram, String mongDoi) {
+        BigDecimal ketQua = calculator.giaSauGiam(new BigDecimal(gia), phanTram);
+        assertEquals(0, new BigDecimal(mongDoi).compareTo(ketQua));
+    }
+
+    @ParameterizedTest
+    @MethodSource("duLieuChia")
+    void divide_traVeThuong(int a, int b, int mongDoi) {
+        assertEquals(mongDoi, calculator.divide(a, b));
+    }
+
+    static Stream&lt;Arguments&gt; duLieuChia() {
+        return Stream.of(
+                Arguments.of(10, 2, 5),
+                Arguments.of(7, 2, 3),
+                Arguments.of(-10, 2, -5),
+                Arguments.of(0, 5, 0));
+    }
+}
+// mvn test -&gt; Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+// (4 lan @ValueSource + 4 dong @CsvSource + 4 case @MethodSource)</code></pre>
+    </div>
+
+    <p>Vài chi tiết thực chiến:</p>
+    <ul>
+      <li><code class="inline">name = "{0} ..."</code> là <em>display name template</em>: <code class="inline">{index}</code> là số thứ tự, <code class="inline">{0}, {1}...</code> là tham số. Đặt tên tốt giúp nhìn báo cáo biết ngay case nào sai.</li>
+      <li><code class="inline">@MethodSource("duLieuChia")</code> bắt buộc method <code class="inline">static</code> (trừ khi class dùng <code class="inline">PER_CLASS</code>), và nếu method trùng tên với test method thì có thể bỏ chữ <code class="inline">("duLieuChia")</code>.</li>
+      <li>Chuyển kiểu của <code class="inline">@CsvSource</code> dùng conversion service của JUnit: <code class="inline">int</code>, <code class="inline">long</code>, <code class="inline">boolean</code>, enum... đều được. Nếu khai báo tham số là <code class="inline">BigDecimal</code> thì không tự convert — nên nhận <code class="inline">String</code> rồi <code class="inline">new BigDecimal(...)</code> như ví dụ, tường minh hơn.</li>
+      <li>Còn <code class="inline">@EnumSource</code>, <code class="inline">@NullSource</code>, <code class="inline">@EmptySource</code> (nhận biết) cho enum và case null/empty.</li>
+    </ul>
+
+    <div class="note warn"><strong>Đừng tham parameterized:</strong> nếu mỗi case cần logic kiểm tra khác nhau (case này assert message, case kia verify call), hãy viết test riêng — nhồi <code class="inline">if/else</code> trong parameterized test sẽ khó đọc hơn nhiều lần so với vài method tách biệt.</div>
+
+    <h2 id="test-tot">4. Viết test tốt — AAA &amp; F.I.R.S.T. <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Test chạy được chưa đủ; test còn phải <strong>dễ đọc, dễ sửa và đáng tin</strong>. Ba quy tắc dưới đây áp dụng cho mọi ngôn ngữ, và là thứ nhà tuyển dụng soi khi đọc test của bạn.</p>
+
+    <h3>AAA — Arrange, Act, Assert</h3>
+
+    <p>Một test tốt có 3 phần rõ ràng, nên cách nhau bằng dòng trống:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@Test
+void giaSauGiam_10PhanTram_truDung() {
+    // Arrange: chuan bi du lieu, khong chua logic nghiep vu
+    Calculator calculator = new Calculator();
+    BigDecimal gia = new BigDecimal("200000");
+
+    // Act: MOT dong goi dung method can test
+    BigDecimal sauGiam = calculator.giaSauGiam(gia, 10);
+
+    // Assert: kiem tra ket qua mong doi
+    assertEquals(0, new BigDecimal("180000").compareTo(sauGiam));
+}</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Arrange</strong> — dựng dữ liệu, mock, object. Nếu Arrange dài hơn 10 dòng, đó là tín hiệu nên tách builder/helper hoặc thiết kế lại API.</li>
+      <li><strong>Act</strong> — gọi đúng <em>một</em> hành vi. Nếu phải gọi 2-3 method nghiệp vụ để test một thứ, bạn đang test quá nhiều trong một test.</li>
+      <li><strong>Assert</strong> — kiểm tra kết quả, không kiểm tra cách làm (xem bên dưới).</li>
+    </ul>
+
+    <h3>Đặt tên test</h3>
+
+    <p>Trong JUnit, tên method test là một phần tài liệu — khi test fail, dòng đầu tiên bạn đọc chính là nó. Công thức thực dụng: <code class="inline">method_dieuKien_ketQuaMongDoi</code> (tiếng Anh cũng phổ biến: <code class="inline">should...When...</code>).</p>
+
+    <table>
+      <thead>
+        <tr><th>Không nên</th><th>Nên</th><th>Vì sao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">test1()</code>, <code class="inline">testOrder()</code>, <code class="inline">testTaoDon2()</code></td><td><code class="inline">taoDon_gioHangRong_nemIllegalArgumentException()</code></td><td>Đọc tên biết ngay hành vi + điều kiện + kết quả</td></tr>
+        <tr><td><code class="inline">shouldWork()</code>, <code class="inline">testHappyCase()</code></td><td><code class="inline">giaSauGiam_10PhanTram_traVe180000()</code></td><td>"Work" là gì? Không ai biết đúng sai thế nào</td></tr>
+        <tr><td><code class="inline">testTinhTienVaGuiEmail()</code></td><td>Tách thành 2 test riêng</td><td>Chữ "va" trong tên = 2 hành vi trong 1 test</td></tr>
+        <tr><td><code class="inline">kiemTra()</code> chung chung</td><td><code class="inline">divide_chiaChoKhong_nemArithmeticException()</code></td><td>Fail message hiện tên test, tên tốt = tự chẩn đoán</td></tr>
+      </tbody>
+    </table>
+
+    <p>Với tên dài hoặc tiếng Việt có dấu, dùng <code class="inline">@DisplayName("...")</code> — tên hiển thị trong báo cáo, còn tên method giữ ASCII để dễ gõ.</p>
+
+    <h3>Một hành vi một test &amp; test behavior, không test implementation</h3>
+
+    <p>Hai lỗi thiết kế test nghiêm trọng nhất:</p>
+    <ul>
+      <li><strong>Một test nhiều hành vi</strong> — khi fail không biết hỏng cái gì; khi pass không biết đang bảo vệ cái gì. Dấu hiệu: nhiều nhóm Act-Assert trong cùng method, hoặc tên có "và".</li>
+      <li><strong>Test dính vào triển khai</strong> — assert rằng hàm nội bộ A gọi hàm nội bộ B, đúng thứ tự, đúng số lần. Code refactor (đổi cách tính nhưng kết quả không đổi) làm test đỏ hàng loạt, team bắt đầu "sửa test cho xanh" — mất giá trị bảo vệ.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">// Test huong HANH VI: chi quan tam ket qua, refactor thoai mai
+Order order = service.taoDon(user, List.of(sp1, sp2));
+assertEquals(0, new BigDecimal("360000").compareTo(order.tongTien()));
+
+// Test dinh vao TRIEN KHAI: vo khi doi cach tinh du ket qua van dung
+verify(tinhToan).cong(new BigDecimal("120000"), new BigDecimal("240000"));
+InOrder.verify(logger).info("tinh tien");
+// -&gt; khong nen: minh hoa loi test implementation</code></pre>
+    </div>
+
+    <div class="note">Ngoại lệ chính đáng của "test interaction": khi interaction <strong>là</strong> hành vi cần bảo vệ — ví dụ bắt buộc phải gọi <code class="inline">repository.save</code> hoặc gửi email. Lúc đó <code class="inline">verify</code> là hợp lệ (mục 5).</div>
+
+    <h3>F.I.R.S.T. — mức nhận biết</h3>
+
+    <table>
+      <thead>
+        <tr><th>Chữ</th><th>Nghĩa</th><th>Vi phạm thường gặp</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>F</strong>ast</td><td>Unit test chạy mili-giây</td><td>Gọi DB/HTTP thật, <code class="inline">Thread.sleep</code> trong unit test</td></tr>
+        <tr><td><strong>I</strong>solated / Independent</td><td>Test này không phụ thuộc test khác, chạy thứ tự nào cũng được</td><td>Dùng chung field <code class="inline">static</code>, data giữa các test</td></tr>
+        <tr><td><strong>R</strong>epeatable</td><td>Chạy lần nào cũng cùng kết quả, mọi máy, mọi lúc</td><td>Phụ thuộc <code class="inline">LocalDate.now()</code>, <code class="inline">Random</code>, timezone, mạng</td></tr>
+        <tr><td><strong>S</strong>elf-validating</td><td>Test tự kết luận pass/fail, không cần người đọc log</td><td>In giá trị ra rồi "nhìn mắt thường" — không phải test</td></tr>
+        <tr><td><strong>T</strong>imely</td><td>Viết cùng lúc (hoặc trước) khi viết code</td><td>Để 6 tháng sau viết test cho code đã rối</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="mockito">5. Mockito — mock &amp; verify <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Unit test muốn nhanh và độc lập thì không được gọi DB, HTTP, file, đồng hồ hệ thống thật. <strong>Mockito</strong> tạo object giả cho các dependency đó: giả lập kết quả trả về (<em>stub</em>) và kiểm tra tương tác (<em>verify</em>).</p>
+
+    <p>Lấy đúng project "quản lý đơn hàng". Domain tối giản bằng record:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+record User(String email, String ten) { }
+
+record Product(String ten, BigDecimal gia) { }
+
+record Order(User user, List&lt;Product&gt; sanPham, BigDecimal tongTien) { }
+
+interface OrderRepository {
+    Order save(Order order);
+    Optional&lt;Order&gt; findById(long id);
+}
+
+class OrderService {
+    private final OrderRepository repository;
+
+    OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+
+    Order taoDon(User user, List&lt;Product&gt; sanPham) {
+        if (user == null) {
+            throw new IllegalArgumentException("Thieu nguoi mua");
+        }
+        if (sanPham == null || sanPham.isEmpty()) {
+            throw new IllegalArgumentException("Don hang phai co san pham");
+        }
+        BigDecimal tong = sanPham.stream()
+                .map(Product::gia)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return repository.save(new Order(user, List.copyOf(sanPham), tong));
+    }
+
+    Order layDon(long id) {
+        return repository.findById(id)
+                .orElseThrow(() -&gt; new IllegalArgumentException("Khong tim thay don " + id));
+    }
+}</code></pre>
+    </div>
+
+    <p>Test với đầy đủ vũ khí: <code class="inline">@Mock</code>, <code class="inline">@InjectMocks</code>, <code class="inline">@ExtendWith(MockitoExtension.class)</code>, <code class="inline">when/thenAnswer</code>, <code class="inline">verify</code> và <code class="inline">ArgumentCaptor</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock
+    OrderRepository repository;
+
+    @InjectMocks
+    OrderService service;
+
+    @Test
+    void taoDon_duLieuHopLe_luuVaTraVeDon() {
+        User user = new User("an@example.com", "An");
+        List&lt;Product&gt; sanPham = List.of(
+                new Product("Ao thun", new BigDecimal("120000")),
+                new Product("Quan jean", new BigDecimal("240000")));
+        when(repository.save(any(Order.class)))
+                .thenAnswer(invocation -&gt; invocation.getArgument(0));
+
+        Order order = service.taoDon(user, sanPham);
+
+        assertEquals(0, new BigDecimal("360000").compareTo(order.tongTien()));
+        ArgumentCaptor&lt;Order&gt; captor = ArgumentCaptor.forClass(Order.class);
+        verify(repository).save(captor.capture());
+        assertSame(user, captor.getValue().user());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void taoDon_gioHangRong_nemLoi_vaKhongGoiRepository() {
+        User user = new User("an@example.com", "An");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -&gt; service.taoDon(user, List.of()));
+
+        assertEquals("Don hang phai co san pham", ex.getMessage());
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void layDon_khongTimThay_nemIllegalArgumentException() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -&gt; service.layDon(99L));
+
+        assertEquals("Khong tim thay don 99", ex.getMessage());
+        verify(repository).findById(99L);
+    }
+}
+// mvn test -&gt; Tests run: 3, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+    </div>
+
+    <h3>Giải mã các annotation</h3>
+    <ul>
+      <li><code class="inline">@ExtendWith(MockitoExtension.class)</code> — kích hoạt Mockito cho class test: tự khởi tạo <code class="inline">@Mock</code>, tự tiêm vào <code class="inline">@InjectMocks</code> (theo constructor trước, rồi setter/field), và bật <strong>strict stubs</strong>. Không có extension thì <code class="inline">@Mock</code> vẫn <code class="inline">null</code> — phải gọi <code class="inline">MockitoAnnotations.openMocks(this)</code> trong <code class="inline">@BeforeEach</code>.</li>
+      <li><code class="inline">@Mock</code> — tạo instance giả của interface/class, mọi method trả về mặc định (<code class="inline">null</code>, 0, false, list rỗng).</li>
+      <li><code class="inline">@InjectMocks</code> — tạo object <code class="inline">OrderService</code> thật và tiêm các mock vào.</li>
+      <li><strong>Strict stubs</strong> — stub mà test không dùng sẽ làm test fail bằng <code class="inline">UnnecessaryStubbingException</code>. Đây là feature, không phải bug: nó giúp bạn xoá stub chết khi code đổi. Cần nới lỏng cục bộ thì <code class="inline">@MockitoSettings(strictness = Strictness.LENIENT)</code> (nhận biết).</li>
+    </ul>
+
+    <h3>Bảng lệnh Mockito hay dùng</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stub giá trị trả về</td><td><code class="inline">when(repository.findById(1L)).thenReturn(Optional.of(order));</code></td></tr>
+        <tr><td>Stub ném lỗi</td><td><code class="inline">when(repository.save(any())).thenThrow(new DataAccessException());</code></td></tr>
+        <tr><td>Stub động theo tham số</td><td><code class="inline">thenAnswer(invocation -&gt; invocation.getArgument(0))</code></td></tr>
+        <tr><td>Stub method void / spy</td><td><code class="inline">doThrow(...).when(spy).method();</code> — tránh gọi code thật</td></tr>
+        <tr><td>Kiểm tra có gọi</td><td><code class="inline">verify(repository).save(any(Order.class));</code></td></tr>
+        <tr><td>Đếm số lần gọi</td><td><code class="inline">verify(repository, times(2)).save(any());</code> / <code class="inline">never()</code> / <code class="inline">atLeastOnce()</code></td></tr>
+        <tr><td>Đảm bảo không tương tác</td><td><code class="inline">verifyNoInteractions(repository);</code></td></tr>
+        <tr><td>Đảm bảo không còn gọi nào khác</td><td><code class="inline">verifyNoMoreInteractions(repository);</code> — dùng sau các verify</td></tr>
+        <tr><td>Bắt argument</td><td><code class="inline">ArgumentCaptor.forClass(Order.class)</code> + <code class="inline">captor.capture()</code></td></tr>
+        <tr><td>Matcher linh hoạt</td><td><code class="inline">any()</code>, <code class="inline">anyLong()</code>, <code class="inline">eq(1L)</code>, <code class="inline">argThat(o -&gt; o.tongTien().signum() &gt; 0)</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Matcher phải dùng cho TẤT CẢ tham số của một lời gọi.</strong> Trộn tham số thật với matcher sẽ lỗi <code class="inline">InvalidUseOfMatchersException</code>: viết <code class="inline">verify(repo).save(order)</code> (không matcher) hoặc <code class="inline">verify(repo).save(eq(order))</code> (có matcher) — đừng trộn <code class="inline">save(order, any())</code> kiểu nửa vời.</div>
+
+    <h3>Khi nào mock, khi nào không</h3>
+
+    <table>
+      <thead>
+        <tr><th>Nên mock</th><th>Không nên mock</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Dependency qua biên hệ thống: repository/DB, HTTP client, message queue, file, email, <code class="inline">Clock</code>, nguồn random</td><td><strong>Value object / record / DTO</strong> (<code class="inline">User</code>, <code class="inline">Product</code>, <code class="inline">Money</code>, <code class="inline">Order</code>) — tạo object thật, rẻ và không bao giờ null bất ngờ</td></tr>
+        <tr><td>Interface của bạn bọc thư viện ngoài (để không mock thư viện bên thứ ba)</td><td>Thư viện JDK: <code class="inline">List</code>, <code class="inline">Map</code>, <code class="inline">BigDecimal</code>, <code class="inline">Optional</code> — dùng thật</td></tr>
+        <tr><td>Thành phần chậm/không ổn định: gọi mạng, chờ đợi</td><td>Class đơn giản thuần logic — mock nó chỉ làm test dính vào triển khai</td></tr>
+        <tr><td>Khi <em>hợp đồng</em> là "phải gọi đúng" (gửi email, lưu DB)</td><td>Khi chỉ cần kết quả — tạo fake object đơn giản (in-memory) đôi khi sạch hơn mock</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Spy — dùng ở mức nhận biết.</strong> <code class="inline">Mockito.spy(realObject)</code> tạo object bọc quanh object thật: method không stub sẽ chạy code thật. Bẫy kinh điển: <code class="inline">when(spy.tinh())</code> gọi luôn method thật; muốn stub mà không chạy code thật phải dùng <code class="inline">doReturn(100).when(spy).tinh()</code>. Spy rất dễ tạo test mong manh — ưu tiên inject dependency hoặc tách class hơn là spy. Còn <code class="inline">Mockito.mockStatic(...)</code> (mock static, nhận biết) chỉ nên dùng để bọc legacy code, đừng dùng trong code mới.</div>
+
+    <h2 id="assertj">6. AssertJ — assertion dễ đọc <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">Assertions</code> của JUnit đủ dùng cho kiểm tra đơn giản, nhưng khi so sánh collection, object lồng nhau hay exception thì rất khó đọc. <strong>AssertJ</strong> cho chuỗi method fluent bắt đầu bằng <code class="inline">assertThat</code>, gợi ý method theo kiểu dữ liệu và in diff chi tiết khi fail — gần với cảm giác <code class="inline">expect(...)</code> của Jest.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    void giaSauGiam_traVeDung_voiAssertJ() {
+        BigDecimal sauGiam = calculator.giaSauGiam(new BigDecimal("200000"), 10);
+
+        // isEqualByComparingTo: so BigDecimal bang compareTo (bo qua scale)
+        assertThat(sauGiam).isEqualByComparingTo("180000");
+    }
+
+    @Test
+    void danhSachSanPham_extracting() {
+        List&lt;Product&gt; sanPham = List.of(
+                new Product("Ao thun", new BigDecimal("120000")),
+                new Product("Quan jean", new BigDecimal("240000")));
+
+        assertThat(sanPham)
+                .hasSize(2)
+                .extracting(Product::ten)
+                .containsExactly("Ao thun", "Quan jean");
+
+        assertThat(sanPham).allSatisfy(p -&gt; assertThat(p.gia()).isPositive());
+    }
+
+    @Test
+    void chiaChoKhong_nemLoi_voiAssertJ() {
+        assertThatThrownBy(() -&gt; calculator.divide(10, 0))
+                .isInstanceOf(ArithmeticException.class)
+                .hasMessage("chia cho 0");
+    }
+
+    @Test
+    void kiemTraMem_softAssertions() {
+        User user = new User("an@example.com", "An");
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(user.ten()).isEqualTo("An");
+        softly.assertThat(user.email()).contains("@");
+        softly.assertAll();   // bat buoc: khong goi thi loi bi bo qua
+    }
+}
+// mvn test -&gt; Tests run: 4, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+    </div>
+
+    <p>Vì sao AssertJ dễ đọc hơn — so sánh trực tiếp:</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần kiểm tra</th><th>JUnit Assertions</th><th>AssertJ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>BigDecimal không lệch scale</td><td><code class="inline">assertEquals(0, expected.compareTo(actual))</code></td><td><code class="inline">assertThat(actual).isEqualByComparingTo(expected)</code></td></tr>
+        <tr><td>List đúng thứ tự</td><td>So từng phần tử / <code class="inline">assertIterableEquals</code></td><td><code class="inline">assertThat(list).containsExactly(...)</code></td></tr>
+        <tr><td>Trích field của list</td><td>Vòng lặp thủ công</td><td><code class="inline">extracting(Product::ten)</code></td></tr>
+        <tr><td>Exception + message</td><td><code class="inline">assertThrows</code> rồi <code class="inline">assertEquals</code> message</td><td><code class="inline">assertThatThrownBy(...).hasMessageContaining(...)</code></td></tr>
+        <tr><td>Chạy hết assertion, báo đủ lỗi</td><td><code class="inline">assertAll(...)</code></td><td><code class="inline">SoftAssertions</code> / <code class="inline">assertSoftly</code></td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li><strong><code class="inline">containsExactly</code> vs <code class="inline">containsOnly</code> vs <code class="inline">containsExactlyInAnyOrder</code></strong> — lần lượt: đúng thứ tự, đủ phần tử không cần thứ tự, đủ phần tử bất kỳ thứ tự. Dùng <code class="inline">containsOnly</code>/<code class="inline">containsExactlyInAnyOrder</code> khi thứ tự không phải hợp đồng.</li>
+      <li><strong>Ngoại lệ:</strong> <code class="inline">assertThatCode(() -&gt; ...).doesNotThrowAnyException()</code>, <code class="inline">assertThatExceptionOfType(...)</code> là biến thể hay dùng.</li>
+      <li><strong>So sánh object lồng nhau:</strong> <code class="inline">assertThat(actual).usingRecursiveComparison().isEqualTo(expected)</code> so từng field đệ quy, bỏ qua việc class chưa cài <code class="inline">equals</code>. Tên cũ <code class="inline">isEqualToComparingFieldByFieldRecursively</code> đã bị loại bỏ ở các bản AssertJ mới — gặp tên cũ này thì chuyển sang <code class="inline">usingRecursiveComparison()</code>.</li>
+      <li><strong>Soft assertions</strong> chạy tiếp dù assertion trước fail, gom hết lỗi rồi báo một lần — nhưng <strong>quên <code class="inline">softly.assertAll()</code> thì mọi lỗi bị nuốt im lặng</strong>. Đừng lạm dụng: một test vẫn nên tập trung một hành vi.</li>
+    </ul>
+
+    <div class="note"><strong>Kết hợp cả hai:</strong> nhiều dự án dùng JUnit <code class="inline">Assertions</code> cho kiểm tra đơn giản và AssertJ cho list/exception. Chỉ cần thống nhất trong team — trộn lẫn mỗi test một kiểu sẽ khó review.</div>
+
+    <h2 id="tdd">7. TDD — red-green-refactor <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>TDD (Test-Driven Development)</strong> là viết test <em>trước</em> code, theo vòng lặp 3 bước rất ngắn:</p>
+
+    <ol>
+      <li><strong>Red</strong> — viết một test nhỏ cho hành vi chưa có; chạy cho chắc là nó <span class="tok-typ">fail</span> (chưa compile hoặc assert sai). Test đỏ chứng minh test thực sự kiểm tra được điều cần kiểm tra.</li>
+      <li><strong>Green</strong> — viết code <em>đơn giản nhất</em> đủ để test xanh. Chưa cần đẹp, chưa cần tối ưu.</li>
+      <li><strong>Refactor</strong> — dọn code khi toàn bộ test vẫn xanh: đổi tên, tách method, bỏ lặp. Test là lưới an toàn.</li>
+    </ol>
+
+    <p>Ví dụ chu trình cho <code class="inline">Calculator.giaSauGiam</code> — giả sử method chưa tồn tại. Bước 1, viết test trước (đỏ vì chưa compile):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// RED: chua co method giaSauGiam -&gt; khong compile, dung la mong doi
+@Test
+void giaSauGiam_10PhanTram_traVe180000() {
+    BigDecimal ketQua = calculator.giaSauGiam(new BigDecimal("200000"), 10);
+    assertEquals(0, new BigDecimal("180000").compareTo(ketQua));
+}</code></pre>
+    </div>
+
+    <p>Bước 2 — code tối thiểu để xanh (chưa validate gì cả):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// GREEN: phien ban don gian nhat chay qua test
+BigDecimal giaSauGiam(BigDecimal gia, int phanTramGiam) {
+    BigDecimal giam = gia.multiply(BigDecimal.valueOf(phanTramGiam))
+            .divide(BigDecimal.valueOf(100));
+    return gia.subtract(giam);
+}</code></pre>
+    </div>
+
+    <p>Bước 3, thêm một test mới cho case lỗi — lại đỏ vì chưa validate, rồi bổ sung validation để xanh:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// RED lan 2: percent ngoai 0..100 phai nem loi
+@Test
+void giaSauGiam_phanTramNgoaiKhoang_nemIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class,
+            () -&gt; calculator.giaSauGiam(new BigDecimal("100000"), 150));
+}
+
+// GREEN lan 2: them guard clause (khong doi test cu)
+BigDecimal giaSauGiam(BigDecimal gia, int phanTramGiam) {
+    if (phanTramGiam &lt; 0 || phanTramGiam &gt; 100) {
+        throw new IllegalArgumentException("phan tram giam khong hop le: " + phanTramGiam);
+    }
+    BigDecimal giam = gia.multiply(BigDecimal.valueOf(phanTramGiam))
+            .divide(BigDecimal.valueOf(100));
+    return gia.subtract(giam);
+}
+// REFACTOR: tach hang so, dat ten bien ro -&gt; chay lai toan bo test, van xanh</code></pre>
+    </div>
+
+    <p>Điểm cốt lõi: code chỉ được coi là "xong" khi có test chứng minh. TDD cũng là cách học thiết kế API — bạn đóng vai người <em>gọi</em> method trước khi viết nó, nên tên và tham số tự nhiên dễ dùng hơn.</p>
+
+    <table>
+      <thead>
+        <tr><th>TDD hợp với</th><th>TDD không hợp với</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Logic nghiệp vụ có quy tắc rõ: tính tiền, giảm giá, validate, state machine</td><td>Khám phá công nghệ mới (spike) — chưa biết API thì chưa viết test được</td></tr>
+        <tr><td>Bug fix: viết test tái hiện bug (đỏ), sửa cho xanh — bug không tái phát</td><td>UI/đồ hoạ, prototype vứt đi</td></tr>
+        <tr><td>Team đã có văn hoá test, CI chạy nhanh</td><td>Legacy code rối chưa có test — thường phải viết <em>characterization test</em> (test khoá hành vi hiện tại) trước</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Đừng giáo điều.</strong> TDD là công cụ, không phải tôn giáo. Trong thực tế nhiều team viết code trước rồi test sau (test-after) cho phần đã rõ, và dùng TDD cho phần logic phức tạp. Điều <strong>bắt buộc</strong> là có test — thứ tự viết linh hoạt.</div>
+
+    <h2 id="coverage">8. Coverage &amp; JaCoCo <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Coverage</strong> (độ bao phủ) là tỷ lệ code được test chạy qua, đo tự động bởi công cụ. Hai chỉ số cần phân biệt:</p>
+
+    <ul>
+      <li><strong>Line coverage</strong> — bao nhiêu % dòng code đã được chạy ít nhất một lần.</li>
+      <li><strong>Branch coverage</strong> — bao nhiêu % <em>nhánh</em> (<code class="inline">if/else</code>, <code class="inline">switch</code>, toán tử 3 ngôi, <code class="inline">&amp;&amp;</code>/<code class="inline">||</code>) đã được chạy. Một <code class="inline">if</code> không có <code class="inline">else</code> cần cả 2 nhánh mới đạt 100% branch.</li>
+    </ul>
+
+    <p>Ví dụ line coverage có thể 100% mà branch chỉ 50%: dòng <code class="inline">if</code> có chạy nhưng nhánh điều kiện sai chưa bao giờ được thử.</p>
+
+    <h3>JaCoCo trong Maven</h3>
+
+    <p>JaCoCo chuẩn của Java: chạy cùng <code class="inline">mvn test</code>, sinh báo cáo HTML ở <code class="inline">target/site/jacoco/index.html</code>:</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;plugin&gt;
+  &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+  &lt;artifactId&gt;jacoco-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.8.12&lt;/version&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;prepare-agent&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+    &lt;execution&gt;
+      &lt;id&gt;report&lt;/id&gt;
+      &lt;phase&gt;test&lt;/phase&gt;
+      &lt;goals&gt;
+        &lt;goal&gt;report&lt;/goal&gt;
+      &lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+    </div>
+
+    <div class="note">Version plugin chỉ là ví dụ — tra bản mới trên Maven Central. Dùng Spring Boot thì thêm plugin là đủ, dependency JUnit/Mockito/AssertJ đã có trong <code class="inline">spring-boot-starter-test</code>.</div>
+
+    <h3>Coverage là chỉ số hỗ trợ, không phải mục tiêu</h3>
+
+    <p>Coverage trả lời câu hỏi "chỗ nào <strong>chưa</strong> được test" — nó không trả lời "test có tốt không". Đoạn test sau làm coverage tăng mà không bảo vệ gì cả:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Anti-pattern: "test" chi de du coverage, khong assert gi
+@Test
+void goiChoCoCoverage() {
+    calculator.giaSauGiam(new BigDecimal("100000"), 10);   // chay nhung khong kiem tra
+}</code></pre>
+    </div>
+
+    <p>Dòng code trên đã "được test" theo báo cáo, nhưng nếu method trả sai, nếu quên validate — test vẫn xanh. Vài lời khuyên thực dụng:</p>
+    <ul>
+      <li>Đừng đặt KPI kiểu "phải 90% coverage" — team sẽ viết test rác cho đủ số. Nếu công ty bắt buộc ngưỡng, hãy chặn ở mức thấp (ví dụ 60–70%) và tăng dần theo vùng code mới.</li>
+      <li>Ưu tiên coverage cho <strong>logic nghiệp vụ</strong> (tính tiền, chính sách giảm giá, validate) và <strong>branch coverage</strong> — nơi bug ẩn. Code generated, getter/setter, DTO thuần không cần ép coverage.</li>
+      <li>Khi đọc báo cáo, soi các dòng <strong>đỏ</strong> (chưa chạy) và các nhánh chưa đi qua — thường là case lỗi, case biên mà bạn quên. Đó mới là giá trị thật của công cụ.</li>
+      <li>Mức nhận biết: <strong>mutation testing</strong> (PIT) — công cụ tự sửa code (đảo điều kiện, đổi toán tử) rồi xem test có bắt được không; đây mới là thước đo test <em>chất lượng</em>, nhưng chạy chậm nên ít dùng hằng ngày.</li>
+    </ul>
+
+    <h2 id="unit-integration">9. Unit test vs Integration test <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Hai loại test khác nhau ở <strong>phạm vi</strong> và <strong>cái gì là thật</strong>, kéo theo tốc độ và độ tin cậy khác nhau:</p>
+
+    <table>
+      <thead>
+        <tr><th>Tiêu chí</th><th>Unit test</th><th>Integration test</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Phạm vi</td><td>Một class/method</td><td>Nhiều tầng: service + repository + DB/HTTP</td></tr>
+        <tr><td>Dependency</td><td>Mock hết (Mockito)</td><td>Thật phần lớn (DB thật/in-memory, HTTP server giả)</td></tr>
+        <tr><td>Tốc độ</td><td>Mili-giây — chạy nghìn test vài giây</td><td>Giây đến phút — cần dựng context, DB</td></tr>
+        <tr><td>Độ tin cậy</td><td>Thấp hơn: mock có thể khác hành vi thật</td><td>Cao hơn: kiểm tra cả cấu hình, SQL, serialization</td></tr>
+        <tr><td>Khi fail</td><td>Khoanh vùng hẹp, biết ngay class nào</td><td>Phải điều tra: mapping, transaction, môi trường...</td></tr>
+        <tr><td>Ví dụ</td><td><code class="inline">CalculatorTest</code>, <code class="inline">OrderServiceTest</code> với mock repository</td><td><code class="inline">OrderRepository</code> chạy trên DB thật, gọi API qua <code class="inline">MockMvc</code>/TestRestTemplate</td></tr>
+      </tbody>
+    </table>
+
+    <p>Nhớ lại test pyramid (mục 1): nhiều unit test vì nhanh và rẻ; integration test đủ để bắt các lỗi mà mock không thể tạo ra (SQL sai, mapping sai, transaction sai); e2e rất ít vì chậm và dễ flaky.</p>
+
+    <h3>Spring Boot — slice test &amp; full context (nhận biết, học sâu ở GĐ5)</h3>
+
+    <p>Spring Boot cho chọn đúng "lát" cần load thay vì dựng cả ứng dụng, giúp integration test nhanh hơn nhiều:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">@SpringBootTest   // load TOAN BO context -&gt; cham nhung that nhat
+@WebMvcTest       // chi tang web: controller, filter, JSON -&gt; mock service
+@DataJpaTest      // chi JPA + database (mac dinh H2 in-memory)
+@JsonTest         // chi Jackson: serialize/deserialize</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">@SpringBootTest</code></strong> — dựng cả ApplicationContext; dùng cho integration test quan trọng, đừng dùng tràn lan vì rất chậm.</li>
+      <li><strong>Slice test</strong> (<code class="inline">@WebMvcTest</code>, <code class="inline">@DataJpaTest</code>, <code class="inline">@JsonTest</code>) — chỉ load phần liên quan, dependency ngoài được mock/thay bằng H2.</li>
+      <li><strong>Testcontainers</strong> (nhận biết) — chạy DB/Redis/Kafka thật trong Docker ngay từ test. Chậm hơn H2 nhưng loại bỏ khác biệt "H2 chạy được, PostgreSQL production lại lỗi". Đánh đổi: cần Docker trong máy/CI.</li>
+      <li><strong><code class="inline">@MockitoBean</code> thay <code class="inline">@MockBean</code></strong> — Spring Framework 6.2 (Spring Boot 3.4+) đánh dấu <code class="inline">@MockBean</code>/<code class="inline">@SpyBean</code> deprecated và khuyến nghị chuyển sang <code class="inline">@MockitoBean</code>/<code class="inline">@MockitoSpyBean</code>; các bản Spring Boot 4 về sau dùng <code class="inline">@MockitoBean</code> là chuẩn. Đọc đề cũ thấy <code class="inline">@MockBean</code> thì biết ngay đó là tài liệu trước 3.4.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code class="java">// Trong test Spring Boot: thay bean that bang mock
+@MockitoBean
+OrderRepository repository;   // thay cho @MockBean (da deprecated)</code></pre>
+    </div>
+
+    <div class="note">Lộ trình backend (REST API, Spring Boot, JPA, Testcontainers) nằm ở <a href="roadmap.html#phase-5">Giai đoạn 5 — Backend stack</a>. Trang này chỉ cần bạn nắm khái niệm và biết unit test là trọng tâm đi làm hằng ngày.</div>
+
+    <h2 id="production">10. Testing trong production <span class="badge b-prod">Production</span></h2>
+
+    <p>Unit test hằng ngày khác bài tập ở chỗ: người đọc test là đồng nghiệp (và chính bạn 6 tháng sau). Vài thói quen tạo khác biệt lớn:</p>
+
+    <ul>
+      <li><strong>Test đọc như tài liệu.</strong> Tên test + dữ liệu Arrange + assertion chính là đặc tả. Một người mới đọc <code class="inline">CalculatorTest</code> phải hiểu method làm gì mà không cần mở <code class="inline">Calculator</code>.</li>
+      <li><strong>Test cả exception, không chỉ happy path.</strong> Hỏi "dữ liệu xấu nhất là gì?" — null, rỗng, âm, 0, quá lớn, sai định dạng, phần tử trùng. Mỗi case lỗi quan trọng nên có một test (<code class="inline">assertThrows</code>, thường kèm kiểm tra message để chắc đúng lỗi).</li>
+      <li><strong>Test chạy trong CI.</strong> Test chỉ chạy trên máy bạn thì gần như vô giá trị. Pipeline gọi <code class="inline">mvn -B test</code>, test đỏ chặn merge.</li>
+      <li><strong>Test phải chạy ổn định (deterministic).</strong> Không phụ thuộc thời gian, mạng, thứ tự chạy. Xem 2 mục dưới.</li>
+    </ul>
+
+    <h3>Loại bỏ phụ thuộc thời gian &amp; random</h3>
+
+    <p>Đây là nguồn flaky test số một. Code gọi <code class="inline">LocalDate.now()</code> hoặc <code class="inline">new Random()</code> bên trong không thể test ổn định — hãy <strong>tiêm (inject)</strong> phụ thuộc vào. Với thời gian, JDK có sẵn <code class="inline">Clock</code> (học ở <a href="date-time.html">3.5 java.time</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">// Code production: nhan Clock tu ngoai
+class OrderService {
+    private final Clock clock;
+
+    OrderService(Clock clock) {
+        this.clock = clock;
+    }
+
+    LocalDate ngayGiaoDuKien() {
+        return LocalDate.now(clock).plusDays(3);
+    }
+}
+
+// Test: Clock co dinh -&gt; ket qua co dinh, chay nam nao cung vay
+@Test
+void ngayGiaoDuKien_cong3Ngay() {
+    Clock coDinh = Clock.fixed(Instant.parse("2026-10-03T00:00:00Z"), ZoneOffset.UTC);
+    OrderService service = new OrderService(coDinh);
+
+    assertEquals(LocalDate.of(2026, 10, 6), service.ngayGiaoDuKien());
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">// Random: neu nghiep vu cho phep thi tiem generator; neu phai Random that thi seed co dinh
+Random random = new Random(42);      // cung seed -&gt; cung day so -&gt; test on dinh
+int maDon = random.nextInt(1_000_000);
+
+// Tot hon: tiem gia tri thay vi sinh ngau nhien
+Supplier&lt;String&gt; sinhMaDon = () -&gt; "DH-00042";   // luc test tiem gia tri co dinh</code></pre>
+    </div>
+
+    <h3>Flaky test — test lúc xanh lúc đỏ</h3>
+
+    <p>Flaky test là test fail ngẫu nhiên dù không ai sửa code. Nguy hiểm hơn test không có: team bắt đầu "chạy lại cho xanh" và bỏ qua tín hiệu đỏ thật. Bốn nguyên nhân phổ biến và cách xử lý:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nguyên nhân</th><th>Dấu hiệu</th><th>Cách sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Phụ thuộc thứ tự / state dùng chung</td><td>Chạy một mình thì pass, chạy cả class thì fail</td><td>Bỏ field <code class="inline">static</code>, dựng dữ liệu trong <code class="inline">@BeforeEach</code></td></tr>
+        <tr><td>Thời gian / timezone / random</td><td>Fail theo giờ trong ngày, khác máy</td><td>Inject <code class="inline">Clock</code>, seed cố định, chỉ định timezone trong test</td></tr>
+        <tr><td><code class="inline">Thread.sleep</code> chờ việc bất đồng bộ</td><td>Máy chậm là fail, máy nhanh thì pass</td><td>Chờ theo điều kiện (Awaitility), dùng <code class="inline">CompletableFuture.get(timeout)</code>, không sleep</td></tr>
+        <tr><td>Mạng / service ngoài / port</td><td>Fail khi CI chậm hoặc service bên kia chết</td><td>Mock ở biên hoặc Testcontainers; không gọi production trong test</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Quy tắc vàng với flaky test:</strong> tìm nguyên nhân gốc, không rerun cho tới khi xanh. Nếu chưa sửa được ngay, quarantine (tạm <code class="inline">@Disabled("flaky -&gt; ticket #123")</code>) và coi đó là bug P1 — vì mỗi lần rerun là một lần bạn dạy cả team phớt lờ đèn đỏ.</div>
+
+    <h2 id="pitfalls">11. Pitfalls — lỗi thường gặp khi viết test <span class="badge b-prod">Production</span></h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Biểu hiện</th><th>Cách sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Test phụ thuộc thứ tự</strong></td><td>Chạy cả class thì fail, chạy riêng thì pass; kết quả đổi khi đổi thứ tự</td><td>Mỗi test tự dựng dữ liệu trong <code class="inline">@BeforeEach</code>; không dùng static mutable; JUnit tạo instance mới mỗi test nên đừng phá cơ chế đó</td></tr>
+        <tr><td><strong>Dùng chung mutable state</strong></td><td>Field <code class="inline">static List</code>/<code class="inline">static Map</code> trong test class bị test khác thấy</td><td>Chuyển thành field instance; nếu cần tài nguyên chung thì chỉ đọc, không sửa</td></tr>
+        <tr><td><strong>Nhiều assert không liên quan trong một test</strong></td><td>Fail ở assert đầu, các assert sau không bao giờ chạy; tên test không mô tả hết</td><td>Một hành vi một test; dùng <code class="inline">assertAll</code>/soft assertions chỉ cho nhiều field của <em>cùng</em> một kết quả</td></tr>
+        <tr><td><strong>Mock mọi thứ</strong></td><td>Mock cả value object, collection, class thuần logic; test chỉ kiểm tra mock chứ không kiểm tra code</td><td>Chỉ mock ở biên hệ thống (DB, HTTP, Clock); object dữ liệu tạo thật</td></tr>
+        <tr><td><strong><code class="inline">Thread.sleep</code> trong test</strong></td><td>Test chậm, vẫn flaky vì sleep không đảm bảo điều kiện đã xảy ra</td><td>Chờ theo điều kiện (Awaitility/polling), hoặc thiết kế lại để không cần chờ</td></tr>
+        <tr><td><strong>Test private method (qua reflection)</strong></td><td>Reflection mong manh, đổi tên là vỡ; test dính triển khai</td><td>Test qua public API; logic phức tạp thì tách thành class/package-private rồi test trực tiếp</td></tr>
+        <tr><td><strong>Sửa test để che bug</strong></td><td>Code đổi làm test đỏ, sửa expected theo code mới mà không kiểm tra đúng/sai</td><td>Trước khi sửa test, trả lời: hành vi mới có đúng yêu cầu không? Nếu bug thì sửa code, không sửa test</td></tr>
+        <tr><td><strong>Quên case null / rỗng / biên</strong></td><td>Chỉ test happy path; production nổ ở <code class="inline">null</code>, list rỗng, số 0, chuỗi trắng</td><td>Với mỗi method, liệt kê 3 nhóm: bình thường, biên, sai — mỗi nhóm ít nhất một test</td></tr>
+        <tr><td><strong>Test khẳng định quá yếu</strong></td><td><code class="inline">assertNotNull</code>/<code class="inline">assertTrue(size &gt;= 0)</code> — sai thế nào cũng pass</td><td>Khẳng định giá trị cụ thể hoặc tính chất chặt: nội dung, số lượng, message lỗi</td></tr>
+        <tr><td><strong>Bắt exception rồi không assert</strong></td><td><code class="inline">try { ... } catch (Exception e) { }</code> — test luôn xanh</td><td>Dùng <code class="inline">assertThrows</code>; nếu muốn test không ném thì dùng <code class="inline">assertDoesNotThrow</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="to-chuc-test">12. Tổ chức test &amp; dependency Maven <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Maven chia source code và test thành hai cây riêng; test <strong>không bao giờ</strong> được đóng gói vào artifact production. Đặt test cùng package với class cần test để dùng được package-private:</p>
+
+    <div class="codeblock">
+      <pre><code>src/
+  main/java/com/example/order/
+    Calculator.java
+    Order.java
+    OrderRepository.java
+    OrderService.java
+    Product.java
+    User.java
+  test/java/com/example/order/
+    CalculatorTest.java
+    OrderServiceTest.java</code></pre>
+    </div>
+
+    <p>Dependency (snippet — version chỉ là ví dụ, tra bản mới nhất trên Maven Central; xem thêm <a href="maven-gradle.html">4.3 Maven &amp; Gradle</a>):</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+    &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+    &lt;version&gt;5.11.4&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+  &lt;/dependency&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.mockito&lt;/groupId&gt;
+    &lt;artifactId&gt;mockito-junit-jupiter&lt;/artifactId&gt;
+    &lt;version&gt;5.14.2&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+  &lt;/dependency&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.assertj&lt;/groupId&gt;
+    &lt;artifactId&gt;assertj-core&lt;/artifactId&gt;
+    &lt;version&gt;3.27.3&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+    </div>
+
+    <ul>
+      <li><strong><code class="inline">scope test</code></strong> — dependency chỉ có mặt khi compile/chạy test, không lọt vào jar production. Đây là lý do code <code class="inline">src/main</code> không được <code class="inline">import org.junit...</code>.</li>
+      <li><strong><code class="inline">junit-jupiter</code></strong> là artifact tổng (gồm api, params, engine). <strong><code class="inline">mockito-junit-jupiter</code></strong> kéo theo <code class="inline">mockito-core</code> — cần nó để dùng <code class="inline">@ExtendWith(MockitoExtension.class)</code>. <strong><code class="inline">assertj-core</code></strong> độc lập.</li>
+      <li><strong>Spring Boot</strong> thì chỉ cần <code class="inline">spring-boot-starter-test</code> (scope test) — đã quản lý version cho JUnit, Mockito, AssertJ, JSONassert.</li>
+      <li><strong>Quy ước tên:</strong> Maven Surefire mặc định chạy các class khớp <code class="inline">Test*</code>, <code class="inline">*Test</code>, <code class="inline">*Tests</code>, <code class="inline">*TestCase</code>. Cứ đặt <code class="inline">TenClassTest</code>. Nếu dùng JUnit 5 + Surefire quá cũ có thể không chạy test — khai báo plugin version mới (ví dụ 3.5.2) khi cần.</li>
+    </ul>
+
+    <p>Lệnh chạy test:</p>
+
+    <div class="codeblock">
+      <pre><code>mvn test                                    # chay toan bo test
+mvn test -Dtest=CalculatorTest              # chi mot class
+mvn test -Dtest=CalculatorTest#giaSauGiam*  # chi cac method khop pattern
+mvn -B test                                 # che do CI (khong mau, log sach)</code></pre>
+    </div>
+
+    <p>Trong IDE (IntelliJ/Eclipse/VS Code) chỉ cần bấm nút chạy cạnh test class; debug test bằng breakpoint như code thường — đây là cách nhanh nhất để tìm nguyên nhân khi test đỏ.</p>
+
+    <h2 id="vi-du">13. Ví dụ đầy đủ — Calculator &amp; OrderService <span class="badge b-prod">Production</span></h2>
+
+    <p>Ghép mọi thứ đã học vào một test class hoàn chỉnh: <code class="inline">@BeforeEach</code>, JUnit assertions, AssertJ, parameterized và exception. Giả định <code class="inline">Calculator</code> ở <a href="#junit-co-ban">mục 2</a> nằm trong <code class="inline">src/main/java</code>:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class CalculatorTest {
+    private Calculator calculator;
+
+    @BeforeEach
+    void setUp() {
+        calculator = new Calculator();
+    }
+
+    @Test
+    @DisplayName("cong hai so")
+    void add_haiSoDuong_traVeTong() {
+        assertThat(calculator.add(2, 3)).isEqualTo(5);
+    }
+
+    @Test
+    void divide_chiaChoKhong_nemArithmeticException() {
+        assertThatThrownBy(() -&gt; calculator.divide(10, 0))
+                .isInstanceOf(ArithmeticException.class)
+                .hasMessage("chia cho 0");
+    }
+
+    @ParameterizedTest(name = "{0} giam {1}% = {2}")
+    @CsvSource({
+            "200000, 10, 180000",
+            "120000, 25,  90000",
+            "100000,  0, 100000"
+    })
+    void giaSauGiam_traVeDung(String gia, int phanTram, String mongDoi) {
+        BigDecimal ketQua = calculator.giaSauGiam(new BigDecimal(gia), phanTram);
+        assertThat(ketQua).isEqualByComparingTo(mongDoi);
+    }
+
+    @Test
+    void giaSauGiam_phanTramNgoai0Den100_nemIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -&gt; calculator.giaSauGiam(new BigDecimal("100000"), 150));
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(ex.getMessage()).contains("khong hop le");
+        softly.assertThat(ex.getCause()).isNull();
+        softly.assertAll();
+        assertTrue(ex.getMessage().contains("150"));
+    }
+}
+// mvn test -&gt; Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+// (3 @Test + 3 lan chay cua @ParameterizedTest)</code></pre>
+    </div>
+
+    <p>Còn <code class="inline">OrderService</code> — mock repository, verify tương tác, bắt argument và kiểm tra tổng tiền bằng AssertJ (<code class="inline">Order</code>, <code class="inline">User</code>, <code class="inline">Product</code>, <code class="inline">OrderRepository</code> như <a href="#mockito">mục 5</a>):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+    @Mock
+    OrderRepository repository;
+
+    @InjectMocks
+    OrderService service;
+
+    @Test
+    void taoDon_congDungTongTien_vaLuuXuongRepository() {
+        when(repository.save(any(Order.class)))
+                .thenAnswer(invocation -&gt; invocation.getArgument(0));
+
+        Order order = service.taoDon(
+                new User("an@example.com", "An"),
+                List.of(new Product("Ao thun", new BigDecimal("120000")),
+                        new Product("Quan jean", new BigDecimal("240000"))));
+
+        assertThat(order.tongTien()).isEqualByComparingTo("360000");
+        verify(repository).save(order);
+    }
+}
+// mvn test -&gt; Tests run: 1, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+    </div>
+
+    <div class="note"><strong>Bộ khung tối thiểu để tự luyện:</strong> tạo project Maven, copy pom ở mục 12, đặt <code class="inline">Calculator</code> vào <code class="inline">src/main/java</code>, test vào <code class="inline">src/test/java</code>, chạy <code class="inline">mvn test</code>. Trong lúc làm <a href="#bai-tap">bài tập</a>, bạn có thể chạy từng test và cố tình làm sai để thấy màu đỏ.</div>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Unit test là gì? Vì sao phải viết?</summary>
+      <div class="answer">Unit test là test tự động kiểm tra một đơn vị nhỏ (thường là một method/class), chạy nhanh và không phụ thuộc hệ thống ngoài. Viết test để bắt regression khi sửa code, tự tin refactor, làm tài liệu sống mô tả hành vi, và làm cổng chất lượng trong CI. Cần nhớ: test không làm code đúng — nó chỉ giúp bạn <em>biết</em> code đúng hay sai; thiết kế vẫn là việc của bạn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. JUnit 5 khác JUnit 4 ở điểm nào?</summary>
+      <div class="answer">JUnit 5 gồm Platform (nền chạy), Jupiter (API mới) và Vintage (chạy test JUnit 4 cũ). Khác biệt chính: annotation chuyển từ <code class="inline">org.junit.Test</code> sang <code class="inline">org.junit.jupiter.api.Test</code>; <code class="inline">@Before</code>/<code class="inline">@After</code> đổi thành <code class="inline">@BeforeEach</code>/<code class="inline">@AfterEach</code>; mở rộng bằng <code class="inline">@ExtendWith</code> thay cho <code class="inline">@RunWith</code>; assertions rõ ràng hơn; hỗ trợ lambda, <code class="inline">@ParameterizedTest</code>, <code class="inline">@Nested</code>. Về dependency, Maven chỉ cần artifact tổng <code class="inline">junit-jupiter</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. <code class="inline">@BeforeEach</code> khác <code class="inline">@BeforeAll</code> thế nào?</summary>
+      <div class="answer"><code class="inline">@BeforeEach</code> chạy trước <strong>mỗi</strong> test method — nơi dựng dữ liệu sạch cho từng test, không cần static. <code class="inline">@BeforeAll</code> chạy <strong>một lần</strong> trước tất cả test — dùng cho tài nguyên đắt (mở kết nối, dựng server test), bắt buộc <code class="inline">static</code> trừ khi class dùng <code class="inline">@TestInstance(PER_CLASS)</code>. <code class="inline">@AfterEach</code>/<code class="inline">@AfterAll</code> đối xứng để dọn dẹp. Quy tắc thực dụng: mặc định dùng <code class="inline">@BeforeEach</code>; chỉ <code class="inline">@BeforeAll</code> khi thật sự tốn kém.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. JUnit tạo instance test class như thế nào? Vì sao điều này quan trọng?</summary>
+      <div class="answer">Mặc định (<code class="inline">PER_METHOD</code>), mỗi test method được chạy trên một instance <strong>mới</strong> của test class. Vì vậy field instance luôn sạch, các test độc lập và chạy theo thứ tự nào cũng được. Điều này cũng có nghĩa: field <code class="inline">static</code> mutable sẽ phá vỡ cách ly và gây test phụ thuộc thứ tự — đừng dùng. Muốn giữ state giữa các test (hiếm), dùng <code class="inline">@TestInstance(TestInstance.Lifecycle.PER_CLASS)</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">assertEquals(expected, actual)</code> — đặt sai thứ tự có sao không?</summary>
+      <div class="answer">Pass/fail vẫn đúng vì so sánh đối xứng, nhưng khi fail JUnit in <code class="inline">expected: &lt;...&gt; but was: &lt;...&gt;</code> theo đúng thứ tự bạn truyền. Đặt actual trước expected sẽ khiến message đảo ngược, người debug hiểu sai. Luôn truyền <strong>expected trước, actual sau</strong>. JUnit còn nhận tham số message thứ ba, hoặc <code class="inline">Supplier&lt;String&gt;</code> để tránh tạo chuỗi khi test pass.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. Test exception thế nào? <code class="inline">assertThrows</code> hoạt động ra sao?</summary>
+      <div class="answer">Dùng <code class="inline">assertThrows(LoaiException.class, () -&gt; ...)</code>: JUnit chạy lambda, pass nếu ném đúng loại exception, fail nếu không ném hoặc ném loại khác. Nó <strong>trả về</strong> exception đã ném để bạn assert tiếp <code class="inline">getMessage()</code>/<code class="inline">getCause()</code>. Với trường hợp phải chạy êm, dùng <code class="inline">assertDoesNotThrow</code>. Không dùng try/catch + cờ boolean trong test — vừa dài vừa dễ bỏ sót khi exception không được ném.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">assertAll</code> để làm gì?</summary>
+      <div class="answer">Gộp nhiều assertion vào một test và chạy <strong>hết</strong> thay vì dừng ở lỗi đầu tiên, sau đó báo cáo tất cả lỗi cùng lúc. Hữu ích khi kiểm tra nhiều field của cùng một kết quả (message, cause, mã lỗi). Tuy nhiên vẫn phải giữ tinh thần "một hành vi một test" — <code class="inline">assertAll</code> không phải giấy phép nhồi nhiều hành vi khác nhau vào một test.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">@ParameterizedTest</code> là gì? Kể các nguồn dữ liệu chính.</summary>
+      <div class="answer">Là test chạy cùng logic với nhiều bộ dữ liệu; mỗi bộ là một lần chạy riêng và được báo fail riêng. Nguồn dữ liệu: <code class="inline">@ValueSource</code> (danh sách một kiểu), <code class="inline">@CsvSource</code> (bảng nhiều cột, tự chuyển kiểu cơ bản), <code class="inline">@MethodSource</code> (method static trả <code class="inline">Stream</code>/<code class="inline">Collection</code> các <code class="inline">Arguments</code>), ngoài ra <code class="inline">@EnumSource</code>, <code class="inline">@NullSource</code>, <code class="inline">@EmptySource</code>. Dùng <code class="inline">name = "...{0}..."</code> để tên case dễ đọc. Nếu mỗi case cần logic kiểm tra khác nhau thì viết test riêng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. AAA là gì? Có bắt buộc viết comment không?</summary>
+      <div class="answer">AAA = Arrange (chuẩn bị dữ liệu/mock), Act (gọi đúng một hành vi), Assert (kiểm tra kết quả). Comment AAA không bắt buộc, nhưng nên tách 3 phần bằng dòng trống để mắt nhận ra ngay. Nếu phần Arrange chiếm quá nhiều dòng hoặc có nhiều Act, đó là tín hiệu test quá lớn — tách test hoặc tách helper.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. Đặt tên test thế nào cho tốt?</summary>
+      <div class="answer">Tên nói rõ <em>hành vi + điều kiện + kết quả mong đợi</em>: <code class="inline">taoDon_gioHangRong_nemIllegalArgumentException</code>, <code class="inline">giaSauGiam_10PhanTram_traVe180000</code>. Tránh <code class="inline">test1</code>, <code class="inline">testOrder</code>, <code class="inline">shouldWork</code>. Vì test fail sẽ hiện tên method, tên tốt giúp chẩn đoán mà không cần mở code. Tên dài/tiếng Việt có dấu thì để trong <code class="inline">@DisplayName</code>, tên method giữ ASCII.</div>
+    </details>
+
+    <h3>Test double &amp; Mockito</h3>
+
+    <details class="qa">
+      <summary>Câu 11. mock, stub, spy, fake, dummy khác nhau thế nào?</summary>
+      <div class="answer">Đều là <strong>test double</strong> (object giả thay cho object thật): <em>dummy</em> — object rỗng chỉ để đủ tham số; <em>stub</em> — trả dữ liệu đã định (<code class="inline">when...thenReturn</code>); <em>mock</em> — stub + ghi lại tương tác để <code class="inline">verify</code>; <em>spy</em> — bọc quanh object thật, method không stub chạy code thật; <em>fake</em> — cài đặt đơn giản nhưng hoạt động thật (repository in-memory). Mockito tạo mock/stub/spy; fake do bạn tự viết.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. <code class="inline">when/thenReturn</code> hoạt động ra sao? Khi nào dùng <code class="inline">doReturn().when()</code>?</summary>
+      <div class="answer"><code class="inline">when(mock.method(args)).thenReturn(x)</code> đăng ký stub: gọi method trên mock để Mockito ghi nhận lời gọi, rồi trả <code class="inline">x</code> cho các lần gọi sau. Với <strong>spy</strong> hoặc method <strong>void</strong>, cách này nguy hiểm vì <code class="inline">when(spy.method())</code> gọi luôn code thật (có thể gây side effect) — phải dùng <code class="inline">doReturn(x).when(spy).method()</code>, <code class="inline">doThrow(...)</code>, <code class="inline">doNothing()</code>. Cần kết quả động theo tham số thì dùng <code class="inline">thenAnswer</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. <code class="inline">verify</code> dùng khi nào? Khi nào verify là dấu hiệu test tồi?</summary>
+      <div class="answer"><code class="inline">verify</code> dùng khi <em>tương tác chính là hành vi cần bảo vệ</em>: bắt buộc gọi <code class="inline">repository.save</code>, bắt buộc gửi email, không được gọi API khi validate fail (<code class="inline">verifyNoInteractions</code>). Verify trở thành dấu hiệu tồi khi test dính vào triển khai nội bộ — verify số lần gọi helper, thứ tự gọi nội bộ — vì refactor không đổi hành vi vẫn làm test đỏ. Nguyên tắc: ưu tiên assert kết quả/trạng thái, chỉ verify ở biên hệ thống.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. <code class="inline">@Mock</code>, <code class="inline">@InjectMocks</code>, <code class="inline">@ExtendWith(MockitoExtension.class)</code> làm gì? Thiếu extension thì sao?</summary>
+      <div class="answer"><code class="inline">@Mock</code> tạo object giả và gán vào field; <code class="inline">@InjectMocks</code> tạo object thật cần test rồi tiêm các mock vào (constructor trước, sau đó setter/field); <code class="inline">@ExtendWith(MockitoExtension.class)</code> kích hoạt cả hai và kiểm tra strict stubs. Thiếu extension thì <code class="inline">@Mock</code> vẫn là <code class="inline">null</code> — phải tự gọi <code class="inline">MockitoAnnotations.openMocks(this)</code> trong <code class="inline">@BeforeEach</code>. Strict stubs giúp phát hiện stub thừa qua <code class="inline">UnnecessaryStubbingException</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. <code class="inline">ArgumentCaptor</code> dùng khi nào?</summary>
+      <div class="answer">Khi cần kiểm tra sâu giá trị argument mà code đã truyền cho mock — đặc biệt object được tạo <em>bên trong</em> method nên test không có tham chiếu. Cách dùng: <code class="inline">ArgumentCaptor&lt;Order&gt; captor = ArgumentCaptor.forClass(Order.class); verify(repository).save(captor.capture());</code> rồi assert trên <code class="inline">captor.getValue()</code>. Nếu chỉ cần biết "có gọi hay không" thì <code class="inline">verify</code> thường đủ; đừng lạm dụng captor cho mọi thứ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Khi nào KHÔNG nên mock?</summary>
+      <div class="answer">Không mock value object/record/DTO (<code class="inline">User</code>, <code class="inline">Product</code>, <code class="inline">Order</code>, <code class="inline">Money</code>) — tạo thật rẻ và tránh null bất ngờ. Không mock thư viện JDK (<code class="inline">List</code>, <code class="inline">BigDecimal</code>, <code class="inline">Optional</code>). Không mock class thuần logic không có dependency. Không mock thư viện bên thứ ba trực tiếp — hãy bọc sau interface của bạn rồi mock interface đó. Mock chỉ nên xuất hiện ở biên hệ thống: repository/DB, HTTP, file, message queue, <code class="inline">Clock</code>, nguồn random. Mockito 5 mock được final class và static (inline mock maker), nhưng càng mock sâu test càng dính triển khai.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Test private method thế nào?</summary>
+      <div class="answer">Không test trực tiếp — hãy test qua public API đã gọi nó. Nếu một private method phức tạp đến mức cần test riêng, đó là tín hiệu thiết kế: tách nó thành class/package-private helper rồi test trực tiếp (test cùng package truy cập được package-private). Dùng reflection để gọi private là giải pháp bị bỏ qua nhanh chóng vì cực dễ vỡ khi refactor và không mang lại giá trị.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 18. AssertJ hơn JUnit <code class="inline">Assertions</code> ở điểm nào? So <code class="inline">BigDecimal</code> ra sao?</summary>
+      <div class="answer">AssertJ cho chuỗi assertion fluent, method gợi ý theo kiểu dữ liệu (list có <code class="inline">hasSize</code>, <code class="inline">containsExactly</code>, <code class="inline">extracting</code>; exception có <code class="inline">assertThatThrownBy</code>) và message lỗi chi tiết, dễ chẩn đoán hơn. Với <code class="inline">BigDecimal</code> phải dùng <code class="inline">isEqualByComparingTo("180000")</code> thay vì <code class="inline">isEqualTo</code>: <code class="inline">isEqualTo</code> dùng <code class="inline">equals</code> nên phân biệt scale (<code class="inline">180000</code> khác <code class="inline">180000.0</code>). AssertJ còn có soft assertions và <code class="inline">usingRecursiveComparison()</code> để so object lồng nhau không cần <code class="inline">equals</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. TDD là gì? Lợi ích và giới hạn?</summary>
+      <div class="answer">TDD là viết test trước code theo vòng lặp red → green → refactor: viết test đỏ, viết code tối thiểu cho xanh, dọn code khi test vẫn xanh. Lợi ích: test luôn tồn tại, thiết kế API từ góc người dùng, tự tin refactor, bug fix kèm test tái hiện. Giới hạn: không hợp khi đang khám phá công nghệ (spike), UI, prototype; legacy code phải viết characterization test trước. Thực tế nhiều team kết hợp test-first cho logic phức tạp và test-after cho phần đã rõ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Coverage bao nhiêu là đủ? 100% có nghĩa là hết bug?</summary>
+      <div class="answer">Không có con số "đủ" tuyệt đối. Coverage chỉ cho biết dòng/nhánh nào <strong>chưa</strong> được chạy, không chứng minh assertion có ý nghĩa — test không assert gì vẫn đạt 100%. Branch coverage có giá trị hơn line coverage. Thực dụng: đặt ngưỡng thấp cho toàn dự án (60–70%) và tập trung test kỹ logic nghiệp vụ, case biên, case lỗi. Đừng lấy coverage làm KPI vì sẽ sinh "test rác cho đủ số". Công cụ sâu hơn là mutation testing (PIT) — nhận biết.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 21. Unit test khác integration test thế nào? Spring Boot hỗ trợ gì?</summary>
+      <div class="answer">Unit test kiểm tra một class/method với mọi dependency được mock — nhanh (mili-giây), fail khoanh vùng hẹp. Integration test kiểm tra nhiều tầng thật (service + DB/HTTP) — chậm hơn (giây), độ tin cậy cao hơn vì không phụ thuộc mock, nhưng fail khó điều tra. Test pyramid: nhiều unit, vừa integration, ít e2e. Spring Boot có slice test (<code class="inline">@WebMvcTest</code>, <code class="inline">@DataJpaTest</code>, <code class="inline">@JsonTest</code>) load đúng phần cần thiết, <code class="inline">@SpringBootTest</code> load full context, và Testcontainers để chạy DB thật bằng Docker (nhận biết). Từ Spring Boot 3.4 dùng <code class="inline">@MockitoBean</code> thay <code class="inline">@MockBean</code> đã deprecated.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 22. Flaky test là gì? Nguyên nhân và cách xử lý?</summary>
+      <div class="answer">Flaky test là test lúc pass lúc fail dù code không đổi. Nguyên nhân thường gặp: phụ thuộc thứ tự/state dùng chung (static mutable), thời gian/timezone/random, <code class="inline">Thread.sleep</code> chờ bất đồng bộ, mạng/port/service ngoài, race condition. Cách xử lý: tìm nguyên nhân gốc — tuyệt đối không "rerun cho xanh"; cô lập dữ liệu mỗi test, inject <code class="inline">Clock</code>/seed, chờ theo điều kiện (Awaitility) thay vì sleep, mock hoặc Testcontainers thay vì gọi service thật. Nếu chưa sửa ngay, <code class="inline">@Disabled</code> kèm ticket và coi là bug ưu tiên cao — vì test flaky phá hỏng lòng tin vào cả bộ test.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Viết test cho <code class="inline">Calculator.add</code> — đủ 3 nhóm đầu vào</summary>
+      <div class="codeblock">
+        <pre><code class="java">class Calculator {
+    int add(int a, int b) {
+        return a + b;
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Ba test cho ba nhóm: bình thường (số dương), biên/đối nhau, và âm. Dùng <code class="inline">assertEquals(expected, actual)</code> đúng thứ tự:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    void add_haiSoDuong_traVeTong() {
+        assertEquals(7, calculator.add(2, 5));
+    }
+
+    @Test
+    void add_soDoiNhau_traVe0() {
+        assertEquals(0, calculator.add(-3, 3));
+    }
+
+    @Test
+    void add_haiSoAm_traVeTongAm() {
+        assertEquals(-5, calculator.add(-2, -3));
+    }
+}
+// mvn test -&gt; Tests run: 3, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Test exception với <code class="inline">@DisplayName</code>: chia cho 0</summary>
+      <div class="codeblock">
+        <pre><code class="java">int divide(int a, int b) {
+    if (b == 0) {
+        throw new ArithmeticException("chia cho 0");
+    }
+    return a / b;
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p><code class="inline">assertThrows</code> trả về exception để kiểm tra tiếp message. Thêm một test <code class="inline">assertDoesNotThrow</code> cho case hợp lệ — test hành vi "không ném" thay vì chỉ test kết quả:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    @DisplayName("chia cho 0 nem ArithmeticException voi message ro rang")
+    void divide_chiaChoKhong_nemArithmeticException() {
+        ArithmeticException ex = assertThrows(ArithmeticException.class,
+                () -&gt; calculator.divide(10, 0));
+
+        assertEquals("chia cho 0", ex.getMessage());
+    }
+
+    @Test
+    void divide_chiaCho2_traVeThuong() {
+        assertDoesNotThrow(() -&gt; calculator.divide(10, 2));
+        assertEquals(5, calculator.divide(10, 2));
+    }
+}
+// mvn test -&gt; Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Parameterized test <code class="inline">@CsvSource</code> cho giảm giá (có case biên 0% và 100%)</summary>
+      <div class="codeblock">
+        <pre><code class="java">BigDecimal giaSauGiam(BigDecimal gia, int phanTramGiam) {
+    if (gia == null || gia.signum() &lt; 0) {
+        throw new IllegalArgumentException("gia khong hop le");
+    }
+    if (phanTramGiam &lt; 0 || phanTramGiam &gt; 100) {
+        throw new IllegalArgumentException("phan tram giam khong hop le");
+    }
+    BigDecimal giam = gia.multiply(BigDecimal.valueOf(phanTramGiam))
+            .divide(BigDecimal.valueOf(100));
+    return gia.subtract(giam);
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Dùng bảng <code class="inline">@CsvSource</code>; nhận giá và kết quả mong đợi là <code class="inline">String</code> rồi chuyển sang <code class="inline">BigDecimal</code>, so bằng <code class="inline">compareTo</code> để không phụ thuộc scale. Có cả case biên 0% (không đổi) và 100% (về 0):</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @ParameterizedTest(name = "gia {0}, giam {1}% -&gt; {2}")
+    @CsvSource({
+            "100000,   0, 100000",
+            "100000, 100, 0",
+            "200000,  15, 170000",
+            "99999,   50, 49999.5"
+    })
+    void giaSauGiam_traVeDung(String gia, int phanTram, String mongDoi) {
+        BigDecimal ketQua = calculator.giaSauGiam(new BigDecimal(gia), phanTram);
+
+        assertEquals(0, new BigDecimal(mongDoi).compareTo(ketQua));
+    }
+}
+// mvn test -&gt; Tests run: 4, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. <code class="inline">@MethodSource</code> cho phép chia: 4 case gồm số âm và 0</summary>
+      <div class="answer">
+        <p>Method nguồn phải <code class="inline">static</code> và trả về <code class="inline">Stream&lt;Arguments&gt;</code>. Mỗi <code class="inline">Arguments.of(...)</code> là một dòng dữ liệu khớp đúng thứ tự tham số method test:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @ParameterizedTest(name = "{0} / {1} = {2}")
+    @MethodSource("duLieuChia")
+    void divide_traVeThuong(int a, int b, int mongDoi) {
+        assertEquals(mongDoi, calculator.divide(a, b));
+    }
+
+    static Stream&lt;Arguments&gt; duLieuChia() {
+        return Stream.of(
+                Arguments.of(10, 2, 5),
+                Arguments.of(7, 2, 3),
+                Arguments.of(-10, 2, -5),
+                Arguments.of(0, 5, 0));
+    }
+}
+// mvn test -&gt; Tests run: 4, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Mock repository: tìm thấy và không tìm thấy đơn</summary>
+      <div class="codeblock">
+        <pre><code class="java">class OrderService {
+    private final OrderRepository repository;
+
+    OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+
+    Order layDon(long id) {
+        return repository.findById(id)
+                .orElseThrow(() -&gt; new IllegalArgumentException("Khong tim thay don " + id));
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Mock <code class="inline">OrderRepository</code>, stub <code class="inline">findById</code> cho cả hai nhánh. Test "không tìm thấy" cũng nên <code class="inline">verify</code> rằng method được gọi đúng id:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+    @Mock
+    OrderRepository repository;
+
+    @InjectMocks
+    OrderService service;
+
+    @Test
+    void layDon_timThay_traVeDungDon() {
+        Order don = new Order(new User("an@example.com", "An"), List.of(), new BigDecimal("0"));
+        when(repository.findById(1L)).thenReturn(Optional.of(don));
+
+        Order ketQua = service.layDon(1L);
+
+        assertSame(don, ketQua);
+        verify(repository).findById(1L);
+    }
+
+    @Test
+    void layDon_khongTimThay_nemIllegalArgumentException() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -&gt; service.layDon(99L));
+
+        assertEquals("Khong tim thay don 99", ex.getMessage());
+        verify(repository).findById(99L);
+    }
+}
+// mvn test -&gt; Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. <code class="inline">ArgumentCaptor</code>: bắt đơn hàng đã lưu, kiểm tra tổng tiền</summary>
+      <div class="answer">
+        <p>Khi test không có tham chiếu tới object được tạo bên trong method, dùng captor để "bắt" argument. Sau khi verify, kiểm tra sâu bằng AssertJ và chốt bằng <code class="inline">verifyNoMoreInteractions</code>:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+    @Mock
+    OrderRepository repository;
+
+    @InjectMocks
+    OrderService service;
+
+    @Test
+    void taoDon_luuDonVoiTongTienDung() {
+        when(repository.save(any(Order.class)))
+                .thenAnswer(invocation -&gt; invocation.getArgument(0));
+
+        service.taoDon(new User("an@example.com", "An"),
+                List.of(new Product("Ao thun", new BigDecimal("120000")),
+                        new Product("Quan jean", new BigDecimal("240000"))));
+
+        ArgumentCaptor&lt;Order&gt; captor = ArgumentCaptor.forClass(Order.class);
+        verify(repository).save(captor.capture());
+
+        Order daLuu = captor.getValue();
+        assertThat(daLuu.tongTien()).isEqualByComparingTo("360000");
+        assertThat(daLuu.sanPham()).hasSize(2);
+        verifyNoMoreInteractions(repository);
+    }
+}
+// mvn test -&gt; Tests run: 1, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Sửa test phụ thuộc thứ tự (shared state)</summary>
+      <div class="codeblock">
+        <pre><code class="java">class CalculatorTest {
+    static final List&lt;String&gt; lichSu = new ArrayList&lt;&gt;();   // dung chung giua cac test
+
+    @Test
+    void test1_themPhanTu() {
+        lichSu.add("a");
+        assertEquals(1, lichSu.size());
+    }
+
+    @Test
+    void test2_kiemTraRong() {
+        assertEquals(0, lichSu.size());   // FAIL neu test1 chay truoc
+    }
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Nguyên nhân: field <code class="inline">static</code> dùng chung, test2 thấy dữ liệu test1 thêm vào. Vì JUnit đã tạo instance mới cho mỗi test, chỉ cần bỏ <code class="inline">static</code> là xong — hoặc khởi tạo lại trong <code class="inline">@BeforeEach</code> nếu muốn tường minh:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CalculatorTest {
+    private List&lt;String&gt; lichSu;
+
+    @BeforeEach
+    void setUp() {
+        lichSu = new ArrayList&lt;&gt;();   // sach cho tung test
+    }
+
+    @Test
+    void themPhanTu_ghiVaoLichSu() {
+        lichSu.add("a");
+        assertEquals(1, lichSu.size());
+    }
+
+    @Test
+    void khongCoGiThiLichSuRong() {
+        assertEquals(0, lichSu.size());
+    }
+}
+// mvn test -&gt; Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Tìm test smell và sửa lại</summary>
+      <div class="codeblock">
+        <pre><code class="java">@Test
+void testTaoDon() throws InterruptedException {
+    User user = mock(User.class);
+    Product sanPham = mock(Product.class);
+    when(user.ten()).thenReturn("An");
+    when(sanPham.gia()).thenReturn(new BigDecimal("100000"));
+    OrderService service = new OrderService(mock(OrderRepository.class));
+
+    Order order = service.taoDon(user, List.of(sanPham));
+
+    Thread.sleep(500);                      // "cho cho chac"
+    assertNotNull(order);
+    assertTrue(order.tongTien().signum() &gt;= 0);
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Các smell: (1) mock value object <code class="inline">User</code>/<code class="inline">Product</code> — record thì tạo thật; (2) tên test chung chung; (3) <code class="inline">Thread.sleep</code> không cần thiết và gây chậm/flaky; (4) assert quá yếu — tổng tiền sai vẫn pass; (5) không verify repository. Bản sửa:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+    @Mock
+    OrderRepository repository;
+
+    @InjectMocks
+    OrderService service;
+
+    @Test
+    void taoDon_userVaSanPhamThat_congDungTongTien() {
+        User user = new User("an@example.com", "An");
+        Product sanPham = new Product("Ao thun", new BigDecimal("100000"));
+        when(repository.save(any(Order.class)))
+                .thenAnswer(invocation -&gt; invocation.getArgument(0));
+
+        Order order = service.taoDon(user, List.of(sanPham));
+
+        assertThat(order.tongTien()).isEqualByComparingTo("100000");
+        assertThat(order.user()).isEqualTo(user);
+        verify(repository).save(order);
+    }
+}
+// mvn test -&gt; Tests run: 1, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. AssertJ: kiểm tra danh sách đơn hàng</summary>
+      <div class="answer">
+        <p>Dùng <code class="inline">extracting</code> để lấy field của từng phần tử, <code class="inline">containsExactly</code> khi thứ tự quan trọng, và <code class="inline">filteredOn</code> để lọc trước khi assert:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class CalculatorTest {
+    @Test
+    void danhSachDon_hienThiDung() {
+        List&lt;Order&gt; donHang = List.of(
+                new Order(new User("an@example.com", "An"), List.of(), new BigDecimal("300000")),
+                new Order(new User("binh@example.com", "Binh"), List.of(), new BigDecimal("150000")));
+
+        assertThat(donHang)
+                .hasSize(2)
+                .extracting(order -&gt; order.user().ten())
+                .containsExactly("An", "Binh");
+
+        assertThat(donHang)
+                .filteredOn(order -&gt; order.tongTien().compareTo(new BigDecimal("200000")) &gt;= 0)
+                .hasSize(1)
+                .extracting(Order::tongTien)
+                .allSatisfy(tien -&gt; assertThat(tien).isPositive());
+    }
+}
+// mvn test -&gt; Tests run: 1, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. <code class="inline">assertAll</code>: kiểm tra đầy đủ thông tin exception</summary>
+      <div class="answer">
+        <p>Gộp các assertion về cùng một exception — nếu một cái fail, các cái còn lại vẫn chạy và bạn thấy hết vấn đề trong một lần:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    void chiaChoKhong_thongTinLoiDayDu() {
+        ArithmeticException ex = assertThrows(ArithmeticException.class,
+                () -&gt; calculator.divide(10, 0));
+
+        assertAll(
+                () -&gt; assertEquals("chia cho 0", ex.getMessage()),
+                () -&gt; assertNull(ex.getCause()),
+                () -&gt; assertTrue(ex.getMessage().contains("chia")));
+    }
+}
+// mvn test -&gt; Tests run: 1, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Refactor test theo AAA + đổi tên</summary>
+      <div class="codeblock">
+        <pre><code class="java">@Test
+void test1() {
+    assertEquals(180000, new Calculator()
+            .giaSauGiam(new BigDecimal("200000"), 10).intValue());
+}</code></pre>
+      </div>
+      <div class="answer">
+        <p>Vấn đề: tên vô nghĩa; <code class="inline">intValue()</code> làm mất phần thập phân (nguy hiểm với tiền); trộn Arrange vào Act. Bản sạch theo AAA:</p>
+        <div class="codeblock">
+          <pre><code class="java">@Test
+void giaSauGiam_10PhanTram_traVe180000() {
+    // Arrange
+    Calculator calculator = new Calculator();
+    BigDecimal gia = new BigDecimal("200000");
+
+    // Act
+    BigDecimal sauGiam = calculator.giaSauGiam(gia, 10);
+
+    // Assert
+    assertEquals(0, new BigDecimal("180000").compareTo(sauGiam));
+}</code></pre>
+        </div>
+        <p>Nếu muốn kiểm tra kiểu số nguyên, chọn dữ liệu chia hết; còn với tiền tệ hãy giữ <code class="inline">BigDecimal</code> và so bằng <code class="inline">compareTo</code>.</p>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. AssertJ exception: <code class="inline">assertThatThrownBy</code> + <code class="inline">assertThatCode</code></summary>
+      <div class="answer">
+        <p>Hai biến thể hay dùng của AssertJ: một cái khẳng định ném đúng lỗi + message, một cái khẳng định chạy êm ở case hợp lệ:</p>
+        <div class="codeblock">
+          <pre><code class="java">import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class CalculatorTest {
+    private final Calculator calculator = new Calculator();
+
+    @Test
+    void giaSauGiam_phanTramNgoaiKhoang_nemLoi() {
+        assertThatThrownBy(() -&gt; calculator.giaSauGiam(new BigDecimal("100000"), 150))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("khong hop le")
+                .hasMessageContaining("150");
+    }
+
+    @Test
+    void giaSauGiam_phanTram0_chayEm() {
+        assertThatCode(() -&gt; calculator.giaSauGiam(new BigDecimal("100000"), 0))
+                .doesNotThrowAnyException();
+    }
+}
+// mvn test -&gt; Tests run: 2, Failures: 0, Errors: 0, Skipped: 0</code></pre>
+        </div>
+      </div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 13. TDD: viết test trước cho <code class="inline">tinhPhiVanChuyen</code></summary>
+      <div class="codeblock">
+        <pre><code>Yeu cau:
+- tongTien &gt;= 500000 -&gt; phi 0
+- 0 &lt;= tongTien &lt; 500000 -&gt; phi 30000
+- tongTien &lt; 0 (hoac null) -&gt; nem IllegalArgumentException</code></pre>
+      </div>
+      <div class="answer">
+        <p>Bước RED — viết test trước (method chưa tồn tại, không compile là đỏ hợp lệ). Dùng parameterized cho các mốc, kèm case biên đúng 500000 và case lỗi:</p>
+        <div class="codeblock">
+          <pre><code class="java">@ParameterizedTest(name = "tong {0} -&gt; phi {1}")
+@CsvSource({
+        "600000,     0",
+        "500000,     0",     // bien: dung moc mien phi
+        "499999, 30000",     // bien: ngay duoi moc
+        "0,      30000"
+})
+void tinhPhiVanChuyen_theoMoc(String tongTien, int mongDoi) {
+    assertEquals(mongDoi,
+            calculator.tinhPhiVanChuyen(new BigDecimal(tongTien)));
+}
+
+@Test
+void tinhPhiVanChuyen_tongTienAm_nemIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class,
+            () -&gt; calculator.tinhPhiVanChuyen(new BigDecimal("-1")));
+}</code></pre>
+        </div>
+        <p>Bước GREEN — viết code đơn giản nhất đủ để xanh (dùng <code class="inline">compareTo</code> với <code class="inline">BigDecimal</code>, không dùng <code class="inline">==</code>):</p>
+        <div class="codeblock">
+          <pre><code class="java">int tinhPhiVanChuyen(BigDecimal tongTien) {
+    if (tongTien == null || tongTien.signum() &lt; 0) {
+        throw new IllegalArgumentException("tong tien khong hop le");
+    }
+    if (tongTien.compareTo(new BigDecimal("500000")) &gt;= 0) {
+        return 0;
+    }
+    return 30_000;
+}
+// mvn test -&gt; Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+// (4 case parameterized + 1 test loi)</code></pre>
+        </div>
+        <p>Bước REFACTOR — tách hằng số <code class="inline">MOC_MIEN_PHI</code>/<code class="inline">PHI_CO_DINH</code>, đặt tên rõ, chạy lại toàn bộ test vẫn xanh. Dữ liệu test đã dùng chính method ở <a href="#vi-du">mục 13</a> nên chỉ cần thêm method vào <code class="inline">Calculator</code> là chạy được.</p>
+      </div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>JUnit 5 — annotation</h3>
+
+    <table>
+      <thead>
+        <tr><th>Annotation</th><th>Ý nghĩa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">@Test</code></td><td>Đánh dấu một test method (không cần <code class="inline">main</code>, không cần in)</td></tr>
+        <tr><td><code class="inline">@DisplayName("...")</code></td><td>Tên hiển thị trong báo cáo, hỗ trợ tiếng Việt/khoảng trắng</td></tr>
+        <tr><td><code class="inline">@BeforeEach / @AfterEach</code></td><td>Chạy trước/sau <strong>mỗi</strong> test — dựng và dọn dữ liệu</td></tr>
+        <tr><td><code class="inline">@BeforeAll / @AfterAll</code></td><td>Chạy <strong>một lần</strong> trước/sau cả class — phải <code class="inline">static</code> (trừ <code class="inline">PER_CLASS</code>)</td></tr>
+        <tr><td><code class="inline">@Disabled("ly do")</code></td><td>Tạm bỏ qua test, kèm lý do — đừng xoá/comment code</td></tr>
+        <tr><td><code class="inline">@ParameterizedTest</code></td><td>Test chạy nhiều bộ dữ liệu</td></tr>
+        <tr><td><code class="inline">@ValueSource / @CsvSource / @MethodSource / @EnumSource</code></td><td>Nguồn dữ liệu cho parameterized test</td></tr>
+        <tr><td><code class="inline">@Nested</code></td><td>Class test lồng nhau để nhóm theo ngữ cảnh (giống <code class="inline">describe</code>)</td></tr>
+        <tr><td><code class="inline">@Tag("slow")</code></td><td>Gắn nhãn để lọc test khi chạy (nhận biết)</td></tr>
+        <tr><td><code class="inline">@ExtendWith(...)</code></td><td>Đăng ký extension — ví dụ <code class="inline">MockitoExtension</code></td></tr>
+        <tr><td><code class="inline">@TestInstance(PER_CLASS)</code></td><td>Dùng chung một instance cho cả class (nhận biết)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Assertion — JUnit &amp; AssertJ</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>JUnit 5</th><th>AssertJ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bằng nhau</td><td><code class="inline">assertEquals(expected, actual)</code></td><td><code class="inline">assertThat(actual).isEqualTo(expected)</code></td></tr>
+        <tr><td>BigDecimal</td><td><code class="inline">assertEquals(0, expected.compareTo(actual))</code></td><td><code class="inline">assertThat(actual).isEqualByComparingTo(expected)</code></td></tr>
+        <tr><td>Null / khác null</td><td><code class="inline">assertNull / assertNotNull</code></td><td><code class="inline">assertThat(x).isNull() / isNotNull()</code></td></tr>
+        <tr><td>Đúng/sai</td><td><code class="inline">assertTrue / assertFalse</code></td><td><code class="inline">assertThat(x).isTrue() / isFalse()</code></td></tr>
+        <tr><td>Cùng object</td><td><code class="inline">assertSame / assertNotSame</code></td><td><code class="inline">assertThat(x).isSameAs(y)</code></td></tr>
+        <tr><td>Ném lỗi</td><td><code class="inline">assertThrows(Loi.class, () -&gt; ...)</code></td><td><code class="inline">assertThatThrownBy(...).isInstanceOf(...).hasMessage(...)</code></td></tr>
+        <tr><td>Không ném</td><td><code class="inline">assertDoesNotThrow(...)</code></td><td><code class="inline">assertThatCode(...).doesNotThrowAnyException()</code></td></tr>
+        <tr><td>Nhiều assertion</td><td><code class="inline">assertAll(...)</code></td><td><code class="inline">SoftAssertions</code> + <code class="inline">assertAll()</code></td></tr>
+        <tr><td>List đúng thứ tự</td><td><code class="inline">assertIterableEquals</code></td><td><code class="inline">containsExactly(...)</code></td></tr>
+        <tr><td>List đủ phần tử</td><td>—</td><td><code class="inline">containsExactlyInAnyOrder(...)</code> / <code class="inline">containsOnly(...)</code></td></tr>
+        <tr><td>Kích thước / rỗng</td><td><code class="inline">assertEquals(n, list.size())</code></td><td><code class="inline">hasSize(n)</code> / <code class="inline">isEmpty()</code></td></tr>
+        <tr><td>Trích field</td><td>—</td><td><code class="inline">extracting(Order::tongTien)</code></td></tr>
+        <tr><td>So object lồng nhau</td><td>—</td><td><code class="inline">usingRecursiveComparison().isEqualTo(...)</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Mockito — matcher &amp; lệnh</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Matcher cơ bản</td><td><code class="inline">any()</code>, <code class="inline">any(Order.class)</code>, <code class="inline">anyLong()</code>, <code class="inline">anyString()</code>, <code class="inline">eq(1L)</code>, <code class="inline">isNull()</code>, <code class="inline">isA(Loi.class)</code></td></tr>
+        <tr><td>Matcher điều kiện</td><td><code class="inline">argThat(o -&gt; o.tongTien().signum() &gt; 0)</code>, <code class="inline">contains("abc")</code>, <code class="inline">startsWith(...)</code></td></tr>
+        <tr><td>Stub</td><td><code class="inline">when(x.method()).thenReturn(v)</code> / <code class="inline">thenThrow(e)</code> / <code class="inline">thenAnswer(inv -&gt; ...)</code></td></tr>
+        <tr><td>Stub void / spy</td><td><code class="inline">doReturn(v).when(spy).method()</code>, <code class="inline">doThrow(e).when(mock).voidMethod()</code>, <code class="inline">doNothing()</code></td></tr>
+        <tr><td>Verify</td><td><code class="inline">verify(x).method(args)</code>, <code class="inline">times(n)</code>, <code class="inline">never()</code>, <code class="inline">atLeastOnce()</code>, <code class="inline">atMost(n)</code></td></tr>
+        <tr><td>Không tương tác</td><td><code class="inline">verifyNoInteractions(mock)</code>, <code class="inline">verifyNoMoreInteractions(mock)</code></td></tr>
+        <tr><td>Bắt argument</td><td><code class="inline">ArgumentCaptor.forClass(Order.class)</code> + <code class="inline">capture()</code> + <code class="inline">getValue()</code></td></tr>
+        <tr><td>Bật Mockito cho JUnit 5</td><td><code class="inline">@ExtendWith(MockitoExtension.class)</code> + <code class="inline">@Mock</code> + <code class="inline">@InjectMocks</code> + <code class="inline">@Captor</code></td></tr>
+        <tr><td>BDD style (nhận biết)</td><td><code class="inline">given(x.method()).willReturn(v)</code>, <code class="inline">then(x).should().method()</code></td></tr>
+        <tr><td>Mock static (nhận biết, legacy)</td><td><code class="inline">try (MockedStatic&lt;...&gt; ms = mockStatic(Class.class)) { ... }</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Quy tắc phải nhớ</h3>
+    <ul>
+      <li>Một hành vi một test; tên test nói rõ hành vi — điều kiện — kết quả.</li>
+      <li>Test độc lập: không static mutable, dữ liệu dựng lại mỗi test.</li>
+      <li>Assert kết quả trước, verify tương tác sau (và chỉ ở biên hệ thống).</li>
+      <li>Không mock value object; mock repository/HTTP/Clock.</li>
+      <li>Matcher Mockito phải dùng cho tất cả tham số của một lời gọi.</li>
+      <li>BigDecimal so bằng <code class="inline">compareTo</code>/<code class="inline">isEqualByComparingTo</code>, không <code class="inline">equals</code>.</li>
+      <li>Không <code class="inline">Thread.sleep</code>; inject thời gian/random.</li>
+      <li>Coverage là đèn soi chỗ trống, không phải KPI; test đỏ không được rerun cho xanh.</li>
+      <li>Test fail: kiểm tra code trước, đừng sửa test để che bug.</li>
+    </ul>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Viết được test JUnit 5 với <code class="inline">@Test</code>, <code class="inline">@DisplayName</code>, assertions mà không cần tra cứu.</li>
+      <li>Giải thích được vòng đời: mỗi test một instance; <code class="inline">@BeforeEach</code> vs <code class="inline">@BeforeAll</code>.</li>
+      <li>Test được exception bằng <code class="inline">assertThrows</code> và kiểm tra cả message.</li>
+      <li>Viết parameterized test với <code class="inline">@CsvSource</code> và <code class="inline">@MethodSource</code>.</li>
+      <li>Nêu và áp dụng AAA; đặt tên test theo hành vi.</li>
+      <li>Phân biệt mock/stub/spy/fake/dummy và biết khi nào không mock.</li>
+      <li>Mock repository, stub <code class="inline">when/thenReturn</code>, verify tương tác, bắt argument bằng ArgumentCaptor.</li>
+      <li>Giải thích <code class="inline">@Mock</code>, <code class="inline">@InjectMocks</code>, <code class="inline">@ExtendWith(MockitoExtension.class)</code> và strict stubs.</li>
+      <li>Dùng AssertJ cho list/exception; biết bẫy BigDecimal scale.</li>
+      <li>Trình bày TDD red-green-refactor kèm ví dụ.</li>
+      <li>Phân biệt line vs branch coverage và vì sao cover 100% chưa chắc hết bug.</li>
+      <li>Phân biệt unit vs integration test; kể được slice test Spring Boot + Testcontainers.</li>
+      <li>Xử lý flaky test: nêu nguyên nhân và cách sửa, không rerun cho xanh.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://junit.org/junit5/docs/current/user-guide/" target="_blank" rel="noreferrer">JUnit 5 User Guide</a></li>
+      <li><a href="https://site.mockito.org/" target="_blank" rel="noreferrer">Mockito — trang chủ &amp; documentation</a></li>
+      <li><a href="https://assertj.github.io/doc/" target="_blank" rel="noreferrer">AssertJ — documentation</a></li>
+      <li><a href="https://www.jacoco.org/jacoco/trunk/doc/" target="_blank" rel="noreferrer">JaCoCo — documentation</a></li>
+      <li><a href="https://maven.apache.org/surefire/maven-surefire-plugin/" target="_blank" rel="noreferrer">Maven Surefire Plugin</a></li>
+      <li><a href="https://docs.spring.io/spring-boot/reference/testing/index.html" target="_blank" rel="noreferrer">Spring Boot — Testing</a></li>
+      <li><a href="https://martinfowler.com/articles/practical-test-pyramid.html" target="_blank" rel="noreferrer">Martin Fowler — The Practical Test Pyramid</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Testing · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

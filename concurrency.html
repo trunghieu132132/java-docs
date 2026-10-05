@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurrency — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item active" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25 (Temurin).</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="concurrency">Concurrency — Thread, JMM &amp; Executor</h1>
+
+    <p class="lead">Đa luồng là chủ đề nặng nhất của Java Backend và cũng là nơi sinh ra nhiều bug production khó tái hiện nhất: race condition, deadlock, mất visibility. Trang này đi từ thread, Java Memory Model, <code class="inline">synchronized</code>/<code class="inline">volatile</code>, Lock, Atomic, ExecutorService, CompletableFuture tới virtual threads và structured concurrency — kèm bẫy phỏng vấn và cách xử lý sự cố bằng thread dump. Mọi output đều chạy thật trên JDK 25.</p>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p>Mức độ bắt buộc của chủ đề 4.2 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — tạo và quản lý thread an toàn; dùng <code class="inline">synchronized</code>, <code class="inline">volatile</code>, <code class="inline">ReentrantLock</code>, Atomic đúng chỗ; dùng <code class="inline">ExecutorService</code>, <code class="inline">Future</code>, <code class="inline">CompletableFuture</code>; dùng <code class="inline">ConcurrentHashMap</code> và <code class="inline">BlockingQueue</code>; viết producer–consumer; shutdown pool đúng cách.</li>
+      <li><strong>Phải hiểu</strong> — vì sao <code class="inline">count++</code> mất dữ liệu; happens-before của JMM; khác nhau giữa atomicity, visibility và ordering; vì sao <code class="inline">volatile</code> không đủ cho phép cộng dồn; thread pool hoạt động thế nào; vì sao deadlock xảy ra.</li>
+      <li><strong>Nhận biết</strong> — virtual threads và pinning; Scoped Values; structured concurrency (còn preview); lock-free/CAS và ABA; StampedLock; parallel stream và common pool; profiling/thread dump.</li>
+    </ul>
+
+    <p>Cách học hiệu quả:</p>
+    <ol>
+      <li>Hiểu <a href="#jmm">JMM &amp; visibility</a> trước — mọi lỗi concurrency đều quy về ba từ khóa: atomicity, visibility, ordering.</li>
+      <li>Gõ lại từng ví dụ và chạy nhiều lần: các ví dụ race/deadlock <strong>cố ý</strong> cho kết quả dao động.</li>
+      <li>Làm <a href="#bai-tap">Bài tập đoán output</a> trước khi mở đáp án.</li>
+      <li>Ôn nhanh bằng <a href="#cheat-sheet">Cheat sheet</a> trước buổi phỏng vấn.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code>. Mọi file chạy bằng <code class="inline">java TenFile.java</code>; riêng ví dụ <em>preview</em> (structured concurrency) cần thêm cờ, được ghi rõ tại chỗ.</div>
+
+    <div class="note warn"><strong>Output concurrency không cố định:</strong> thứ tự dòng in giữa các thread, số lần in trong một khoảng thời gian, và kết quả các ví dụ race/deadlock <strong>thay đổi mỗi lần chạy</strong>. Trong trang, output được ghi kèm chú thích "(một lần chạy)" ở những chỗ như vậy — điều quan trọng là <em>điểm cần thấy</em>, không phải con số chính xác.</div>
+
+    <h3>Bảng chọn nhanh theo nhu cầu</h3>
+
+    <table>
+      <thead>
+        <tr><th>Cần gì</th><th>Dùng gì</th><th>Ghi chú</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tăng/đếm biến giữa nhiều thread, tần suất thấp</td><td><code class="inline">AtomicInteger</code>/<code class="inline">AtomicLong</code></td><td>Không khóa, CAS; ưu tiên hơn synchronized cho một biến</td></tr>
+        <tr><td>Bộ đếm tranh chấp rất cao (metrics)</td><td><code class="inline">LongAdder</code></td><td>Nhiều cell, tổng hợp khi đọc — nhanh hơn Atomic khi contention cao</td></tr>
+        <tr><td>Bảo vệ một khối logic/nhiều biến liên quan</td><td><code class="inline">synchronized</code> hoặc <code class="inline">ReentrantLock</code></td><td>Cần atomicity + visibility; Lock khi cần tryLock/timeout/fairness</td></tr>
+        <tr><td>Chỉ cần visibility cho một cờ hiệu</td><td><code class="inline">volatile</code></td><td>Không đảm bảo atomicity cho <code class="inline">++</code></td></tr>
+        <tr><td>Chạy nhiều task nền, giới hạn số thread</td><td><code class="inline">ExecutorService</code></td><td>Không tự <code class="inline">new Thread</code> cho từng request</td></tr>
+        <tr><td>Nhiều task IO song song, cần ghép kết quả</td><td><code class="inline">CompletableFuture</code></td><td>Truyền executor riêng cho task blocking</td></tr>
+        <tr><td>Hàng nghìn task blocking (HTTP, DB) mỗi request</td><td>Virtual threads</td><td><code class="inline">newVirtualThreadPerTaskExecutor()</code>; không pool</td></tr>
+        <tr><td>Map đọc/ghi đồng thời</td><td><code class="inline">ConcurrentHashMap</code></td><td>Không nhận null; compound ops atomic</td></tr>
+        <tr><td>Producer–Consumer</td><td><code class="inline">BlockingQueue</code></td><td><code class="inline">put</code>/<code class="inline">take</code> tự block; bounded để tránh OOM</td></tr>
+        <tr><td>Chờ N việc xong trước khi chạy tiếp</td><td><code class="inline">CountDownLatch</code>/<code class="inline">Phaser</code></td><td>Latch dùng một lần; CyclicBarrier dùng lại được</td></tr>
+        <tr><td>Tính toán song song trên collection lớn, CPU-bound</td><td>Parallel stream</td><td>Chỉ khi không side-effect, không blocking; đo bằng JMH</td></tr>
+      </tbody>
+    </table>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol start="2">
+        <li><a href="#thread">Thread — tạo, start vs run, lifecycle</a></li>
+        <li><a href="#race">Race condition &amp; atomicity</a></li>
+        <li><a href="#jmm">Visibility &amp; Java Memory Model</a></li>
+        <li><a href="#synchronized">synchronized — khóa đúng cách</a></li>
+        <li><a href="#lock">Lock, ReentrantLock, Condition</a></li>
+        <li><a href="#atomic">Atomic, CAS &amp; LongAdder</a></li>
+        <li><a href="#executor">ExecutorService, Future &amp; thread pool</a></li>
+        <li><a href="#completable-future">CompletableFuture</a></li>
+        <li><a href="#virtual-threads">Virtual threads, Scoped Values &amp; structured concurrency</a></li>
+        <li><a href="#deadlock">Deadlock, livelock &amp; starvation</a></li>
+        <li><a href="#collections">Thread-safe collections &amp; công cụ phối hợp</a></li>
+        <li><a href="#parallel-stream">Parallel stream — khi nào dùng</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập đoán output</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+        <li><a href="#nguon">Nguồn tham khảo</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="thread">2. Thread — tạo, start vs run, lifecycle <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Process có không gian bộ nhớ riêng; <strong>thread là đơn vị thực thi bên trong process</strong>. Các thread trong cùng process <strong>chia sẻ heap</strong> (object, static field) nhưng mỗi thread có <strong>stack riêng</strong> (biến local, lời gọi method). Chính vì chia sẻ heap nên mới sinh ra race condition — đây là khác biệt tư duy lớn nhất khi từ Node.js sang Java.</p>
+
+    <h3>Ba cách tạo thread</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">// 1. implements Runnable - khuyen dung
+Runnable r = () -> IO.println("chay bang Runnable");
+
+// 2. Callable - co ket qua tra ve va nem duoc checked exception
+Callable&lt;Integer&gt; c = () -&gt; 42;
+
+// 3. extends Thread - tranh dung: da ke thua Thread thi khong ke thua class khac duoc
+class MyThread extends Thread {
+    public void run() { IO.println("chay bang Thread"); }
+}</code></pre>
+    </div>
+
+    <p>Về mặt API, <strong>Runnable</strong> là một việc không trả về gì, còn <strong>Callable</strong> trả về kết quả và được chạy qua executor (<code class="inline">Future</code>). Trong code production hiện đại, bạn hiếm khi tự <code class="inline">new Thread</code> — hãy để <code class="inline">ExecutorService</code> quản lý (mục 8).</p>
+
+    <h3><code class="inline">start()</code> vs <code class="inline">run()</code> — câu hỏi mở màn kinh điển</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ThreadBasics {
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; IO.println("chay trong: " + Thread.currentThread().getName());
+
+        IO.println("main: " + Thread.currentThread().getName());
+        job.run();
+        Thread t = new Thread(job, "worker-1");
+        t.start();
+        t.join();
+        IO.println("state sau join: " + t.getState());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>main: main
+chay trong: main
+chay trong: worker-1
+state sau join: TERMINATED</code></pre>
+    </div>
+
+    <p><code class="inline">job.run()</code> chỉ là <strong>gọi method bình thường</strong> trên thread hiện tại (in ra <code class="inline">main</code>), còn <code class="inline">start()</code> mới tạo thread mới và để JVM gọi <code class="inline">run()</code> bên trong nó. Gọi <code class="inline">start()</code> lần thứ hai trên cùng thread ném <code class="inline">IllegalThreadStateException</code>. <code class="inline">join()</code> khiến thread gọi chờ thread kia kết thúc.</p>
+
+    <h3>Thread lifecycle — 6 trạng thái</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">public class LifecycleDemo {
+    public static void main() throws InterruptedException {
+        Thread t = new Thread(() -&gt; {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "worker");
+
+        IO.println("sau new   : " + t.getState());
+        t.start();
+        Thread.sleep(10);
+        IO.println("dang ngu  : " + t.getState());
+        t.join();
+        IO.println("sau join  : " + t.getState());
+        IO.println("cac state : " + java.util.Arrays.toString(Thread.State.values()));
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>sau new   : NEW
+dang ngu  : TIMED_WAITING
+sau join  : TERMINATED
+cac state : [NEW, RUNNABLE, BLOCKED, WAITING, TIMED_WAITING, TERMINATED]</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Trạng thái</th><th>Nghĩa</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">NEW</code></td><td>Đã tạo object, chưa <code class="inline">start()</code></td><td><code class="inline">new Thread(...)</code></td></tr>
+        <tr><td><code class="inline">RUNNABLE</code></td><td>Đang chạy hoặc sẵn sàng chờ CPU (gồm cả đang chờ IO ở tầng OS)</td><td>sau <code class="inline">start()</code></td></tr>
+        <tr><td><code class="inline">BLOCKED</code></td><td>Đang chờ vào monitor của <code class="inline">synchronized</code></td><td>thread B chờ thread A nhả khóa</td></tr>
+        <tr><td><code class="inline">WAITING</code></td><td>Chờ vô thời hạn</td><td><code class="inline">Object.wait()</code>, <code class="inline">join()</code> không timeout, <code class="inline">LockSupport.park()</code></td></tr>
+        <tr><td><code class="inline">TIMED_WAITING</code></td><td>Chờ có thời hạn</td><td><code class="inline">Thread.sleep(ms)</code>, <code class="inline">wait(ms)</code>, <code class="inline">join(ms)</code></td></tr>
+        <tr><td><code class="inline">TERMINATED</code></td><td>Đã kết thúc</td><td>hàm main/run chạy xong hoặc exception</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><strong>Đọc thread dump để thấy trạng thái thật:</strong> <code class="inline">jcmd &lt;pid&gt; Thread.print</code> hoặc <code class="inline">jstack &lt;pid&gt;</code> in danh sách thread kèm trạng thái và stack — công cụ đầu tiên khi production treo. Chi tiết ở <a href="roadmap.html#phase-4">4.1/4.7</a>; mục 11 có ví dụ đọc deadlock.</div>
+
+    <h3>Interrupt &amp; daemon</h3>
+
+    <ul>
+      <li><strong>Interrupt</strong> là cơ chế <em>hợp tác</em>: <code class="inline">t.interrupt()</code> không dừng ngay mà chỉ <em>đặt cờ</em>. Nếu thread đang <code class="inline">sleep/wait/join</code>, nó nhận <code class="inline">InterruptedException</code> và cờ bị xóa. Bên trong <code class="inline">catch</code>, gọi lại <code class="inline">Thread.currentThread().interrupt()</code> để "trao cờ" lên trên — <strong>đừng nuốt im lặng</strong>.</li>
+      <li>Vòng lặp dài nên kiểm tra <code class="inline">Thread.currentThread().isInterrupted()</code> để thoát sớm; <code class="inline">Thread.interrupted()</code> vừa đọc vừa xóa cờ.</li>
+      <li><strong>Daemon thread</strong> là thread nền: JVM sẽ thoát khi <em>mọi non-daemon thread</em> kết thúc, bất kể daemon còn chạy. Đặt bằng <code class="inline">t.setDaemon(true)</code> trước <code class="inline">start()</code>. Ví dụ điển hình: scheduled cleanup. Không dùng daemon cho việc quan trọng cần hoàn tất (ghi file, commit DB) — JVM có thể tắt bất ngờ.</li>
+    </ul>
+
+    <div class="note"><strong>Không có cách "kill" thread an toàn trong Java:</strong> <code class="inline">Thread.stop()</code> bị bỏ từ lâu vì để lại object trong trạng thái nửa vời. Muốn dừng: dùng cờ volatile + interrupt, hoặc <code class="inline">Future.cancel(true)</code>.</div>
+
+    <h2 id="race">3. Race condition &amp; atomicity <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Race condition xảy ra khi nhiều thread cùng đọc/ghi dữ liệu chia sẻ mà không đồng bộ, khiến kết quả phụ thuộc <em>thứ tự thực thi</em> — vốn không xác định. Phép <code class="inline">count++</code> trông như một hành động nhưng thực chất là ba bước: đọc <code class="inline">count</code> → cộng 1 → ghi lại. Hai thread có thể đọc cùng giá trị cũ rồi cùng ghi đè nhau (lost update).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class RaceCondition {
+    static int count = 0;
+
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; {
+            for (int i = 0; i &lt; 100_000; i++) count++;
+        };
+        Thread t1 = new Thread(job);
+        Thread t2 = new Thread(job);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("count = " + count + " (ky vong 200000)");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>count = 129069 (ky vong 200000)   // mot lan chay - so nay thay doi moi lan</code></pre>
+    </div>
+
+    <p>6 lần chạy thử trên máy soạn tài liệu cho: <code class="inline">129069</code>, <code class="inline">141203</code>, <code class="inline">115179</code>, <code class="inline">133910</code>, <code class="inline">106237</code>, <code class="inline">134489</code> — <strong>không lần nào đủ 200000</strong>. Bug kiểu này rất khó tìm ở production vì đôi khi nó "đúng", chỉ sai dưới tải cao.</p>
+
+    <h3>Các dạng race thường gặp</h3>
+
+    <table>
+      <thead>
+        <tr><th>Dạng</th><th>Ví dụ</th><th>Hậu quả</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Read-modify-write</td><td><code class="inline">count++</code>, <code class="inline">tong += tien</code></td><td>Mất cập nhật (lost update)</td></tr>
+        <tr><td>Check-then-act</td><td><code class="inline">if (map.get(k) == null) map.put(k, v);</code></td><td>Hai thread cùng thấy null → ghi đè nhau; dùng <code class="inline">putIfAbsent</code>/<code class="inline">computeIfAbsent</code></td></tr>
+        <tr><td>Lazy init</td><td><code class="inline">if (instance == null) instance = new ...;</code></td><td>Tạo hai object; dùng holder/static final hoặc double-checked locking đúng</td></tr>
+        <tr><td>Bất biến của bất biến kép</td><td>Chuyển tiền 2 tài khoản</td><td>Tổng tiền sai; cần khóa/transaction</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ba cách sửa, tăng dần theo nhu cầu: <code class="inline">synchronized</code> (mục 5), <code class="inline">AtomicInteger</code> (mục 7), hoặc <strong>tốt nhất</strong> — thiết kế để không chia sẻ mutable state: biến immutable, thread-local, chia dữ liệu theo task rồi gộp kết quả.</p>
+
+    <h2 id="jmm">4. Visibility &amp; Java Memory Model <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Vì sao cần đồng bộ ngay cả khi chỉ <em>một</em> thread ghi? Mỗi CPU có cache riêng, JIT có thể giữ biến trong register, và compiler/CPU được phép <strong>đổi thứ tự</strong> lệnh miễn là với một thread đơn lẻ kết quả không đổi. Không có đồng bộ, thread này có thể không bao giờ thấy giá trị thread kia ghi.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class VolatileStop {
+    static volatile boolean running = true;
+
+    public static void main() throws InterruptedException {
+        Thread worker = new Thread(() -&gt; {
+            while (running) {
+                // vong lap nong - neu running khong volatile, JIT co the giu gia tri true mai mai
+            }
+            IO.println("worker dung");
+        });
+        worker.start();
+        Thread.sleep(50);
+        running = false;
+        worker.join();
+        IO.println("main ket thuc");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>worker dung
+main ket thuc</code></pre>
+    </div>
+
+    <p>Bỏ <code class="inline">volatile</code> đi, chương trình <em>có thể</em> treo vĩnh viễn: JIT nâng <code class="inline">running</code> ra khỏi vòng lặp (hoisting) vì không thấy nó bị thay đổi trong thread đó. Đây là bug kinh điển chỉ xuất hiện ở bản build tối ưu — bản debug lại chạy đúng.</p>
+
+    <h3>happens-before — quy tắc thực dụng</h3>
+
+    <p>JMM định nghĩa quan hệ <strong>happens-before</strong>: nếu thao tác A happens-before B thì mọi thay đổi bộ nhớ của A đều <em>nhìn thấy</em> ở B. Các cặp cần nhớ:</p>
+
+    <ul>
+      <li>Trong cùng một thread, mọi thao tác theo thứ tự chương trình.</li>
+      <li>Ghi vào <code class="inline">volatile</code> happens-before lần đọc <code class="inline">volatile</code> tiếp theo cùng biến.</li>
+      <li>Nhả monitor (<code class="inline">unlock</code>/ra khỏi <code class="inline">synchronized</code>) happens-before vào monitor tiếp theo (mở khóa kế tiếp).</li>
+      <li><code class="inline">Thread.start()</code> happens-before mọi thao tác trong thread mới; mọi thao tác trong thread happens-before <code class="inline">join()</code> trả về.</li>
+      <li>Ghi <code class="inline">final</code> field trong constructor happens-before đọc field đó qua tham chiếu được công bố an toàn (JLS 17.5).</li>
+      <li>Gửi task vào executor happens-before task bắt đầu chạy; task kết thúc happens-before <code class="inline">Future.get()</code> trả về.</li>
+    </ul>
+
+    <div class="note warn"><strong>volatile chỉ giải quyết visibility, không giải quyết atomicity.</strong> <code class="inline">volatile int count; count++;</code> vẫn mất dữ liệu y như mục 3. Chỉ dùng <code class="inline">volatile</code> cho: cờ bật/tắt, trạng thái một chiều, hoặc biến chỉ <em>một</em> thread ghi và nhiều thread đọc (theo mô hình one-writer).</div>
+
+    <p>Khái niệm liên quan là <strong>safe publication</strong>: đưa object đã khởi tạo xong cho thread khác thấy. Các cách an toàn: <code class="inline">static final</code> khởi tạo trong static block, <code class="inline">volatile</code> reference, gán qua <code class="inline">AtomicReference</code>, hoặc đặt vào collection concurrent. Nếu không, thread khác có thể thấy object ở trạng thái nửa vời (thấy reference trước khi thấy field đã gán).</p>
+
+    <h2 id="synchronized">5. synchronized — khóa đúng cách <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p><code class="inline">synchronized</code> khóa theo một <strong>monitor object</strong>: một thread vào được thì thread khác phải chờ. Nó đảm bảo đồng thời <strong>atomicity</strong> (trọn khối như một hành động) và <strong>visibility</strong> (khi ra khỏi khối, mọi thay đổi được đẩy ra bộ nhớ chính; khi vào khối, cache được làm mới).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class SynchronizedCounter {
+    static int count = 0;
+
+    static synchronized void tang() {
+        count++;
+    }
+
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; {
+            for (int i = 0; i &lt; 100_000; i++) tang();
+        };
+        Thread t1 = new Thread(job);
+        Thread t2 = new Thread(job);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("count = " + count);
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>count = 200000</code></pre>
+    </div>
+
+    <h3>Khóa vào đối tượng nào?</h3>
+
+    <ul>
+      <li><code class="inline">synchronized</code> trên <strong>method instance</strong> → khóa <code class="inline">this</code>.</li>
+      <li><code class="inline">static synchronized</code> → khóa object <code class="inline">Class</code> của class đó.</li>
+      <li><code class="inline">synchronized (obj) { ... }</code> → khóa đúng object <code class="inline">obj</code>. Đây là dạng linh hoạt nhất — luôn khóa cùng một object đã tạo sẵn, không tạo mới trong method.</li>
+    </ul>
+
+    <p>Lỗi phổ biến: tạo object khóa mới mỗi lần gọi, khiến mỗi thread khóa một monitor khác nhau và <code class="inline">synchronized</code> trở nên vô dụng:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class BadLock {
+    static int count = 0;
+
+    static void tang() {
+        Object lock = new Object();
+        synchronized (lock) {
+            count++;
+        }
+    }
+
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; {
+            for (int i = 0; i &lt; 100_000; i++) tang();
+        };
+        Thread t1 = new Thread(job);
+        Thread t2 = new Thread(job);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("count = " + count + " (ky vong 200000)");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>count = 150497 (ky vong 200000)   // mot lan chay - van nho hon 200000</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Đừng khóa trên object "của người khác":</strong> tránh <code class="inline">synchronized ("literal")</code>, trên <code class="inline">Integer</code>/<code class="inline">Boolean</code> boxed (có cache!), hay trên object public mà code khác cũng khóa — dễ deadlock ngoài ý muốn. Tạo một <code class="inline">private final Object lock = new Object();</code> riêng.</div>
+
+    <h3>wait / notify — và vì sao nên tránh</h3>
+
+    <p><code class="inline">wait()</code>/<code class="inline">notify()</code> cho phép thread chờ điều kiện trong khi đã <em>nhả</em> monitor, nhưng dễ dùng sai: phải gọi trong <code class="inline">synchronized</code>, phải chờ bằng <code class="inline">while</code> (không phải <code class="inline">if</code>) vì có thể thức dậy giả (spurious wakeup), và <code class="inline">notify</code> chỉ đánh thức một thread bất kỳ. Code hiện đại nên dùng <code class="inline">BlockingQueue</code>, <code class="inline">CountDownLatch</code> (mục 12) hoặc <code class="inline">Lock</code> + <code class="inline">Condition</code> (mục 6) thay vì tự viết wait/notify.</p>
+
+    <div class="note"><strong>Góc production:</strong> khóa <code class="inline">synchronized</code> càng rộng càng dễ nghẽn. Nguyên tắc: khóa <em>ít</em> và <em>ngắn</em> — không gọi IO, không gọi callback/network bên trong khối khóa. Trước JDK 24, <code class="inline">synchronized</code> gây <em>pinning</em> virtual thread; JEP 491 (JDK 24) đã xử lý — chi tiết ở mục 10.</div>
+
+    <h2 id="lock">6. Lock, ReentrantLock, Condition <span class="badge b-junior">Junior+</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">ReentrantLock</code> là bản nâng cấp của <code class="inline">synchronized</code> khi bạn cần thứ mà monitor không có: thử khóa không chờ (<code class="inline">tryLock</code>), chờ có timeout, ngắt được khi đang chờ (<code class="inline">lockInterruptibly</code>), công bằng (fairness), hoặc nhiều hàng chờ điều kiện (<code class="inline">Condition</code>).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.locks.ReentrantLock;
+
+public class LockDemo {
+    static int count = 0;
+    static final ReentrantLock lock = new ReentrantLock();
+
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; {
+            for (int i = 0; i &lt; 100_000; i++) {
+                lock.lock();
+                try {
+                    count++;
+                } finally {
+                    lock.unlock();
+                }
+            }
+        };
+        Thread t1 = new Thread(job);
+        Thread t2 = new Thread(job);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("count    = " + count);
+        IO.println("isLocked = " + lock.isLocked());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>count    = 200000
+isLocked = false</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Luôn <code class="inline">unlock()</code> trong <code class="inline">finally</code>.</strong> Khác với <code class="inline">synchronized</code> (JVM tự nhả khi ra khỏi block hoặc khi exception), Lock phải nhả tay — quên <code class="inline">finally</code> là treo cả hệ thống.</div>
+
+    <h3>tryLock — chống chờ vô hạn</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.locks.ReentrantLock;
+
+public class TryLockDemo {
+    static final ReentrantLock lock = new ReentrantLock();
+
+    public static void main() throws InterruptedException {
+        lock.lock();
+        Thread worker = new Thread(() -&gt;
+            IO.println("worker tryLock khi main dang giu: " + lock.tryLock()));
+        worker.start();
+        worker.join();
+        IO.println("main nha lock");
+        IO.println("main tryLock lai sau khi nha    : " + lock.tryLock());
+        lock.unlock();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>worker tryLock khi main dang giu: false
+main nha lock
+main tryLock lai sau khi nha    : true</code></pre>
+    </div>
+
+    <p><strong>Reentrant</strong> nghĩa là cùng một thread có thể khóa lồng nhiều lần (đếm số lần giữ), phải <code class="inline">unlock()</code> đúng số lần. <code class="inline">tryLock()</code> trả <code class="inline">false</code> ngay lập tức nếu không lấy được; bản có tham số <code class="inline">tryLock(time, unit)</code> chờ tối đa bao lâu. Đây là công cụ chính để <em>phá deadlock</em>: nếu không lấy được khóa trong thời gian cho phép, chủ động bỏ và thử lại/thất bại sạch sẽ thay vì treo mãi.</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th><code class="inline">synchronized</code></th><th><code class="inline">ReentrantLock</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cú pháp</td><td>block/method, JVM tự nhả</td><td><code class="inline">lock()</code>/<code class="inline">unlock()</code> thủ công trong <code class="inline">finally</code></td></tr>
+        <tr><td>tryLock / timeout</td><td>Không</td><td>Có</td></tr>
+        <tr><td>Ngắt khi đang chờ</td><td>Không (chờ vô hạn)</td><td><code class="inline">lockInterruptibly()</code></td></tr>
+        <tr><td>Fairness</td><td>Không đảm bảo</td><td><code class="inline">new ReentrantLock(true)</code></td></tr>
+        <tr><td>Nhiều điều kiện chờ</td><td>Một monitor</td><td>Nhiều <code class="inline">Condition</code></td></tr>
+        <tr><td>Hiệu năng hiện đại</td><td>Tốt, JVM tối ưu</td><td>Tương đương; chỉ nhanh hơn khi cần tính năng</td></tr>
+      </tbody>
+    </table>
+
+    <p>Họ hàng cần biết: <code class="inline">ReadWriteLock</code> (nhiều reader song song, writer độc quyền), <code class="inline">StampedLock</code> (optimistic read, nhanh hơn nhưng không reentrant), <code class="inline">Condition.await()/signal()</code> thay cho wait/notify với nhiều hàng chờ. Quy tắc thực dụng: <strong>mặc định dùng <code class="inline">synchronized</code></strong>; chỉ chuyển sang Lock khi cần một trong các tính năng trên và đã đo thấy cần.</p>
+
+    <h2 id="atomic">7. Atomic, CAS &amp; LongAdder <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Các lớp <code class="inline">java.util.concurrent.atomic</code> giải bài toán read-modify-write cho <em>một biến</em> mà không cần khóa, dựa trên lệnh phần cứng <strong>CAS (Compare-And-Set)</strong>: "nếu giá trị hiện tại vẫn là A thì đổi thành B; nếu không, trả về thất bại". Thất bại thì vòng lặp thử lại với giá trị mới.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.atomic.AtomicInteger;
+
+public class AtomicCounter {
+    static AtomicInteger count = new AtomicInteger();
+
+    public static void main() throws InterruptedException {
+        Runnable job = () -&gt; {
+            for (int i = 0; i &lt; 100_000; i++) count.incrementAndGet();
+        };
+        Thread t1 = new Thread(job);
+        Thread t2 = new Thread(job);
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+        IO.println("count = " + count.get());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>count = 200000</code></pre>
+    </div>
+
+    <p><code class="inline">incrementAndGet()</code> là một thao tác CAS trọn vẹn nên luôn đúng. Ngoài ra còn <code class="inline">getAndIncrement()</code>, <code class="inline">addAndGet(n)</code>, <code class="inline">updateAndGet(fn)</code>, <code class="inline">accumulateAndGet(n, fn)</code>.</p>
+
+    <h3>AtomicReference &amp; CAS tường minh</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.atomic.AtomicReference;
+
+public class AtomicRefDemo {
+    static final AtomicReference&lt;String&gt; status = new AtomicReference&lt;&gt;("NEW");
+
+    public static void main() {
+        boolean ok1 = status.compareAndSet("NEW", "RUNNING");
+        IO.println("cas 1: " + ok1 + " -&gt; " + status.get());
+
+        boolean ok2 = status.compareAndSet("NEW", "DONE");
+        IO.println("cas 2: " + ok2 + " -&gt; " + status.get());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>cas 1: true -&gt; RUNNING
+cas 2: false -&gt; RUNNING</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Chọn lớp:</strong> <code class="inline">AtomicInteger</code>/<code class="inline">AtomicLong</code> (đếm, id), <code class="inline">AtomicBoolean</code> (cờ), <code class="inline">AtomicReference</code> (object/trạng thái), <code class="inline">AtomicIntegerArray</code>/<code class="inline">AtomicLongArray</code> (mảng).</li>
+      <li><strong>LongAdder</strong> (và <code class="inline">LongAccumulator</code>) cho <em>counter contention cao</em>: chia thành nhiều cell để giảm tranh chấp, cộng lại khi <code class="inline">sum()</code>. Nhanh hơn <code class="inline">AtomicLong</code> khi hàng nghìn thread cùng tăng, nhưng <code class="inline">sum()</code> không phải ảnh chụp nhất quán tức thời — phù hợp metrics.</li>
+      <li><strong>Bẫy ABA:</strong> giá trị đổi A → B → A khiến CAS tưởng chưa từng thay đổi. Hiếm gặp, nhưng với cấu trúc lock-free phức tạp hãy dùng <code class="inline">AtomicStampedReference</code> (kèm số phiên bản).</li>
+      <li>Atomic không thay được khóa khi cần cập nhật <em>nhiều biến liên quan</em> trong một thao tác nhất quán — lúc đó vẫn cần <code class="inline">synchronized</code>/Lock.</li>
+    </ul>
+
+    <h2 id="executor">8. ExecutorService, Future &amp; thread pool <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p>Tự tạo thread cho từng việc là phản pattern: thread tạo/hủy tốn kém, số lượng không giới hạn làm sập hệ thống. <strong>ExecutorService</strong> tách "việc cần chạy" khỏi "ai chạy và chạy bao nhiêu", cho phép hàng đợi, giới hạn thread, và thu thập kết quả qua <code class="inline">Future</code>.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class ExecutorDemo {
+    public static void main() throws Exception {
+        try (ExecutorService pool = Executors.newFixedThreadPool(3)) {
+            Future&lt;Integer&gt; f1 = pool.submit(() -&gt; {
+                Thread.sleep(30);
+                return 21;
+            });
+            Future&lt;Integer&gt; f2 = pool.submit(() -&gt; 2);
+            IO.println("f1  = " + f1.get());
+            IO.println("f2  = " + f2.get());
+            IO.println("tong = " + (f1.get() + f2.get()));
+        }
+        IO.println("pool da dong");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>f1  = 21
+f2  = 2
+tong = 23
+pool da dong</code></pre>
+    </div>
+
+    <p>Từ Java 19, <code class="inline">ExecutorService</code> là <code class="inline">AutoCloseable</code>: dùng try-with-resources để tự động <code class="inline">close()</code> (chờ task đang chạy xong rồi dừng) — gọn hơn <code class="inline">shutdown()</code> + <code class="inline">awaitTermination()</code> thủ công.</p>
+
+    <h3>Future — lấy kết quả, và cái bẫy nuốt exception</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+public class FutureTimeout {
+    public static void main() throws Exception {
+        try (ExecutorService pool = Executors.newSingleThreadExecutor()) {
+            Future&lt;String&gt; f = pool.submit(() -&gt; {
+                Thread.sleep(200);
+                return "xong";
+            });
+            try {
+                IO.println(f.get(50, TimeUnit.MILLISECONDS));
+            } catch (TimeoutException e) {
+                IO.println("het thoi gian cho - future van chay");
+                f.cancel(true);
+            }
+
+            Future&lt;?&gt; loi = pool.submit(() -&gt; {
+                throw new IllegalStateException("bug trong task");
+            });
+            try {
+                loi.get();
+            } catch (ExecutionException e) {
+                IO.println("bat duoc: " + e.getCause().getMessage());
+            }
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>het thoi gian cho - future van chay
+bat duoc: bug trong task</code></pre>
+    </div>
+
+    <ul>
+      <li><code class="inline">get()</code> <strong>block</strong> đến khi xong — đừng gọi trong vòng lặp tuần tự nếu muốn song song; luôn cân nhắc <code class="inline">get(timeout, unit)</code>.</li>
+      <li>Exception trong task bị bọc vào <code class="inline">ExecutionException</code> — phải <code class="inline">get()</code> mới thấy; <code class="inline">submit()</code> một task ném lỗi mà không bao giờ gọi <code class="inline">get()</code> là <strong>nuốt lỗi im lặng</strong>. <code class="inline">execute()</code> thì ngược lại: exception in thẳng ra <code class="inline">UncaughtExceptionHandler</code> và in stderr.</li>
+      <li><code class="inline">cancel(true)</code> cố ngắt thread đang chạy (gửi interrupt); task phải hợp tác mới dừng thật.</li>
+    </ul>
+
+    <h3>Chọn thread pool — bẫy của <code class="inline">Executors</code></h3>
+
+    <table>
+      <thead>
+        <tr><th>Factory</th><th>Cấu hình</th><th>Bẫy</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">newFixedThreadPool(n)</code></td><td>n thread + queue <strong>không giới hạn</strong></td><td>Task dồn vào queue → OOM; n thread có thể không đủ cho IO</td></tr>
+        <tr><td><code class="inline">newCachedThreadPool()</code></td><td>thread <strong>không giới hạn</strong>, tái sử dụng 60s</td><td>Bão task → tạo hàng nghìn thread → sập máy</td></tr>
+        <tr><td><code class="inline">newSingleThreadExecutor()</code></td><td>1 thread + queue không giới hạn</td><td>Tuần tự hóa; cùng bẫy queue</td></tr>
+        <tr><td><code class="inline">newVirtualThreadPerTaskExecutor()</code></td><td>1 virtual thread / task</td><td>Không pool; dùng cho task blocking IO (mục 10)</td></tr>
+      </tbody>
+    </table>
+
+    <p>Production nên tạo <code class="inline">ThreadPoolExecutor</code> tường minh với <strong>queue có biên</strong> + <code class="inline">RejectedExecutionHandler</code> (mặc định là <code class="inline">AbortPolicy</code> ném <code class="inline">RejectedExecutionException</code>; có thể chọn CallerRunsPolicy để tạo backpressure). Cách chọn kích thước:</p>
+
+    <ul>
+      <li><strong>CPU-bound</strong> (tính toán): khoảng số core (<code class="inline">Runtime.getRuntime().availableProcessors()</code>), thêm 1 nếu cần che IO lặt vặt.</li>
+      <li><strong>IO-bound</strong> (DB, HTTP): công thức <code class="inline">threads ≈ cores × (1 + thời gian chờ / thời gian tính)</code> — nhưng tốt hơn hết là dùng virtual threads khi toàn blocking IO.</li>
+      <li>Luôn đặt tên thread (<code class="inline">ThreadFactory</code>) để đọc log/thread dump dễ: <code class="inline">order-worker-3</code> thay vì <code class="inline">pool-1-thread-3</code>.</li>
+    </ul>
+
+    <h3>ScheduledExecutorService</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class ScheduledDemo {
+    public static void main() throws Exception {
+        try (ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor()) {
+            var future = scheduler.schedule(() -&gt; 42, 50, TimeUnit.MILLISECONDS);
+            IO.println("ket qua sau 50ms: " + future.get());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>ket qua sau 50ms: 42</code></pre>
+    </div>
+
+    <p>Ba method chính: <code class="inline">schedule</code> (chạy một lần sau delay), <code class="inline">scheduleAtFixedRate</code> (chu kỳ cố định, tính từ lần bắt đầu), <code class="inline">scheduleWithFixedDelay</code> (nghỉ cố định giữa hai lần chạy). Nếu một lần chạy ném exception, task định kỳ <strong>im lặng dừng</strong> — hãy bọc <code class="inline">try/catch</code> bên trong task và log.</p>
+
+    <h2 id="completable-future">9. CompletableFuture <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">Future</code> chỉ cho lấy kết quả bằng <code class="inline">get()</code> (block). <code class="inline">CompletableFuture</code> (Java 8) thêm khả năng <strong>ghép nối</strong> như Promise: biến đổi, kết hợp, xử lý lỗi — tương đương <code class="inline">.then()</code> của Node.js.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.CompletableFuture;
+
+public class CompletableFutureDemo {
+    static String goiApi(String ten) {
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return ten + "@api";
+    }
+
+    public static void main() {
+        CompletableFuture&lt;String&gt; a = CompletableFuture.supplyAsync(() -&gt; goiApi("user"));
+        CompletableFuture&lt;String&gt; b = CompletableFuture.supplyAsync(() -&gt; goiApi("order"));
+
+        String ketQua = a.thenCombine(b, (x, y) -&gt; x + " + " + y)
+                        .exceptionally(ex -&gt; "loi: " + ex.getMessage())
+                        .join();
+        IO.println(ketQua);
+
+        CompletableFuture
+            .supplyAsync(() -&gt; "10")
+            .thenApply(Integer::parseInt)
+            .thenApply(n -&gt; n * 2)
+            .thenAccept(n -&gt; IO.println("chain: " + n))
+            .join();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>user@api + order@api
+chain: 20</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Ý nghĩa</th><th>Tương đương Node.js</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">supplyAsync</code> / <code class="inline">runAsync</code></td><td>Chạy async, có/không kết quả</td><td><code class="inline">new Promise(...)</code> / <code class="inline">Promise.resolve()</code></td></tr>
+        <tr><td><code class="inline">thenApply</code></td><td>Biến đổi kết quả (1-1)</td><td><code class="inline">.then(v =&gt; ...)</code></td></tr>
+        <tr><td><code class="inline">thenCompose</code></td><td>Nối tiếp khi hàm trả về CF khác (dẹp lồng)</td><td><code class="inline">.then</code> trả Promise (auto-flatten)</td></tr>
+        <tr><td><code class="inline">thenCombine</code></td><td>Ghép hai CF độc lập chạy song song</td><td><code class="inline">Promise.all([a, b])</code> (2 phần tử)</td></tr>
+        <tr><td><code class="inline">allOf</code> / <code class="inline">anyOf</code></td><td>Chờ tất cả / chờ một cái xong</td><td><code class="inline">Promise.all</code> / <code class="inline">Promise.race</code></td></tr>
+        <tr><td><code class="inline">exceptionally</code> / <code class="inline">handle</code></td><td>Bắt lỗi, trả giá trị dự phòng / xử lý cả hai nhánh</td><td><code class="inline">.catch(ex =&gt; ...)</code></td></tr>
+        <tr><td><code class="inline">join()</code> / <code class="inline">get()</code></td><td>Chờ và lấy kết quả; <code class="inline">join</code> không checked exception</td><td><code class="inline">await</code></td></tr>
+        <tr><td><code class="inline">orTimeout</code> / <code class="inline">completeOnTimeout</code> (Java 9)</td><td>Giới hạn thời gian chờ</td><td>AbortSignal.timeout / Promise.race</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>Bốn bẫy production:</strong> (1) mặc định <code class="inline">supplyAsync</code> chạy trên <strong>common ForkJoinPool</strong> — task blocking lâu sẽ chiếm hết pool chung; hãy truyền executor riêng (<code class="inline">supplyAsync(fn, executor)</code>). (2) Quên gọi <code class="inline">join/get</code>/<code class="inline">allOf</code> thì exception bị nuốt. (3) Gọi <code class="inline">get()</code> ngay sau <code class="inline">supplyAsync</code> thì không còn bất đồng bộ. (4) Đừng mutate state chung trong các nhánh — dùng cách tổng hợp kết quả trả về.</div>
+
+    <h2 id="virtual-threads">10. Virtual threads, Scoped Values &amp; structured concurrency <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Virtual thread</strong> (chính thức từ Java 21, JEP 444) là thread do JVM quản lý, nhẹ hơn thread hệ điều hành hàng nghìn lần: có thể tạo hàng triệu. Khi virtual thread gặp thao tác blocking (IO, <code class="inline">sleep</code>, chờ lock), JVM <em>tháo nó ra</em> khỏi carrier thread và dùng carrier chạy việc khác — nên code blocking truyền thống vẫn scale.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class VirtualThreadsDemo {
+    public static void main() throws Exception {
+        Thread vt = Thread.ofVirtual().name("vt-", 1).start(() -&gt;
+            IO.println("virtual? " + Thread.currentThread().isVirtual()
+                       + " | ten: " + Thread.currentThread().getName()));
+        vt.join();
+
+        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future&lt;String&gt; f = pool.submit(() -&gt; {
+                Thread.sleep(50);
+                return "xong, virtual=" + Thread.currentThread().isVirtual();
+            });
+            IO.println(f.get());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>virtual? true | ten: vt-1
+xong, virtual=true</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>Dùng khi:</strong> server xử lý nhiều request blocking (HTTP client, JDBC, đọc file) — thay thế thread pool lớn. Mỗi request một virtual thread là mô hình đơn giản nhất.</li>
+      <li><strong>Không dùng khi:</strong> CPU-bound (virtual thread không nhanh hơn platform thread cho tính toán); không <strong>pool</strong> virtual thread (tạo mới là rẻ, pool chỉ tổ tốn).</li>
+      <li><strong>Pinning:</strong> virtual thread bị "ghim" vào carrier khi chạy native code/JNI/FFM. Trước JDK 24, <code class="inline">synchronized</code> cũng gây pinning; <strong>JEP 491 (JDK 24) đã bỏ pinning cho monitor</strong> — trên JDK 25 bạn không cần thay <code class="inline">synchronized</code> bằng <code class="inline">ReentrantLock</code> chỉ vì virtual thread nữa.</li>
+      <li><strong>ThreadLocal:</strong> mỗi virtual thread có ThreadLocal riêng — hàng triệu thread nghĩa là hàng triệu bản sao; cân nhắc <code class="inline">ScopedValue</code>. Đặc biệt cảnh giác khi chạy virtual thread <em>trong thread pool kế thừa ThreadLocal</em>.</li>
+    </ul>
+
+    <h3>Scoped Values (chính thức JDK 25, JEP 506)</h3>
+
+    <p><code class="inline">ScopedValue</code> là cách chia sẻ dữ liệu bất biến theo ngữ cảnh request (user, traceId, tenant) mà không cần truyền tham số qua mọi hàm. Khác ThreadLocal: chỉ đọc được trong scope, tự giải phóng, an toàn với virtual threads.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">public class ScopedValueDemo {
+    static final ScopedValue&lt;String&gt; USER = ScopedValue.newInstance();
+
+    public static void main() {
+        ScopedValue.where(USER, "an").run(() -&gt; {
+            IO.println("trong scope : " + USER.get());
+            IO.println("isBound     : " + USER.isBound());
+        });
+        IO.println("ngoai scope : " + USER.isBound());
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>trong scope : an
+isBound     : true
+ngoai scope : false</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Thread mới không tự thừa hưởng binding.</strong> Đọc <code class="inline">ScopedValue</code> từ một thread <code class="inline">start()</code> độc lập ngoài scope sẽ ném <code class="inline">NoSuchElementException</code>. Binding chỉ truyền xuống <em>subtask trong StructuredTaskScope</em>; muốn truyền context sang thread tự tạo, hãy truyền tham số hoặc chạy task trong scope phù hợp.</div>
+
+    <h3>Structured concurrency — preview</h3>
+
+    <p>Ý tưởng: một task tách thành nhiều subtask phải cùng sống trong một <em>scope</em> — subtask nào lỗi hoặc bị hủy thì cả nhóm được dọn dẹp, không để thread rò rỉ.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.*;
+
+public class StructuredDemo {
+    static String goiApi(String ten) throws InterruptedException {
+        Thread.sleep(50);
+        return ten + "@api";
+    }
+
+    public static void main() throws Exception {
+        try (var scope = StructuredTaskScope.open()) {
+            var user = scope.fork(() -&gt; goiApi("user"));
+            var order = scope.fork(() -&gt; goiApi("order"));
+            scope.join();
+            IO.println(user.get() + " + " + order.get());
+        }
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>$ java --enable-preview --source 25 StructuredDemo.java
+user@api + order@api</code></pre>
+    </div>
+
+    <div class="note warn"><strong>Preview feature (JEP 505, JDK 25):</strong> API structured concurrency còn có thể thay đổi giữa các phiên bản — bản 25 dùng <code class="inline">StructuredTaskScope.open()</code>, các bản trước dùng <code class="inline">new StructuredTaskScope.ShutdownOnFailure()</code>. Compile/run phải thêm <code class="inline">--enable-preview --source 25</code>; <strong>không dùng trong production</strong> cho tới khi chính thức. Đây là mức "nhận biết".</div>
+
+    <h2 id="deadlock">11. Deadlock, livelock &amp; starvation <span class="badge b-interview">Hay hỏi phỏng vấn</span> <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Deadlock</strong> xảy ra khi hai thread mỗi bên giữ một khóa và chờ khóa của bên kia — vòng tròn chờ vĩnh viễn. Điều kiện Coffman gồm 4 yếu tố, phá một yếu tố là phá được deadlock:</p>
+
+    <ol>
+      <li>Mutual exclusion — tài nguyên chỉ một thread dùng tại một thời điểm.</li>
+      <li>Hold and wait — đang giữ khóa này lại chờ khóa khác.</li>
+      <li>No preemption — không ai cướp được khóa.</li>
+      <li>Circular wait — có vòng tròn chờ.</li>
+    </ol>
+
+    <div class="codeblock">
+      <pre><code class="java">public class DeadlockDemo {
+    static final Object A = new Object();
+    static final Object B = new Object();
+
+    public static void main() throws InterruptedException {
+        Thread t1 = new Thread(() -&gt; {
+            synchronized (A) {
+                try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                synchronized (B) { IO.println("t1 lay duoc B"); }
+            }
+        }, "t1");
+        Thread t2 = new Thread(() -&gt; {
+            synchronized (B) {
+                try { Thread.sleep(50); } catch (InterruptedException e) { return; }
+                synchronized (A) { IO.println("t2 lay duoc A"); }
+            }
+        }, "t2");
+        t1.setDaemon(true);
+        t2.setDaemon(true);
+        t1.start();
+        t2.start();
+        Thread.sleep(300);
+        IO.println("t1 state: " + t1.getState());
+        IO.println("t2 state: " + t2.getState());
+        IO.println("ca hai BLOCKED: deadlock");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>t1 state: BLOCKED
+t2 state: BLOCKED
+ca hai BLOCKED: deadlock</code></pre>
+    </div>
+
+    <p>Trong thực tế chương trình sẽ treo (t1/t2 là daemon ở đây để ví dụ tự thoát). Chẩn đoán bằng thread dump: <code class="inline">jcmd &lt;pid&gt; Thread.print</code> hoặc <code class="inline">jstack &lt;pid&gt;</code>; JVM còn tự phát hiện và in dòng <code class="inline">Found one Java-level deadlock</code> kèm chuỗi chờ.</p>
+
+    <h3>Cách phòng tránh</h3>
+
+    <ul>
+      <li><strong>Thứ tự khóa cố định:</strong> mọi nơi đều khóa A rồi B, không nơi nào ngược lại. Đặt tên/so sánh id để sắp thứ tự khóa nếu là object động.</li>
+      <li><strong>tryLock có timeout</strong> thay vì chờ vô hạn: không lấy được thì nhả hết và thử lại — phá "hold and wait".</li>
+      <li><strong>Giảm khóa lồng nhau:</strong> một khóa duy nhất, hoặc dùng cấu trúc concurrent có sẵn thay vì tự khóa nhiều tầng.</li>
+      <li><strong>Không gọi code "ngoài" khi đang giữ khóa</strong> (callback, network, listener) — nguồn deadlock phổ biến ở production.</li>
+      <li><strong>Bất biến &amp; không chia sẻ</strong> là cách tốt nhất: message passing/queue thay vì khóa chung.</li>
+    </ul>
+
+    <p><strong>Livelock</strong>: các thread vẫn chạy nhưng cứ "nhường nhau" mãi, không tiến triển (hai người nhường nhau ở hành lang). <strong>Starvation</strong>: một thread mãi không được cấp tài nguyên vì thread khác luôn giành mất — thường do ưu tiên hoặc khóa không công bằng. Cả hai đều cần thiết kế lại luồng phối hợp, không chỉ thêm timeout.</p>
+
+    <h2 id="collections">12. Thread-safe collections &amp; công cụ phối hợp <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">ArrayList</code>, <code class="inline">HashMap</code>... <strong>không an toàn</strong> khi nhiều thread cùng sửa. Hai thread cùng <code class="inline">put</code> vào HashMap có thể mất entry hoặc báo <code class="inline">ConcurrentModificationException</code> khi thread khác đang duyệt. Cách xử lý hiện đại:</p>
+
+    <table>
+      <thead>
+        <tr><th>Nhu cầu</th><th>Dùng</th><th>Lưu ý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Map đọc/ghi đồng thời</td><td><code class="inline">ConcurrentHashMap</code></td><td>Không nhận null; <code class="inline">computeIfAbsent</code>/<code class="inline">merge</code> atomic; iterator "weakly consistent" (không ném CME, có thể thấy dữ liệu gần nhất)</td></tr>
+        <tr><td>List đọc nhiều, ghi ít</td><td><code class="inline">CopyOnWriteArrayList</code></td><td>Mỗi lần ghi copy cả mảng — chỉ hợp danh sách listener/cấu hình ít thay đổi</td></tr>
+        <tr><td>Set concurrent</td><td><code class="inline">ConcurrentHashMap.newKeySet()</code></td><td>Không có <code class="inline">ConcurrentHashSet</code> riêng</td></tr>
+        <tr><td>Producer–Consumer</td><td><code class="inline">BlockingQueue</code></td><td><code class="inline">ArrayBlockingQueue</code> có biên; <code class="inline">LinkedBlockingQueue</code> mặc định không biên — nhớ đặt capacity</td></tr>
+        <tr><td>Hàng đợi không chặn</td><td><code class="inline">ConcurrentLinkedQueue</code></td><td>Không block, không biên</td></tr>
+        <tr><td>Bọc collection cũ</td><td><code class="inline">Collections.synchronizedList/Map</code></td><td>An toàn từng method, nhưng <strong>duyệt vẫn phải tự synchronized</strong> trên collection</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Producer–Consumer với BlockingQueue</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+public class ProducerConsumer {
+    public static void main() throws InterruptedException {
+        BlockingQueue&lt;Integer&gt; queue = new ArrayBlockingQueue&lt;&gt;(3);
+
+        Thread producer = new Thread(() -&gt; {
+            try {
+                for (int i = 1; i &lt;= 5; i++) {
+                    queue.put(i);
+                    IO.println("san xuat: " + i);
+                }
+                queue.put(-1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "producer");
+
+        Thread consumer = new Thread(() -&gt; {
+            try {
+                while (true) {
+                    int v = queue.take();
+                    if (v == -1) break;
+                    IO.println("tieu thu: " + v);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "consumer");
+
+        producer.start();
+        consumer.start();
+        producer.join();
+        consumer.join();
+        IO.println("xong");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>// mot lan chay - thu tu dong giua producer/consumer thay doi
+san xuat: 1
+san xuat: 2
+san xuat: 3
+tieu thu: 1
+tieu thu: 2
+san xuat: 4
+san xuat: 5
+tieu thu: 3
+tieu thu: 4
+tieu thu: 5
+xong</code></pre>
+    </div>
+
+    <p><code class="inline">put</code> block khi queue đầy, <code class="inline">take</code> block khi queue rỗng — nhờ đó tự nhiên có backpressure và không cần wait/notify. Dùng <strong>poison pill</strong> (<code class="inline">-1</code>) để báo consumer dừng là pattern quen thuộc.</p>
+
+    <h3>Chờ nhau: Latch, Barrier, Semaphore</h3>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.concurrent.CountDownLatch;
+
+public class LatchDemo {
+    public static void main() throws InterruptedException {
+        CountDownLatch ready = new CountDownLatch(3);
+
+        for (int i = 1; i &lt;= 3; i++) {
+            final int id = i;
+            Thread.ofPlatform().name("worker-" + i).start(() -&gt; {
+                IO.println("worker " + id + " san sang");
+                ready.countDown();
+            });
+        }
+        ready.await();
+        IO.println("ca 3 worker da san sang");
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>// mot lan chay - thu tu worker thay doi
+worker 2 san sang
+worker 1 san sang
+worker 3 san sang
+ca 3 worker da san sang</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Công cụ</th><th>Công dụng</th><th>Đặc điểm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">CountDownLatch</code></td><td>Chờ N việc xong (<code class="inline">countDown</code> → <code class="inline">await</code>)</td><td>Dùng một lần, không reset</td></tr>
+        <tr><td><code class="inline">CyclicBarrier</code></td><td>N thread chờ nhau tại một điểm rồi cùng đi tiếp</td><td>Tái sử dụng được; hợp chia pha tính toán</td></tr>
+        <tr><td><code class="inline">Semaphore</code></td><td>Giới hạn N "giấy phép" (connection, slot)</td><td><code class="inline">acquire</code>/<code class="inline">release</code>; dùng để rate limit tài nguyên</td></tr>
+        <tr><td><code class="inline">Phaser</code></td><td>Barrier linh hoạt, số bên thay đổi</td><td>Nâng cao, ít dùng hơn</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note warn"><strong>ThreadLocal trên thread pool:</strong> thread được tái sử dụng, nên dữ liệu ThreadLocal của request trước <em>sống sót</em> sang request sau nếu bạn quên <code class="inline">remove()</code> — vừa rò rỉ bộ nhớ vừa lộ dữ liệu. Luôn <code class="inline">try/finally { context.remove(); }</code>. Virtual threads không bị vấn đề tái sử dụng này, nhưng lại tốn bộ nhớ nếu tạo quá nhiều bản sao.</div>
+
+    <h2 id="parallel-stream">13. Parallel stream — khi nào dùng <span class="badge b-prod">Production</span></h2>
+
+    <p><code class="inline">.parallel()</code> chia công việc cho <strong>common ForkJoinPool</strong> (mặc định ~ số core - 1). Chỉ có lợi khi: dữ liệu đủ lớn, công việc <strong>CPU-bound</strong>, thuần túy (không side-effect), không blocking, và không phụ thuộc thứ tự.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+
+public class ParallelStreamDemo {
+    public static void main() {
+        long sum = LongStream.rangeClosed(1, 10_000_000).parallel().sum();
+        IO.println("tong = " + sum);
+
+        IO.print("forEach        : ");
+        IntStream.rangeClosed(1, 5).parallel().forEach(n -&gt; IO.print(n + " "));
+        IO.println();
+
+        IO.print("forEachOrdered : ");
+        IntStream.rangeClosed(1, 5).parallel().forEachOrdered(n -&gt; IO.print(n + " "));
+        IO.println();
+    }
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code>tong = 50000005000000
+forEach        : 3 2 4 1 5     // mot lan chay - thu tu thay doi
+forEachOrdered : 1 2 3 4 5     // luon dung thu tu</code></pre>
+    </div>
+
+    <p><strong>Không nên dùng parallel stream khi:</strong> task có IO/DB/HTTP (chặn carrier của common pool, ảnh hưởng toàn bộ ứng dụng); có side-effect (ghi list, tăng biến — race condition); dữ liệu nhỏ (overhead chia việc lớn hơn lợi ích); cần thứ tự (phải dùng <code class="inline">forEachOrdered</code>, mất lợi thế); hoặc đang ở trong một parallel stream khác (nested). Muốn đo lợi thật, hãy benchmark bằng <strong>JMH</strong> — đừng đoán. Với task IO, virtual threads + cấu trúc tuần tự thường tốt hơn.</p>
+
+    <div class="note"><strong>Liên hệ:</strong> Stream API cơ bản và bẫy <code class="inline">parallel</code> nằm ở <a href="streams.html">3.8 Stream API</a>; nguyên tắc chung: <em>đo trước, song song hóa sau</em>.</div>
+
+    <h2 id="goc-nodejs">14. Góc Node.js — event loop vs đa luồng thật</h2>
+
+    <table>
+      <thead>
+        <tr><th>Node.js</th><th>Java</th><th>Khác biệt cần đổi cách nghĩ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Event loop đơn luồng + worker pool cho IO/crypto</td><td>Nhiều thread thật chạy song song, chia sẻ heap</td><td>Java phải <strong>bảo vệ shared state</strong>; Node chủ yếu tránh chia sẻ nên ít gặp race</td></tr>
+        <tr><td>Promise / async-await</td><td><code class="inline">CompletableFuture</code> / virtual threads</td><td>Cùng ý tưởng chuỗi bất đồng bộ; Java có callback hell nếu lạm dụng CF</td></tr>
+        <tr><td>CPU-bound làm nghẽn event loop</td><td>CPU-bound chạy thread riêng</td><td>Node phải tách worker_threads; Java chỉ cần executor phù hợp</td></tr>
+        <tr><td><code class="inline">worker_threads</code>, <code class="inline">cluster</code></td><td>Thread pool, virtual threads, nhiều service instance</td><td>Virtual threads ≈ worker nhẹ không giới hạn cho blocking IO</td></tr>
+        <tr><td>Không có lock; dùng cấu trúc async</td><td><code class="inline">synchronized</code>, Lock, Atomic</td><td>Lock trong Java là chuyện thường ngày — học cách khóa đúng (mục 5–6)</td></tr>
+        <tr><td><code class="inline">AsyncLocalStorage</code></td><td><code class="inline">ThreadLocal</code> / <code class="inline">ScopedValue</code></td><td>ThreadLocal gắn với thread — nhớ remove khi dùng pool</td></tr>
+      </tbody>
+    </table>
+
+    <p>Điểm dễ sai nhất khi chuyển từ Node sang: trong Node gần như mọi thứ chạy tuần tự trong một thread nên code "tự an toàn"; sang Java, hai request có thể chạy thật sự cùng lúc trên hai core, cùng sửa một object. Mọi state chia sẻ <em>phải</em> được thiết kế lại: immutable, local theo request, hoặc có khóa.</p>
+
+    <h2 id="qa">15. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Cơ bản</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Process và thread khác nhau thế nào? Java thread chia sẻ gì?</summary>
+      <div class="answer">Process là chương trình đang chạy với không gian địa chỉ riêng; thread là đơn vị thực thi trong process. Các thread cùng process <strong>chia sẻ heap, static field, code</strong>, nhưng mỗi thread có <strong>stack riêng</strong> (biến local, call frame) và chương trình con. Chính việc chia sẻ heap tạo ra nhu cầu đồng bộ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. <code class="inline">start()</code> và <code class="inline">run()</code> khác gì? Gọi <code class="inline">start()</code> hai lần thì sao?</summary>
+      <div class="answer"><code class="inline">run()</code> chỉ là lời gọi method bình thường trên thread hiện tại. <code class="inline">start()</code> tạo thread mới và JVM gọi <code class="inline">run()</code> bên trong nó. Gọi <code class="inline">start()</code> lần hai trên cùng thread ném <code class="inline">IllegalThreadStateException</code>; còn gọi <code class="inline">run()</code> nhiều lần vẫn bình thường.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Kể 6 trạng thái của thread.</summary>
+      <div class="answer"><code class="inline">NEW</code>, <code class="inline">RUNNABLE</code>, <code class="inline">BLOCKED</code> (chờ monitor synchronized), <code class="inline">WAITING</code> (wait/join/park vô hạn), <code class="inline">TIMED_WAITING</code> (sleep/wait/join có thời hạn), <code class="inline">TERMINATED</code>. Chú ý <code class="inline">RUNNABLE</code> bao gồm cả thread đang chờ IO ở tầng OS — không có trạng thái "blocked on IO" riêng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Race condition là gì? Vì sao <code class="inline">count++</code> không an toàn?</summary>
+      <div class="answer">Race condition là kết quả phụ thuộc thứ tự thực thi không xác định của nhiều thread. <code class="inline">count++</code> gồm đọc – cộng – ghi, không nguyên tử; hai thread có thể cùng đọc giá trị cũ rồi cùng ghi đè (lost update). Sửa: <code class="inline">synchronized</code>, Atomic, hoặc không chia sẻ state.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. <code class="inline">volatile</code> đảm bảo gì? Có thay được <code class="inline">synchronized</code> không?</summary>
+      <div class="answer"><code class="inline">volatile</code> đảm bảo <strong>visibility</strong> (ghi/đọc đi thẳng bộ nhớ chính, có happens-before giữa lần ghi và lần đọc sau) và chặn reordering quanh nó. Nó <strong>không</strong> đảm bảo atomicity: <code class="inline">volatile count++</code> vẫn mất cập nhật. Dùng cho cờ hiệu, one-writer-many-readers; không dùng thay khóa cho compound action.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. happans-before là gì? Kể vài cặp quy tắc.</summary>
+      <div class="answer">Là quan hệ đảm bảo thay đổi bộ nhớ của thao tác A được thread thực hiện B <em>nhìn thấy</em>. Các cặp hay dùng: thứ tự chương trình trong một thread; ghi volatile → đọc volatile sau; unlock monitor → lock monitor sau; <code class="inline">start()</code> → code trong thread mới; code trong thread → <code class="inline">join()</code> trả về; <code class="inline">final</code> field → đọc qua reference được công bố an toàn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. <code class="inline">synchronized</code> khóa vào đối tượng nào?</summary>
+      <div class="answer">Method instance khóa <code class="inline">this</code>; <code class="inline">static</code> synchronized khóa object <code class="inline">Class</code>; block khóa object trong ngoặc. Nó reentrant (cùng thread khóa lồng được). Đừng khóa String/boxed literal hay object public dùng chung vì dễ deadlock và ảnh hưởng ngoài phạm vi kiểm soát.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. <code class="inline">synchronized</code> và <code class="inline">ReentrantLock</code> khác nhau gì? Khi nào chọn Lock?</summary>
+      <div class="answer">Lock linh hoạt hơn: <code class="inline">tryLock</code> (không chờ hoặc timeout), <code class="inline">lockInterruptibly</code>, fairness, nhiều <code class="inline">Condition</code>. Bù lại phải nhả tay trong <code class="inline">finally</code>. Mặc định dùng <code class="inline">synchronized</code>; chuyển sang Lock khi cần timeout/ngắt/công bằng hoặc phá deadlock.</div>
+    </details>
+
+    <h3>Nâng cao (Junior+)</h3>
+
+    <details class="qa">
+      <summary>Câu 9. CAS là gì? Vì sao Atomic nhanh hơn synchronized?</summary>
+      <div class="answer">CAS (compare-and-set) là lệnh phần cứng: "nếu giá trị còn là A thì đổi thành B, ngược lại báo thất bại". Atomic dùng vòng lặp CAS nên không cần khóa hệ điều hành, giảm chi phí context switch — nhanh hơn khi contention thấp. Contention cao thì CAS quay vòng nhiều; lúc đó <code class="inline">LongAdder</code> hoặc khóa có thể tốt hơn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 10. ABA problem là gì?</summary>
+      <div class="answer">Giá trị đổi A → B → A khiến CAS tưởng "chưa từng thay đổi" và thực hiện nhầm. Với dữ liệu phức tạp (stack/queue lock-free), dùng <code class="inline">AtomicStampedReference</code> để kèm số phiên bản, hoặc dùng GC + immutable node như các collection sẵn có.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Vì sao không nên dùng <code class="inline">Executors.newFixedThreadPool</code> trong production?</summary>
+      <div class="answer">Nó dùng queue <strong>không giới hạn</strong>: khi task đến nhanh hơn xử lý, queue phình đến OOM và thời gian chờ tăng vô hạn mà không có tín hiệu. Production nên tự tạo <code class="inline">ThreadPoolExecutor</code> với queue có biên và <code class="inline">RejectedExecutionHandler</code> phù hợp (fail fast hoặc CallerRuns để backpressure).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. <code class="inline">submit()</code> khác <code class="inline">execute()</code> thế nào về exception?</summary>
+      <div class="answer"><code class="inline">execute(Runnable)</code> ném exception ra <code class="inline">UncaughtExceptionHandler</code> (in stderr, thread có thể chết). <code class="inline">submit(...)</code> bọc exception vào <code class="inline">Future</code> — nếu không gọi <code class="inline">get()</code> thì lỗi bị nuốt im lặng. Đây là lỗi production rất hay gặp khi submit mà không theo dõi Future.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Kích thước thread pool nên chọn thế nào?</summary>
+      <div class="answer">CPU-bound: ~ số core. IO-bound: <code class="inline">cores × (1 + wait/compute)</code>, rồi đo và chỉnh. Tuyệt đối không chọn số "to cho chắc": quá nhiều thread gây context switch và OOM. Với blocking IO thuần, virtual thread thường thay thế công thức này tốt hơn.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Deadlock là gì và phòng tránh thế nào?</summary>
+      <div class="answer">Hai hay nhiều thread chờ khóa của nhau theo vòng tròn. Phòng tránh: khóa theo thứ tự cố định; dùng <code class="inline">tryLock(timeout)</code>; giảm khóa lồng nhau; không gọi callback/IO khi đang giữ khóa; ưu tiên immutable/không chia sẻ. Chẩn đoán bằng thread dump (<code class="inline">jcmd Thread.print</code>/<code class="inline">jstack</code>).</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 15. ConcurrentHashMap khác HashMap và synchronizedMap thế nào?</summary>
+      <div class="answer">ConcurrentHashMap an toàn đa luồng bằng khóa mịn/CAS, <strong>không nhận null</strong>, iterator weakly consistent (không ném CME) và các thao tác ghép như <code class="inline">computeIfAbsent</code>/<code class="inline">merge</code> là atomic. <code class="inline">Collections.synchronizedMap</code> chỉ khóa từng method — thao tác ghép vẫn race và duyệt vẫn phải tự đồng bộ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. Future vs CompletableFuture?</summary>
+      <div class="answer">Future chỉ cho <code class="inline">get()</code> blocking và không ghép nối được. CompletableFuture hỗ trợ pipeline phi blocking: <code class="inline">thenApply/thenCompose/thenCombine</code>, <code class="inline">allOf/anyOf</code>, xử lý lỗi <code class="inline">exceptionally/handle</code>, timeout <code class="inline">orTimeout</code>. Lưu ý mặc định chạy trên common ForkJoinPool — truyền executor riêng cho task blocking.</div>
+    </details>
+
+    <h3>Production</h3>
+
+    <details class="qa">
+      <summary>Câu 17. Virtual thread khác platform thread? Khi nào dùng?</summary>
+      <div class="answer">Virtual thread do JVM lập lịch, cực nhẹ (hàng triệu được), tự nhường carrier khi blocking IO. Dùng cho workload blocking IO (HTTP, DB, file) để thay thread pool lớn. Không có lợi cho CPU-bound; không pool virtual thread; trước JDK 24 <code class="inline">synchronized</code> gây pinning (JEP 491 đã sửa ở JDK 24+), còn pinning khi chạy native/JNI/FFM.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. ScopedValue khác ThreadLocal ở đâu?</summary>
+      <div class="answer">ScopedValue bất biến, giới hạn trong một scope (<code class="inline">where(...).run(...)</code>), tự giải phóng khi hết scope và thân thiện với virtual thread (không cần copy hàng triệu bản). ThreadLocal mutable, gắn vòng đời thread, phải <code class="inline">remove()</code> trên thread pool. ScopedValue chỉ chia sẻ <em>đọc</em>; muốn truyền vào thread tách rời phải dùng StructuredTaskScope hoặc tham số.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. Vì sao iterator của ConcurrentHashMap không ném ConcurrentModificationException?</summary>
+      <div class="answer">Nó là <em>weakly consistent</em>: hoạt động trên ảnh chụp tại thời điểm duyệt, có thể thấy hoặc không thấy thay đổi đồng thời, nhưng không bao giờ ném CME và không bị kẹt. Ngược lại, fail-fast iterator của HashMap phát hiện modification count thay đổi và ném CME. Không có nghĩa là size() chính xác tức thời — <code class="inline">size()</code> là ước lượng.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 20. Parallel stream dùng chung gì, khi nào nên tránh?</summary>
+      <div class="answer">Dùng common ForkJoinPool (mặc định ~ số core - 1). Tránh khi: task blocking IO (chiếm carrier, ảnh hưởng cả app), có side-effect/state chia sẻ, dữ liệu nhỏ, cần đảm bảo thứ tự, hoặc nested parallel. Chỉ dùng cho CPU-bound thuần túy với dữ liệu lớn và đã benchmark bằng JMH.</div>
+    </details>
+
+    <h2 id="bai-tap">16. Bài tập đoán output</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <p>Đoán kết quả (hoặc kết luận "không xác định") trước khi mở đáp án. Các bài race/thread có thể chạy ra kết quả khác nhau — mục tiêu là giải thích <em>vì sao</em>.</p>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Hai thread cùng tăng một biến <code class="inline">AtomicInteger</code> 1000 lần mỗi bên. Kết quả?</summary>
+      <div class="answer"><p>Luôn bằng <code class="inline">2000</code>. <code class="inline">incrementAndGet()</code> là một thao tác CAS nguyên tử; không có lost update.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Hai thread cùng tăng một biến <code class="inline">volatile int</code> 1000 lần mỗi bên. Kết quả?</summary>
+      <div class="answer"><p>Thường nhỏ hơn <code class="inline">2000</code> và thay đổi mỗi lần chạy. <code class="inline">volatile</code> chỉ đảm bảo visibility, không đảm bảo atomicity của read-modify-write. Sửa bằng <code class="inline">AtomicInteger</code> hoặc khóa.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. <code class="inline">static synchronized</code> và method <code class="inline">synchronized</code> thường có khóa cùng nhau không?</summary>
+      <div class="answer"><p>Không. <code class="inline">static synchronized</code> khóa object <code class="inline">Class</code>, còn method instance khóa <code class="inline">this</code> — hai monitor khác nhau nên hai thread có thể vào đồng thời một bên static, một bên instance.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. <code class="inline">ReentrantLock</code> được khóa hai lần bởi cùng thread, chỉ <code class="inline">unlock()</code> một lần. Lock còn bị giữ không?</summary>
+      <div class="answer"><p>Còn. Lock reentrant đếm số lần giữ; phải <code class="inline">unlock()</code> đúng hai lần. Thiếu một lần thì thread khác không bao giờ vào được.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Task ném exception, gọi <code class="inline">submit()</code> rồi không bao giờ <code class="inline">get()</code>. Điều gì xảy ra?</summary>
+      <div class="answer"><p>Exception nằm im trong Future — không log, không ai biết task đã thất bại. Đây là lỗi nuốt exception kinh điển. <code class="inline">execute()</code> thì in stack trace qua UncaughtExceptionHandler.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. <code class="inline">Future.get(50, MILLISECONDS)</code> khi task cần 200ms — task có bị hủy không?</summary>
+      <div class="answer"><p>Không. <code class="inline">get</code> chỉ ném <code class="inline">TimeoutException</code>; task vẫn chạy tới hết. Muốn hủy phải gọi <code class="inline">future.cancel(true)</code> và task phải hợp tác với interrupt.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. <code class="inline">IntStream.rangeClosed(1, 5).parallel().forEach(...)</code> in theo thứ tự nào?</summary>
+      <div class="answer"><p>Không xác định — có thể là <code class="inline">3 2 4 1 5</code> hoặc bất kỳ hoán vị nào (một lần chạy của tài liệu ra <code class="inline">3 2 4 1 5</code>). Muốn đúng thứ tự dùng <code class="inline">forEachOrdered</code> (đánh đổi mất một phần song song).</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Thread pool 1 thread, chạy task A submit task B rồi <code class="inline">A.get()</code> trên B. Chuyện gì xảy ra?</summary>
+      <div class="answer"><p>Deadlock: B nằm trong queue chờ thread duy nhất, mà thread đó (đang chạy A) lại chờ B. Không bao giờ xong. Tránh chờ task con bên trong task cha cùng pool; dùng <code class="inline">thenCompose</code>/tách pool hoặc thiết kế lại.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. <code class="inline">ThreadLocal</code> set ở request 1, request 2 chạy lại trên cùng thread pool — đọc được gì?</summary>
+      <div class="answer"><p>Vẫn thấy giá trị của request 1 nếu không <code class="inline">remove()</code>, vì thread được tái sử dụng. Vừa rò rỉ bộ nhớ vừa có thể lộ dữ liệu người dùng. Luôn <code class="inline">try/finally { tl.remove(); }</code>.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. Hai thread khóa A rồi B, và B rồi A. Kết quả?</summary>
+      <div class="answer"><p>Deadlock nếu mỗi bên giữ được khóa đầu trước khi xin khóa thứ hai (như ví dụ mục 11: cả hai <code class="inline">BLOCKED</code>). Sửa bằng thứ tự khóa cố định hoặc <code class="inline">tryLock</code> timeout.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. <code class="inline">ConcurrentHashMap.computeIfAbsent</code> có thread-safe không? Còn <code class="inline">get()</code> rồi <code class="inline">put()</code>?</summary>
+      <div class="answer"><p><code class="inline">computeIfAbsent</code> atomic — chỉ một thread tính giá trị cho mỗi key. Còn cặp <code class="inline">get()</code> + <code class="inline">put()</code> là check-then-act, hai thread có thể cùng thấy null và tạo/cập nhật chồng nhau. Dùng <code class="inline">putIfAbsent</code>/<code class="inline">computeIfAbsent</code>/<code class="inline">merge</code>.</p></div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Trên JDK 25, virtual thread gọi <code class="inline">synchronized</code> rồi blocking lâu có làm pinning carrier không?</summary>
+      <div class="answer"><p>Không còn từ JDK 24 (JEP 491) — monitor không còn ghim virtual thread. Pinning hiện chỉ xảy ra khi chạy native/JNI/FFM (hoặc class initializer) trong thân virtual thread. Trên JDK 21–23 thì có, nên tài liệu cũ thường khuyên thay bằng ReentrantLock.</p></div>
+    </details>
+
+    <h2 id="cheat-sheet">17. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách viết</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Tăng biến an toàn</td><td><code class="inline">AtomicInteger.incrementAndGet()</code> · <code class="inline">LongAdder.increment()</code></td></tr>
+        <tr><td>Cập nhật nguyên tử có điều kiện</td><td><code class="inline">atomic.compareAndSet(mongDoi, moi)</code></td></tr>
+        <tr><td>Khóa một khối</td><td><code class="inline">synchronized (lock) { ... }</code> với <code class="inline">private final Object lock</code></td></tr>
+        <tr><td>Khóa nâng cao</td><td><code class="inline">lock.lock(); try { ... } finally { lock.unlock(); }</code></td></tr>
+        <tr><td>Thử khóa không chờ</td><td><code class="inline">if (lock.tryLock(500, TimeUnit.MILLISECONDS)) { ... }</code></td></tr>
+        <tr><td>Cờ bật/tắt giữa thread</td><td><code class="inline">private volatile boolean running;</code></td></tr>
+        <tr><td>Chạy N task và chờ kết quả</td><td><code class="inline">try (var pool = Executors.newFixedThreadPool(n)) { ... }</code></td></tr>
+        <tr><td>Task IO blocking quy mô lớn</td><td><code class="inline">Executors.newVirtualThreadPerTaskExecutor()</code></td></tr>
+        <tr><td>Nhiều call IO song song</td><td><code class="inline">CompletableFuture.supplyAsync(fn, executor).thenCombine(...)</code></td></tr>
+        <tr><td>Chờ tất cả CF xong</td><td><code class="inline">CompletableFuture.allOf(a, b, c).join()</code></td></tr>
+        <tr><td>Timeout cho CF</td><td><code class="inline">cf.orTimeout(2, TimeUnit.SECONDS)</code></td></tr>
+        <tr><td>Producer–Consumer</td><td><code class="inline">BlockingQueue&lt;T&gt; q = new ArrayBlockingQueue&lt;&gt;(100);</code> · <code class="inline">put</code>/<code class="inline">take</code></td></tr>
+        <tr><td>Chờ N việc</td><td><code class="inline">CountDownLatch(n)</code> → <code class="inline">countDown()</code>/<code class="inline">await()</code></td></tr>
+        <tr><td>Giới hạn tài nguyên</td><td><code class="inline">Semaphore(n)</code> → <code class="inline">acquire()</code>/<code class="inline">release()</code></td></tr>
+        <tr><td>Map đồng thời</td><td><code class="inline">new ConcurrentHashMap&lt;&gt;()</code> · <code class="inline">computeIfAbsent</code>, <code class="inline">merge</code></td></tr>
+        <tr><td>List đọc nhiều</td><td><code class="inline">new CopyOnWriteArrayList&lt;&gt;()</code></td></tr>
+        <tr><td>Dữ liệu theo request</td><td><code class="inline">ScopedValue.where(CTX, v).run(...)</code> (ưu tiên), hoặc ThreadLocal + <code class="inline">remove()</code></td></tr>
+        <tr><td>Dừng pool lịch sự</td><td>try-with-resources (<code class="inline">close()</code>) hoặc <code class="inline">shutdown()</code> + <code class="inline">awaitTermination()</code></td></tr>
+        <tr><td>Chẩn đoán treo</td><td><code class="inline">jcmd &lt;pid&gt; Thread.print</code> · <code class="inline">jstack &lt;pid&gt;</code></td></tr>
+        <tr><td>Đo hiệu năng song song</td><td>JMH — đừng tin <code class="inline">currentTimeMillis</code> đơn lẻ</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được atomicity, visibility, ordering bằng ví dụ.</li>
+      <li>Viết lại ví dụ race condition và 3 cách sửa không cần tra cứu.</li>
+      <li>Vẽ được 6 trạng thái thread và đường chuyển giữa chúng.</li>
+      <li>Nêu khác nhau <code class="inline">start()</code>/<code class="inline">run()</code>, <code class="inline">synchronized</code>/<code class="inline">volatile</code>, <code class="inline">synchronized</code>/<code class="inline">ReentrantLock</code>.</li>
+      <li>Viết producer–consumer bằng BlockingQueue từ trí nhớ.</li>
+      <li>Giải thích vì sao <code class="inline">Executors.newFixedThreadPool</code> có thể OOM.</li>
+      <li>Phân biệt <code class="inline">submit</code>/<code class="inline">execute</code> và cách không nuốt exception.</li>
+      <li>Nêu 4 điều kiện deadlock và 4 cách phòng tránh.</li>
+      <li>Giải thích virtual thread dùng cho gì, pinning là gì, JEP 491 sửa gì.</li>
+      <li>Biết đọc thread dump để tìm thread BLOCKED/WAITING.</li>
+      <li>Biết khi nào <em>không</em> nên dùng parallel stream.</li>
+    </ul>
+
+    <h2 id="nguon">18. Nguồn tham khảo</h2>
+
+    <ul>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/package-summary.html" target="_blank" rel="noreferrer">JDK 25 API — java.util.concurrent</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Thread.html" target="_blank" rel="noreferrer">JDK 25 API — java.lang.Thread</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html" target="_blank" rel="noreferrer">JDK 25 API — CompletableFuture</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ExecutorService.html" target="_blank" rel="noreferrer">JDK 25 API — ExecutorService</a></li>
+      <li><a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-17.html" target="_blank" rel="noreferrer">JLS Chapter 17 — Threads and Locks (Java Memory Model)</a></li>
+      <li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ScopedValue.html" target="_blank" rel="noreferrer">JDK 25 API — ScopedValue</a></li>
+      <li><a href="https://openjdk.org/jeps/444" target="_blank" rel="noreferrer">JEP 444 — Virtual Threads (Java 21)</a></li>
+      <li><a href="https://openjdk.org/jeps/491" target="_blank" rel="noreferrer">JEP 491 — Synchronize Virtual Threads without Pinning (JDK 24)</a></li>
+      <li><a href="https://openjdk.org/jeps/505" target="_blank" rel="noreferrer">JEP 505 — Structured Concurrency (preview, JDK 25)</a></li>
+      <li><a href="https://openjdk.org/jeps/506" target="_blank" rel="noreferrer">JEP 506 — Scoped Values (JDK 25)</a></li>
+      <li><a href="https://dev.java/learn/concurrency/" target="_blank" rel="noreferrer">Dev.java — Concurrency</a></li>
+      <li><a href="https://docs.oracle.com/javase/tutorial/essential/concurrency/" target="_blank" rel="noreferrer">Oracle Tutorial — Concurrency</a></li>
+      <li>Java Concurrency in Practice — Brian Goetz (nền tảng JMM &amp; bẫy production)</li>
+      <li>Effective Java — Joshua Bloch, chương 11 (Concurrency)</li>
+    </ul>
+
+    <p class="footer">Java Docs · Concurrency · JDK 25 · Cập nhật 05/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>

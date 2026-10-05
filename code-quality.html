@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code quality &amp; quy trình team — Java Docs</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="searchbar">
+      <div class="search-input">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input id="search" type="search" placeholder="Search..." autocomplete="off" spellcheck="false">
+      </div>
+      <button class="menu-btn" type="button" title="Tùy chọn">&#8942;</button>
+    </div>
+
+    <nav class="tree" id="tree">
+      <details class="group">
+        <summary><span class="ico" style="background:#2b6cb0">J</span><span class="label">Java Core</span><span class="count">8</span></summary>
+        <a class="item" href="roadmap.html">Lộ trình học Java</a>
+        <a class="item" href="index.html">Biến trong Java</a>
+        <a class="item" href="data-types.html">Data Types &amp; Type Casting</a>
+        <a class="item" href="operators.html">Operators &amp; Math</a>
+        <a class="item" href="control-flow.html">Control Flow</a>
+        <a class="item" href="methods.html">Methods</a>
+        <a class="item" href="arrays.html">Arrays</a>
+        <a class="item" href="strings.html">Strings</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#6b46c1">O</span><span class="label">OOP</span><span class="count">9</span></summary>
+        <a class="item" href="classes-objects.html">Classes &amp; Objects</a>
+        <a class="item" href="encapsulation.html">Encapsulation &amp; Immutability</a>
+        <a class="item" href="inheritance.html">Inheritance</a>
+        <a class="item" href="polymorphism.html">Polymorphism</a>
+        <a class="item" href="abstract-interface.html">Abstract vs Interface</a>
+        <a class="item" href="object-contract.html">equals / hashCode / toString</a>
+        <a class="item" href="enum-nested.html">Enum, Nested &amp; Sealed</a>
+        <a class="item" href="solid-patterns.html">SOLID &amp; Patterns</a>
+        <a class="item" href="annotations-reflection.html">Annotations &amp; Reflection</a>
+      </details>
+      <details class="group">
+        <summary><span class="ico" style="background:#2f855a">D</span><span class="label">Dữ liệu &amp; lỗi</span><span class="count">8</span></summary>
+        <a class="item" href="exceptions.html">Exceptions</a>
+        <a class="item" href="generics.html">Generics</a>
+        <a class="item" href="collections.html">Collections</a>
+        <a class="item" href="io-files.html">I/O &amp; Files</a>
+        <a class="item" href="date-time.html">java.time</a>
+        <a class="item" href="lambda-functional.html">Lambda &amp; Functional</a>
+        <a class="item" href="optional.html">Optional</a>
+        <a class="item" href="streams.html">Stream API</a>
+      </details>
+      <details class="group" open>
+        <summary><span class="ico" style="background:#b7791f">P</span><span class="label">Production</span><span class="count">7</span></summary>
+        <a class="item" href="concurrency.html">Concurrency</a>
+        <a class="item" href="jvm.html">JVM</a>
+        <a class="item" href="maven-gradle.html">Maven &amp; Gradle</a>
+        <a class="item" href="testing.html">Testing</a>
+        <a class="item" href="logging.html">Logging</a>
+        <a class="item active" href="code-quality.html">Code Quality</a>
+        <a class="item" href="debugging.html">Debugging</a>
+      </details>
+    </nav>
+  </aside>
+
+  <main class="content" id="top">
+
+    <div class="toast" id="toast">
+      <button class="toast-close" id="toastClose" type="button" title="Đóng">&times;</button>
+      <h3>Ghi chú</h3>
+      <p>Tài liệu tự soạn để học, chạy hoàn toàn offline. Mọi ví dụ trong trang đã được chạy thật bằng JDK 25.</p>
+      <a href="#" id="toastOk">Đã hiểu</a>
+    </div>
+
+    <h1 id="code-quality">Code quality &amp; quy trình team</h1>
+
+    <p class="lead"><strong>Code quality</strong> là toàn bộ thói quen viết code dễ đọc, dễ sửa, ít lỗi; còn <strong>quy trình team</strong> là cách cả nhóm bảo đảm chất lượng đó bằng git, review, static analysis và CI. Trang này gom cả hai: kỹ năng cá nhân (naming, hàm nhỏ, DRY, comment, formatting, refactoring) và cách làm việc nhóm (Scrum/Jira, commit, PR review, quality gate) — kèm ví dụ refactor <code class="inline">OrderService</code> chạy thật bằng JDK 25, chứng minh hành vi không đổi.</p>
+
+    <nav class="toc">
+      <div class="toc-title">Mục lục</div>
+      <ol>
+        <li><a href="#tong-quan">Tổng quan &amp; cách học</a></li>
+        <li><a href="#naming">Đặt tên — naming</a></li>
+        <li><a href="#ham-nho">Hàm nhỏ, một việc</a></li>
+        <li><a href="#duplicate">Duplicate &amp; abstraction</a></li>
+        <li><a href="#comment">Comment đúng chỗ</a></li>
+        <li><a href="#formatting">Formatting &amp; convention</a></li>
+        <li><a href="#quy-trinh">Quy trình team — Scrum &amp; Jira</a></li>
+        <li><a href="#git-pr">Git workflow &amp; PR review</a></li>
+        <li><a href="#static-analysis">Static analysis &amp; CI</a></li>
+        <li><a href="#refactoring">Refactoring</a></li>
+        <li><a href="#pitfalls">Pitfalls thường gặp</a></li>
+        <li><a href="#goc-nodejs">Góc Node.js</a></li>
+        <li><a href="#luyen-tap">Luyện tập &amp; tài nguyên</a></li>
+        <li><a href="#qa">Interview Q&amp;A</a></li>
+        <li><a href="#bai-tap">Bài tập</a></li>
+        <li><a href="#cheat-sheet">Cheat sheet &amp; checklist</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="tong-quan">1. Tổng quan &amp; cách học</h2>
+
+    <div class="badges-legend">
+      <span class="badge b-interview">Hay hỏi phỏng vấn</span>
+      <span class="badge b-junior">Junior+</span>
+      <span class="badge b-prod">Production</span>
+    </div>
+
+    <p><strong>Code quality</strong> (chất lượng code) là mức độ code dễ đọc, dễ hiểu, dễ sửa và ít lỗi. "Chạy được" mới là điều kiện cần — chương trình đúng chức năng vẫn có thể là code tồi: biến <code class="inline">data1</code>, hàm 300 dòng, copy-paste 5 chỗ, comment vô nghĩa. Code tồi vẫn chạy... cho tới lần đầu tiên có người phải sửa nó.</p>
+
+    <p>Một con số đáng nhớ: lập trình viên dành phần lớn thời gian để <strong>đọc</strong> code (code cũ, PR, thư viện), không phải gõ code mới. Tỉ lệ đọc/viết thường được nhắc là khoảng <strong>10:1</strong>. Vì vậy tối ưu quan trọng nhất không phải gõ nhanh, mà là viết code để người khác — và chính bạn 6 tháng sau — đọc hiểu nhanh.</p>
+
+    <p>Song song với kỹ năng cá nhân là <strong>quy trình team</strong>: branch, commit, PR review, static analysis, CI. Cá nhân giỏi mà quy trình kém thì lỗi vẫn lọt; quy trình tốt mà code cẩu thả thì reviewer quá tải. Hai nửa này phải đi cùng nhau.</p>
+
+    <p>Mức độ bắt buộc của chủ đề 4.6 (phỏng vấn: cao · production: bắt buộc):</p>
+    <ul>
+      <li><strong>Phải làm được</strong> — đặt tên rõ nghĩa; tách hàm nhỏ một việc; xoá code chết; viết commit message đúng chuẩn; tạo PR nhỏ; chạy formatter/linter trước khi push.</li>
+      <li><strong>Phải hiểu</strong> — vì sao code được đọc nhiều hơn viết; DRY hiểu đúng (rule of three, premature abstraction); vòng đời một ticket từ Jira tới merge; definition of done; static analysis khác gì test.</li>
+      <li><strong>Nhận biết</strong> — SonarQube quality gate và coverage trên new code; SpotBugs/PMD; trunk-based development; pair programming; technical debt và cách trả nợ dần.</li>
+    </ul>
+
+    <p>Cách học hiệu quả nhất:</p>
+    <ol>
+      <li>Đọc mục 2–6 (kỹ năng cá nhân), rồi lôi một hàm cũ của chính bạn ra refactor thật.</li>
+      <li>Đọc mục 7–9 (quy trình &amp; công cụ) và áp dụng ngay vào PR tiếp theo.</li>
+      <li>Làm <a href="#bai-tap">Bài tập</a> — có bài refactor chạy được, đối chiếu output.</li>
+      <li>Ôn <a href="#cheat-sheet">Cheat sheet &amp; checklist</a> trước buổi review hoặc phỏng vấn.</li>
+    </ol>
+
+    <div class="note">Ví dụ dùng <code class="inline">IO.println(...)</code> — cách viết gọn của JDK 25 (JEP 512), tương đương <code class="inline">System.out.println(...)</code> trong tài liệu cũ. Các cặp ví dụ trước/sau refactor trong trang đã được chạy thật: output giống hệt nhau, đúng tinh thần "refactor không đổi hành vi".</div>
+
+    <h3>Góc Node.js</h3>
+    <ul>
+      <li>Bạn sẽ thấy rất quen: <strong>ESLint + Prettier</strong> tương ứng <strong>Checkstyle + formatter Java</strong>; <strong>husky/lint-staged</strong> tương ứng <strong>git hooks phía Java</strong>; <strong>npm scripts</strong> tương ứng <strong>Maven/Gradle</strong>; CI (GitHub Actions) gần như giống nhau.</li>
+      <li>Khác biệt lớn nhất: Java có static analysis mạnh hơn nhờ kiểu tĩnh — Checkstyle/SpotBugs/PMD/SonarQube bắt được nhiều lỗi mà ESLint thuần JS phải cần thêm TypeScript mới thấy.</li>
+      <li>Quy ước commit (Conventional Commits) dùng chung cho cả hai hệ sinh thái. Chi tiết so sánh ở <a href="#goc-nodejs">mục 12</a>.</li>
+    </ul>
+
+    <h2 id="naming">2. Đặt tên — naming <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Đặt tên là kỹ năng rẻ nhất mà mang lại nhiều nhất. Tên đúng làm comment trở nên thừa; tên sai làm cả hàm rối. Nguyên tắc gốc: <strong>tên trả lời "cái này là gì / làm gì", không phải "viết tắt của cái gì"</strong>. Quy ước chữ (camelCase, PascalCase, SCREAMING_SNAKE) bạn đã học ở <a href="index.html#cu-phap">Biến trong Java — mục 2</a>.</p>
+
+    <h3>Quy tắc cốt lõi</h3>
+    <ul>
+      <li><strong>Lộ ý định</strong> — <code class="inline">soNgayQuaHan</code>, <code class="inline">tinhTongTien</code>, <code class="inline">OrderStatus.HUY</code>. Người đọc hiểu mà không cần mở body.</li>
+      <li><strong>Phát âm được &amp; tìm được</strong> — <code class="inline">khachHang</code> dễ hơn <code class="inline">kh</code>; tên riêng giúp Ctrl+F hiệu quả hơn nhiều so với <code class="inline">i</code>, <code class="inline">e</code>, <code class="inline">x2</code>.</li>
+      <li><strong>Không viết tắt mơ hồ</strong> — <code class="inline">data1</code>, <code class="inline">tmp</code>, <code class="inline">mgr</code>, <code class="inline">proc</code>, <code class="inline">calc</code>. Ngoại lệ quen thuộc: <code class="inline">id</code>, <code class="inline">url</code>, <code class="inline">dto</code>, biến đếm <code class="inline">i</code> trong vòng lặp ngắn.</li>
+      <li><strong>Tên theo hành vi</strong> — <code class="inline">tinhTong</code> chứ không <code class="inline">xuLy</code>; <code class="inline">isVip</code> chứ không <code class="inline">vipFlag</code>.</li>
+      <li><strong>Nhất quán</strong> — cả codebase dùng <code class="inline">khachHang</code> thì đừng chỗ <code class="inline">customer</code>, chỗ <code class="inline">client</code>. Chọn <em>một</em> ngôn ngữ cho identifier (thực tế: tiếng Anh) và giữ đúng.</li>
+      <li><strong>Dạng số nhiều gợi ý cấu trúc</strong> — <code class="inline">List&lt;Order&gt; orders</code>, <code class="inline">Map&lt;String, Integer&gt; countByCity</code>; boolean dùng <code class="inline">is</code>/<code class="inline">has</code>/<code class="inline">can</code>/<code class="inline">should</code>.</li>
+      <li><strong>Không mã hoá kiểu vào tên</strong> — <code class="inline">strName</code>, <code class="inline">iCount</code>, <code class="inline">listOrders</code> là thói quen từ C/Windows; IDE đã hiển thị kiểu rồi.</li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr><th>Tên tồi</th><th>Vấn đề</th><th>Tên tốt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">int d;</code></td><td>Không ai biết <code class="inline">d</code> là gì</td><td><code class="inline">int soNgayQuaHan;</code></td></tr>
+        <tr><td><code class="inline">calc(a, b)</code></td><td>Calc cái gì?</td><td><code class="inline">tinhTongTien(donGia, soLuong)</code></td></tr>
+        <tr><td><code class="inline">boolean flag;</code></td><td>Flag nghĩa là gì?</td><td><code class="inline">boolean laKhachVip;</code></td></tr>
+        <tr><td><code class="inline">List&lt;Order&gt; data1;</code></td><td><code class="inline">data1</code>/<code class="inline">data2</code> không phân biệt được</td><td><code class="inline">List&lt;Order&gt; donChoXuLy;</code></td></tr>
+        <tr><td><code class="inline">void processOrder()</code></td><td>Process gồm những bước nào?</td><td><code class="inline">void guiMailXacNhan()</code> — tách tiếp nếu có "và"</td></tr>
+      </tbody>
+    </table>
+
+    <p>Ví dụ chạy thật — cùng logic nhưng tên gọi "nói chuyện" được với người đọc:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">record Order(String maDon, long soTien) {}
+
+class PriceCalculator {
+    static long tinhGiamGia(long soTien) {
+        return soTien &gt;= 500_000 ? 50_000 : 0;
+    }
+}
+
+void main() {
+    Order don = new Order("DH-001", 600_000);
+    IO.println(don.maDon() + " duoc giam " + PriceCalculator.tinhGiamGia(don.soTien()) + " VND");
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>DH-001 duoc giam 50000 VND</code></pre>
+    </div>
+
+    <div class="note"><strong>Code tiếng Anh hay tiếng Việt?</strong> Đa số codebase production (kể cả của các công ty Việt Nam) dùng identifier tiếng Anh vì hệ sinh thái thư viện, log, tài liệu đều tiếng Anh. Điều quan trọng không phải ngôn ngữ nào, mà là <strong>nhất quán</strong> trong cả repo — trộn lẫn nửa Anh nửa Việt mới là thứ gây khó chịu nhất.</div>
+
+    <h2 id="ham-nho">3. Hàm nhỏ, một việc <span class="badge b-prod">Production</span></h2>
+
+    <p>Đây là phiên bản "SRP ở mức method" (SRP đầy đủ học ở <a href="solid-patterns.html#srp">SOLID &amp; Patterns — mục 2</a>): một hàm chỉ nên làm <strong>một việc</strong>. Phép thử thực dụng: mô tả hàm bằng một câu <em>không có chữ "và"</em>. "Hàm này tính tổng tiền <strong>và</strong> gửi email" là hai việc — tách ra.</p>
+
+    <ul>
+      <li><strong>Một mức trừu tượng</strong> — đừng trộn "bước nghiệp vụ" với "chi tiết kỹ thuật" trong cùng một hàm: vừa <code class="inline">tinhTong</code>, vừa <code class="inline">substring</code> chuỗi, vừa mở connection.</li>
+      <li><strong>Ngắn vừa một màn hình</strong> — khoảng 20–30 dòng là mốc thực dụng. Dài hơn thì dừng lại hỏi: "chỗ này tách được không?"</li>
+      <li><strong>Tham số ít (1–3)</strong> — 4–5 tham số là dấu hiệu hàm đang gom nhiều việc. Gói chúng vào một <code class="inline">record</code> (xem <a href="methods.html#tham-so-mac-dinh">Methods — mục 4</a>).</li>
+      <li><strong>Không dùng boolean flag</strong> để chọn hành vi — <code class="inline">taoBaoCao(true)</code> đọc không hiểu nghĩa; flag thường là hai hàm bị nhét vào một.</li>
+      <li><strong>Guard clause thay nested if</strong> — kiểm tra dữ liệu xấu trước và return sớm (chi tiết ở <a href="control-flow.html#if-else">Control Flow — mục 2</a>).</li>
+      <li><strong>Không side effect ẩn</strong> — hàm tên <code class="inline">tinhTong</code> thì đừng ghi file hay gửi mail bên trong.</li>
+    </ul>
+
+    <h3>Flag argument — tách thành hai hàm</h3>
+
+    <p>Trước: một hàm với boolean <code class="inline">tomTat</code>; đọc call site không biết <code class="inline">true</code> nghĩa là gì. Sau: hai hàm có tên nói rõ hành vi. Output không đổi — đúng tinh thần refactor.</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class ReportGenerator {
+    static String taoBaoCao(boolean tomTat) {
+        if (tomTat) {
+            return "Bao cao ngan: 3 chi tieu";
+        }
+        return "Bao cao day du: 12 chi tieu, 4 bieu do";
+    }
+}
+
+void main() {
+    IO.println(ReportGenerator.taoBaoCao(true));
+    IO.println(ReportGenerator.taoBaoCao(false));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Bao cao ngan: 3 chi tieu
+Bao cao day du: 12 chi tieu, 4 bieu do</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">class ReportGenerator {
+    static String baoCaoTomTat() {
+        return "Bao cao ngan: 3 chi tieu";
+    }
+
+    static String baoCaoDayDu() {
+        return "Bao cao day du: 12 chi tieu, 4 bieu do";
+    }
+}
+
+void main() {
+    IO.println(ReportGenerator.baoCaoTomTat());
+    IO.println(ReportGenerator.baoCaoDayDu());
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Bao cao ngan: 3 chi tieu
+Bao cao day du: 12 chi tieu, 4 bieu do</code></pre>
+    </div>
+
+    <h3>Guard clause thay nested if</h3>
+
+    <p>Cùng logic xếp hạng khách hàng, viết lồng nhau (trước) và viết guard clause (sau). Chạy cả hai file cho ra kết quả giống hệt:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">class PriceCalculator {
+    static String xepHang(long tongChiTieu) {
+        String hang;
+        if (tongChiTieu &gt;= 0) {
+            if (tongChiTieu &gt;= 50_000_000) {
+                hang = "Kim cuong";
+            } else {
+                if (tongChiTieu &gt;= 10_000_000) {
+                    hang = "Vang";
+                } else {
+                    hang = "Bac";
+                }
+            }
+        } else {
+            hang = "Khong hop le";
+        }
+        return hang;
+    }
+}
+
+void main() {
+    IO.println(PriceCalculator.xepHang(60_000_000));
+    IO.println(PriceCalculator.xepHang(25_000_000));
+    IO.println(PriceCalculator.xepHang(1_000));
+    IO.println(PriceCalculator.xepHang(-5));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Kim cuong
+Vang
+Bac
+Khong hop le</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">class PriceCalculator {
+    static String xepHang(long tongChiTieu) {
+        if (tongChiTieu &lt; 0) {
+            return "Khong hop le";
+        }
+        if (tongChiTieu &gt;= 50_000_000) {
+            return "Kim cuong";
+        }
+        if (tongChiTieu &gt;= 10_000_000) {
+            return "Vang";
+        }
+        return "Bac";
+    }
+}
+
+void main() {
+    IO.println(PriceCalculator.xepHang(60_000_000));
+    IO.println(PriceCalculator.xepHang(25_000_000));
+    IO.println(PriceCalculator.xepHang(1_000));
+    IO.println(PriceCalculator.xepHang(-5));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Kim cuong
+Vang
+Bac
+Khong hop le</code></pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Dấu hiệu hàm đang quá to</th><th>Cách xử lý</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Comment đánh dấu "phần 1 / phần 2 / phần 3"</td><td>Mỗi phần là một method — extract method</td></tr>
+        <tr><td>Phải cuộn màn hình mới đọc hết</td><td>Tách theo bước nghiệp vụ, đặt tên theo bước</td></tr>
+        <tr><td>Nhiều biến local chỉ dùng một lần</td><td>Đưa vào method nhỏ, biến thành tham số/local của method đó</td></tr>
+        <tr><td>If lồng 3–4 tầng</td><td>Guard clause / early return</td></tr>
+        <tr><td>Tham số boolean điều khiển luồng</td><td>Tách thành hai hàm</td></tr>
+        <tr><td>Phải mock 5 thứ mới test được</td><td>Hàm đang gánh quá nhiều trách nhiệm</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Đừng tách hàm một cách máy móc. Tiêu chí cuối cùng vẫn là <strong>dễ đọc hơn</strong>: một hàm 25 dòng mạch lạc tốt hơn năm hàm 5 dòng với tên kiểu <code class="inline">doStep1</code>, <code class="inline">doStep2</code>. Tên method chính là tài liệu — xem thêm <a href="methods.html#best-practices">Methods — mục 12</a>.</div>
+
+    <h2 id="duplicate">4. Duplicate &amp; abstraction — DRY hiểu đúng <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>DRY</strong> (Don't Repeat Yourself) không có nghĩa "thấy hai đoạn giống nhau là gộp". Định nghĩa đúng: <em>mỗi mảnh kiến thức/quy tắc nghiệp vụ chỉ tồn tại ở một nơi trong hệ thống</em>. Hai đoạn code giống nhau nhưng đại diện hai quy tắc khác nhau thì <strong>không phải duplicate</strong> — gộp chúng lại là sai.</p>
+
+    <ul>
+      <li><strong>Rule of three</strong> — lần thứ nhất cứ viết; lần thứ hai chép cũng tạm được; đến lần thứ ba thì mới trừu tượng hoá. Trừu tượng quá sớm tốn công mà chưa chắc đúng hướng.</li>
+      <li><strong>Premature abstraction</strong> — gộp hai thứ "trông giống nhau" nhưng tiến hoá khác nhau sẽ tạo abstraction gượng ép: thêm cờ, thêm tham số, thêm <code class="inline">if</code> cho từng ca. Kết quả khó hiểu hơn cả lúc còn lặp.</li>
+      <li><strong>Duplication đắt, wrong abstraction đắt hơn</strong> — nếu đã gộp sai, cách sửa đúng thường là <em>inline ngược lại</em> (bỏ abstraction) rồi quan sát một thời gian trước khi gộp lại.</li>
+      <li><strong>Khi lặp ngắn là ổn</strong> — dữ liệu test, cấu hình, hai dòng format khác ngữ cảnh, code chỉ chạy một lần. Đừng tạo helper cho mọi thứ.</li>
+    </ul>
+
+    <p>Ví dụ thực tế: báo cáo lặp 3 lần cùng một cách format tiền. Đây là duplicate thật (cùng một quy tắc hiển thị) nên tách hàm là đúng. Chạy thật cả hai phiên bản — output giống hệt:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Locale;
+
+class ReportGenerator {
+    static String baoCao(long doanhThu, long chiPhi, long loiNhuan) {
+        return "Doanh thu: " + String.format(Locale.US, "%,d", doanhThu) + " VND\n"
+                + "Chi phi: " + String.format(Locale.US, "%,d", chiPhi) + " VND\n"
+                + "Loi nhuan: " + String.format(Locale.US, "%,d", loiNhuan) + " VND";
+    }
+}
+
+void main() {
+    IO.println(ReportGenerator.baoCao(1_250_000_000L, 800_000_000L, 450_000_000L));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Doanh thu: 1,250,000,000 VND
+Chi phi: 800,000,000 VND
+Loi nhuan: 450,000,000 VND</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.util.Locale;
+
+class ReportGenerator {
+    static String baoCao(long doanhThu, long chiPhi, long loiNhuan) {
+        return dong("Doanh thu", doanhThu) + dong("Chi phi", chiPhi) + dong("Loi nhuan", loiNhuan);
+    }
+
+    static String dong(String nhan, long soTien) {
+        return nhan + ": " + formatTien(soTien) + " VND\n";
+    }
+
+    static String formatTien(long soTien) {
+        return String.format(Locale.US, "%,d", soTien);
+    }
+}
+
+void main() {
+    IO.println(ReportGenerator.baoCao(1_250_000_000L, 800_000_000L, 450_000_000L));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>Doanh thu: 1,250,000,000 VND
+Chi phi: 800,000,000 VND
+Loi nhuan: 450,000,000 VND</code></pre>
+    </div>
+
+    <div class="note"><code class="inline">Locale.US</code> được truyền tường minh để output ổn định giữa các máy; nếu dùng <code class="inline">String.format</code> không có locale, dấu phân cách nghìn phụ thuộc locale hệ điều hành (có máy in <code class="inline">1.250.000.000</code>, có máy in <code class="inline">1,250,000,000</code>) — đây cũng là một dạng bug "chạy máy tôi thì được". Xem thêm <a href="strings.html">Strings</a>.</div>
+
+    <div class="note warn"><strong>Cẩn thận với abstraction sai:</strong> nếu <code class="inline">formatTien</code> sau này phải xử lý thêm "đơn vị VND/USD", rồi "làm tròn theo từng loại báo cáo", rồi "ẩn số 0"... trong khi chỉ một chỗ cần — đó là lúc abstraction đang phình ra. Quay lại tách riêng là hợp lý.</div>
+
+    <h2 id="comment">5. Comment đúng chỗ <span class="badge b-junior">Junior+</span></h2>
+
+    <p>Comment tốt trả lời câu hỏi <strong>"tại sao"</strong> — quyết định, trade-off, ràng buộc mà code không tự nói được. Thứ trả lời <strong>"cái gì"</strong> thường nên được thay bằng code rõ nghĩa hơn.</p>
+
+    <table>
+      <thead>
+        <tr><th>Comment tồi (nói "cái gì")</th><th>Cách sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">// tang i len 1</code></td><td>Xoá — code đã nói rồi</td></tr>
+        <tr><td><code class="inline">// tinh tong</code> trước method <code class="inline">tinhTong()</code></td><td>Xoá; tên hàm đã đủ</td></tr>
+        <tr><td><code class="inline">// goi API</code></td><td>Nếu cần, ghi <em>vì sao</em>: retry bao nhiêu lần, timeout vì lý do gì</td></tr>
+        <tr><td>Cả trăm dòng code bị comment out</td><td>Xoá — git đã giữ lịch sử; code chết chỉ gây nhiễu</td></tr>
+        <tr><td><code class="inline">// TODO</code> trống nghĩa</td><td><code class="inline">// TODO(an): doi sang API v2 khi backend len prod - JIRA-1234</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Comment tốt — giải thích quyết định mà nhìn code không đoán được (chạy thật):</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+class PriceCalculator {
+    static BigDecimal chiaDeu(BigDecimal tong, int soNguoi) {
+        // Dung HALF_UP vi tien VND khong co phan le; lam tron xuong se thieu tien cua khach
+        return tong.divide(BigDecimal.valueOf(soNguoi), 0, RoundingMode.HALF_UP);
+    }
+}
+
+void main() {
+    IO.println(PriceCalculator.chiaDeu(new BigDecimal("100000"), 3));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>33333</code></pre>
+    </div>
+
+    <p>Nếu xoá comment, người sau rất dễ "tối ưu" thành <code class="inline">RoundingMode.DOWN</code> và vô tình làm thiếu tiền của khách. Đó chính là lý do comment này đáng tồn tại — nó ghi lại <strong>quyết định</strong>, không phải mô tả lệnh <code class="inline">divide</code>.</p>
+
+    <h3>Javadoc cho public API</h3>
+
+    <p>Class/method <code class="inline">public</code> của thư viện dùng chung nên có Javadoc mô tả <strong>hợp đồng</strong>: làm gì, tham số, trả gì, ném gì. Không mô tả implementation (implementation sẽ đổi, hợp đồng thì không).</p>
+
+    <div class="codeblock">
+      <pre><code class="java">/**
+ * Tinh tien giam gia theo hang khach.
+ *
+ * @param tongChiTieu tong chi tieu tich luy (VND), khong am
+ * @return so tien giam, khong am
+ * @throws IllegalArgumentException neu tongChiTieu am
+ */
+public long tinhGiamGia(long tongChiTieu) {
+    if (tongChiTieu &lt; 0) {
+        throw new IllegalArgumentException("tongChiTieu am: " + tongChiTieu);
+    }
+    return tongChiTieu &gt;= 500_000 ? 50_000 : 0;
+}</code></pre>
+    </div>
+
+    <p>Quy tắc nhớ nhanh: <strong>xoá dòng comment mà code vẫn dễ hiểu → xoá. Xoá dòng comment mà người sau có thể hiểu sai quyết định → giữ, và viết cho rõ "vì sao".</strong></p>
+
+    <h2 id="formatting">6. Formatting &amp; convention <span class="badge b-prod">Production</span></h2>
+
+    <p>Tranh cãi về format (dấu ngoặc ở đâu, thụt mấy space) là loại tranh cãi tốn thời gian nhất mà giá trị thấp nhất. Cách giải quyết của mọi team chuyên nghiệp: <strong>chọn một chuẩn, để formatter thi hành, và không bàn lại trong review</strong>.</p>
+
+    <ul>
+      <li><strong>Google Java Style</strong> là chuẩn phổ biến: thụt 2 space, giới hạn 100 cột, <code class="inline">{</code> mở cùng dòng, luôn dùng ngoặc nhọn kể cả if một dòng. Chuẩn Oracle truyền thống thì thụt 4 space — quan trọng là team chọn một và thống nhất.</li>
+      <li><strong>IntelliJ IDEA</strong>: <code class="inline">Cmd+Option+L</code> (macOS) format file; bật <em>Save Actions</em>/<em>Format on Save</em>, <em>Optimize Imports</em>. Cấu hình nằm trong <code class="inline">.idea/codeStyles</code> hoặc <code class="inline">.editorconfig</code> commit vào repo để cả team dùng chung.</li>
+      <li><strong>Eclipse</strong> có formatter file <code class="inline">.xml</code> export được; build tool có thể chạy plugin format (Spotless, google-java-format) như một phần của <code class="inline">verify</code>.</li>
+      <li><strong>Import sạch</strong> — không wildcard (<code class="inline">import java.util.*;</code>), không import thừa. Wildcard che mất dependency thật và làm đọc diff khó hơn.</li>
+      <li><strong>Không raw type</strong> — <code class="inline">List list = new ArrayList();</code> chỉ compile kèm cảnh báo; hãy dùng <code class="inline">List&lt;Order&gt; list = new ArrayList&lt;&gt;();</code>. Chi tiết ở <a href="generics.html#bay">Generics — mục 8</a>.</li>
+      <li><strong>Một statement một dòng</strong>, dòng không quá dài, không khai báo nhiều biến trên một dòng: <code class="inline">int a, b;</code> dễ sót khi sửa.</li>
+    </ul>
+
+    <table>
+      <thead>
+        <tr><th>Hạng mục</th><th>Quy ước phổ biến</th><th>Công cụ thi hành</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Indent &amp; xuống dòng</td><td>Google style: 2 space, 100 cột</td><td>IntelliJ formatter, google-java-format, Checkstyle</td></tr>
+        <tr><td>Đặt tên</td><td>camelCase / PascalCase / SCREAMING_SNAKE</td><td>Checkstyle (TypeName, MemberName...)</td></tr>
+        <tr><td>Ngoặc nhọn</td><td>Luôn dùng <code class="inline">{ }</code>, kể cả một lệnh</td><td>Checkstyle (NeedBraces)</td></tr>
+        <tr><td>Import</td><td>Không wildcard, không thừa</td><td>Checkstyle (AvoidStarImport), IDE optimize imports</td></tr>
+        <tr><td>Javadoc API public</td><td>Có <code class="inline">@param</code>/<code class="inline">@return</code>/<code class="inline">@throws</code></td><td>Checkstyle (MissingJavadocMethod)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">Quy tắc vàng khi review: <strong>không comment về format nếu formatter/CI đã lo được</strong>. Review dành thời gian cho logic, edge case, bảo mật, naming — những thứ tool không thay bạn quyết định được. Nếu PR lệch format, chỉ cần nhắc "chạy formatter giúp mình" thay vì liệt kê 30 dòng.</div>
+
+    <h2 id="quy-trinh">7. Quy trình team — Scrum &amp; Jira <span class="badge b-prod">Production</span></h2>
+
+    <p>Ở trường bạn làm một mình; đi làm bạn làm trong team 3–10 người. Quy trình tồn tại để trả lời các câu hỏi: ai đang làm gì, khi nào xong, xong nghĩa là gì, và làm sao biết mình đang đi đúng hướng.</p>
+
+    <h3>Agile/Scrum trong 5 phút</h3>
+
+    <p>Scrum chia công việc thành các <strong>sprint</strong> ngắn (thường 1–2 tuần) lặp đi lặp lại. Mỗi sprint có 4 sự kiện chính:</p>
+
+    <table>
+      <thead>
+        <tr><th>Sự kiện</th><th>Tần suất</th><th>Mục đích</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Sprint planning</td><td>Đầu sprint</td><td>Chọn việc từ backlog, làm rõ acceptance criteria, ước lượng story point</td></tr>
+        <tr><td>Daily standup</td><td>Mỗi ngày, ~15 phút</td><td>Đồng bộ: đang làm gì, có chướng ngại gì. Không phải báo cáo cho sếp</td></tr>
+        <tr><td>Sprint review</td><td>Cuối sprint</td><td>Demo sản phẩm chạy được cho PO/stakeholder, nhận phản hồi</td></tr>
+        <tr><td>Retrospective (retro)</td><td>Cuối sprint</td><td>Nhìn lại <em>cách làm việc</em>: giữ gì, sửa gì. Không đổ lỗi cá nhân</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Jira workflow — vòng đời một ticket</h3>
+
+    <p>Luồng trạng thái phổ biến: <strong>To Do → In Progress → In Review → Done</strong> (thêm <strong>Blocked</strong> khi bị chặn). Một ticket tốt có mô tả, acceptance criteria, estimate và link tới PR.</p>
+
+    <div class="codeblock">
+      <pre><code>[ORDER-123] Giam gia 10% cho khach VIP
+
+Mo ta:
+- Khach hang VIP duoc giam 10% tren tam tinh truoc thue
+- Voucher van duoc ap dung sau khi giam gia
+
+Acceptance criteria:
+- [ ] Don cua khach VIP duoc giam dung 10%
+- [ ] Khach thuong khong bi anh huong
+- [ ] Co test cho ca VIP / thuong / voucher null
+
+Estimate: 3 story point
+Lien ket: PR #45</code></pre>
+    </div>
+
+    <h3>Story point — ước lượng theo độ phức tạp</h3>
+
+    <ul>
+      <li><strong>Story point là đơn vị tương đối</strong>, gộp cả độ phức tạp, khối lượng và độ rủi ro — không phải số giờ. Dãy Fibonacci (1, 2, 3, 5, 8, 13) được dùng vì con người ước lượng tương đối tốt hơn tuyệt đối.</li>
+      <li><strong>Planning poker</strong>: cả team chọn point độc lập rồi giải thích chênh lệch. Mục đích là tìm ra chỗ mọi người hiểu ticket khác nhau, không phải chọn số đẹp.</li>
+      <li><strong>Velocity</strong> (số point hoàn thành mỗi sprint) giúp dự báo, không phải để đo năng suất cá nhân. Đừng quy đổi "1 point = X giờ" rồi cam kết theo giờ.</li>
+      <li>Ticket quá lớn (&gt;13 point) nên tách nhỏ — vừa dễ ước lượng, vừa dễ review.</li>
+    </ul>
+
+    <h3>Definition of Done (DoD)</h3>
+
+    <p><strong>Acceptance criteria</strong> là điều kiện nghiệp vụ của riêng ticket; <strong>Definition of Done</strong> là tiêu chuẩn chung cho <em>mọi</em> ticket. Một ticket có thể đạt acceptance criteria nhưng chưa Done vì test chưa xanh. DoD thường gồm:</p>
+
+    <ul>
+      <li>Code compile, format sạch, static analysis không có vi phạm mới.</li>
+      <li>Test mới viết cho logic mới, toàn bộ test suite xanh.</li>
+      <li>CI xanh, PR được approve bởi ít nhất một người.</li>
+      <li>Không còn code chết, không còn <code class="inline">TODO</code> vô chủ; docs/Javadoc cập nhật nếu API đổi.</li>
+      <li>Deploy lên staging (nếu team có) và không lỗi.</li>
+    </ul>
+
+    <p><strong>Vai trò trong team:</strong> Product Owner (ưu tiên backlog, làm rõ nghiệp vụ), Scrum Master (bảo vệ quy trình, gỡ chướng ngại), Developer (thiết kế, code, test, review lẫn nhau), QA/Tester (kiểm thử độc lập, đẩy chất lượng từ đầu chứ không chỉ cuối dự án).</p>
+
+    <h2 id="git-pr">8. Git workflow &amp; PR review <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p>Git là công cụ; quy ước mới là thứ giữ lịch sử dễ đọc. Ba quy ước quan trọng nhất: tên branch, commit message, và kích thước PR.</p>
+
+    <h3>Tên branch</h3>
+
+    <ul>
+      <li><code class="inline">feat/order-discount</code> — tính năng mới.</li>
+      <li><code class="inline">fix/null-voucher-npe</code> — sửa bug, tên nói rõ bug gì.</li>
+      <li><code class="inline">refactor/order-service</code> — refactor, không đổi hành vi.</li>
+      <li><code class="inline">docs/code-quality</code> — tài liệu.</li>
+      <li>Branch ngắn, sống 1–3 ngày. Branch sống vài tuần là nguồn conflict khổng lồ.</li>
+    </ul>
+
+    <h3>Conventional Commits</h3>
+
+    <p>Format chuẩn của commit message:</p>
+
+    <div class="signature">
+      <span class="sig-muted">&lt;type&gt;(</span><span class="sig-var">scope</span><span class="sig-muted">):</span> <span class="sig-var">mo ta ngan, thi hien tai</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Type</th><th>Dùng khi</th><th>Ví dụ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline">feat</code></td><td>Thêm tính năng</td><td><code class="inline">feat(order): giam 10% cho khach VIP</code></td></tr>
+        <tr><td><code class="inline">fix</code></td><td>Sửa bug</td><td><code class="inline">fix(order): xu ly voucher null khi tinh tong</code></td></tr>
+        <tr><td><code class="inline">refactor</code></td><td>Đổi cấu trúc, không đổi hành vi</td><td><code class="inline">refactor(order): tach tinhTong thanh cac buoc nho</code></td></tr>
+        <tr><td><code class="inline">test</code></td><td>Thêm/sửa test</td><td><code class="inline">test(order): them ca bien voucher rong</code></td></tr>
+        <tr><td><code class="inline">docs</code></td><td>Tài liệu</td><td><code class="inline">docs: bo sung javadoc cho PriceCalculator</code></td></tr>
+        <tr><td><code class="inline">style</code></td><td>Format, không đổi logic</td><td><code class="inline">style: chay google-java-format toan repo</code></td></tr>
+        <tr><td><code class="inline">perf</code></td><td>Tối ưu hiệu năng</td><td><code class="inline">perf(order): tranh tao BigDecimal trong vong lap</code></td></tr>
+        <tr><td><code class="inline">chore</code>/<code class="inline">build</code>/<code class="inline">ci</code></td><td>Việc lặt vặt, build, pipeline</td><td><code class="inline">ci: them checkstyle vao verify</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>Commit message tốt có phần body giải thích <strong>vì sao</strong> — diff đã nói "cái gì":</p>
+
+    <div class="codeblock">
+      <pre><code>fix(order): xu ly voucher null khi tinh tong
+
+Call site cu truyen voucher null lam NPE trong tinhTamTinh.
+Them kiem tra null/blank truoc khi ap dung voucher va test
+cho 3 ca: voucher hop le, voucher rong, voucher null.
+
+Refs: ORDER-123</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code># Tao branch va commit theo tung buoc nho
+git switch -c feat/order-discount
+git add -p
+git commit -m "feat(order): giam 10% cho khach VIP"
+git push -u origin feat/order-discount</code></pre>
+    </div>
+
+    <h3>PR nhỏ — chìa khoá của review hiệu quả</h3>
+
+    <ul>
+      <li><strong>Một PR một mục tiêu.</strong> Refactor và feature mới nên là hai PR khác nhau; trộn lại thì không ai review nổi đâu là thay đổi logic thật.</li>
+      <li><strong>Kích thước vừa review</strong> — heuristic quen thuộc: dưới ~400 dòng thay đổi. PR 2000 dòng thường chỉ được duyệt hình thức.</li>
+      <li><strong>Tự review diff trước khi mở PR</strong> — bạn là người review số 0; xoá debug log, xoá file rác, đọc lại từng dòng.</li>
+      <li><strong>Mô tả PR</strong> nêu mục tiêu, cách kiểm thử, ảnh hưởng. Reviewer không cần đọc hết diff để hiểu ý tưởng.</li>
+    </ul>
+
+    <div class="codeblock">
+      <pre><code>## Muc tieu
+Tinh giam gia 10% cho khach VIP khi tao don.
+
+## Thay doi chinh
+- Them PriceCalculator.tinhGiamGia
+- OrderService goi calculator thay vi logic inline
+
+## Cach kiem thu
+- mvn test (them 3 test)
+- Chay tay: VIP / thuong / voucher null
+
+## Checklist
+- [x] Tu review diff
+- [x] Test cho ca bien
+- [x] CI xanh</code></pre>
+    </div>
+
+    <h3>Checklist khi review PR</h3>
+
+    <ul>
+      <li><strong>Hiểu mục tiêu</strong> — PR này giải quyết gì? Nếu không trả lời được từ mô tả và diff, hỏi tác giả trước khi review chi tiết.</li>
+      <li><strong>Logic đúng</strong> — thuật toán, điều kiện biên (<code class="inline">&gt;=</code> hay <code class="inline">&gt;</code>?), xử lý null/rỗng, trường hợp lỗi.</li>
+      <li><strong>Edge case &amp; luồng lỗi</strong> — đầu vào bất thường, exception, transaction, retry.</li>
+      <li><strong>Test</strong> — có test cho logic mới và ca biên chưa? Test có thật sự kiểm tra hành vi không?</li>
+      <li><strong>Bảo mật</strong> — dữ liệu nhạy cảm bị log ra? SQL nối chuỗi? Input chưa validate? Secret bị hardcode?</li>
+      <li><strong>Naming &amp; thiết kế</strong> — tên có nghĩa, hàm có một việc, không phá vỡ abstraction sẵn có.</li>
+      <li><strong>Không nitpick format</strong> — việc của formatter/CI. Góp ý về style chỉ khi nó ảnh hưởng đọc hiểu.</li>
+      <li><strong>Không tự viết lại theo ý mình</strong> — review để code tốt hơn, không phải để mọi thứ giống phong cách của bạn.</li>
+    </ul>
+
+    <h3>Văn hoá feedback</h3>
+
+    <ul>
+      <li>Phân loại rõ: <strong>blocking</strong> (phải sửa), <strong>suggestion</strong> (nên cân nhắc), <strong>nit</strong> (tuỳ, thường là format nhỏ). Prefix <code class="inline">nit:</code> giúp tác giả biết mức độ.</li>
+      <li>Hỏi thay vì khẳng định: "Mình hiểu đoạn này xử lý X, đúng không?" thay vì "Sai rồi".</li>
+      <li>Khen điểm tốt — reviewer chỉ toàn thấy lỗi thì tác giả sẽ né review.</li>
+      <li>Khi <em>nhận</em> feedback: không phòng thủ, không coi code là bản thân. Chưa rõ thì hỏi lại; đồng ý thì sửa; có lý do khác thì giải thích trade-off, không tranh thắng thua.</li>
+    </ul>
+
+    <div class="note">Git workflow chi tiết hơn — branch model, merge vs rebase, xử lý conflict — nằm ở lộ trình giai đoạn 4: <a href="roadmap.html#phase-4">Roadmap — GĐ4 Production</a>. Ở mức Junior+, điều quan trọng nhất vẫn là: branch nhỏ, commit có nghĩa, PR nhỏ, review văn minh.</div>
+
+    <h2 id="static-analysis">9. Static analysis &amp; CI <span class="badge b-prod">Production</span></h2>
+
+    <p><strong>Static analysis</strong> là phân tích code mà không chạy nó. Máy kiểm tra hàng nghìn dòng trong vài giây và bắt được cả lớp lỗi mà mắt người bỏ sót. Bốn công cụ bạn sẽ gặp trong mọi dự án Java:</p>
+
+    <table>
+      <thead>
+        <tr><th>Công cụ</th><th>Phân tích gì</th><th>Bắt được gì</th><th>Chạy ở đâu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Checkstyle</strong></td><td>Mã nguồn, chỉ về style/convention</td><td>Thiếu ngoặc, dòng quá dài, tên sai quy ước, import thừa/wildcard, thiếu Javadoc</td><td>IDE + Maven/Gradle + CI</td></tr>
+        <tr><td><strong>SpotBugs</strong></td><td>Bytecode</td><td>Bug pattern thật: dereference null, <code class="inline">equals</code> không khớp <code class="inline">hashCode</code>, resource leak, so sánh chuỗi bằng <code class="inline">==</code></td><td>Maven/Gradle + CI</td></tr>
+        <tr><td><strong>PMD</strong></td><td>Mã nguồn</td><td>Code smell: code không dùng, catch rỗng, method quá phức tạp, copy-paste</td><td>Maven/Gradle + CI</td></tr>
+        <tr><td><strong>SonarQube</strong></td><td>Mã nguồn + bytecode + lịch sử</td><td>Tổng hợp bug, vulnerability, code smell, duplication, coverage, technical debt; quản lý theo quality gate</td><td>Server + CI (và SonarLint trong IDE)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>SonarQube — quality gate</h3>
+
+    <ul>
+      <li><strong>Bug</strong> — lỗi logic hoặc rủi ro runtime. <strong>Vulnerability</strong> — lỗ hổng bảo mật. <strong>Code smell</strong> — chưa sai nhưng khó bảo trì.</li>
+      <li><strong>Technical debt</strong> — thời gian ước lượng để sửa hết code smell; dùng để nhìn xu hướng, không phải KPI cá nhân.</li>
+      <li><strong>Coverage</strong> — tỉ lệ dòng được test bao phủ; <strong>duplications</strong> — tỉ lệ code trùng lặp.</li>
+      <li><strong>Quality gate</strong> — bộ điều kiện để merge. Điểm mấu chốt: gate áp dụng trên <strong>new code</strong> (code của PR), không phải toàn bộ legacy. Ví dụ: coverage new code ≥ 80%, 0 bug mới, 0 vulnerability mới, duplication new code &lt; 3%.</li>
+      <li>Gate trên new code là cách thực dụng để "không làm nợ thêm" mà không phải dừng cả team để trả hết nợ cũ.</li>
+    </ul>
+
+    <p>Tích hợp Checkstyle vào Maven (chạy trong <code class="inline">verify</code>):</p>
+
+    <div class="codeblock">
+      <pre><code>&lt;plugin&gt;
+  &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+  &lt;artifactId&gt;maven-checkstyle-plugin&lt;/artifactId&gt;
+  &lt;version&gt;3.3.1&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;configLocation&gt;google_checks.xml&lt;/configLocation&gt;
+    &lt;failOnViolation&gt;true&lt;/failOnViolation&gt;
+  &lt;/configuration&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;phase&gt;verify&lt;/phase&gt;
+      &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+    </div>
+
+    <p>Và nối vào CI (GitHub Actions) để mọi PR đều được kiểm tra tự động:</p>
+
+    <div class="codeblock">
+      <pre><code>name: ci
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - run: mvn -B verify</code></pre>
+    </div>
+
+    <p>Khi vi phạm, output Checkstyle thường có dạng:</p>
+
+    <div class="errblock">
+      <pre>[ERROR] OrderService.java:23:9: 'if' construct must use '{}'s. [NeedBraces]
+[ERROR] OrderService.java:41: Line is longer than 100 characters (found 118). [LineLength]
+[ERROR] OrderService.java:12:5: Missing a Javadoc comment. [MissingJavadocMethod]</pre>
+    </div>
+
+    <div class="note warn"><strong>Điều tối kỵ:</strong> sửa rule, tắt check, hay thêm <code class="inline">@SuppressWarnings</code> chỉ để qua gate. Đó là che bệnh, không phải chữa bệnh. Suppress hợp lệ khi có lý do kỹ thuật thật và đi kèm comment giải thích + người review đồng ý. Chi tiết chạy Maven/CI ở <a href="maven-gradle.html">Maven &amp; Gradle — GĐ4</a>.</div>
+
+    <h2 id="refactoring">10. Refactoring <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <p><strong>Refactoring</strong> là thay đổi cấu trúc code <em>mà không thay đổi hành vi quan sát được</em>. Đây là định nghĩa phải thuộc: nếu output/log/exception thay đổi thì đó là sửa logic, không phải refactor. Vì vậy nguyên tắc số một: <strong>có test xanh trước khi refactor</strong> — test là lưới an toàn chứng minh hành vi không đổi.</p>
+
+    <h3>Khi nào refactor?</h3>
+
+    <table>
+      <thead>
+        <tr><th>Nên refactor</th><th>Không nên refactor</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Ngay trước khi thêm feature vào vùng code đó ("làm sạch chỗ sắp sửa")</td><td>Đang xử lý incident/sự cố production</td></tr>
+        <tr><td>Sau khi một bug vừa được fix — dọn luôn chỗ vừa sửa</td><td>Sát ngày release, không còn thời gian test lại</td></tr>
+        <tr><td>Khi review feedback chỉ ra code khó hiểu</td><td>Không có test và không đủ thời gian viết test trước</td></tr>
+        <tr><td>Khi cùng một đoạn code phải sửa đi sửa lại nhiều lần</td><td>"Refactor sprint" big-bang đổi cả hệ thống một lúc</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Kỹ thuật cơ bản (đủ dùng 90% trường hợp)</h3>
+    <ul>
+      <li><strong>Rename</strong> — biến/hàm/class. Dùng chức năng rename của IDE, đừng Find &amp; Replace tay.</li>
+      <li><strong>Extract method</strong> — cắt một khối logic thành method có tên; đây là kỹ thuật dùng nhiều nhất.</li>
+      <li><strong>Extract variable</strong> — đặt tên cho biểu thức khó hiểu: <code class="inline">long sauThue = ...</code>.</li>
+      <li><strong>Guard clause / replace nested with early return</strong> — như minh hoạ ở <a href="#ham-nho">mục 3</a>.</li>
+      <li><strong>Introduce constant</strong> — magic number thành hằng số có tên.</li>
+      <li><strong>Remove dead code</strong> — xoá code không dùng; git giữ lịch sử rồi.</li>
+    </ul>
+
+    <p>Nguyên tắc vận hành: <strong>refactor từng bước nhỏ, chạy test sau mỗi bước</strong>. Một PR refactor 500 dòng không test là cá cược. IDE (IntelliJ) làm rename/extract an toàn hơn sửa tay rất nhiều.</p>
+
+    <h3>Ví dụ thật: refactor OrderService</h3>
+
+    <p>Trước: một hàm 5 tham số, boolean flags, nhiều bước trộn lẫn, magic number. Sau: gói tham số vào record <code class="inline">Order</code>, tách từng bước thành method có tên, đưa magic number thành hằng số. Cả hai file đã chạy thật — output giống hệt nhau:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+class OrderService {
+    static BigDecimal tinhTien(BigDecimal donGia, int soLuong, boolean khachVip, boolean giaoNhanh, String voucher) {
+        BigDecimal tamTinh = donGia.multiply(BigDecimal.valueOf(soLuong));
+        if (khachVip) {
+            tamTinh = tamTinh.multiply(new BigDecimal("0.90"));
+        }
+        if (voucher != null &amp;&amp; !voucher.isBlank()) {
+            tamTinh = tamTinh.subtract(new BigDecimal("20000"));
+        }
+        BigDecimal thue = tamTinh.multiply(new BigDecimal("0.08"));
+        BigDecimal tong = tamTinh.add(thue);
+        if (giaoNhanh) {
+            tong = tong.add(new BigDecimal("30000"));
+        }
+        return tong;
+    }
+}
+
+void main() {
+    IO.println(OrderService.tinhTien(new BigDecimal("100000"), 2, true, true, "GIAM20"));
+    IO.println(OrderService.tinhTien(new BigDecimal("50000"), 1, false, false, null));
+    IO.println(OrderService.tinhTien(new BigDecimal("30000"), 3, false, true, "  "));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>202800.0000
+54000.00
+127200.00</code></pre>
+    </div>
+
+    <p>Sau refactor — hành vi không đổi, nhưng mỗi bước có tên đọc được:</p>
+
+    <div class="codeblock">
+      <pre><code class="java">import java.math.BigDecimal;
+
+record Order(BigDecimal donGia, int soLuong, boolean khachVip, boolean giaoNhanh, String voucher) {}
+
+class OrderService {
+    static final BigDecimal TY_LE_KHACH_VIP = new BigDecimal("0.90");
+    static final BigDecimal GIAM_GIA_VOUCHER = new BigDecimal("20000");
+    static final BigDecimal THUE_VAT = new BigDecimal("0.08");
+    static final BigDecimal PHI_GIAO_NHANH = new BigDecimal("30000");
+
+    static BigDecimal tinhTong(Order order) {
+        BigDecimal tamTinh = tinhTamTinh(order);
+        BigDecimal sauVoucher = apDungVoucher(tamTinh, order.voucher());
+        BigDecimal thue = sauVoucher.multiply(THUE_VAT);
+        return sauVoucher.add(thue).add(phiGiaoHang(order));
+    }
+
+    static BigDecimal tinhTamTinh(Order order) {
+        BigDecimal goc = order.donGia().multiply(BigDecimal.valueOf(order.soLuong()));
+        return order.khachVip() ? goc.multiply(TY_LE_KHACH_VIP) : goc;
+    }
+
+    static BigDecimal apDungVoucher(BigDecimal tien, String voucher) {
+        boolean coVoucher = voucher != null &amp;&amp; !voucher.isBlank();
+        return coVoucher ? tien.subtract(GIAM_GIA_VOUCHER) : tien;
+    }
+
+    static BigDecimal phiGiaoHang(Order order) {
+        return order.giaoNhanh() ? PHI_GIAO_NHANH : BigDecimal.ZERO;
+    }
+}
+
+void main() {
+    IO.println(OrderService.tinhTong(new Order(new BigDecimal("100000"), 2, true, true, "GIAM20")));
+    IO.println(OrderService.tinhTong(new Order(new BigDecimal("50000"), 1, false, false, null)));
+    IO.println(OrderService.tinhTong(new Order(new BigDecimal("30000"), 3, false, true, "  ")));
+}</code></pre>
+    </div>
+
+    <div class="codeblock error">
+      <pre><code>202800.0000
+54000.00
+127200.00</code></pre>
+    </div>
+
+    <ul>
+      <li>Hai output <strong>giống hệt nhau</strong> — bằng chứng hành vi không đổi. Cách làm chuyên nghiệp: viết test cho bản cũ trước, refactor, chạy lại test.</li>
+      <li>Record <code class="inline">Order</code> gom 5 tham số rời thành một parameter object — call site đọc như câu văn, không còn chuỗi <code class="inline">true, true</code> khó hiểu.</li>
+      <li>Magic string <code class="inline">"0.90"</code>, <code class="inline">"0.08"</code> trở thành hằng số có tên; đổi thuế suất không phải săn trong thân hàm.</li>
+      <li>Commit nên tách: một commit <code class="inline">refactor(order): ...</code> riêng, không trộn với commit feature — reviewer dễ kiểm chứng "không đổi hành vi".</li>
+    </ul>
+
+    <div class="note">Test sẽ học ở <a href="testing.html">Testing (JUnit) — GĐ4</a>. Dù chưa có JUnit, bạn vẫn có thể làm như trang này: viết file cũ và file mới, chạy cả hai, so sánh output. Không có lưới an toàn thì đừng refactor lớn.</div>
+
+    <h2 id="pitfalls">11. Pitfalls thường gặp</h2>
+
+    <table>
+      <thead>
+        <tr><th>Lỗi</th><th>Hậu quả</th><th>Cách tránh</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Premature optimization</strong> — tối ưu khi chưa đo</td><td>Code phức tạp hơn mà không nhanh hơn; sai chỗ cần tối ưu</td><td>Đo trước (profiler), tối ưu khi có số liệu</td></tr>
+        <tr><td><strong>Premature abstraction</strong> — trừu tượng sau 1–2 lần lặp</td><td>Abstraction gượng ép, thêm cờ và tham số cho từng ca</td><td>Rule of three; chờ đủ hiểu biến thể</td></tr>
+        <tr><td><strong>Hàm dài</strong> trộn nhiều mức trừu tượng</td><td>Khó test, khó review, bug ẩn</td><td>Một việc, mô tả không có chữ "và"; extract method</td></tr>
+        <tr><td><strong>Comment thừa</strong> mô tả "cái gì"</td><td>Nhiễu, lỗi thời, che code thật</td><td>Xoá; chỉ giữ "tại sao"; để code tự nói</td></tr>
+        <tr><td><strong>Tên mơ hồ</strong> (<code class="inline">data1</code>, <code class="inline">tmp</code>, <code class="inline">xuLy</code>)</td><td>Phải đọc body mới hiểu; tìm kiếm vô vọng</td><td>Tên theo ý định; rename ngay khi nghĩ ra tên tốt hơn</td></tr>
+        <tr><td><strong>Commit message "fix"</strong>, "update", "abc"</td><td>Lịch sử vô dụng khi truy vết bug</td><td>Conventional Commits; body giải thích vì sao</td></tr>
+        <tr><td><strong>PR khổng lồ</strong> trộn feature + refactor + format</td><td>Review hình thức, bug lọt, conflict triền miên</td><td>Một PR một mục tiêu, &lt; ~400 dòng</td></tr>
+        <tr><td><strong>Tranh cãi format</strong> trong review</td><td>Tốn thời gian, căng thẳng không cần thiết</td><td>Formatter + CI; review chuyện logic</td></tr>
+        <tr><td><strong>Copy-paste không hiểu</strong></td><td>Bug lan ra nhiều chỗ, sửa một chỗ quên chỗ khác</td><td>Hiểu trước khi chép; rule of three rồi tách</td></tr>
+        <tr><td><strong>Suppress warning bừa</strong> để qua gate</td><td>Che lỗi thật, nợ kỹ thuật tăng âm thầm</td><td>Fix gốc; suppress phải có lý do + review</td></tr>
+        <tr><td><strong>Trộn refactor với feature</strong> trong cùng commit</td><td>Diff không đọc được đâu là hành vi mới</td><td>Tách commit/PR riêng</td></tr>
+        <tr><td><strong>Viết test sau để đối phó coverage</strong></td><td>Test không kiểm tra gì thật, vẫn lọt bug</td><td>Test song song với code; coverage là chỉ dấu, không phải mục tiêu</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="goc-nodejs">12. Góc Node.js — ESLint/Prettier vs Checkstyle/Sonar</h2>
+
+    <p>Nếu bạn đến từ Node.js, gần như mọi khái niệm đều có bản tương ứng — chỉ khác tên công cụ:</p>
+
+    <table>
+      <thead>
+        <tr><th>Việc</th><th>Node.js / JS</th><th>Java</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lint style &amp; convention</td><td>ESLint</td><td>Checkstyle (và PMD cho code smell)</td></tr>
+        <tr><td>Format code</td><td>Prettier</td><td>google-java-format, IntelliJ/Eclipse formatter, Spotless</td></tr>
+        <tr><td>Bắt bug pattern</td><td>ESLint rules + TypeScript; cần thêm runtime test</td><td>SpotBugs (phân tích bytecode) — mạnh hơn nhờ kiểu tĩnh</td></tr>
+        <tr><td>Nền tảng tổng hợp + quality gate</td><td>ESLint + coverage + CI checks</td><td>SonarQube/SonarCloud (dùng được cho cả JS)</td></tr>
+        <tr><td>Git hooks trước commit</td><td>husky + lint-staged</td><td>git hook shell, pre-commit framework, hoặc Maven/Gradle plugin</td></tr>
+        <tr><td>Kiểm tra commit message</td><td>commitlint + commitizen</td><td>commitlint cũng chạy được; nhiều team check bằng CI script/plugin</td></tr>
+        <tr><td>Test + coverage</td><td>Jest <code class="inline">--coverage</code>, nyc</td><td>JUnit + JaCoCo</td></tr>
+        <tr><td>Chạy task/build</td><td>npm scripts (<code class="inline">npm run lint</code>)</td><td>Maven/Gradle lifecycle (<code class="inline">mvn verify</code>)</td></tr>
+        <tr><td>CI</td><td>GitHub Actions, GitLab CI...</td><td>Giống hệt — chỉ khác lệnh build</td></tr>
+        <tr><td>Commit convention</td><td>Conventional Commits</td><td>Conventional Commits (giống nhau)</td></tr>
+      </tbody>
+    </table>
+
+    <p>So sánh lệnh quen thuộc:</p>
+
+    <div class="codeblock">
+      <pre><code>// package.json (Node.js)
+"scripts": {
+  "lint": "eslint .",
+  "format": "prettier --write .",
+  "test": "jest --coverage",
+  "verify": "npm run lint &amp;&amp; npm test"
+}</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <pre><code># Java (Maven) — tuong duong
+mvn checkstyle:check     # nhu eslint
+mvn spotless:apply       # nhu prettier --write
+mvn test                 # nhu jest
+mvn -B verify            # gom tat ca + dong goi</code></pre>
+    </div>
+
+    <ul>
+      <li><strong>husky là package Node</strong> — team Java thuần thường không kéo husky vào; họ viết git hook shell, dùng framework <code class="inline">pre-commit</code>, hoặc chạy check trong Maven/Gradle. Hiệu quả tương đương: chặn code xấu trước khi tới CI.</li>
+      <li><strong>Conventional Commits là chuẩn chung</strong> — dùng y nguyên cho cả hai hệ sinh thái, không cần học lại.</li>
+      <li><strong>SonarQube dùng chung</strong> — nhiều dự án có cả frontend TS và backend Java; Sonar phân tích cả hai và quality gate áp dụng thống nhất.</li>
+      <li><strong>Khác biệt lớn nhất:</strong> nhờ kiểu tĩnh, Java bắt được lỗi ngay lúc compile và SpotBugs phân tích bytecode; ESLint thuần JS không có lợi thế đó — thường phải cần TypeScript mới đạt mức tương đương.</li>
+    </ul>
+
+    <h2 id="luyen-tap">13. Luyện tập &amp; tài nguyên</h2>
+
+    <p>Code quality không học bằng đọc — phải sửa code thật. Lộ trình luyện tập gợi ý cho project "quản lý đơn hàng" xuyên suốt:</p>
+
+    <ol>
+      <li><strong>Tuần 1</strong> — soi lại code cũ, đổi 20 tên biến/hàm mơ hồ thành tên có nghĩa; sửa xong chạy lại để chắc hành vi không đổi.</li>
+      <li><strong>Tuần 2</strong> — tìm 3 hàm dài nhất trong project, extract method; viết kiểm thử thủ công (như trang này) trước và sau.</li>
+      <li><strong>Tuần 3</strong> — luyện quy trình: mỗi thay đổi một branch, commit Conventional Commits, tự review diff trước khi push.</li>
+      <li><strong>Tuần 4</strong> — cài Checkstyle chạy trong build, sửa hết vi phạm; tạo một PR nhỏ cho người khác review và ngược lại.</li>
+    </ol>
+
+    <p>Các doc liên quan trong bộ tài liệu:</p>
+    <ul>
+      <li><a href="methods.html">1.5 Methods</a> — khai báo, overload, guard clause, best practices ở mức method; nền tảng cho mục 2–3 của trang này.</li>
+      <li><a href="control-flow.html#if-else">1.4 Control Flow — if/else &amp; guard clause</a> — chi tiết kỹ thuật early return.</li>
+      <li><a href="classes-objects.html#class-object">2.1 Classes &amp; Objects</a> — record, static factory, khi nào tách class.</li>
+      <li><a href="solid-patterns.html#srp">2.8 SOLID &amp; Patterns — SRP</a> — SRP ở mức class; mục 4 (DRY) của trang này là hệ quả của SRP.</li>
+      <li><a href="generics.html#bay">3.2 Generics — bẫy thường gặp</a> — vì sao không dùng raw type.</li>
+      <li><a href="testing.html">4.4 Testing (JUnit)</a> — bước tiếp theo bắt buộc để refactor an toàn.</li>
+      <li><a href="maven-gradle.html">4.3 Maven &amp; Gradle</a> — nơi cấu hình Checkstyle/SpotBugs/Sonar trong build.</li>
+      <li><a href="roadmap.html#phase-4">Roadmap — GĐ4 Production</a> — vị trí chủ đề 4.6 trong toàn bộ lộ trình.</li>
+    </ul>
+
+    <div class="note">Thứ tự học gợi ý trong giai đoạn 4: 4.1 JVM → 4.2 Concurrency → 4.3 Maven &amp; Gradle → 4.4 Testing → 4.5 Logging → 4.6 Code quality (trang này) → 4.7 Debug/tooling; xem <a href="roadmap.html#phase-4">Roadmap — GĐ4 Production</a>.</div>
+
+    <h2 id="qa">14. Interview Q&amp;A <span class="badge b-interview">Hay hỏi phỏng vấn</span></h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="qa">Hiện tất cả đáp án</button>
+    </div>
+
+    <h3>Clean code &amp; refactoring</h3>
+
+    <details class="qa">
+      <summary>Câu 1. Clean code là gì? Vì sao code chạy đúng vẫn chưa đủ?</summary>
+      <div class="answer">Clean code là code dễ đọc, dễ hiểu, dễ sửa và ít lỗi — không chỉ "chạy được". Một chương trình đúng chức năng vẫn có thể là code tồi: tên vô nghĩa, hàm 300 dòng, copy-paste. Code tồi không sai hôm nay nhưng làm mọi thay đổi ngày mai chậm và rủi ro hơn; chi phí bảo trì thường lớn hơn nhiều chi phí viết ban đầu.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 2. "Code được đọc nhiều hơn viết" — điều đó ảnh hưởng gì tới cách bạn viết?</summary>
+      <div class="answer">Tỉ lệ đọc/viết thường vào khoảng 10:1; phần lớn thời gian là đọc code cũ, PR, thư viện. Vì vậy nên tối ưu cho người đọc: tên rõ nghĩa, hàm ngắn một việc, ít trạng thái ẩn, comment giải thích "tại sao". Gõ code chậm hơn một chút để dễ đọc hơn là khoản đầu tư lãi nhất.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 3. Một cái tên tốt cần tiêu chí nào? Cho ví dụ tên tồi và cách sửa.</summary>
+      <div class="answer">Tên tốt: lộ ý định, phát âm được, tìm kiếm được, nhất quán, không viết tắt mơ hồ. Ví dụ <code class="inline">List&lt;Order&gt; data1</code> → <code class="inline">List&lt;Order&gt; donChoXuLy</code>; <code class="inline">boolean flag</code> → <code class="inline">boolean laKhachVip</code>; <code class="inline">calc(a, b)</code> → <code class="inline">tinhTongTien(donGia, soLuong)</code>. Tên đúng còn làm comment trở nên thừa.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 4. Hàm dài bao nhiêu là quá dài? Gặp hàm dài thì làm gì?</summary>
+      <div class="answer">Mốc thực dụng khoảng 20–30 dòng hoặc hơn một màn hình. Dấu hiệu rõ hơn con số: comment đánh dấu "phần 1/2/3", if lồng sâu, nhiều biến local dùng một lần, phải mock nhiều thứ mới test được. Cách xử lý: xác định các bước nghiệp vụ và extract method theo từng bước, đặt tên theo bước, chạy test sau mỗi lần tách.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 5. Hàm có quá nhiều tham số thì xử lý thế nào? Boolean flag argument có vấn đề gì?</summary>
+      <div class="answer">Gói các tham số liên quan vào một <code class="inline">record</code> (parameter object) hoặc builder nếu nhiều tham số tuỳ chọn. Boolean flag như <code class="inline">taoBaoCao(true)</code> làm call site vô nghĩa và thường che hai hành vi trong một hàm — tách thành hai hàm có tên rõ như <code class="inline">baoCaoTomTat()</code> và <code class="inline">baoCaoDayDu()</code>.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 6. DRY hiểu đúng là gì? Rule of three là gì?</summary>
+      <div class="answer">DRY nghĩa là mỗi <em>kiến thức/quy tắc nghiệp vụ</em> chỉ tồn tại một nơi, không phải "thấy giống là gộp". Hai đoạn code giống nhau nhưng vì lý do khác nhau thì không phải duplicate. Rule of three: lần 1 cứ viết, lần 2 có thể chép, đến lần 3 mới trừu tượng hoá — để có đủ dữ liệu hiểu các biến thể trước khi gộp.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 7. Premature abstraction là gì? Vì sao nguy hiểm hơn cả việc lặp code?</summary>
+      <div class="answer">Là trừu tượng hoá quá sớm khi chưa hiểu hết các biến thể. Khi yêu cầu khác đi, abstraction phải gánh thêm cờ, tham số, nhánh <code class="inline">if</code> cho từng ca — trở nên khó hiểu hơn cả code lặp ban đầu. Sửa sai abstraction thường phải "inline ngược lại" rồi làm lại; vì vậy nhiều người nói wrong abstraction đắt hơn duplication.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 8. Khi nào nên viết comment? Javadoc khác comment thường thế nào?</summary>
+      <div class="answer">Comment để giải thích "tại sao": quyết định, trade-off, ràng buộc, cảnh báo mà code không nói được. Comment "cái gì" nên thay bằng code rõ hơn. Javadoc dành cho API public, mô tả <em>hợp đồng</em> gồm <code class="inline">@param</code>, <code class="inline">@return</code>, <code class="inline">@throws</code> — không mô tả implementation; comment thường giải thích tại chỗ cho người đọc thân hàm.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 9. Refactoring là gì? Khi nào nên và không nên refactor? Vì sao cần test trước?</summary>
+      <div class="answer">Refactoring là đổi cấu trúc mà không đổi hành vi quan sát được. Nên làm trước khi thêm feature vào vùng code, sau khi fix bug, khi review feedback chỉ ra code khó hiểu. Không nên khi đang xử lý incident, sát release, hoặc không có test. Test xanh trước là lưới an toàn chứng minh hành vi không đổi — không có test thì "refactor" dễ biến thành "viết lại kèm bug".</div>
+    </details>
+
+    <h3>Quy trình &amp; review</h3>
+
+    <details class="qa">
+      <summary>Câu 10. Scrum có những sự kiện chính nào? Daily standup để làm gì?</summary>
+      <div class="answer">Sprint (1–2 tuần) với 4 sự kiện: Sprint planning (chọn việc, làm rõ acceptance criteria), Daily standup (~15 phút đồng bộ tiến độ và chướng ngại), Sprint review (demo sản phẩm chạy được, nhận phản hồi), Retrospective (nhìn lại cách làm việc, cải tiến quy trình). Standup là để đồng bộ trong team, không phải báo cáo cho quản lý.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 11. Definition of Done là gì? Khác acceptance criteria thế nào?</summary>
+      <div class="answer">Acceptance criteria là điều kiện nghiệp vụ của riêng từng ticket ("VIP được giảm 10%"). Definition of Done là tiêu chuẩn chung áp cho mọi ticket: code format/static analysis sạch, test mới + toàn bộ suite xanh, CI xanh, được approve, docs cập nhật, không còn code chết/TODO vô chủ. Ticket có thể đạt acceptance criteria nhưng chưa Done vì CI đang đỏ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 12. Story point là gì? Vì sao ước lượng bằng point thay vì giờ?</summary>
+      <div class="answer">Story point là đơn vị tương đối gộp độ phức tạp, khối lượng và rủi ro, thường theo dãy Fibonacci. Con người ước lượng tương đối ("cái này gấp đôi cái kia") tốt hơn tuyệt đối ("mất đúng 7 giờ"), và point tránh việc bị hiểu thành cam kết thời gian. Velocity (point hoàn thành mỗi sprint) dùng để dự báo, không phải đo năng suất cá nhân; đừng quy đổi point thành giờ.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 13. Một PR review tốt cần kiểm tra những gì? Vì sao PR nhỏ quan trọng?</summary>
+      <div class="answer">Kiểm tra: mục tiêu PR, tính đúng của logic, edge case và luồng lỗi, test có thật sự kiểm tra hành vi, bảo mật (log dữ liệu nhạy cảm, SQL nối chuỗi, secret hardcode), naming và thiết kế; không nitpick format — việc của formatter/CI. PR nhỏ (một mục tiêu, dưới ~400 dòng) giúp reviewer giữ đủ ngữ cảnh trong đầu; PR khổng lồ thường chỉ được duyệt hình thức và bug dễ lọt.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 14. Nhận và cho feedback review thế nào cho văn minh?</summary>
+      <div class="answer">Phân loại comment thành blocking / suggestion / nit để tác giả biết mức độ; hỏi thay vì khẳng định ("mình hiểu đoạn này xử lý X đúng không?"); khen điểm tốt. Khi nhận feedback: không phòng thủ, không coi code là bản thân, chưa rõ thì hỏi lại, đồng ý thì sửa, có lý do khác thì giải thích trade-off — mục tiêu là code tốt hơn, không phải thắng thua.</div>
+    </details>
+
+    <h3>Công cụ &amp; CI</h3>
+
+    <details class="qa">
+      <summary>Câu 15. Checkstyle khác SpotBugs thế nào? PMD để làm gì?</summary>
+      <div class="answer">Checkstyle phân tích mã nguồn và chỉ quan tâm style/convention: ngoặc, độ dài dòng, tên, import, Javadoc. SpotBugs phân tích bytecode để tìm bug pattern thật: dereference null, <code class="inline">equals</code> lệch <code class="inline">hashCode</code>, resource leak, so sánh chuỗi bằng <code class="inline">==</code>. PMD phân tích mã nguồn tìm code smell: code không dùng, catch rỗng, method quá phức tạp. Cả ba bổ sung cho nhau, thường chạy chung trong build.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 16. SonarQube quality gate là gì? Vì sao gate tính trên new code?</summary>
+      <div class="answer">Quality gate là bộ điều kiện phải đạt để merge/deploy, ví dụ: coverage new code ≥ 80%, 0 bug mới, 0 vulnerability mới, duplication new code &lt; 3%. Gate áp trên new code vì codebase cũ thường đã có nợ kỹ thuật, không thể sửa hết ngay; gate trên new code đảm bảo "không làm nợ thêm" mà vẫn cho team ship tính năng. Code vi phạm gate không được merge.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 17. Static analysis có thay thế được test không? Vì sao?</summary>
+      <div class="answer">Không. Static analysis bắt các pattern chung (null, style, bug pattern) mà không cần chạy; test xác nhận hành vi cụ thể của nghiệp vụ với dữ liệu thật. Một codebase static analysis sạch vẫn có thể sai logic; ngược lại coverage cao vẫn có thể chứa lỗ hổng bảo mật mà tool phát hiện. Hai lớp phòng thủ bổ sung cho nhau: tool chạy mọi commit, test chạy mọi thay đổi hành vi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 18. Conventional Commits là gì? Lợi ích gì?</summary>
+      <div class="answer">Là quy ước commit dạng <code class="inline">&lt;type&gt;(scope): mô tả</code> với các type như <code class="inline">feat</code>, <code class="inline">fix</code>, <code class="inline">refactor</code>, <code class="inline">test</code>, <code class="inline">docs</code>, <code class="inline">chore</code>. Lợi ích: lịch sử đọc được, tìm thay đổi theo loại, tự sinh CHANGELOG và version theo semver, tooling (commitlint) kiểm tra tự động, reviewer biết ngay bản chất thay đổi.</div>
+    </details>
+
+    <details class="qa">
+      <summary>Câu 19. CI fail vì Checkstyle nhưng đang gấp deadline — có nên sửa rule hoặc tắt check để qua gate?</summary>
+      <div class="answer">Không. Sửa rule/tắt check để qua gate là che bệnh: vi phạm vẫn còn, và lần sau cả team mất niềm tin vào gate. Cách đúng: sửa vi phạm (phần lớn là format, chạy formatter là xong), hoặc tách ticket nợ kỹ thuật nếu thật sự lớn, hoặc suppress cục bộ kèm comment lý do và được reviewer đồng ý. Chính sách nhất quán quan trọng hơn một lần deadline.</div>
+    </details>
+
+    <h2 id="bai-tap">15. Bài tập</h2>
+
+    <div class="qa-toolbar">
+      <button class="toggle-all" type="button" data-group="exercise">Hiện tất cả đáp án</button>
+    </div>
+
+    <details class="qa exercise">
+      <summary>Bài 1. Refactor hàm dài thành các method nhỏ</summary>
+      <div class="codeblock">
+        <pre><code class="java">record Order(String maDon, long donGia, int soLuong, boolean khachVip) {}
+
+static String taoHoaDon(Order order) {
+    if (order == null) {
+        return "khong co don";
+    }
+    long tamTinh = order.donGia() * order.soLuong();
+    long giamGia = 0;
+    if (order.khachVip()) {
+        giamGia = tamTinh * 10 / 100;
+    }
+    long sauGiam = tamTinh - giamGia;
+    long thue = sauGiam * 8 / 100;
+    long tong = sauGiam + thue;
+    return "Don " + order.maDon() + ": " + tong + " VND (giam " + giamGia + ")";
+}</code></pre>
+      </div>
+      <div class="answer">Tách theo từng bước nghiệp vụ, mỗi bước một method có tên; hàm chính đọc như công thức. Chú ý giữ nguyên công thức cũ (10% giảm, 8% thuế) để không đổi hành vi:
+        <div class="codeblock">
+          <pre><code class="java">static String taoHoaDon(Order order) {
+    if (order == null) {
+        return "khong co don";
+    }
+    long giamGia = tinhGiamGia(order);
+    long tong = tinhTongSauThue(order, giamGia);
+    return formatHoaDon(order, tong, giamGia);
+}
+
+static long tinhTamTinh(Order order) {
+    return order.donGia() * order.soLuong();
+}
+
+static long tinhGiamGia(Order order) {
+    if (!order.khachVip()) {
+        return 0;
+    }
+    return tinhTamTinh(order) * 10 / 100;
+}
+
+static long tinhTongSauThue(Order order, long giamGia) {
+    long sauGiam = tinhTamTinh(order) - giamGia;
+    return sauGiam + sauGiam * 8 / 100;
+}
+
+static String formatHoaDon(Order order, long tong, long giamGia) {
+    return "Don " + order.maDon() + ": " + tong + " VND (giam " + giamGia + ")";
+}</code></pre>
+        </div>
+        Chấp nhận nhiều biến thể tên miễn là mỗi hàm làm đúng một việc và công thức không đổi.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 2. Đặt tên lại cho rõ nghĩa</summary>
+      <div class="codeblock">
+        <pre><code class="java">int d;
+String s;
+boolean f;
+List&lt;Order&gt; l;
+void proc(Order o) { ... }
+long calc(long a, long b) { return a * b / 100; }</code></pre>
+      </div>
+      <div class="answer">Gợi ý: <code class="inline">int d</code> → <code class="inline">int soNgayQuaHan</code>; <code class="inline">String s</code> → tuỳ ngữ cảnh, ví dụ <code class="inline">String maVoucher</code>; <code class="inline">boolean f</code> → <code class="inline">boolean laKhachVip</code>; <code class="inline">List&lt;Order&gt; l</code> → <code class="inline">List&lt;Order&gt; donChoXuLy</code>; <code class="inline">proc(Order o)</code> → <code class="inline">guiMailXacNhan(Order order)</code>; <code class="inline">calc(a, b)</code> → <code class="inline">tinhPhanTram(long tongTien, long phanTram)</code>. Nguyên tắc: tên nói rõ đơn vị/ý nghĩa, không viết tắt mơ hồ.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 3. Tìm code smell trong đoạn sau</summary>
+      <div class="codeblock">
+        <pre><code class="java">static void p(boolean f) {
+    // tinh toan
+    String s = "";
+    if (f) {
+        s = "A" + 1;
+    } else {
+        s = "A" + 1;
+    }
+    IO.println(s);
+}</code></pre>
+      </div>
+      <div class="answer">Các smell: (1) tên hàm <code class="inline">p</code> vô nghĩa; (2) boolean flag <code class="inline">f</code> không nói lên hành vi; (3) comment <code class="inline">// tinh toan</code> thừa, còn sai; (4) hai nhánh if/else giống hệt nhau — duplicate, có thể xoá cả if; (5) tên biến <code class="inline">s</code> mơ hồ; (6) hàm vừa xử lý vừa in (side effect) — nên tách tính toán và in; (7) chuỗi <code class="inline">"A" + 1</code> khó hiểu, nên đặt hằng/biến có tên.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 4. Viết commit message chuẩn cho 3 thay đổi</summary>
+      <div class="answer">Gợi ý:
+        <ul>
+          <li>Thêm tính năng giảm giá VIP: <code class="inline">feat(order): giam 10% cho khach VIP</code>.</li>
+          <li>Sửa NPE khi voucher null: <code class="inline">fix(order): xu ly voucher null khi tinh tong tien</code> (body ghi vì sao và test đã thêm).</li>
+          <li>Tách hàm tính tổng, không đổi hành vi: <code class="inline">refactor(order): tach tinhTong thanh cac buoc nho</code>.</li>
+        </ul>
+        Type phải đúng bản chất (refactor khác feat/fix), mô tả ngắn ở thì hiện tại, không viết hoa đầu dòng.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 5. Viết checklist review PR (ít nhất 8 mục)</summary>
+      <div class="answer">Ví dụ: (1) hiểu mục tiêu PR; (2) logic đúng và điều kiện biên; (3) xử lý null/rỗng/lỗi; (4) test mới có kiểm tra hành vi và ca biên; (5) bảo mật: không log dữ liệu nhạy cảm, không hardcode secret, validate input; (6) naming và thiết kế nhất quán; (7) không có code chết/debug log/TODO vô chủ; (8) không nitpick format (formatter/CI lo); (9) PR một mục tiêu, kích thước hợp lý; (10) câu hỏi/đề xuất ghi rõ mức blocking/suggestion/nit.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 6. Tách guard clause cho hàm sau</summary>
+      <div class="codeblock">
+        <pre><code class="java">static String xepLoai(int diem) {
+    String kq;
+    if (diem &gt;= 0 &amp;&amp; diem &lt;= 10) {
+        if (diem &gt;= 8) {
+            kq = "Gioi";
+        } else {
+            kq = "Kha";
+        }
+    } else {
+        kq = "Khong hop le";
+    }
+    return kq;
+}</code></pre>
+      </div>
+      <div class="answer">
+        <div class="codeblock">
+          <pre><code class="java">static String xepLoai(int diem) {
+    if (diem &lt; 0 || diem &gt; 10) {
+        return "Khong hop le";
+    }
+    if (diem &gt;= 8) {
+        return "Gioi";
+    }
+    return "Kha";
+}</code></pre>
+        </div>
+        Điều kiện xấu lên đầu, return sớm; phần logic chính nằm thẳng hàng, không lồng nhau. Hành vi giữ nguyên cho mọi đầu vào.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 7. Viết Javadoc cho public method</summary>
+      <div class="codeblock">
+        <pre><code class="java">public long tinhGiamGia(long tongChiTieu)</code></pre>
+      </div>
+      <div class="answer">
+        <div class="codeblock">
+          <pre><code class="java">/**
+ * Tinh tien giam gia theo tong chi tieu tich luy.
+ *
+ * @param tongChiTieu tong chi tieu (VND), phai khong am
+ * @return so tien giam (VND), khong am
+ * @throws IllegalArgumentException neu tongChiTieu am
+ */</code></pre>
+        </div>
+        Javadoc mô tả hợp đồng (đầu vào, đầu ra, lỗi), không mô tả code bên trong. Nếu method phụ thuộc trạng thái hay thread-safety, ghi thêm ở phần mô tả.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 8. Sửa duplicate bằng extract method</summary>
+      <div class="codeblock">
+        <pre><code class="java">IO.println("Tong: " + String.format(Locale.US, "%,d", tong) + " VND");
+IO.println("Da tra: " + String.format(Locale.US, "%,d", daTra) + " VND");
+IO.println("Con lai: " + String.format(Locale.US, "%,d", conLai) + " VND");</code></pre>
+      </div>
+      <div class="answer">Quy tắc hiển thị tiền bị lặp 3 lần — đây là duplicate thật, nên tách:
+        <div class="codeblock">
+          <pre><code class="java">static void inDong(String nhan, long soTien) {
+    IO.println(nhan + ": " + formatTien(soTien) + " VND");
+}
+
+static String formatTien(long soTien) {
+    return String.format(Locale.US, "%,d", soTien);
+}
+
+// call site
+inDong("Tong", tong);
+inDong("Da tra", daTra);
+inDong("Con lai", conLai);</code></pre>
+        </div>
+        Lưu ý: đây là gộp hai thứ thật sự cùng quy tắc. Nếu ba chỗ có quy tắc hiển thị khác nhau, gộp lại sẽ thành premature abstraction.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 9. Đoán output trước/sau refactor</summary>
+      <div class="codeblock">
+        <pre><code class="java">class PriceCalculator {
+    static int phiGiaoHang(int tongTien) {
+        int phi;
+        if (tongTien &gt;= 0) {
+            if (tongTien &gt;= 500_000) {
+                phi = 0;
+            } else {
+                phi = 30_000;
+            }
+        } else {
+            phi = -1;
+        }
+        return phi;
+    }
+
+    static int phiGiaoHangSau(int tongTien) {
+        if (tongTien &lt; 0) {
+            return -1;
+        }
+        if (tongTien &gt;= 500_000) {
+            return 0;
+        }
+        return 30_000;
+    }
+}
+
+void main() {
+    IO.println(PriceCalculator.phiGiaoHang(600_000) + " " + PriceCalculator.phiGiaoHangSau(600_000));
+    IO.println(PriceCalculator.phiGiaoHang(499_999) + " " + PriceCalculator.phiGiaoHangSau(499_999));
+    IO.println(PriceCalculator.phiGiaoHang(-1) + " " + PriceCalculator.phiGiaoHangSau(-1));
+}</code></pre>
+      </div>
+      <div class="answer">Cả hai cột giống nhau — hành vi không đổi:
+        <div class="codeblock error">
+          <pre><code>0 0
+30000 30000
+-1 -1</code></pre>
+        </div>
+        Đã chạy thật bằng JDK 25. Đây là cách kiểm chứng refactor khi chưa có JUnit: chạy song song bản cũ và bản mới, so từng dòng output.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 10. Review đoạn code sau — tìm ít nhất 5 vấn đề</summary>
+      <div class="codeblock">
+        <pre><code class="java">class PriceCalculator {
+    static long tinhGiamGia(long tongChiTieu) {
+        if (tongChiTieu &gt; 10000000) {
+            return 100000;
+        }
+        return 100000;
+    }
+}</code></pre>
+      </div>
+      <div class="answer">Các vấn đề: (1) hai nhánh trả về cùng một giá trị — cả <code class="inline">if</code> là vô nghĩa, có thể xoá; (2) magic number <code class="inline">10000000</code> và <code class="inline">100000</code> — nên đặt hằng số có tên; (3) điều kiện biên <code class="inline">&gt;</code> hay <code class="inline">&gt;=</code>? Không rõ ý định, cần hỏi tác giả; (4) không kiểm tra đầu vào âm; (5) không có Javadoc cho method public; (6) không có test nào chứng minh hành vi. Khi review, câu hỏi quan trọng nhất là hỏi tác giả ý định của điều kiện biên thay vì tự đoán.</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 11. Gói 6 tham số thành record</summary>
+      <div class="codeblock">
+        <pre><code class="java">static long taoHoaDon(long donGia, int soLuong, boolean khachVip,
+                      boolean giaoNhanh, String voucher, String maDon) {
+    // ...
+}</code></pre>
+      </div>
+      <div class="answer">
+        <div class="codeblock">
+          <pre><code class="java">record Order(long donGia, int soLuong, boolean khachVip,
+             boolean giaoNhanh, String voucher, String maDon) {}
+
+static long taoHoaDon(Order order) {
+    // doc qua order.donGia(), order.soLuong()...
+}</code></pre>
+        </div>
+        Call site từ <code class="inline">taoHoaDon(100000, 2, true, false, null, "DH-1")</code> thành <code class="inline">taoHoaDon(new Order(100000, 2, true, false, null, "DH-1"))</code> — vẫn nhiều giá trị nhưng gom thành một đối tượng có tên, dễ mở rộng và không phá vỡ chữ ký method khi thêm trường. Nếu nhiều tham số tuỳ chọn, dùng builder (xem <a href="methods.html#tham-so-mac-dinh">Methods — mục 4</a>).</div>
+    </details>
+
+    <details class="qa exercise">
+      <summary>Bài 12. Chọn công cụ static analysis cho từng tình huống</summary>
+      <div class="answer">
+        <ul>
+          <li>Team tranh cãi chỗ đặt ngoặc, giới hạn 100 cột, import wildcard → <strong>Checkstyle</strong> với <code class="inline">google_checks.xml</code> để chốt tự động, khỏi tranh luận.</li>
+          <li>Nghi ngờ có <code class="inline">equals</code> thiếu <code class="inline">hashCode</code> hoặc resource chưa đóng → <strong>SpotBugs</strong> (phân tích bytecode bắt bug pattern thật).</li>
+          <li>Cần một quality gate trên CI cho mọi PR, theo dõi coverage/duplication/vulnerability theo thời gian → <strong>SonarQube</strong> (hoặc SonarCloud).</li>
+          <li>Muốn bắt code không dùng, catch rỗng, method quá phức tạp ngay trên máy → <strong>PMD</strong> (hoặc rule tương ứng của SonarLint trong IDE).</li>
+        </ul>
+        Thực tế thường dùng phối hợp: Checkstyle + SpotBugs/PMD chạy trong build, SonarQube làm bảng tổng hợp và gate trên CI.</div>
+    </details>
+
+    <h2 id="cheat-sheet">16. Cheat sheet &amp; checklist</h2>
+
+    <h3>Cheat sheet</h3>
+
+    <table>
+      <thead>
+        <tr><th>Việc cần làm</th><th>Cách làm</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Đặt tên</td><td>Lộ ý định, phát âm được, tìm được, nhất quán; tránh <code class="inline">data1</code>, <code class="inline">tmp</code>, viết tắt mơ hồ</td></tr>
+        <tr><td>Hàm nhỏ</td><td>Một việc, mô tả không có chữ "và"; ~20–30 dòng; 1–3 tham số</td></tr>
+        <tr><td>Nhiều tham số</td><td>Gói vào <code class="inline">record</code> (parameter object) hoặc builder</td></tr>
+        <tr><td>Boolean flag argument</td><td>Tách thành hai hàm có tên rõ hành vi</td></tr>
+        <tr><td>If lồng sâu</td><td>Guard clause / early return — điều kiện xấu lên đầu</td></tr>
+        <tr><td>DRY</td><td>Mỗi quy tắc một nơi; rule of three; cảnh giác premature abstraction</td></tr>
+        <tr><td>Comment</td><td>Giải thích "tại sao"; Javadoc cho public API (<code class="inline">@param</code>/<code class="inline">@return</code>/<code class="inline">@throws</code>)</td></tr>
+        <tr><td>Todo/Fixme</td><td>Có ngữ cảnh + người + ticket: <code class="inline">// TODO(an): ... - JIRA-123</code></td></tr>
+        <tr><td>Format</td><td>Formatter chạy tự động; import sạch, không wildcard; không raw type</td></tr>
+        <tr><td>Branch</td><td><code class="inline">feat|fix|refactor|docs/&lt;scope-ngan&gt;</code>, sống 1–3 ngày</td></tr>
+        <tr><td>Commit</td><td><code class="inline">type(scope): mô tả</code> (Conventional Commits); body giải thích vì sao</td></tr>
+        <tr><td>PR</td><td>Một mục tiêu, &lt; ~400 dòng, tự review diff, mô tả rõ cách kiểm thử</td></tr>
+        <tr><td>Review</td><td>Mục tiêu, logic, edge case, test, bảo mật, naming; không nitpick format</td></tr>
+        <tr><td>Feedback</td><td>blocking / suggestion / nit; hỏi thay vì khẳng định; hướng về code, không về người</td></tr>
+        <tr><td>Definition of Done</td><td>Code + test + review + CI xanh + docs; không code chết/TODO vô chủ</td></tr>
+        <tr><td>Story point</td><td>Tương đối (Fibonacci), không phải giờ; velocity để dự báo</td></tr>
+        <tr><td>Static analysis</td><td>Checkstyle (style/convention), SpotBugs (bug pattern), PMD (code smell), SonarQube (quality gate)</td></tr>
+        <tr><td>Quality gate</td><td>Áp trên new code: coverage, 0 bug/vulnerability mới, duplication thấp</td></tr>
+        <tr><td>Refactor</td><td>Đổi cấu trúc, không đổi hành vi; test xanh trước; từng bước nhỏ; commit riêng</td></tr>
+        <tr><td>Khi nào refactor</td><td>Trước feature, sau fix bug, khi review khó hiểu — không khi incident/sát release</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Checklist tự đánh giá trước phỏng vấn</h3>
+
+    <ul class="checklist">
+      <li>Giải thích được clean code là gì và vì sao code được đọc nhiều hơn viết.</li>
+      <li>Đổi tên được 10 identifier mơ hồ thành tên có nghĩa, có lý do.</li>
+      <li>Tách được một hàm 40 dòng thành các method một việc mà không đổi hành vi.</li>
+      <li>Giải thích DRY đúng, rule of three và premature abstraction kèm ví dụ.</li>
+      <li>Nêu được tiêu chí comment tốt, biết khi nào dùng Javadoc.</li>
+      <li>Cấu hình được formatter và biết vì sao không tranh cãi format trong review.</li>
+      <li>Thuộc vòng đời ticket: To Do → In Progress → In Review → Done; biết DoD khác acceptance criteria.</li>
+      <li>Viết được commit message Conventional Commits cho feat/fix/refactor.</li>
+      <li>Liệt kê được checklist review PR không có mục "format".</li>
+      <li>Phân biệt Checkstyle / SpotBugs / PMD / SonarQube và biết quality gate là gì.</li>
+      <li>Định nghĩa refactor đúng và biết vì sao cần test trước khi refactor.</li>
+      <li>Trình bày được một lần refactor thật: trước/sau, output không đổi, commit tách riêng.</li>
+    </ul>
+
+    <h3>Nguồn tham khảo</h3>
+
+    <ul>
+      <li><a href="https://google.github.io/styleguide/javaguide.html" target="_blank" rel="noreferrer">Google Java Style Guide</a></li>
+      <li><a href="https://checkstyle.org/" target="_blank" rel="noreferrer">Checkstyle — official site</a></li>
+      <li><a href="https://spotbugs.github.io/" target="_blank" rel="noreferrer">SpotBugs — official site</a></li>
+      <li><a href="https://pmd.github.io/" target="_blank" rel="noreferrer">PMD — official site</a></li>
+      <li><a href="https://docs.sonarsource.com/sonarqube/" target="_blank" rel="noreferrer">SonarQube Documentation</a></li>
+      <li><a href="https://www.conventionalcommits.org/" target="_blank" rel="noreferrer">Conventional Commits 1.0.0</a></li>
+      <li><a href="https://refactoring.com/" target="_blank" rel="noreferrer">Refactoring — Martin Fowler</a></li>
+      <li><a href="https://scrumguides.org/scrum-guide.html" target="_blank" rel="noreferrer">The Scrum Guide</a></li>
+      <li><a href="https://docs.github.com/en/pull-requests" target="_blank" rel="noreferrer">GitHub Docs — Pull requests</a></li>
+    </ul>
+
+    <p class="footer">Java Docs · Code quality · JDK 25 · Cập nhật 03/10/2026</p>
+
+  </main>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+<script src="script.js"></script>
+</body>
+</html>
